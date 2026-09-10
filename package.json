@@ -9,5 +9,13 @@
   },
   "scripts": {
     "test": "node tools/tests/run-public-tests.js"
+  },
+  "dependencies": {
+    "fflate": "0.8.3",
+    "multer": "2.3.0",
+    "nodemailer": "9.1.1",
+    "pdf-parse": "2.4.5",
+    "pdfjs-dist": "5.4.296",
+    "write-excel-file": "4.1.1"
   }
 }
