@@ -1,0 +1,13 @@
+{
+  "name": "k-session",
+  "version": "0.1.0-rc.0",
+  "description": "K⁺-SESSION 项目、付款与发票协作系统（公开候选，尚未发布）",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "test": "node tools/tests/run-public-tests.js"
+  }
+}
