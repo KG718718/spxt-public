@@ -18,3 +18,7 @@
 ## 文件与边界
 
 public-startup.js、employee-settlement.js、3份相关合成测试及本记录。公司版、真实业务文件和正式实例未变。未PR、合并、Release、部署；完整server/Admin接入、其余模块审查、依赖、浏览器与候选ZIP仍未完成。
+
+## Hosted result after upload
+
+Commit 8edf9f14a51a58b86b6788bce9de6141fb5551fe passed 237 checks in 6 test files on hosted Windows. All 19 real-filesystem startup checks passed, including exclusive publication, second-process reload and two-process first-admin contention. Evidence: https://github.com/KG718718/spxt-public/actions/runs/34460680038 . This does not represent HTTP, browser, full installation or LAN acceptance.

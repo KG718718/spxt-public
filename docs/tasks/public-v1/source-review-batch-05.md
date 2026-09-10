@@ -37,3 +37,9 @@ The export implementation has NOT been uploaded. Proposed least-scope correction
 ## Remaining gates
 
 Obtain the export visibility decision, complete server and page adaptation, validate permissions through synthetic HTTP and real browser tests, finish a zero-data Windows package, and verify installation/restart/upgrade/restore. License, PR, merge and Release remain separate decisions. Do not call this batch a complete application or a release.
+
+## Hosted result after upload
+
+Commit 207a2576fdcb19d5f3bb5dd975e5b1499513d14f passed all 279 checks in 9 test files on hosted Windows. Breakdown: backup filesystem 9, bonus 73, debt 15, foundation 24, mail 18, service fees 49, settlement 26, startup real filesystem 19, startup memory 46. Locked dependency installation succeeded; npm audit --audit-level=low reported 0 vulnerabilities. No tests failed.
+
+Evidence: https://github.com/KG718718/spxt-public/actions/runs/34462172034 . Mail transport was fake or dry-run only. This does not provide full server, HTTP, browser, DPAPI, installer, upgrade, complete restore or LAN acceptance. The export visibility decision above remains unresolved; this run excludes the export implementation.
