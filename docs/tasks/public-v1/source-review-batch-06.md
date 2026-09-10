@@ -31,3 +31,11 @@ Third-party dependency names/versions, original license texts and notices must a
 Sources: https://opensource.org/license/mit ; https://www.apache.org/licenses/LICENSE-2.0 ; https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository .
 
 No local public copy, private Git history, company configuration or business data was written or uploaded. No PR, merge, Release, deployment or operational-host modification.
+
+## 2026-09-10 依赖许可缺项修复记录
+
+首次托管检查 34463871251 在 @napi-rs/canvas-win32-x64-msvc@0.1.80 未随包附 LICENSE 时按预期失败，后续测试未执行，不记通过。已核对该平台包与 @napi-rs/canvas@0.1.80 的 npm 元数据：同一官方仓库、同一 gitHead dda1b258dac667b4c66b94bbd4d70aa79ea4503a。父包附带该提交的原始 MIT 正文。
+
+新增精确映射，仅允许该包/版本使用同版本父包原始 LICENSE，SHA-256 必须为 8802fecf9da4367bc23bcf20b21cc143785fc6c92b152f3fa7fbe6ce08d344d6；任何版本或正文改变均要求重新审查，不给所有缺文件依赖通用豁免。原第三方作者署名保留。
+
+这只补齐 npm 包层级正文来源；该原生图形二进制还涉及 Skia 等原生组件，完整封装前必须继续核对其实际分发许可/声明。inventory 明确 nativeBinaryReview=pending-before-distribution，不将本次包层级检查标成完整原生二进制合规通过。

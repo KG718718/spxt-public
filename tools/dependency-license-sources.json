@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "sources": {
+    "node_modules/@napi-rs/canvas-win32-x64-msvc": {
+      "version": "0.1.80",
+      "license": "MIT",
+      "providerPath": "node_modules/@napi-rs/canvas",
+      "providerVersion": "0.1.80",
+      "file": "LICENSE",
+      "sha256": "8802fecf9da4367bc23bcf20b21cc143785fc6c92b152f3fa7fbe6ce08d344d6",
+      "upstream": "https://github.com/Brooooooklyn/canvas/blob/dda1b258dac667b4c66b94bbd4d70aa79ea4503a/LICENSE",
+      "evidence": "Both exact-version npm manifests identify the same repository and gitHead dda1b258dac667b4c66b94bbd4d70aa79ea4503a. The platform package omits its own license file; the parent package includes this unchanged upstream license.",
+      "nativeComponentsReview": "pending-before-distribution; package MIT notice is not a complete audit of bundled Skia/native dependencies"
+    }
+  }
+}
