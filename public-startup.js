@@ -32,12 +32,21 @@ function newEmptyState() {
     ]);
 }
 function readOptionalJson(filename, label, fs = fsDefault) {
-    let source;
+    // Inspect the entry itself: a broken link or disappearing file is not a fresh install.
     try {
-        source = fs.readFileSync(filename, 'utf8');
+        const stat = fs.lstatSync(filename);
+        if (!stat.isFile() || stat.isSymbolicLink()) {
+            throw failure('STORE_UNREADABLE', label + '必须为普通文件，不能使用链接或目录。');
+        }
     } catch (error) {
         if (error.code === 'ENOENT') return { exists: false, value: null };
         throw failure('STORE_UNREADABLE', label + '不可读取；已停止启动，请检查权限或恢复备份，原文件不变。');
+    }
+    let source;
+    try {
+        source = fs.readFileSync(filename, 'utf8');
+    } catch {
+        throw failure('STORE_UNREADABLE', label + '读取失败或读取期间发生变化；已停止启动，禁止按空库初始化。');
     }
     try {
         const value = JSON.parse(source);
@@ -147,7 +156,7 @@ function initializeFirstAdministrator(options) {
     const at = new Date().toISOString();
     data.users.push({
         username, password: 'pbkdf2-sha256$' + iterations + '$' + salt + '$' + hash,
-        role: 'admin', accountStatus: 'active', lifecycleVersion: 0, createdAt: at
+        role: 'admin', accountStatus: 'active', lifecycleVersion: 0, created: at
     });
     data.logs.push({ user: username, action: '首次管理员初始化', detail: '本机完成首次安装；未导入业务数据', time: at });
     validateState(data);

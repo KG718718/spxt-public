@@ -110,7 +110,7 @@ for (const config of ['{"incomplete":','[]','null',{serviceFeeRates:[]},{bonusRu
     });
 }
 test('unreadable files do not become a new installation', () => {
-    const fs = memoryFs(); fs.fail = 'read';
+    const fs = stateFs(existingState()); fs.fail = 'read';
     assert.throws(() => loadStartupState(options(fs)), {code:'STORE_UNREADABLE'});
     assertNoWrites(fs);
 });
@@ -210,5 +210,20 @@ test('duplicate usernames cannot silently pass validation',()=>{
 });
 test('empty business parameters are valid readable configuration, not ready to calculate',()=>{
     assert.deepEqual(validateConfig({}),{});
+});
+test('linked data path is not treated as a new or ordinary installation',()=>{
+    const fs=stateFs(existingState());
+    const originalStat=fs.lstatSync.bind(fs);
+    fs.lstatSync=file=>file===options(fs).dataFile?{isFile:()=>true,isDirectory:()=>false,isSymbolicLink:()=>true}:originalStat(file);
+    assert.throws(()=>loadStartupState(options(fs)),{code:'STORE_UNREADABLE'});
+    assertNoWrites(fs);
+});
+test('initial administrator uses existing account and audit field contract',()=>{
+    const fs=memoryFs();
+    const data=initializeFirstAdministrator({...options(fs),username:'synthetic-admin',password:'Synthetic-Secret-32'});
+    assert.equal(typeof data.users[0].created,'string');
+    assert.ok(data.users[0].created.length>0);
+    assert.equal(data.logs[0].user,'synthetic-admin');
+    assert.equal(typeof data.logs[0].detail,'string');
 });
 console.log('Public startup checks passed: '+passed);
