@@ -41,3 +41,13 @@ No local public copy, private Git history, company configuration or business dat
 这只补齐 npm 包层级正文来源；该原生图形二进制还涉及 Skia 等原生组件，完整封装前必须继续核对其实际分发许可/声明。inventory 明确 nativeBinaryReview=pending-before-distribution，不将本次包层级检查标成完整原生二进制合规通过。
 
 The second hosted run passed all 310 functional checks (10 test files), including the actual XLSX archive privacy check, but the license step failed because busboy@1.6.0 and streamsearch@1.1.0 use the legacy single-entry licenses array rather than license. Exact-version publisher metadata confirms type MIT. The checker now recognizes that single-entry format while still requiring lockfile agreement and original license text; unknown or ambiguous licenses still fail.
+
+## Final hosted result for this batch
+
+Source/test commit: 031c2ef5a4de275879bb8c1da0194581c69bf686.
+Hosted Windows run: https://github.com/KG718718/spxt-public/actions/runs/34464534559 — success.
+All 310 checks in 10 test files passed, including 31 export privacy cases with actual XLSX XML inspection. npm audit reported 0 vulnerabilities.
+
+The package-level license inventory passed: 23 installed packages, 31 original license/notice files, 9 platform-optional packages not installed. Cloud-only artifact: https://github.com/KG718718/spxt-public/actions/runs/34464534559/artifacts/10146942633 (39,472 bytes). This is a license evidence archive, NOT an application installation package. It is reproducible from the committed lockfile and checker; the artifact has 30-day retention.
+
+Remaining: confirm project license choice and authorized copyright attribution; review bundled native components, Node/OCR/assets and the exact final distribution. Complete server/HTTP/browser and installation/upgrade/full restore gates. No final project LICENSE has been applied, and no Release or main merge was made.
