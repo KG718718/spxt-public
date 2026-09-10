@@ -37,7 +37,9 @@ for (const [key,locked] of Object.entries(lock.packages||{})) {
         throw Error('Linked dependency is not an approved bundled dependency');
     const manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8'));
     if(manifest.version!==locked.version) throw Error('Dependency version differs from lockfile: '+key);
-    const license=typeof manifest.license==='string'?manifest.license:manifest.license?.type;
+    const license=typeof manifest.license==='string'?manifest.license:manifest.license?.type
+        || (Array.isArray(manifest.licenses) && manifest.licenses.length===1 ? manifest.licenses[0]?.type : undefined);
+    if(locked.license && license!==locked.license)throw Error('License metadata differs from lockfile: '+manifest.name);
     if(!allowedLicenses.has(license)) throw Error('License requires explicit review: '+manifest.name+' / '+license);
     let discovered=collect(directory), licenseSource=null;
     if(!discovered.some(x=>/^(licen[cs]e|copying)([._-].*)?$/i.test(path.posix.basename(x.rel)))) {

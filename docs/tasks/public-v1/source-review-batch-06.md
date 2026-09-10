@@ -39,3 +39,5 @@ No local public copy, private Git history, company configuration or business dat
 新增精确映射，仅允许该包/版本使用同版本父包原始 LICENSE，SHA-256 必须为 8802fecf9da4367bc23bcf20b21cc143785fc6c92b152f3fa7fbe6ce08d344d6；任何版本或正文改变均要求重新审查，不给所有缺文件依赖通用豁免。原第三方作者署名保留。
 
 这只补齐 npm 包层级正文来源；该原生图形二进制还涉及 Skia 等原生组件，完整封装前必须继续核对其实际分发许可/声明。inventory 明确 nativeBinaryReview=pending-before-distribution，不将本次包层级检查标成完整原生二进制合规通过。
+
+The second hosted run passed all 310 functional checks (10 test files), including the actual XLSX archive privacy check, but the license step failed because busboy@1.6.0 and streamsearch@1.1.0 use the legacy single-entry licenses array rather than license. Exact-version publisher metadata confirms type MIT. The checker now recognizes that single-entry format while still requiring lockfile agreement and original license text; unknown or ambiguous licenses still fail.
