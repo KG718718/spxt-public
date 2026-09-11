@@ -150,7 +150,7 @@ function createConfigStore(options) {
                 return Number.isFinite(at)&&Number.isFinite(bt)?bt-at||a.index-b.index:a.index-b.index;
             }).map(row=>row.entry);
     }
-    return Object.freeze({update,getConfig:()=>clone(state),getVersion:()=>own(state,'configVersion')?state.configVersion:0,
+    return Object.freeze({update,getParameters:()=>parameters(state),getConfig:()=>clone(state),getVersion:()=>own(state,'configVersion')?state.configVersion:0,
         view:actor=>configView(state,actor),logs});
 }
 module.exports={createConfigStore,validateConfigState,configView,PARAMETERS};

@@ -201,4 +201,12 @@ check('response disconnect after commit does not roll back or attempt a false fa
     assert.equal(JSON.parse(f.files.get(file)).configVersion,1);
     rejectsUnchanged(f,()=>put(f,{taxRate:0.03},0),'CONFIG_VERSION_CONFLICT');
 });
+check('runtime parameter view is current, independent and excludes audit/internal fields',()=>{
+ const f=fixture({taxRate:0.02,internalValue:'not-for-runtime'});
+ put(f,{serviceFeeRates:{default:0.03,'礼品采购':0.04}});
+ const view=f.store.getParameters();assert.equal(view.taxRate,0.02);
+ assert.equal(Object.hasOwn(view,'configAuditRecords'),false);assert.equal(Object.hasOwn(view,'internalValue'),false);
+ view.serviceFeeRates.default=0.99;assert.equal(f.store.getParameters().serviceFeeRates.default,0.03);
+ put(f,{taxRate:0},f.store.getVersion());assert.equal(f.store.getParameters().taxRate,0);
+});
 console.log('Public atomic config unit tests: '+count+' passed.');
