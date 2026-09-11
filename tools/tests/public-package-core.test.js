@@ -56,6 +56,44 @@ async function check(name,fn){await fn();report.checks.push(name);count++;consol
   const setup=await f.call('/api/setup');assert.equal(setup.data.initializationRequired,false);
   const login=await f.call('/api/login',{method:'POST',body:{username:'package-admin',password}});assert.equal(login.status,200);
  });
+ await check('saved configuration and synthetic attachment survive program replacement',async()=>{
+  const login=await f.call('/api/login',{method:'POST',body:{username:'package-admin',password}});
+  const token=login.data.token;assert.ok(token);
+  const config=await f.call('/api/config',{token,method:'PUT',body:{expectedVersion:0,taxRate:0}});
+  assert.equal(config.status,200,JSON.stringify(config.data));
+  const client=await f.call('/api/clients',{token,method:'POST',body:{name:'Synthetic package restore client'}});
+  assert.equal(client.status,200,JSON.stringify(client.data));
+  const attachment=path.join(instance,'attachments','synthetic-backup-evidence.bin');
+  fs.mkdirSync(path.dirname(attachment),{recursive:true});
+  fs.writeFileSync(attachment,Buffer.from('Synthetic restore byte evidence; not an uploaded invoice.'));
+ });
+ const snapshotTree=directory=>{
+  const files={};
+  const walk=(dir,prefix='')=>{for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
+   const rel=prefix+entry.name,target=path.join(dir,entry.name);
+   if(entry.isDirectory())walk(target,rel+'/');
+   else if(entry.isFile())files[rel]=sha256(fs.readFileSync(target));
+   else throw Error('Unexpected fixture link or special file');
+  }};walk(directory);return files;
+ };
+ await check('stopped complete-instance copy restores configuration, credentials, master data and attachment bytes',async()=>{
+  await f.stop();const original=snapshotTree(instance);
+  const backup=path.join(work,'synthetic-complete-backup'),restored=path.join(work,'synthetic-restored-instance');
+  // Synthetic manual recovery rehearsal only, not an automatic production restore API.
+  fs.cpSync(instance,backup,{recursive:true,errorOnExist:true,force:false});
+  assert.deepEqual(snapshotTree(backup),original);
+  fs.cpSync(backup,restored,{recursive:true,errorOnExist:true,force:false});
+  assert.deepEqual(snapshotTree(restored),original);
+  f=await start(restored,{env,programRoot});assert.ok(f.port,f.output);
+  assert.deepEqual(snapshotTree(restored),original);
+  const login=await f.call('/api/login',{method:'POST',body:{username:'package-admin',password}});assert.equal(login.status,200);
+  const config=await f.call('/api/config',{token:login.data.token});assert.equal(config.status,200);assert.equal(config.data.taxRate,0);
+  const clients=await f.call('/api/clients',{token:login.data.token});assert.equal(clients.status,200);
+  assert.ok(JSON.stringify(clients.data).includes('Synthetic package restore client'));
+  assert.deepEqual(snapshotTree(instance),original);assert.deepEqual(snapshotTree(backup),original);
+  assert.deepEqual(fs.readFileSync(path.join(restored,'attachments','synthetic-backup-evidence.bin')),
+   fs.readFileSync(path.join(backup,'attachments','synthetic-backup-evidence.bin')));
+ });
  report.archiveSha256=built.sha256;report.fileCount=built.manifest.files.length;report.passed=count;
  fs.writeFileSync(path.join(work,'report.json'),JSON.stringify(report,null,2));
  fs.writeFileSync(path.join(work,'PACKAGE-MANIFEST.json'),JSON.stringify(built.manifest,null,2));
