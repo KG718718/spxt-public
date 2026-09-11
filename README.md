@@ -56,7 +56,17 @@
 
 ## 版本与下载
 
-本版名称为 **K⁺-SESSION 1.0**，代码及包清单版本为 **1.0.0**。1.0.0 安装包正在按统一版本号重新验证，正式发布入口待建立；不把较早的测试包标成正式 1.0。
+本版名称为 **K⁺-SESSION 1.0**，代码及包清单版本为 **1.0.0**。1.0.0 安装包已通过云端验证，正式 Release 入口尚未建立。
+
+[下载1.0.0安装候选](https://github.com/KG718718/spxt-public/actions/runs/34609338291/artifacts/10268045838)（需登录GitHub，Actions产物保留30天）。外层ZIP内包含 K-SESSION-online-setup.zip 与 SHA256SUMS.txt；解压内层安装包后按指南操作。
+
+[本次CI](https://github.com/KG718718/spxt-public/actions/runs/34609338291)：26份核心测试/742项检查、23项实际安装检查、6项可选OCR检查通过，依赖审计0漏洞。版本、说明与包内容保持一致。
+
+安装ZIP SHA256：
+
+```text
+d32993b2ac3fb2e7652e9bf3c796cc70ff240c965a2eaff5082c33d7ee97416d
+```
 
 当前源码：[codex/public-v1](https://github.com/KG718718/spxt-public/tree/codex/public-v1)。
 

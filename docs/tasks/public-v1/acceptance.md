@@ -1,5 +1,12 @@
 # Acceptance｜K⁺-SESSION 公开版 V1
 
+## 1.0.0 产品说明与版本补验｜2026-09-11
+
+[本次CI](https://github.com/KG718718/spxt-public/actions/runs/34609338291)：26份核心测试/742项检查（含新增产品文档与版本8项）、实际安装23项、可选OCR6项均通过；依赖审计0漏洞。版本/清单/安装包一致。业务、页面、网络与依赖逻辑未修改，完整回归通过。
+
+详见[第17批记录](batch-17-product-v1-docs.md)。正式标签/Release与main合并仍需明确授权；下文为较早对应提交的验收记录。
+
+
 ## 当前验收｜2026-09-11
 
 以 [第16批证据](batch-16-online-installer.md) 和 [PROJECT.md](../../../PROJECT.md) 为准。用户确认在线安装，原方案选择已关闭。
