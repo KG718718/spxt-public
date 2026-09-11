@@ -4,6 +4,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { validateTaxRate } = require('./tax-config');
 const { validateInvoiceBuyerName } = require('./invoice-access-policy');
+const { validateConfigState } = require('./public-config-store');
 
 const ARRAY_FIELDS = Object.freeze([
     'applications', 'payments', 'debts', 'clients', 'invoices', 'invoiceOcrJobs',
@@ -107,6 +108,7 @@ function validateConfig(value) {
     if (Object.hasOwn(value, 'bonusRules') && !plainRecord(value.bonusRules)) {
         throw failure('CONFIG_INVALID', '奖金配置结构非法，拒绝静默回退。');
     }
+    validateConfigState(value);
     return value;
 }
 function assertNoPriorAssets(options, fs) {
