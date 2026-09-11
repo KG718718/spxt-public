@@ -927,3 +927,16 @@ body #tab-users label:has(#createUserPayee) { color:#f5f0e6 !important; }
 
 body .btn.detail-button:not(:disabled), body .btn.approve-button:not(:disabled) { color:#111 !important; }
 body .btn.detail-button:not(:disabled):hover, body .btn.approve-button:not(:disabled):hover { background:#f0d393 !important; color:#111 !important; }
+
+/* Native date-picker icons remain visible on both dark forms and light dialogs. */
+input[type="date"], input[type="month"], input[type="time"], input[type="datetime-local"] { color-scheme: light; }
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  background-color: var(--ks-gold);
+  border-radius: 3px;
+  opacity: 1;
+  filter: none;
+  cursor: pointer;
+}

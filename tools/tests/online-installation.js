@@ -92,6 +92,9 @@ async function start(target){
    await ep.locator('#contractAmount').fill('1000');await ep.locator('#contractAmount').press('Tab');await ep.waitForFunction(()=>document.getElementById('totalTax')?.textContent==='待配置');
    assert.doesNotMatch(await ep.locator('body').innerText(),/初始化失败/);assert.match(await ep.locator('#approvalInitializationError').innerText(),/税率/);
    const data=JSON.parse(fs.readFileSync(path.join(target,'instance','data.json')));for(const k of ['applications','payments','invoices'])assert.deepEqual(data[k],[]);
+   const dayField=ep.locator('input[type=\"date\"]').first();
+   assert.equal(await dayField.evaluate(el=>getComputedStyle(el).colorScheme),'light');
+   assert.match(fs.readFileSync(path.join(target,'versions',JSON.parse(fs.readFileSync(path.join(target,'active.json'))).release,'app','k-session-theme.css'),'utf8'),/calendar-picker-indicator[\s\S]*background-color: var\(--ks-gold\)/);
    await ep.screenshot({path:path.join(evidence,'03-unconfigured-employee.png'),fullPage:true});
   }finally{await ec.close();}
  });
