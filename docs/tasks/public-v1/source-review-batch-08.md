@@ -13,3 +13,7 @@ Before implementation a module-presence probe failed: there was no public bootst
 The hosted-only test uses newly constructed fictional identities and isolated .test-work directories: bad Host/origin/method/content/body/role, zero write on failure, first valid creation, repeat/concurrency/restart, corrupt data/config and orphan assets, filesystem error redaction and runtime handoff failure. The test server hosts only this handler; it does not assert the full application server or login UI is complete. Four JavaScript files pass syntax checks. Cloud results to follow.
 
 No source application files, real accounts/data, mail, company services or host were changed. No local public directory or artifact. No PR/main merge/Release/deployment.
+
+## Hosted verification
+
+Commit d58aa9fb5a554dd44e422d4792a71032c334dc25: [Windows CI 34565261706](https://github.com/KG718718/spxt-public/actions/runs/34565261706) succeeded. 382 checks across 13 files, including 30 actual bootstrap HTTP and 26 tax core checks; npm audit 0 vulnerabilities. This is not a complete application or installer test.
