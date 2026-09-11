@@ -1,6 +1,6 @@
 # Batch 04｜安全启动与月结关联
 
-本批只包含已逐文件审查的公开代码与虚构测试；不含原公司资料或历史，不代表完整应用已可安装。
+本批只包含已逐文件审查的公开代码与虚构测试；不含预置组织资料或历史，不代表完整应用已可安装。
 
 ## 已核实证据
 
@@ -17,7 +17,7 @@
 
 ## 文件与边界
 
-public-startup.js、employee-settlement.js、3份相关合成测试及本记录。公司版、真实业务文件和正式实例未变。未PR、合并、Release、部署；完整server/Admin接入、其余模块审查、依赖、浏览器与候选ZIP仍未完成。
+public-startup.js、employee-settlement.js、3份相关合成测试及本记录。既有运行实例、真实业务文件和正式实例未变。未PR、合并、Release、部署；完整server/Admin接入、其余模块审查、依赖、浏览器与候选ZIP仍未完成。
 
 ## Hosted result after upload
 

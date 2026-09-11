@@ -1,7 +1,7 @@
 {
   "name": "k-session",
-  "version": "0.1.0-rc.0",
-  "description": "K⁺-SESSION 项目、付款与发票协作系统（公开候选，尚未发布）",
+  "version": "1.0.0",
+  "description": "K⁺-SESSION：面向广告公司的OA、财务核对与数据统计系统",
   "private": true,
   "license": "MIT",
   "engines": {

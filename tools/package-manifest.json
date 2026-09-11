@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "brand": "K⁺-SESSION",
-  "version": "0.1.0-rc.0",
+  "version": "1.0.0",
   "distribution": "application-core-only",
   "runtimeIncluded": false,
   "businessDataIncluded": false,
