@@ -13,7 +13,7 @@ set "KSESSION_BOOTSTRAP_ZIP=%stage%\node.zip"
 echo Downloading pinned Node 24.21.0 from nodejs.org ...
 "%SystemRoot%\System32\curl.exe" --fail --location --proto "=https" --proto-redir "=https" --tlsv1.2 --max-redirs 3 --retry 2 --connect-timeout 30 --max-time 600 --output "%KSESSION_BOOTSTRAP_ZIP%" "https://nodejs.org/dist/v24.21.0/node-v24.21.0-win-x64.zip"
 if errorlevel 1 goto failed
-"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoLogo -NoProfile -Command "if ((Get-FileHash -LiteralPath $env:KSESSION_BOOTSTRAP_ZIP -Algorithm SHA256).Hash -ne '158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541') { throw 'Official Node archive checksum mismatch' }"
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoLogo -NoProfile -Command "$ErrorActionPreference='Stop'; $stream=[System.IO.File]::OpenRead($env:KSESSION_BOOTSTRAP_ZIP); $hasher=[System.Security.Cryptography.SHA256]::Create(); try { $actual=[System.BitConverter]::ToString($hasher.ComputeHash($stream)).Replace('-','').ToLowerInvariant(); if ($actual -ne '158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541') { throw 'Official Node archive checksum mismatch' } } finally { $hasher.Dispose(); $stream.Dispose() }"
 if errorlevel 1 goto failed
 "%SystemRoot%\System32\tar.exe" -xf "%KSESSION_BOOTSTRAP_ZIP%" -C "%stage%"
 if errorlevel 1 goto failed
