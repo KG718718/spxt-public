@@ -116,6 +116,60 @@ try{
   await shot('03-user-permission');await inspect('user-permission');
  });
  await createUser('ui-approver','approver',false);
+
+ // Synthetic master records use actual APIs; project/payment and review below use visible controls.
+ const apiAdmin=(await runtime.call('/api/login',{method:'POST',body:{username:'ui-admin',password}})).data.token;
+ async function syntheticApi(url,token,body,method='POST'){
+  const r=await runtime.call(url,{token,body,method});assert.equal(r.status,200,url+' '+JSON.stringify(r.data));return r.data;
+ }
+ const uiClient=(await syntheticApi('/api/clients',apiAdmin,{fullName:'界面合成甲方有限公司'})).record;
+ const uiSupplier=(await syntheticApi('/api/suppliers',apiAdmin,{name:'界面合成供应商有限公司',bankAccount:'SYNTHETIC',payeeAccountType:'formal-supplier'})).supplier;
+ const businessContext=await context.browser().newContext({viewport:{width:1440,height:1000}});
+ try{
+  const employeePage=await businessContext.newPage();observe(employeePage);
+  await employeePage.goto(origin+'/login.html');await employeePage.locator('#username').fill('ui-employee');await employeePage.locator('#password').fill(password);await employeePage.locator('#loginSubmitButton').click();await employeePage.waitForURL('**/approval.html');
+  let uiAppId,uiPayId;
+  await check('employee submits actual project through visible form with empty activity date initially',async()=>{
+   await employeePage.locator('#clientId').selectOption(uiClient.id);assert.equal(await employeePage.locator('#startDate').inputValue(),'');
+   await employeePage.locator('#projectName').fill('Synthetic UI financial project');await employeePage.locator('#approver').selectOption('ui-admin');await employeePage.locator('#startDate').fill(new Date().toISOString().slice(0,10));
+   if(await employeePage.locator('#appTableBody .item-select').count()===0)await employeePage.locator('[onclick="addAppRow()"]').click();
+   const row=employeePage.locator('#appTableBody tr').filter({has:employeePage.locator('.item-select')}).first();
+   await row.locator('.item-select').selectOption('其他');await row.locator('.content-input').fill('Synthetic UI service');await row.locator('.supplier-select').selectOption(uiSupplier.name);await row.locator('.is-proxy-select').selectOption('否');await row.locator('.amount-input').fill('300');await row.locator('.amount-input').blur();
+   await employeePage.locator('#contractAmount').fill('1000');await employeePage.locator('#contractAmount').blur();await inspect('employee-filled-project',employeePage);
+   const done=employeePage.waitForResponse(r=>new URL(r.url()).pathname==='/api/application'&&r.request().method()==='POST');await employeePage.locator('[onclick="submitApplication()"]').click();const r=await done;assert.equal(r.status(),200,await r.text());uiAppId=(await r.json()).id;
+   assert.equal(await employeePage.locator('#projectName').inputValue(),'');
+  });
+  await syntheticApi('/api/config',apiAdmin,{expectedVersion:3,taxRate:0.05},'PUT');
+  await page.goto(origin+'/approval.html');await page.locator('#approvalMainTab').click();
+  await check('Admin sees saved project tax after configuration changes, and detail is operable',async()=>{
+   const row=page.locator('#approvalTableBody tr').filter({hasText:uiAppId});await row.waitFor();assert.match(await row.innerText(),/680\.39/);
+   await row.locator('.detail-button').click();await page.locator('#appDetailModal').waitFor({state:'visible'});await inspect('admin-project-detail');await shot('admin-project-detail');
+   await page.locator('#appDetailCloseButton').click();
+   const done=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/application/'+uiAppId&&r.request().method()==='PUT');await row.locator('.approve-button').click();assert.equal((await done).status(),200);
+  });
+  await check('employee payment UI inherits approved project rather than new tax setting',async()=>{
+   await employeePage.reload();await employeePage.locator('#paymentMainTab').click();await employeePage.locator('#relatedProject').selectOption(uiAppId);
+   await employeePage.locator('#paymentApprover').selectOption('ui-admin');assert.match(await employeePage.locator('#paymentTax').innerText(),/19\.61/);await inspect('employee-payment-filled',employeePage);
+   const done=employeePage.waitForResponse(r=>new URL(r.url()).pathname==='/api/payment'&&r.request().method()==='POST');await employeePage.locator('#paymentSubmitButton').click();const r=await done;assert.equal(r.status(),200,await r.text());uiPayId=(await r.json()).id;
+  });
+  await page.reload();await page.locator('#approvalMainTab').click();
+  await check('Admin opens payment detail and approves with unchanged saved financial facts',async()=>{
+   const row=page.locator('#approvalTableBody tr').filter({hasText:uiPayId});await row.locator('.detail-button').click();await page.locator('#payDetailModal').waitFor({state:'visible'});await inspect('admin-payment-detail');await shot('admin-payment-detail');
+   await page.locator('#payDetailCloseButton').click();const done=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/payment/'+uiPayId&&r.request().method()==='PUT');await row.locator('.approve-button').click();assert.equal((await done).status(),200);
+  });
+  const token=(await syntheticApi('/api/login',null,{username:'ui-employee',password})).token;
+  const rows=(await syntheticApi('/api/invoice-summary',token,undefined,'GET')).rows;
+  await syntheticApi('/api/invoices/batch-v2',token,{appId:uiAppId,expectedKeys:[rows.find(r=>r.appId===uiAppId).key],items:[{invoiceNo:'80000000000000000001',buyerName:'示例购买方测试单位',sellerName:uiSupplier.name,amount:300,invoiceDate:new Date().toISOString().slice(0,10),invoiceType:'发票'}]});
+  await page.goto(origin+'/invoice.html');await page.getByRole('button',{name:'发票审核',exact:true}).click();await inspect('admin-invoice-pending');await shot('admin-invoice-pending');
+  await check('approver actual login exposes review, not Admin maintenance',async()=>{
+   const c=await context.browser().newContext({viewport:{width:1440,height:1000}});try{
+    const p=await c.newPage();observe(p);await p.goto(origin+'/login.html');await p.locator('#username').fill('ui-approver');await p.locator('#password').fill(password);await p.locator('#loginSubmitButton').click();await p.waitForURL('**/approval.html');await p.locator('#approvalMainTab').waitFor({state:'visible'});
+    assert.equal(await p.locator('#applicationMainTab').isVisible(),false);assert.equal(await p.locator('#adminBtn').isVisible(),false);await inspect('approver-project-review',p);await p.goto(origin+'/invoice.html');await inspect('approver-invoice',p);
+   }finally{await c.close();}
+  });
+ }finally{await businessContext.close();}
+ await page.goto(origin+'/admin.html');await page.locator('[data-tab="users"]').waitFor();
+
  await check('all eleven Admin module panels open on the real service',async()=>{
   for(const tab of ['users','clients','debts','config','mail','bonus-preview','employee-settlement','suppliers','logs','backups','stats']){
    await page.locator('[data-tab="'+tab+'"]').click();await page.locator('#tab-'+tab).waitFor({state:'visible'});

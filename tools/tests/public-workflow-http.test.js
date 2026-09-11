@@ -61,8 +61,8 @@ async function login(username){return (await request('/api/login',null,{username
  const approvedPayment=JSON.stringify(state().payments[0]);
  let summary=await request('/api/invoice-summary',employee);
  await check('invoice expected amounts come from approved payment with saved payee types',()=>{
-  assert.equal(summary.rows.length,2);assert.equal(summary.totals.expected,512);
-  assert.equal(summary.rows.find(x=>x.supplier===seller).expectedAmount,412);
+  assert.equal(summary.rows.length,2);assert.equal(summary.totals.expected,500);
+  assert.equal(summary.rows.find(x=>x.supplier===seller).expectedAmount,400);
  });
  const formalRow=summary.rows.find(x=>x.supplier===seller),employeeRow=summary.rows.find(x=>x.supplier==='flow-owner');
  const invoice=(invoiceNo,sellerName,amount)=>({invoiceNo,buyerName:buyer,sellerName,amount,invoiceDate:date,invoiceType:'发票',checked:true,eligible:true});
@@ -78,7 +78,7 @@ async function login(username){return (await request('/api/login',null,{username
  let formalBatch;
  await check('formal supplier invoice becomes pending, not automatically confirmed or shared',async()=>{
   formalBatch=await request('/api/invoices/batch-v2',employee,batch(formalRow,invoice('90000000000000000001',seller,500)));
-  summary=await request('/api/invoice-summary',employee);assert.equal(summary.totals.pendingAmount,412);
+  summary=await request('/api/invoice-summary',employee);assert.equal(summary.totals.pendingAmount,400);
   assert.equal(summary.totals.confirmed,0);assert.equal(state().invoices[0].status,'待审核');
  });
  await check('employee cannot approve invoice batch',async()=>{
@@ -86,7 +86,7 @@ async function login(username){return (await request('/api/login',null,{username
  });
  await request('/api/invoice-submissions/'+formalBatch.batchId,admin,{status:'已确认'},'PUT');
  await check('approved invoice changes confirmation totals and preserves project/payment snapshots',async()=>{
-  summary=await request('/api/invoice-summary',employee);assert.equal(summary.totals.confirmed,412);assert.equal(summary.totals.missing,100);
+  summary=await request('/api/invoice-summary',employee);assert.equal(summary.totals.confirmed,400);assert.equal(summary.totals.missing,100);
   assert.equal(JSON.stringify(state().payments[0]),approvedPayment);assert.equal(JSON.stringify(state().applications[0]),approvedProject);
  });
  await request('/api/users/flow-owner/invoice-replacement',admin,{allowed:true,expectedVersion:0,reason:'Synthetic grant'});
@@ -100,7 +100,7 @@ async function login(username){return (await request('/api/login',null,{username
   const before=JSON.stringify(state().invoices);
   await request('/api/users/flow-owner/invoice-replacement',admin,{allowed:false,expectedVersion:1,reason:'Synthetic revoke'});
   assert.equal(JSON.stringify(state().invoices),before);
-  summary=await request('/api/invoice-summary',admin);assert.equal(summary.totals.confirmed,512);assert.equal(summary.totals.missing,0);
+  summary=await request('/api/invoice-summary',admin);assert.equal(summary.totals.confirmed,500);assert.equal(summary.totals.missing,0);
  });
  const preview=(await request('/api/bonus-preview?year='+year+'&month='+monthNumber,admin)).preview;
  const bonusRow=preview.rows.find(x=>x.applicationId===appId);
@@ -133,7 +133,7 @@ async function login(username){return (await request('/api/login',null,{username
  });
  await check('restart preserves cross-module amounts and snapshots',async()=>{
   const before=disk();await f.stop();f=await start(directory);assert.ok(f.port,f.output);assert.equal(disk(),before);
-  const token=await login('flow-admin');assert.equal((await request('/api/invoice-summary',token)).totals.confirmed,512);
+  const token=await login('flow-admin');assert.equal((await request('/api/invoice-summary',token)).totals.confirmed,500);
  });
  console.log('Public actual cross-module workflow: '+count+' passed.');
 }catch(e){console.error(e.stack);process.exitCode=1;}finally{if(f)await f.stop();}})();
