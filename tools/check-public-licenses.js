@@ -6,6 +6,10 @@ const crypto = require('node:crypto');
 if (process.env.GITHUB_ACTIONS !== 'true') throw Error('License inventory is restricted to the hosted candidate workspace.');
 const root = path.resolve(__dirname, '..');
 const lock = JSON.parse(fs.readFileSync(path.join(root,'package-lock.json'),'utf8'));
+const manifest = JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+const licenseBytes = fs.readFileSync(path.join(root,'LICENSE'));
+const projectNotices = fs.readFileSync(path.join(root,'THIRD_PARTY_NOTICES.md'));
+const projectLicense = require('./public-license-policy').validateProjectLicense({manifest,lock,license:licenseBytes.toString('utf8'),notices:projectNotices.toString('utf8')});
 const reportRoot = path.join(root,'.test-work','license-report');
 const allowedLicenses = new Set(['MIT','MIT-0','ISC','Apache-2.0']);
 const sha256 = data => crypto.createHash('sha256').update(data).digest('hex');
@@ -74,14 +78,19 @@ for(const file of files) {
     fs.mkdirSync(path.dirname(target),{recursive:true});
     fs.writeFileSync(target,file.buffer,{flag:'wx'});
 }
+fs.writeFileSync(path.join(reportRoot,'LICENSE'),licenseBytes,{flag:'wx'});
+fs.writeFileSync(path.join(reportRoot,'PROJECT_THIRD_PARTY_NOTICES.md'),projectNotices,{flag:'wx'});
 const inventory={schemaVersion:1,target:process.platform+'-'+process.arch,lockSha256:sha256(fs.readFileSync(path.join(root,'package-lock.json'))),
-    projectLicenseStatus:'pending-user-choice',nativeBinaryReview:'pending-before-distribution',packages,skippedOptional:skipped};
+    projectLicenseStatus:'MIT-approved',projectLicense,nativeBinaryReview:'pending-before-distribution',packages,skippedOptional:skipped};
 fs.writeFileSync(path.join(reportRoot,'inventory.json'),JSON.stringify(inventory,null,2)+'\n',{flag:'wx'});
 const rows=packages.map(p=>'| '+p.name+' | '+p.version+' | '+p.license+' | '+p.licenseFiles.map(f=>'['+path.posix.basename(f.path)+']('+f.path+')').join(', ')+' |');
 const notice='# Third-party notices — dependency inventory\n\n'+
     'This report contains the original license/notice files of dependencies installed for this hosted target. Their own terms continue to apply. It is not the application license and does not assert that a complete distribution has been validated.\n\n'+
     '| Package | Version | Declared license | Original files |\n|---|---|---|---|\n'+rows.join('\n')+
-    '\n\nNot included in this inventory: the application license, separately distributed Node.js, optional OCR/Python/models, and later browser/assets dependencies. Review the exact final package and include their original notices before release. Platform-skipped optional packages are listed in inventory.json and are not asserted to be bundled.\n';
+    '\n\nThe project LICENSE is included alongside this inventory. Not yet covered: separately distributed Node.js, optional OCR/Python/models, and later browser/assets dependencies. Review the exact final package and include their original notices before release. Platform-skipped optional packages are listed in inventory.json and are not asserted to be bundled.\n';
 fs.writeFileSync(path.join(reportRoot,'THIRD_PARTY_NOTICES.md'),notice,{flag:'wx'});
+const savedInventory=JSON.parse(fs.readFileSync(path.join(reportRoot,'inventory.json'),'utf8'));
+if(savedInventory.projectLicense.spdx!=='MIT'||sha256(fs.readFileSync(path.join(reportRoot,'LICENSE')))!==sha256(licenseBytes)) throw Error('Saved project license evidence mismatch');
+for(const entry of savedInventory.packages.flatMap(p=>p.licenseFiles)){if(sha256(fs.readFileSync(path.join(reportRoot,entry.path)))!==entry.sha256)throw Error('Saved original notice changed');}
 console.log('Third-party license inventory: '+packages.length+' installed packages; '+files.length+' original license/notice files; '+skipped.length+' optional packages not installed.');
-console.log('Project license and bundled native-component review remain pending; this package-level inventory is not release approval.');
+console.log('Project MIT license verified; bundled native-component review remains pending. This inventory is not release approval.');
