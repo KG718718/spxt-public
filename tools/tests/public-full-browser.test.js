@@ -106,7 +106,7 @@ try{
  });
  await check('Admin explicitly grants employee replacement using checkbox and confirmation dialog',async()=>{
   const checkbox=page.locator('input[data-username="ui-employee"][onchange*="setInvoiceReplacementPermission"]');
-  assert.equal(await checkbox.isChecked(),false);await checkbox.check();
+  assert.equal(await checkbox.isChecked(),false);await checkbox.click();
   const dialog=page.locator('dialog[open]');await dialog.locator('[name="reason"]').fill('Synthetic UI acceptance');
   await dialog.locator('[data-submit]').click();
   await page.waitForFunction(()=>document.querySelector('input[data-username="ui-employee"][onchange*="setInvoiceReplacementPermission"]')?.checked);
