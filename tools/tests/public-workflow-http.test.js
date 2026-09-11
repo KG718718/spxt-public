@@ -18,7 +18,7 @@ async function request(url,token,body,method=body===undefined?'GET':'POST',statu
 async function login(username){return (await request('/api/login',null,{username,password})).token;}
 (async()=>{try{
  f=await start(directory);assert.ok(f.port,f.output);
- await request('/api/setup',null,{username:'flow-admin',password});
+ await request('/api/setup',null,{username:'flow-admin',password},'POST',201);
  const admin=await login('flow-admin');
  for(const username of ['flow-owner','flow-executor','flow-other'])await request('/api/users',admin,{username,password,role:'user',createPayeeAccount:username==='flow-owner'});
  const employee=await login('flow-owner'),other=await login('flow-other');

@@ -922,3 +922,5 @@ body .upload-panel .upload-heading > strong,
 body .upload-panel .upload-heading > .hint { color:#332a1b !important; opacity:1 !important; }
 body button:disabled, body .btn:disabled { color:#d6d1c8 !important; opacity:1 !important; }
 #projectSearch::placeholder, #noInvoiceAmount::placeholder, #employeeNote::placeholder { color:#5e513e !important; opacity:1 !important; }
+
+body #tab-users label:has(#createUserPayee) { color:#f5f0e6 !important; }

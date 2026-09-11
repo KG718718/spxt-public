@@ -3111,18 +3111,19 @@ function normalizeInvoiceDate(value) {
 
 function runLocalInvoiceOcr(filePath, callback) {
     if (!fs.existsSync(OCR_PYTHON) || !fs.existsSync(OCR_SCRIPT)) {
-        callback(new Error(`本地OCR环境未找到，请运行 tools\\ocr\\install_ocr.ps1 修复，或设置 KSESSION_OCR_PYTHON / KSESSION_OCR_SCRIPT。当前 Python: ${OCR_PYTHON}；脚本: ${OCR_SCRIPT}`));
+        const unavailable = new Error('尚未安装可选 OCR 组件；请由管理员按安装指南配置，或使用可解析的电子 PDF。');
+        unavailable.code = 'ocr-not-installed';
+        callback(unavailable);
         return;
     }
     execFile(OCR_PYTHON, [OCR_SCRIPT, filePath], {
         windowsHide: true,
         timeout: 180000,
         maxBuffer: 1024 * 1024 * 8,
-        env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
+        env: { ...process.env, PYTHONIOENCODING: 'utf-8', KSESSION_OCR_BUYER_NAME: getParameters().invoiceBuyerName || '', KSESSION_OCR_WORK_DIR: path.join(path.dirname(DATA_FILE), 'ocr-work') }
     }, (err, stdout, stderr) => {
         if (err) {
-            const message = stderr || stdout || err.message;
-            callback(new Error(message));
+            callback(new Error('OCR 识别未完成，请检查可选组件安装、文件格式及大小后重试。'));
             return;
         }
         try {
