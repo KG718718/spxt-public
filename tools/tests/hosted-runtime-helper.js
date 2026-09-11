@@ -1,11 +1,11 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{spawn}=require('node:child_process');
 const root=path.resolve(__dirname,'../..');
-async function start(directory,{env={}}={}){
+async function start(directory,{env={},programRoot=root}={}){
     fs.mkdirSync(directory,{recursive:true});
     let output='',port=0,child;
     const stopped=new Promise(resolve=>{
-        child=spawn(process.execPath,[path.join(root,'server.js')],{cwd:root,windowsHide:true,
+        child=spawn(process.execPath,[path.join(programRoot,'server.js')],{cwd:programRoot,windowsHide:true,
             env:{...process.env,PORT:'0',KSESSION_HOST:'127.0.0.1',
                 KSESSION_DATA_FILE:path.join(directory,'data.json'),KSESSION_CONFIG_FILE:path.join(directory,'config.json'),
                 KSESSION_ATTACHMENTS_DIR:path.join(directory,'attachments'),KSESSION_BACKUPS_DIR:path.join(directory,'backups'),

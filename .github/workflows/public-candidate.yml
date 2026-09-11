@@ -26,6 +26,17 @@ jobs:
         run: npm audit --audit-level=low
       - name: Synthetic core and startup checks
         run: node tools/tests/run-public-tests.js
+      - name: Preserve source-only core package and verification
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: application-core-only-not-installer
+          path: |
+            .test-work/package-core-evidence/K-SESSION-application-core-only.zip
+            .test-work/package-core-evidence/PACKAGE-MANIFEST.json
+            .test-work/package-core-evidence/SHA256SUMS.txt
+            .test-work/package-core-evidence/report.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Collect original third-party license notices
         run: node tools/check-public-licenses.js
       - name: Preserve third-party license evidence
