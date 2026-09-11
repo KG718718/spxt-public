@@ -143,6 +143,7 @@ try{
   await page.goto(origin+'/approval.html');await page.locator('#approvalMainTab').click();
   await check('Admin sees saved project tax after configuration changes, and detail is operable',async()=>{
    const row=page.locator('#approvalTableBody tr').filter({hasText:uiAppId});await row.waitFor();assert.match(await row.innerText(),/680\.39/);
+   await row.locator('.detail-button').hover();await inspect('review-button-hover');await row.locator('.detail-button').focus();await inspect('review-button-focus');
    await row.locator('.detail-button').click();await page.locator('#appDetailModal').waitFor({state:'visible'});await inspect('admin-project-detail');await shot('admin-project-detail');
    await page.locator('#appDetailCloseButton').click();
    const done=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/application/'+uiAppId&&r.request().method()==='PUT');await row.locator('.approve-button').click();assert.equal((await done).status(),200);
