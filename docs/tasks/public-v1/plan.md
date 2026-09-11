@@ -190,3 +190,7 @@ GitHub托管runner提供云端构建与测试环境，不能证明使用者局�
 - 银行信息可选仅保留普通 employee-payee；欠款成本可选仅保留有效 formal-supplier。不保留固定公司别名，不转授通用 company-payee。
 - 用合成同名账号/供应商、撤权/停用/旧草稿重新判定、已存分类深比较、Admin实时角色、版本冲突、非法配置与0副作用测试。源内固定名单的反例只在 RAM 核对，不向公开文件复制固定名单。
 - 完整 server、Admin/员工/发票页面及 HTTP/跨模块角色验收仍须后续同轮接入；核心测试不能标为全部实现。仅云端候选文件，不改 main、公司来源/配置/数据/服务或正式主机。
+
+### 同批启动接入
+
+新增字段也接入 public-startup.js：已有 config.invoiceBuyerName 明确非法、已有 users[].invoiceReplacementAllowed 非布尔时，按已批准的关键配置/权限损坏拒绝启动规则保留原件。缺字段仍允许读取且不回填。先补 startup 单元与 bootstrap HTTP 合成反例后实现，复用 invoice-access-policy 验证，不新增存储或初始化方式。

@@ -13,3 +13,7 @@
 - 完整 server、Admin/员工/发票页面及 HTTP/跨模块角色验收仍须后续同轮接入；核心测试不能标为全部实现。仅云端候选文件，不改 main、公司来源/配置/数据/服务或正式主机。
 
 状态：计划已固定，尚未实现/测试。
+
+### 同批启动接入
+
+新增字段也接入 public-startup.js：已有 config.invoiceBuyerName 明确非法、已有 users[].invoiceReplacementAllowed 非布尔时，按已批准的关键配置/权限损坏拒绝启动规则保留原件。缺字段仍允许读取且不回填。先补 startup 单元与 bootstrap HTTP 合成反例后实现，复用 invoice-access-policy 验证，不新增存储或初始化方式。
