@@ -111,5 +111,37 @@ const hash=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).diges
             assert.equal((await call(failed,{method:'POST',payload:valid})).status,409);assert.equal(hash(failed.storage.dataFile),before);
         });
     }finally{await failed.stop();}
+
+    for(const marker of [{accountStatus:'deleted'},{deletedAt:'2025-02-03T00:00:00.000Z'}]){
+        const tombstone=await fixture();
+        try{
+            assert.equal((await call(tombstone,{method:'POST',payload:valid})).status,201);
+            const data=JSON.parse(fs.readFileSync(tombstone.storage.dataFile,'utf8'));
+            data.users.push({username:'former-fixture',role:'user',...marker});
+            data.applications.push({id:'HISTORY-FIXTURE',applicant:'former-fixture',status:'closed',taxAmount:12,taxRateSnapshot:0.03});
+            fs.writeFileSync(tombstone.storage.dataFile,JSON.stringify(data));
+            await check('credential-free deleted history loads without reopening setup',async()=>{
+                const before=hash(tombstone.storage.dataFile);
+                assert.deepEqual((await call(tombstone)).data,{initializationRequired:false});
+                assert.equal((await call(tombstone,{method:'POST',payload:valid})).status,409);
+                assert.equal(hash(tombstone.storage.dataFile),before);
+                assert.deepEqual(JSON.parse(fs.readFileSync(tombstone.storage.dataFile,'utf8')),data);
+            });
+        }finally{await tombstone.stop();}
+    }
+    for(const taxRate of [null,'',false,-0.01,0]){
+        const taxFixture=await fixture();
+        try{
+            assert.equal((await call(taxFixture,{method:'POST',payload:valid})).status,201);
+            fs.writeFileSync(taxFixture.storage.configFile,JSON.stringify({taxRate}));
+            await check('configured tax validates before initialized setup response: '+String(taxRate),async()=>{
+                const dataHash=hash(taxFixture.storage.dataFile),configHash=hash(taxFixture.storage.configFile);
+                const read=await call(taxFixture),post=await call(taxFixture,{method:'POST',payload:valid});
+                assert.equal(read.status,taxRate===0?200:503);assert.equal(post.status,taxRate===0?409:503);
+                assert.equal(hash(taxFixture.storage.dataFile),dataHash);assert.equal(hash(taxFixture.storage.configFile),configHash);
+            });
+        }finally{await taxFixture.stop();}
+    }
+
     console.log('Public bootstrap HTTP checks: '+count+' passed');
 })().catch(e=>{console.error(e);process.exitCode=1;});

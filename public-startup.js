@@ -2,6 +2,7 @@
 const fsDefault = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { validateTaxRate } = require('./tax-config');
 
 const ARRAY_FIELDS = Object.freeze([
     'applications', 'payments', 'debts', 'clients', 'invoices', 'invoiceOcrJobs',
@@ -73,9 +74,13 @@ function validateState(value) {
     }
     const seen = new Set();
     for (const account of value.users) {
+        // Account deletion keeps its historical identity while removing credentials.
+        const deleted = Boolean(account.deletedAt || account.accountStatus === 'deleted');
+        const removedCredential = deleted && !Object.hasOwn(account, 'password');
+        const hasCredential = typeof account.password === 'string' && Boolean(account.password);
         if (typeof account.username !== 'string' || !account.username.trim()
             || seen.has(account.username) || !['admin', 'approver', 'user'].includes(account.role)
-            || typeof account.password !== 'string' || !account.password) {
+            || (!hasCredential && !removedCredential)) {
             throw failure('STORE_INVALID', '账号结构非法或存在重复；请恢复正确数据，不会重建账号。');
         }
         seen.add(account.username);
@@ -84,6 +89,10 @@ function validateState(value) {
 }
 function validateConfig(value) {
     if (!plainRecord(value)) throw failure('CONFIG_INVALID', '配置必须为对象。');
+    if (Object.hasOwn(value, 'taxRate')) {
+        try { validateTaxRate(value.taxRate); }
+        catch { throw failure('CONFIG_INVALID', '税率配置非法；请检查配置或恢复备份，不会使用默认值。'); }
+    }
     if (Object.hasOwn(value, 'serviceFeeRates') && !plainRecord(value.serviceFeeRates)) {
         throw failure('CONFIG_INVALID', '服务费配置结构非法，拒绝静默回退。');
     }

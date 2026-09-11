@@ -226,4 +226,54 @@ test('initial administrator uses existing account and audit field contract',()=>
     assert.equal(data.logs[0].user,'synthetic-admin');
     assert.equal(typeof data.logs[0].detail,'string');
 });
+
+for(const marker of [{accountStatus:'deleted'},{deletedAt:'2025-02-03T00:00:00.000Z'}]){
+    test('deleted employee history without credentials survives restart',()=>{
+        const value=existingState();
+        value.users.push({username:'former-fixture',role:'user',...marker});
+        value.applications[0].applicant='former-fixture';
+        const fs=stateFs(value);const before=[...fs.files];
+        const result=loadStartupState(options(fs));
+        assert.equal(result.needsInitialization,false);
+        assert.deepEqual(result.data,value);
+        assert.throws(()=>initializeFirstAdministrator({...options(fs),username:'replacement-admin',password:'Synthetic-Secret-32'}),{code:'ALREADY_INITIALIZED'});
+        assert.deepEqual([...fs.files],before);assertNoWrites(fs);
+    });
+}
+for(const status of ['active','disabled']){
+    test('nondeleted account still requires a password: '+status,()=>{
+        const value=existingState();value.users.push({username:'missing-credential',role:'user',accountStatus:status});
+        const fs=stateFs(value);assert.throws(()=>loadStartupState(options(fs)),{code:'STORE_INVALID'});assertNoWrites(fs);
+    });
+}
+test('deleted marker does not excuse malformed stored credential',()=>{
+    const value=existingState();value.users.push({username:'former-fixture',role:'user',accountStatus:'deleted',password:123});
+    assert.throws(()=>validateState(value),{code:'STORE_INVALID'});
+});
+test('deleted account still needs a known role',()=>{
+    const value=existingState();value.users.push({username:'former-fixture',role:'unknown',accountStatus:'deleted'});
+    assert.throws(()=>validateState(value),{code:'STORE_INVALID'});
+});
+test('deleted username remains reserved and cannot be duplicated',()=>{
+    const value=existingState();value.users.push({username:value.users[0].username,role:'user',accountStatus:'deleted'});
+    assert.throws(()=>validateState(value),{code:'STORE_INVALID'});
+});
+for(const taxRate of [null,'','0.02',false,true,-0.01,NaN,Infinity,[],{}]){
+    test('invalid configured tax stops startup without writes: '+String(taxRate),()=>{
+        const fs=stateFs(existingState(),{taxRate});const before=[...fs.files];
+        assert.throws(()=>loadStartupState(options(fs)),{code:'CONFIG_INVALID'});
+        assert.deepEqual([...fs.files],before);assertNoWrites(fs);
+    });
+}
+test('explicit zero tax remains valid at restart',()=>{
+    const fs=stateFs(existingState(),{taxRate:0});
+    assert.equal(loadStartupState(options(fs)).config.taxRate,0);assertNoWrites(fs);
+});
+test('valid tax and historical snapshots are never rewritten',()=>{
+    const value=existingState();value.applications[0].taxAmount=12;value.applications[0].taxRateSnapshot=0.03;
+    const fs=stateFs(value,{taxRate:0.02});const before=[...fs.files];
+    const result=loadStartupState(options(fs));assert.deepEqual(result.data,value);assert.equal(result.config.taxRate,0.02);
+    assert.deepEqual([...fs.files],before);assertNoWrites(fs);
+});
+
 console.log('Public startup checks passed: '+passed);
