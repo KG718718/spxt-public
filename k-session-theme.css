@@ -914,3 +914,11 @@ textarea:disabled {
 .ks-login-form button:disabled { color: #d6d1c8 !important; background: #2a2824 !important; }
 .ks-login-form input:-webkit-autofill { -webkit-text-fill-color: #ffffff !important; box-shadow: 0 0 0 1000px #080808 inset !important; }
 @media (max-width: 560px) { .ks-login-page { padding: 16px; } .ks-login-card { width: 100%; } .ks-login-form { padding: 24px; } .ks-login-title { font-size: 30px; } .ks-login-visual { padding: 28px; min-height: 260px; } .ks-login-copy h2 { font-size: 30px; } }
+
+/* Public full-page acceptance: explicit light/dark surfaces and controls. */
+body .btn.btn-add:not(:disabled), body .btn.btn-add:not(:disabled) * { color:#111 !important; }
+body .btn.btn-add:not(:disabled):hover { color:#111 !important; background:#f0d393 !important; }
+body .upload-panel .upload-heading > strong,
+body .upload-panel .upload-heading > .hint { color:#332a1b !important; opacity:1 !important; }
+body button:disabled, body .btn:disabled { color:#d6d1c8 !important; opacity:1 !important; }
+#projectSearch::placeholder, #noInvoiceAmount::placeholder, #employeeNote::placeholder { color:#5e513e !important; opacity:1 !important; }

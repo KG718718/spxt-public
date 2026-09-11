@@ -33,7 +33,7 @@ try{
     if(!el.getClientRects().length||el.closest('[hidden]'))continue;
     const style=getComputedStyle(el);if(style.visibility!=='visible'||Number(style.opacity)===0)continue;
     const isControl=el.matches('button,a,input,select,textarea');
-    if(!isControl&&el.children.length)continue;
+    if(!isControl&&el.children.length&&![...el.childNodes].some(n=>n.nodeType===3&&n.textContent.trim()))continue;
     const text=el.matches('input,textarea')?(el.value||el.getAttribute('placeholder')||''):el.textContent.trim();
     if(!text)continue;
     let chain=[],node=el;while(node){chain.unshift(node);node=node.parentElement;}
