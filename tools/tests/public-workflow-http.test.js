@@ -131,6 +131,62 @@ async function login(username){return (await request('/api/login',null,{username
  await check('month closure cannot be confirmed twice',async()=>{
   const before=disk();await request('/api/employee-settlements',admin,{employee:'flow-owner',activityMonth:month,selectedReimbursementSourceKeys:[]},'POST',409);assert.equal(disk(),before);
  });
+
+ await check('default-disabled formal mail and template dry-run remain separate',async()=>{
+  const renewed=await login('flow-owner');
+  await request('/api/mail-reminders/templates',renewed,undefined,'GET',403);
+  for(const type of ['businessBonus','executionExpense','employeeSettlement']){
+   const templates=await request('/api/mail-reminders/templates?type='+type+'&activityMonth='+month,admin);
+   const entity=templates.entities[type][0];assert.ok(entity,type+' saved entity');
+   const body={type,entityId:entity.id,recipient:'synthetic-recipient@example.invalid'};
+   const before=JSON.stringify(state().mailSendRecords);
+   const result=await request('/api/mail-reminders/template-test',admin,body);
+   assert.equal(result.result.dryRun,true,JSON.stringify(result));assert.equal(JSON.stringify(state().mailSendRecords),before);
+  }
+  assert.equal(state().mailSendRecords.some(r=>r.status==='smtp_accepted'),false);
+ });
+ await check('real XLSX export is authorized and records an audit before returning bytes',async()=>{
+  const before=state().exportAuditRecords.length;
+  const r=await fetch('http://127.0.0.1:'+f.port+'/api/exports?module=settlement&format=xlsx&scope=current',{headers:{Authorization:'Bearer '+admin}});
+  assert.equal(r.status,200,await (r.status!==200?r.text():Promise.resolve('')));
+  const bytes=Buffer.from(await r.arrayBuffer());assert.equal(bytes.subarray(0,2).toString(),'PK');
+  assert.equal(state().exportAuditRecords.length,before+1);
+ });
+ const renewedOwner=await login('flow-owner');
+ const debtBody={type:'standalone',clientId:client.id,title:'Synthetic debt workflow',businessDescription:'Synthetic evidence only',approver:'flow-admin',principal:1000,attachments:[],costItems:[{item:'其他',content:'Synthetic debt cost',supplier:seller,payeeAccountId:supplier.id,amount:480}]};
+ let debtId;
+ await check('employee and company payees cannot bypass formal debt-cost restriction',async()=>{
+  const company=(await request('/api/suppliers',admin,{name:'Synthetic company payee',bankAccount:'SYNTHETIC',payeeAccountType:'company-payee'})).supplier;
+  for(const p of [payee,company]){
+   const before=disk();await request('/api/debts',renewedOwner,{...debtBody,costItems:[{...debtBody.costItems[0],supplier:p.name,payeeAccountId:p.id}]},'POST',400);assert.equal(disk(),before);
+  }
+ });
+ await check('real debt approval uses existing supplier/client and protects owner visibility',async()=>{
+  debtId=(await request('/api/debts',renewedOwner,debtBody)).record.id;
+  await request('/api/debts/'+debtId,admin,{status:'approved'},'PUT');
+  const all=await request('/api/debts',other);assert.equal(all.records.some(x=>x.id===debtId),false);
+ });
+ let debtApp,debtPay;
+ await check('debt linking and approved repayment retain proportional actual supplier cost',async()=>{
+  const body={...projectBody,projectName:'Synthetic debt repayment project',contractAmount:2000,items:[{...projectBody.items[0],isProxy:'否',amount:10}],debtLinks:[{debtId,principal:500,itemName:'其他',content:'Synthetic repayment'}]};
+  const app=(await request('/api/application',renewedOwner,body)).id;debtApp=app;
+  await request('/api/application/'+app,admin,{status:'approved'},'PUT');
+  const saved=state().applications.find(x=>x.id===app),link=saved.debtLinks[0];
+  debtPay=(await request('/api/payment',renewedOwner,{projectId:app,approver:'flow-admin',items:saved.items.filter(x=>!x.isDebtRepayment).map(({projectItemId,...item})=>item),debtRepayments:[{debtId,debtLinkId:link.id,confirmedPrincipal:500}],attachments:[]})).id;
+  await request('/api/payment/'+debtPay,admin,{status:'approved'},'PUT');
+  const ledger=(await request('/api/debts',admin)).records.find(x=>x.id===debtId);
+  assert.equal(ledger.receivedPrincipal,500);assert.equal(ledger.remainingPrincipal,500);assert.equal(ledger.receivedCost,240);
+  const rows=(await request('/api/invoice-summary',admin)).rows.filter(r=>r.appId===app);
+  assert.equal(rows.filter(r=>r.sourceType==='debt-repayment').reduce((sum,r)=>sum+r.expectedAmount,0),240);
+ });
+ await check('structured backup is Admin-only and preserves exact saved business snapshot',async()=>{
+  await request('/api/backups',renewedOwner,{},'POST',403);
+  const before=disk(),r=await request('/api/backups',admin,{});
+  assert.equal(r.success,true);assert.ok(r.sha256);
+  const backup=fs.readFileSync(path.join(directory,'backups',r.fileName),'utf8');assert.equal(backup,before);
+  assert.equal(require('node:crypto').createHash('sha256').update(backup).digest('hex'),r.sha256);
+ });
+
  await check('restart preserves cross-module amounts and snapshots',async()=>{
   const before=disk();await f.stop();f=await start(directory);assert.ok(f.port,f.output);assert.equal(disk(),before);
   const token=await login('flow-admin');assert.equal((await request('/api/invoice-summary',token)).totals.confirmed,500);

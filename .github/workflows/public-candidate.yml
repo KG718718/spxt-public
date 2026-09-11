@@ -51,3 +51,26 @@ jobs:
           path: .test-work/full-ui-evidence
           if-no-files-found: error
           retention-days: 30
+
+  optional-ocr:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.11'
+      - name: Install optional OCR only on hosted runner
+        run: python -m pip install --disable-pip-version-check --no-cache-dir -r tools/ocr/requirements.txt
+      - name: Recognize generated synthetic invoice
+        run: python tools/tests/optional-ocr-engine.py
+      - name: Preserve synthetic OCR evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: optional-ocr-engine-evidence
+          path: .test-work/ocr-engine-evidence
+          if-no-files-found: warn
+          retention-days: 30
