@@ -61,7 +61,7 @@ async function check(name,fn){await fn();report.checks.push(name);count++;consol
   const token=login.data.token;assert.ok(token);
   const config=await f.call('/api/config',{token,method:'PUT',body:{expectedVersion:0,taxRate:0}});
   assert.equal(config.status,200,JSON.stringify(config.data));
-  const client=await f.call('/api/clients',{token,method:'POST',body:{name:'Synthetic package restore client'}});
+  const client=await f.call('/api/clients',{token,method:'POST',body:{fullName:'Synthetic package restore client'}});
   assert.equal(client.status,200,JSON.stringify(client.data));
   const attachment=path.join(instance,'attachments','synthetic-backup-evidence.bin');
   fs.mkdirSync(path.dirname(attachment),{recursive:true});
