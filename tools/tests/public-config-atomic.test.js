@@ -176,4 +176,29 @@ check('startup rejects invalid audit before any new initialization or save',()=>
     assert.throws(()=>validateConfig({serviceFeeRates:{}}),e=>e.code==='CONFIG_INVALID');
     const f=fixture();put(f,{taxRate:0.03});assert.deepEqual(validateConfig(f.store.getConfig()),f.store.getConfig());
 });
+function handlerFixture(f,{disconnect=false}={}) {
+    const {EventEmitter}=require('node:events');
+    const {createConfigHandler}=require('../../public-config-http');
+    const req=new EventEmitter();
+    Object.assign(req,{url:'/api/config',method:'PUT',headers:{origin:'http://127.0.0.1:32100',
+        host:'127.0.0.1:32100','content-type':'application/json'},socket:{encrypted:false},resume(){},setTimeout(){}});
+    const statuses=[];
+    const res={destroyed:false,writableEnded:false,setHeader(){},destroy(){this.destroyed=true;},
+        end(value){statuses.push(this.statusCode);if(disconnect)throw Error('synthetic disconnected response');this.body=JSON.parse(value);this.writableEnded=true;}};
+    const handler=createConfigHandler({store:f.store,getCurrentUser:()=>admin,
+        getLogs(){throw Error('synthetic unavailable legacy log service');}});
+    handler(req,res);req.emit('data',Buffer.from('{"expectedVersion":0,"taxRate":0.03}'));req.emit('end');
+    return {res,statuses};
+}
+check('unavailable legacy log service cannot turn committed configuration into failure',()=>{
+    const f=fixture({taxRate:0.02});const {res,statuses}=handlerFixture(f);
+    assert.deepEqual(statuses,[200]);assert.equal(res.body.success,true);
+    assert.equal(f.store.getConfig().configVersion,1);assert.equal(JSON.parse(f.files.get(file)).configAuditRecords.length,1);
+});
+check('response disconnect after commit does not roll back or attempt a false failure response',()=>{
+    const f=fixture({taxRate:0.02});const {res,statuses}=handlerFixture(f,{disconnect:true});
+    assert.deepEqual(statuses,[200]);assert.equal(res.destroyed,true);assert.equal(f.store.getConfig().taxRate,0.03);
+    assert.equal(JSON.parse(f.files.get(file)).configVersion,1);
+    rejectsUnchanged(f,()=>put(f,{taxRate:0.03},0),'CONFIG_VERSION_CONFLICT');
+});
 console.log('Public atomic config unit tests: '+count+' passed.');
