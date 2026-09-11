@@ -43,3 +43,11 @@ jobs:
           path: .test-work/login-browser-evidence
           if-no-files-found: error
           retention-days: 30
+      - name: Preserve full application browser evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: full-application-ui-evidence
+          path: .test-work/full-ui-evidence
+          if-no-files-found: error
+          retention-days: 30

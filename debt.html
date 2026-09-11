@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>欠款申请与台账 - K⁺-SESSION 项目运营管理系统</title>
+    <link rel="stylesheet" href="/k-session-theme.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}body{min-height:100vh}.header{padding:20px 40px}.header-inner{display:flex;justify-content:space-between;align-items:center;gap:16px}.header h1{font-size:24px;font-weight:600}.header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.header-actions button{padding:8px 16px}.container{max-width:1400px;margin:0 auto;padding:30px 40px}.card{padding:30px;margin-bottom:24px}.card-title{font-size:20px;font-weight:600;margin-bottom:24px;padding-bottom:16px}.form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 20px}.form-group{margin-bottom:20px}.form-group label{display:block;margin-bottom:8px}.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 16px}.form-span-2{grid-column:span 2}.form-span-all{grid-column:1/-1}.conditional{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px;padding:18px;margin-bottom:20px;background:#1b1b1b;border:1px solid rgba(214,174,98,.42);border-radius:8px}.hint{font-size:12px;margin-top:6px}.detail-table{margin-top:20px}.detail-table th,.detail-table td{padding:12px;text-align:left;vertical-align:top}.detail-table input,.detail-table select{width:100%;padding:8px}.section-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px}.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:20px}.budget-summary{margin:0!important;padding:18px!important}.budget-summary .value{font-size:24px!important}.upload-panel{margin-top:4px;padding:15px;background:#f9f9f9;border-radius:8px}.upload-heading{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.upload-trigger{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:14px}.attachments{display:flex;gap:8px;flex-wrap:wrap}.attachment{border:1px solid #d7a93b;padding:6px 9px;background:#fff;color:#111}.status{display:inline-block;padding:3px 8px;border-radius:10px;font-size:12px}.status-approved,.status-completed{color:#68d391}.status-rejected{color:#ff7a7a}.status-pending,.status-awaiting_repayment{color:#f0d393}.status-in_progress,.status-partially_completed,.status-awaiting_project{color:#80bfff}.links{margin-top:8px;padding:8px;background:#fff8e7!important;color:#111!important;border:1px solid #d7a93b;border-left-width:4px;line-height:1.65}.detail-table td .links,.detail-table td .links *{color:#111!important}.detail-table td .links summary,.detail-table td .links summary *{color:#111!important;font-weight:700}.detail-table td .links summary::marker{color:#765713}.detail-table td .links .hint,.detail-table td .links time{color:#5f5134!important}.empty{text-align:center;padding:28px}.error{color:#ff7a7a;font-weight:700}.info-box{margin-bottom:24px}.table-wrap{overflow:auto}.submit-actions{text-align:center;margin-top:30px}.nowrap{white-space:nowrap}@media(max-width:980px){.header{padding:18px 20px}.header-inner{align-items:flex-start;flex-direction:column}.container{padding:24px 20px}.form-grid,.conditional{grid-template-columns:1fr}.form-span-2{grid-column:auto}.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.summary-grid{grid-template-columns:1fr}.card{padding:20px!important}}
+        .debt-history{margin-top:10px;padding:10px;background:#fff!important;color:#111!important;border:1px solid #d7a93b;border-left-width:5px;border-radius:6px;line-height:1.65}
+        .debt-history,.debt-history *{color:#111!important}
+        .debt-history summary{cursor:pointer;font-weight:700}
+        .debt-history summary::marker{color:#765713}
+        .debt-history-entry{margin-top:9px;padding:10px;background:#fff8e7;border:1px solid #d7a93b;border-radius:5px}
+        .debt-history-title{font-weight:700;color:#765713!important}
+        .debt-history-audit{margin-top:7px;color:#5f5134!important;font-size:12px}
+        .debt-history-attachment{display:inline-block;margin:3px 6px 0 0;padding:3px 6px;background:#fff;border:1px solid #d7a93b;border-radius:4px}
+    </style>
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header class="header"><div class="header-inner"><h1>🧾 欠款申请与项目关联还款</h1><div class="header-actions"><span id="userDisplay"></span><button id="debtExportButton" data-export-action onclick="downloadDebtExport()">导出</button><button id="debtManagementButton" style="display:none" onclick="location.href='/admin.html?tab=debts'">欠款管理</button><button onclick="location.href='/approval.html'">返回首页</button><button onclick="location.href='/invoice.html'">发票中心</button><button class="btn btn-danger" onclick="logout()">退出</button></div></div></header>
+<main class="container">
+    <div id="debtExportStatus" class="uix-export-status" data-state="idle" role="status" aria-live="polite">可导出当前权限范围内的欠款台账。</div>
+    <div id="debtCreateInfo" class="info-box">欠款申请需在本页单独提交。审核通过后，仅能由申请人本人在同一甲方项目中选择“欠款（关联历史申请）”进行关联；普通项目审批不会自动生成欠款。</div>
+    <section id="debtCreateCard" class="card">
+        <div class="card-title">📝 欠款申请</div>
+        <div class="form-grid">
+            <div class="form-group"><label>申请类型 <span class="required">*</span></label><select id="type" onchange="toggleProjectExtra()"><option value="standalone">无项目欠款</option><option value="project-extra">项目额外欠款</option></select></div>
+            <div class="form-group"><label>甲方 <span class="required">*</span></label><select id="clientId"><option value="">正在加载甲方...</option></select><div id="clientEmptyHint" class="hint" style="display:none;color:#ff7a7a">尚未维护已启用甲方，请联系 Admin。</div></div>
+            <div class="form-group"><label>审批人 <span class="required">*</span></label><select id="approver"><option value="">请选择审批人</option></select></div>
+            <div class="form-group form-span-2"><label>欠款事项 <span class="required">*</span></label><input id="title" maxlength="120" placeholder="例如：8月2日活动成本欠款"></div>
+            <div class="form-group"><label>含税欠款金额（元） <span class="required">*</span></label><input id="principal" type="number" min="0.01" step="0.01" placeholder="0.00" oninput="calculate()"></div>
+            <div id="projectExtra" class="conditional form-span-all">
+                <div class="form-group"><label>关联原项目 <span class="required">*</span></label><select id="originalProject" onchange="syncOriginalParty()"><option value="">请选择本人已通过项目</option></select><div id="originalProjectHint" class="hint">仅显示本人已通过且业务奖金、执行奖金均未确认的项目。</div></div>
+                <div class="form-group"><label>追加原因 <span class="required">*</span></label><input id="reason" maxlength="300" placeholder="说明为何在原项目外发生欠款"></div>
+            </div>
+            <div class="form-group form-span-all"><label>业务说明与证明 <span class="required">*</span></label><textarea id="businessDescription" maxlength="2000" placeholder="甲方联系人/指示人 + 谁执行 + 何时何地做什么 + 欠款如何形成 + 用什么材料证明"></textarea><div class="hint">请说明业务发生与欠款形成过程，并结合下方附件提供证明。</div></div>
+            <div class="form-group form-span-all"><label>补充备注（选填）</label><textarea id="businessBasis" maxlength="2000" placeholder="如有其他需要审批人了解的信息，可在此补充"></textarea></div>
+
+            <div class="form-group form-span-all upload-panel"><div class="upload-heading"><strong>📎 业务附件：</strong><label class="upload-trigger" style="background:#667eea;color:white">+ 添加附件<input id="attachmentInput" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" style="display:none" onchange="uploadAttachments(this)"></label><span class="hint">支持 pdf/doc/xls/png/jpg，单文件≤20MB；附件仅随本欠款申请保存。</span></div><div id="attachments" class="attachments"></div></div>
+        </div>
+        <div class="section-heading"><h3>真实成本与收款对象</h3><button id="addCostButton" type="button" class="btn btn-add" onclick="addCostRow()">+ 添加成本明细</button></div>
+        <div id="debtPayeeEmptyHint" class="hint error" style="display:none;margin-top:8px">暂无可用于欠款的正式授权供应商，请联系 Admin 完成收款对象分类。</div>
+        <div class="table-wrap"><table class="detail-table"><thead><tr><th>单项</th><th>内容</th><th>收款对象</th><th>含税实际成本（元）</th><th></th></tr></thead><tbody id="costRows"></tbody></table></div>
+        <div class="summary-grid"><div class="budget-summary"><div class="label">含税欠款</div><div class="value" id="principalAmount">¥0.00</div></div><div class="budget-summary"><div class="label">含税实际成本</div><div class="value" id="actualCost">¥0.00</div></div><div class="budget-summary"><div class="label">利润</div><div class="value" id="profit">¥0.00</div></div><div class="budget-summary"><div class="label">KPI1 / KPI2</div><div class="value" id="kpi">0.00%</div></div></div>
+        <div class="submit-actions"><button id="submitButton" class="btn btn-primary" onclick="submitDebt()">提交欠款申请</button></div>
+    </section>
+    <section class="card">
+        <div id="debtScopeHint" class="hint" style="margin-bottom:12px;color:#111">仅显示本人申请的欠款台账。</div>
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span>📋 欠款申请与关联台账</span><button class="btn" onclick="loadDebts()">刷新</button></div>
+        <div class="table-wrap"><table class="detail-table"><thead><tr><th>编号 / 类型</th><th>甲方 / 事项</th><th>欠款金额 / KPI</th><th>含税真实成本</th><th>关联项目 / 确认归还</th><th>总体状态</th></tr></thead><tbody id="debtRecords"><tr><td colspan="6" class="empty">加载中...</td></tr></tbody></table></div>
+    </section>
+</main>
+<script>
+let currentUser='';let userRole='';let config=null;let debtInitializationReady=false;let applications=[];let suppliers=[];let debtPayees=[];let clients=[];let attachments=[];
+const money=v=>Math.round(((Number(v)||0)+Number.EPSILON)*100)/100;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const authFetch=(url,options={})=>{options.headers=options.headers||{};const token=localStorage.getItem('token');if(token)options.headers.Authorization='Bearer '+token;return fetch(url,options)};
+const projectStatusText=s=>({pending:'项目待审批',approved:'项目已通过',rejected:'项目已驳回',closed:'项目已关闭'}[s]||s||'-');
+const paymentStatusText=s=>({none:'尚未申请付款',pending:'付款待审批',approved:'付款已通过',rejected:'付款已驳回',closed:'付款已关闭'}[s]||s||'-');
+let debtExportBusy=false;
+async function downloadDebtExport(){
+    if(debtExportBusy)return;
+    const button=document.getElementById('debtExportButton');
+    const status=document.getElementById('debtExportStatus');
+    debtExportBusy=true;
+    button.disabled=true;
+    button.setAttribute('aria-busy','true');
+    button.textContent='正在生成...';
+    status.dataset.state='busy';
+    status.textContent='正在生成欠款 XLSX，请勿重复点击。';
+    try{
+        const resp=await authFetch('/api/exports?module=debt&format=xlsx&scope=current');
+        if(!resp.ok){const result=await resp.json().catch(()=>({}));throw new Error(result.error||'导出失败')}
+        const header=resp.headers.get('Content-Disposition')||'';
+        const match=header.match(/filename\*=UTF-8''([^;]+)/i);
+        const link=document.createElement('a');
+        link.href=URL.createObjectURL(await resp.blob());
+        try{link.download=match?decodeURIComponent(match[1]):'debt.xlsx'}catch(_){link.download='debt.xlsx'}
+        link.click();
+        setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+        status.dataset.state='success';
+        status.textContent='欠款 XLSX 已生成，下载已开始。';
+    }catch(error){
+        status.dataset.state='error';
+        status.textContent='导出失败：'+(error.message||'网络请求失败，请重试');
+    }finally{
+        debtExportBusy=false;
+        button.disabled=false;
+        button.removeAttribute('aria-busy');
+        button.textContent='导出';
+    }
+}
+function toggleProjectExtra(){const extra=document.getElementById('type').value==='project-extra';document.getElementById('projectExtra').style.display=extra?'grid':'none';const clientSelect=document.getElementById('clientId');clientSelect.disabled=extra||!clients.length;if(!extra)document.getElementById('originalProject').value=''}
+function syncOriginalParty(){const app=applications.find(x=>x.id===document.getElementById('originalProject').value);const select=document.getElementById('clientId');if(!app){select.value='';return}if(!app.clientId){select.value='';alert('该旧项目尚未确认稳定甲方，请先联系 Admin 逐条确认后再申请项目额外欠款。');return}if(!clients.some(client=>client.id===app.clientId)){select.value='';alert('原项目甲方已停用，不能新增项目额外欠款，请联系 Admin。');return}select.value=app.clientId}
+function debtPayeeLabel(payee){return `${payee.name}（${payee.payeeAccountType==='company-payee'?'公司账户':'授权供应商'}）`}
+function addCostRow(item={}){const row=document.getElementById('costRows').insertRow();const selectedId=item.payeeAccountId||'';const payeeOptions='<option value="">请选择收款对象</option>'+debtPayees.map(payee=>`<option value="${esc(payee.id)}"${selectedId===payee.id?' selected':''}>${esc(debtPayeeLabel(payee))}</option>`).join('');row.innerHTML=`<td><select class="cost-item"><option value="其他">其他</option>${['场地','餐饮','茶歇','物料搭建','AV设备','第三方人员','礼品采购','摄影摄像'].map(x=>`<option value="${x}"${item.item===x?' selected':''}>${x}</option>`).join('')}</select></td><td><input class="cost-content" maxlength="300" value="${esc(item.content||'')}" placeholder="成本内容"></td><td><select class="cost-payee"${debtPayees.length?'':' disabled'}>${payeeOptions}</select></td><td><input class="cost-amount" type="number" min="0.01" step="0.01" value="${item.amount||''}" oninput="calculate()"></td><td><button class="btn btn-danger btn-small" onclick="this.closest('tr').remove();calculate()">删除</button></td>`;calculate()}
+function calculate(){const principal=money(document.getElementById('principal').value);let cost=0;document.querySelectorAll('.cost-amount').forEach(x=>cost=money(cost+money(x.value)));const profit=money(principal-cost);const kpi=principal?profit/principal*100:0;document.getElementById('principalAmount').textContent='¥'+principal.toFixed(2);document.getElementById('actualCost').textContent='¥'+cost.toFixed(2);document.getElementById('profit').textContent='¥'+profit.toFixed(2);document.getElementById('kpi').textContent=kpi.toFixed(2)+'%'}
+function renderAttachments(){document.getElementById('attachments').innerHTML=attachments.map((f,i)=>`<span class="attachment"><a href="${esc(f.path)}" target="_blank" rel="noopener">${esc(f.originalName)}</a> <button class="btn btn-danger btn-small" onclick="attachments.splice(${i},1);renderAttachments()">移除</button></span>`).join('')}
+async function uploadAttachments(input){if(!debtInitializationReady){alert('权威初始化数据未就绪，附件上传已停用');input.value='';return}for(const file of [...input.files]){if(file.size>20*1024*1024){alert(file.name+' 超过20MB限制');continue}const form=new FormData();form.append('file',file);const resp=await authFetch('/api/upload',{method:'POST',body:form});const result=await resp.json();if(!resp.ok||!result.success){alert('上传失败：'+(result.error||resp.status));continue}attachments.push({filename:result.filename,originalName:result.originalName,path:result.path})}input.value='';renderAttachments()}
+function collectCosts(){return [...document.querySelectorAll('#costRows tr')].map(row=>{const payee=debtPayees.find(item=>item.id===row.querySelector('.cost-payee').value);return{item:row.querySelector('.cost-item').value,content:row.querySelector('.cost-content').value.trim(),supplier:payee?.name||'',payeeAccountId:payee?.id||'',payeeAccountType:payee?.payeeAccountType||'',linkedEmployeeUsername:'',amount:row.querySelector('.cost-amount').value}})}
+async function submitDebt(){if(!debtInitializationReady){alert('权威初始化数据未就绪，欠款提交已停用');return}if(!debtPayees.length){alert('暂无可用于欠款的正式授权供应商，请联系 Admin。');return}const body={type:document.getElementById('type').value,approver:document.getElementById('approver').value,clientId:document.getElementById('clientId').value,title:document.getElementById('title').value.trim(),originalProjectId:document.getElementById('originalProject').value,reason:document.getElementById('reason').value.trim(),businessDescription:document.getElementById('businessDescription').value.trim(),businessBasis:document.getElementById('businessBasis').value.trim(),principal:document.getElementById('principal').value,costItems:collectCosts(),attachments};if(!body.clientId){alert('请选择已启用甲方；历史项目需先由 Admin 逐条确认甲方。');return}const button=document.getElementById('submitButton');button.disabled=true;try{const resp=await authFetch('/api/debts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const result=await resp.json();if(!resp.ok||!result.success)throw new Error(result.error||'提交失败');alert('欠款申请已提交：'+result.record.id);['title','reason','businessDescription','businessBasis','principal'].forEach(id=>document.getElementById(id).value='');document.getElementById('clientId').value='';document.getElementById('originalProject').value='';document.getElementById('costRows').innerHTML='';attachments=[];renderAttachments();addCostRow();calculate();await loadDebts()}catch(error){alert(error.message)}finally{button.disabled=!debtPayees.length}}
+async function logout(){await authFetch('/api/logout',{method:'POST'});localStorage.clear();location.href='/login.html'}function linkHtml(link){const remain=money((link.principal||0)-(link.receivedPrincipal||0));return `<div class="links"><b>${esc(link.projectId)} ${esc(link.projectName||'')}</b><br>本次计入 ¥${money(link.principal).toFixed(2)} / 服务费 ¥${money(link.serviceFee).toFixed(2)}（${(Number(link.serviceFeeRateSnapshot||0)*100).toFixed(2)}%）<br>${projectStatusText(link.projectStatus)} / ${paymentStatusText(link.paymentStatus)}<br>已确认归还 ¥${money(link.receivedPrincipal).toFixed(2)} / 待归还 ¥${remain.toFixed(2)}</div>`}
+function debtHistoryAttachments(files){return (files||[]).map(file=>`<a class="debt-history-attachment" href="${esc(file.path)}" target="_blank" rel="noopener">📎 ${esc(file.originalName||'附件')}</a>`).join('')}
+function debtHistoricalPaymentHtml(payment,history){
+    const repayment=(payment.debtRepayments||[]).find(item=>String(item?.debtLinkId||'')===String(history.debtLink?.id||history.id||''));
+    const snapshot=(payment.debtSubmissionSnapshot||[]).find(item=>String(item?.debtLinkId||'')===String(history.debtLink?.id||history.id||''));
+    const paymentFiles=debtHistoryAttachments(payment.attachments);
+    return `<div style="margin-top:7px"><b>付款 ${esc(payment.paymentId||'-')}</b> / 原状态：${paymentStatusText(payment.status)}<br>原归还本金 ¥${money(payment.principal).toFixed(2)} / 原供应商成本 ¥${money(payment.allocatedCost).toFixed(2)}${repayment?`<br>归还明细：欠款 ${esc(repayment.debtId||history.debtId||'-')} / 本金 ¥${money(repayment.confirmedPrincipal).toFixed(2)} / 成本 ¥${money(repayment.allocatedCost).toFixed(2)}`:''}${snapshot?`<br>付款提交快照：本金 ¥${money(snapshot.repaidPrincipal??snapshot.confirmedPrincipal).toFixed(2)} / 成本 ¥${money(snapshot.allocatedCost).toFixed(2)}`:''}${paymentFiles?'<br>'+paymentFiles:''}</div>`;
+}
+function debtHistoricalEntryHtml(history){
+    const audit=history.closureAudit||history.projectClosure;
+    const debtLink=history.debtLink||history;
+    const originalOccupation=audit?.originalOccupationStatus||debtLink.projectClosure?.originalOccupationStatus||debtLink.occupationStatus||'-';
+    const projectFiles=debtHistoryAttachments(history.application?.attachments);
+    const payments=(history.paymentDetails||[]).map(payment=>debtHistoricalPaymentHtml(payment,history)).join('')||'<div style="margin-top:7px">无相关付款记录</div>';
+    const auditHtml=audit
+        ? `关闭人：${esc(audit.closedBy||'-')} / 关闭时间：${esc(audit.closedAt||'-')}<br>关闭原因：${esc(audit.reason||'-')}`
+        : '历史记录缺少整链关闭审计；仅按已保存 closed 状态只读兼容，未伪造关闭人、时间或原因。';
+    return `<div class="debt-history-entry" data-project-closed-debt-evidence><div class="debt-history-title">项目整链已关闭·历史证据</div><b>原项目 ${esc(history.projectId||history.application?.id||'-')} ${esc(history.projectName||history.application?.projectName||'')}</b><br>原项目状态：${projectStatusText(history.originalProjectStatus||history.projectStatus)} / 项目快照本金 ¥${money(history.projectSnapshot?.includedPrincipal).toFixed(2)}<br>原欠款关联 ${esc(debtLink.id||'-')} / 欠款 ${esc(debtLink.debtId||'-')} / 原计划本金 ¥${money(debtLink.principal).toFixed(2)} / 原分摊成本 ¥${money(debtLink.allocatedCost).toFixed(2)} / 原占用状态 ${esc(originalOccupation)}${projectFiles?'<br>'+projectFiles:''}${payments}<div class="debt-history-audit">${auditHtml}</div></div>`;
+}
+function debtHistoricalLinksHtml(record){
+    const histories=record.historicalLinks||[];
+    if(!histories.length)return '';
+    return `<details class="debt-history"><summary>项目整链已关闭·历史证据（${histories.length}）</summary>${histories.map(debtHistoricalEntryHtml).join('')}</details>`;
+}
+function debtFinancialHtml(d){const profit=d.profit===undefined?money(money(d.principal)-money(d.totalActualCost)):money(d.profit);if(d.amountBasis==='tax-inclusive-v1')return `含税欠款 ¥${money(d.principal).toFixed(2)}<br>利润 ¥${profit.toFixed(2)}<br>KPI1 / KPI2 ${(Number(d.kpi1||0)*100).toFixed(2)}%`;return `历史口径本金 ¥${money(d.principal).toFixed(2)}${d.contractAmount?`<br>历史含税值 ¥${money(d.contractAmount).toFixed(2)}`:''}<br>利润 ¥${profit.toFixed(2)}<br>KPI ${(Number(d.kpi1||0)*100).toFixed(2)}%`}
+function renderDebts(records){const tbody=document.getElementById('debtRecords');if(!records.length){tbody.innerHTML='<tr><td colspan="6" class="empty">暂无欠款申请</td></tr>';return}tbody.innerHTML=records.map(d=>`<tr><td><b>${esc(d.id)}</b><br>${d.type==='project-extra'?'项目额外欠款':'无项目欠款'}${d.originalProjectId?'<br>原项目 '+esc(d.originalProjectId):''}<div class="hint">${esc(d.createdAt||'')}</div></td><td><b>${esc(d.partyA)}</b><br>${esc(d.title)}<div class="hint">${esc(d.businessDescription)}</div></td><td>${debtFinancialHtml(d)}</td><td>${(d.costItems||[]).map(c=>`${esc(c.supplier)}：¥${money(c.amount).toFixed(2)}`).join('<br>')}<br><b>合计 ¥${money(d.totalActualCost).toFixed(2)}</b></td><td><b>当前有效口径</b><br>项目已通过 ¥${money(d.includedPrincipal).toFixed(2)}<br>已确认归还 ¥${money(d.receivedPrincipal).toFixed(2)}<br>待归还余额 ¥${money(d.outstandingPrincipal).toFixed(2)}${(d.links||[]).map(linkHtml).join('')}${debtHistoricalLinksHtml(d)}</td><td><span class="status status-${esc(d.lifecycleStatus||d.status)}">${esc(d.lifecycleStatusText||d.status)}</span>${d.reviewNote?'<div class="hint">'+esc(d.reviewNote)+'</div>':''}</td></tr>`).join('')}
+async function loadDebts(){const target=document.getElementById('debtRecords');target.innerHTML='<tr><td colspan="6" class="empty">正在加载欠款记录...</td></tr>';try{const resp=await authFetch('/api/debts');const text=await resp.text();let result;try{result=text?JSON.parse(text):{}}catch{throw new Error('欠款接口返回非法 JSON')}if(!resp.ok){const kind=resp.status===401?'登录已失效':resp.status===403?'无权访问':resp.status===409?'数据冲突':`服务错误 ${resp.status}`;throw new Error(`${kind}：${result.error||'欠款加载失败'}`)}renderDebts(result.records||[])}catch(error){target.innerHTML=`<tr><td colspan="6" class="empty error">${esc(error.message||'网络失败，欠款记录未加载')}</td></tr>`}}
+async function init(){
+    if(!localStorage.getItem('token')){location.href='/login.html';return}
+    const authResp=await authFetch('/api/check-auth',{cache:'no-store'});
+    const identity=await authResp.json().catch(()=>{throw new Error('身份接口返回非法 JSON')});
+    if(!authResp.ok||!identity.authenticated){localStorage.clear();location.href='/login.html';return}
+    currentUser=identity.username||'';userRole=identity.role||'';
+    localStorage.setItem('username',currentUser);localStorage.setItem('role',userRole);
+    document.getElementById('userDisplay').textContent=currentUser+'（'+({admin:'系统管理+审批',approver:'审批岗',user:'员工'}[userRole]||userRole)+'）';
+    const readOnlyRole=userRole==='admin'||userRole==='approver';
+    if(userRole==='admin')document.getElementById('debtManagementButton').style.display='inline-block';
+    if(readOnlyRole){
+        document.getElementById('debtCreateInfo').style.display='none';
+        document.getElementById('debtCreateCard').style.display='none';
+        document.getElementById('debtScopeHint').textContent='审批岗与系统管理员在本页仅查看欠款记录；审核请返回审批中心，标准员工创建与重提入口已关闭。';
+        await loadDebts();return;
+    }
+    const responses=await Promise.all([authFetch('/api/config'),authFetch('/api/data'),authFetch('/api/approvers'),authFetch('/api/suppliers'),authFetch('/api/clients')]);
+    const labels=['权威配置','项目数据','审批人主数据','供应商主数据','甲方主数据'];
+    const parsed=[];
+    for(let index=0;index<responses.length;index++){const response=responses[index];const text=await response.text();let value;try{value=text?JSON.parse(text):{}}catch{throw new Error(`${labels[index]}返回非法 JSON`)}if(!response.ok){const kind=response.status===401?'登录已失效':response.status===403?'无权访问':response.status===409?'数据冲突':response.status>=500?`服务错误 ${response.status}`:`请求失败 ${response.status}`;throw new Error(`${labels[index]}${kind}：${value.error||'未返回原因'}`)}parsed.push(value)}
+    const [loadedConfig,data,approvers,loadedSuppliers,clientResult]=parsed;config=loadedConfig;suppliers=loadedSuppliers;if(!config?.serviceFeeRates||(typeof config.taxRate!=='number'||!Number.isFinite(config.taxRate))||!Array.isArray(approvers)||!Array.isArray(suppliers)||!Array.isArray(clientResult.records))throw new Error('权威初始化数据格式不完整');applications=(data.applications||[]).filter(x=>x.applicant===currentUser);clients=(clientResult.records||[]).filter(client=>client.enabled!==false);
+    document.getElementById('approver').innerHTML='<option value="">请选择审批人</option>'+approvers.map(x=>`<option value="${esc(x.username)}">${esc(x.username)}</option>`).join('');
+    const clientSelect=document.getElementById('clientId');clientSelect.innerHTML=clients.length?'<option value="">请选择已启用甲方</option>'+clients.map(x=>`<option value="${esc(x.id)}">${esc(x.fullName)}</option>`).join(''):'<option value="">暂无已启用甲方</option>';clientSelect.disabled=!clients.length;document.getElementById('clientEmptyHint').style.display=clients.length?'none':'block';
+    const eligibleProjects=applications.filter(x=>x.status==='approved'&&x.debtExtraEligibility?.eligible===true);document.getElementById('originalProject').innerHTML=`<option value="">${eligibleProjects.length?'请选择本人已通过项目':'暂无可追加欠款的项目'}</option>`+eligibleProjects.map(x=>`<option value="${esc(x.id)}">${esc(x.id)} - ${esc(x.partyA)} - ${esc(x.projectName)}</option>`).join('');
+    debtPayees=suppliers.filter(payee=>payee.enabled!==false&&payee.payeeAccountType==='formal-supplier');document.getElementById('debtPayeeEmptyHint').style.display=debtPayees.length?'none':'block';document.getElementById('addCostButton').disabled=!debtPayees.length;document.getElementById('submitButton').disabled=!debtPayees.length;debtInitializationReady=true;toggleProjectExtra();addCostRow();calculate();await loadDebts()
+}
+function setDebtInitializationFailure(error){debtInitializationReady=false;const message=error?.message||'网络失败，权威初始化数据未加载';document.getElementById('debtRecords').innerHTML=`<tr><td colspan="6" class="empty error">初始化失败：${esc(message)}。欠款提交和附件上传已停用，请恢复服务后刷新页面。</td></tr>`;document.querySelectorAll('#debtCreateCard input,#debtCreateCard select,#debtCreateCard textarea,#debtCreateCard button').forEach(element=>{element.disabled=true})}
+init().catch(setDebtInitializationFailure);
+</script>
+</body>
+</html>

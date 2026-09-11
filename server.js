@@ -9468,7 +9468,8 @@ function handleRequest(req, res) {
     const staticRequestPath = requestUrl.pathname === '/' ? '/login.html' : requestUrl.pathname;
     const publicStaticFiles = new Map([
         ['/login.html', { file: 'login.html', type: 'text/html;charset=utf-8' }],
-        ['/k-session-theme.css', { file: 'k-session-theme.css', type: 'text/css;charset=utf-8' }]
+        ['/k-session-theme.css', { file: 'k-session-theme.css', type: 'text/css;charset=utf-8' }],
+        ['/vendor/fflate.js', { file: 'node_modules/fflate/umd/index.js', type: 'text/javascript;charset=utf-8' }]
     ]);
     const authenticatedStaticFiles = new Map([
         ['/approval.html', { file: 'approval.html', type: 'text/html;charset=utf-8' }],

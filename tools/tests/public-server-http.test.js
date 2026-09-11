@@ -134,7 +134,7 @@ try{
         for(const url of ['/api/config','/api/login'])assert.equal((await f.call(url,{method:url.endsWith('config')?'PUT':'POST',token:admin,body:{},headers:{Origin:'https://untrusted.invalid'}})).status,403);
     });
     await check('all empty module API reads remain available without default bonus configuration',async()=>{
-        for(const url of ['/api/data','/api/suppliers','/api/clients','/api/debts','/api/invoice-summary','/api/invoices','/api/invoice-submissions','/api/invoice-pools','/api/bonus-confirmations','/api/mail-reminders/config']){
+        for(const url of ['/api/data','/api/suppliers','/api/clients','/api/debts','/api/invoice-summary','/api/invoices','/api/invoice-submissions','/api/invoice-pools','/api/bonus-confirmations?year=2026&month=9','/api/mail-reminders/config']){
             const r=await f.call(url,{token:admin});assert.equal(r.status,200,url+' '+JSON.stringify(r.data));
         }
     });

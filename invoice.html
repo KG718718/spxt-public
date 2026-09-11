@@ -1,0 +1,2724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发票工作台与审核 - K⁺-SESSION 项目运营管理系统</title>
+    <link rel="stylesheet" href="/k-session-theme.css">
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: "Microsoft YaHei", Arial, sans-serif; background: #111; color: #111; }
+        .header { background: #111; color: #fff; padding: 18px 28px; border-bottom: 2px solid #b98a2c; }
+        .header-row { max-width: 1500px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+        h1 { margin: 0; font-size: 24px; letter-spacing: 0; }
+        h2 { margin: 0 0 12px; font-size: 19px; color: #111; }
+        h3 { margin: 0 0 10px; font-size: 16px; color: #111; }
+        .nav-btn, .btn { border: 1px solid #b98a2c; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-weight: 800; }
+        .nav-btn { background: transparent; color: #fff; }
+        .btn { background: #b98a2c; color: #111; }
+        .btn.dark { background: #111; color: #fff; }
+        .btn.light { background: #fff; color: #111; }
+        .container { max-width: 1500px; margin: 0 auto; padding: 20px; }
+        .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 14px; }
+        .stat { background: #fff; border: 1px solid #e5e7eb; border-left: 4px solid #b98a2c; border-radius: 8px; padding: 12px; }
+        .stat .label { color: #555; font-size: 12px; }
+        .stat .value { color: #111; font-size: 20px; font-weight: 900; margin-top: 5px; }
+        .tabs { display: flex; gap: 8px; flex-wrap: wrap; background: #111; border: 1px solid #b98a2c; border-radius: 8px; padding: 8px; margin-bottom: 14px; }
+        .tab { background: #fff; color: #111; border: 1px solid #b98a2c; border-radius: 6px; padding: 8px 12px; font-weight: 800; cursor: pointer; }
+        .tab.active { background: #111; color: #fff; }
+        .layout { display: grid; grid-template-columns: 340px 1fr; gap: 14px; align-items: start; }
+        .panel, .project, .white { background: #fff; color: #111; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; }
+        .project { margin-bottom: 12px; }
+        .muted { color: #333 !important; font-size: 12px; }
+        .hint { border: 1px solid #b98a2c; border-left: 4px solid #b98a2c; background: #fff; padding: 10px; border-radius: 6px; color: #111; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; background: #111; color: #fff; font-size: 13px; border: 1px solid #b98a2c; }
+        th { background: #211b10 !important; color: #fff !important; text-align: left; padding: 9px; border-bottom: 1px solid #b98a2c; }
+        td { background: #151515 !important; color: #fff !important; padding: 9px; border-bottom: 1px solid #333; vertical-align: top; }
+        td .muted { color: #fff !important; opacity: .85; }
+        table.match-table, table.draft-table { background: #fff !important; color: #111 !important; border: 1px solid #b98a2c !important; }
+        table.match-table > tbody > tr,
+        table.draft-table > tbody > tr { background: #fff !important; color: #111 !important; }
+        table.match-table > tbody > tr > td,
+        table.draft-table > tbody > tr > td { background: #fff !important; color: #111 !important; border: 0 !important; border-bottom: 1px solid #e5e7eb !important; box-shadow: none !important; }
+        table.match-table > tbody > tr > td *,
+        table.draft-table > tbody > tr > td * { color: #111 !important; }
+        table.match-table .muted,
+        table.draft-table .muted { color: #333 !important; opacity: 1 !important; background: transparent !important; }
+        table.match-table input[type="checkbox"] { width: 18px !important; min-width: 18px !important; height: 18px !important; padding: 0 !important; margin: 0 !important; accent-color: #b98a2c; vertical-align: middle; box-shadow: none !important; }
+        table.match-table .status { background: #fff !important; color: #111 !important; border: 1px solid #b98a2c !important; }
+        table.match-table .status.gold,
+        table.match-table .status.dark { background: #fff !important; color: #111 !important; border: 1px solid #b98a2c !important; }
+        .match-reason { display: block; color: #111 !important; background: transparent !important; margin-top: 6px; line-height: 1.45; font-weight: 700; }
+        table.review-table .status,
+        table.ledger-table .status,
+        table.submission-table .status { background: #111 !important; color: #fff !important; border: 1px solid #b98a2c !important; }
+        .review-detail { color: #fff !important; line-height: 1.55; }
+        .review-detail strong { color: #fff !important; }
+        .review-detail .muted { color: #e8dcc3 !important; opacity: 1 !important; }
+        .submission-detail { color: #fff !important; line-height: 1.55; }
+        .submission-detail strong { color: #fff !important; }
+        .submission-detail .muted { color: #e8dcc3 !important; opacity: 1 !important; }
+        .usage-box { margin-top: 6px; border: 1px solid #b98a2c; border-radius: 6px; padding: 6px 8px; color: #fff !important; background: #111 !important; line-height: 1.5; }
+        .usage-box strong { color: #fff !important; }
+        .usage-box .muted { color: #e8dcc3 !important; opacity: 1 !important; }
+        .usage-box.rejected-only { border-color: #555; }
+        .status { display: inline-block; background: #fff; color: #111; border: 1px solid #b98a2c; border-radius: 999px; padding: 3px 8px; font-size: 12px; font-weight: 900; white-space: nowrap; }
+        .status.gold { background: #111; color: #fff; }
+        .status.dark { background: #111; color: #fff; }
+        .detail-grid { display: grid; gap: 10px; }
+        .detail-card { border: 1px solid #d7dbe2; border-left: 4px solid #b98a2c; border-radius: 8px; padding: 10px; background: #fff; color: #111; cursor: pointer; }
+        .panel .muted,
+        .project .muted,
+        .white .muted,
+        .detail-card .muted { color: #333 !important; opacity: 1 !important; }
+        .detail-card.selected { background: #111; color: #fff; border-color: #b98a2c; }
+        .detail-card.selected .muted { color: #fff !important; opacity: .9 !important; }
+        body.is-busy { cursor: wait; }
+        body.is-busy::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: transparent;
+            pointer-events: all;
+            cursor: wait;
+        }
+        body.is-busy .detail-card,
+        body.is-busy table tbody tr,
+        body.is-busy .tab,
+        body.is-busy a,
+        body.is-busy button,
+        body.is-busy input,
+        body.is-busy select,
+        body.is-busy textarea { pointer-events: none; }
+        body.is-busy .busy-allowed { pointer-events: auto; }
+        .hint.busy-note { background: #fff; color: #111; border: 1px solid #b98a2c; border-left: 5px solid #b98a2c; font-weight: 900; }
+        .workbench { display: grid; grid-template-columns: 420px 1fr; gap: 14px; align-items: start; }
+        label { display: block; margin: 10px 0 5px; font-weight: 900; color: #111; }
+        input, textarea { width: 100%; border: 1px solid #b98a2c; border-radius: 6px; padding: 9px 10px; background: #fff; color: #111; font-size: 14px; }
+        textarea { min-height: 90px; resize: vertical; }
+        .risk-box { background: #111; color: #fff; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .result-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0; }
+        .result { border: 1px solid #d7dbe2; border-left: 4px solid #b98a2c; border-radius: 8px; padding: 10px; background: #fff; color: #111; }
+        .result span { display: block; color: #555; font-size: 12px; }
+        .result strong { display: block; color: #111; font-size: 18px; margin-top: 4px; }
+        .hide { display: none; }
+        @media (max-width: 1100px) {
+            .layout, .workbench { grid-template-columns: 1fr; }
+            .stats, .result-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 700px) {
+            .stats, .result-grid { grid-template-columns: 1fr; }
+            .container { padding: 12px; }
+        }
+        .topbar { height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 24px; border-bottom: 1px solid #d8a238; background: #090909; position: sticky; top: 0; z-index: 20; }
+        .brand { display: flex; align-items: center; gap: 12px; min-width: 260px; }
+        .logo { width: 34px; height: 34px; border-radius: 6px; display: grid; place-items: center; background: #d8a238; color: #111; font-weight: 900; }
+        .brand-title { font-size: 18px; font-weight: 800; color: #f7f1df; }
+        .topbar-note { color: #d8c9a0; font-size: 13px; margin-top: 2px; }
+        .top-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .top-actions .btn.danger { background: #090909; color: #d8a238; border-color: #d8a238; }
+        .page { width: min(1480px, calc(100vw - 32px)); margin: 16px auto 36px; display: grid; gap: 12px; }
+        .summary { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 10px; }
+        .metric { background: #fffdf7; color: #1e1b16; border: 1px solid #d8a238; border-radius: 6px; min-height: 74px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; }
+        .metric .label { color: #655f54; font-size: 13px; }
+        .metric .value { font-size: 22px; font-weight: 900; margin-top: 3px; }
+        .page .tabs { margin-bottom: 0; border: 1px solid #d8a238; border-radius: 6px; background: #090909; padding: 8px; }
+        .page .tab { min-width: 112px; height: 34px; display: inline-flex; align-items: center; justify-content: center; background: #090909 !important; color: #d8a238 !important; border: 1px solid #d8a238 !important; border-radius: 5px; padding: 0 16px; }
+        .page .tab.active { background: #d8a238 !important; color: #111 !important; border-color: #d8a238 !important; }
+        .section { background: #fffdf7; color: #1e1b16; border: 1px solid #d8d1c2; border-radius: 6px; padding: 14px; }
+        .section-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 10px; }
+        .section-title { font-size: 16px; font-weight: 900; color: #1e1b16; }
+        .section-note { color: #655f54; font-size: 13px; }
+        .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .input, .select { min-height: 34px; border: 1px solid #d8a238; border-radius: 5px; background: #fff; color: #111; padding: 7px 10px; font: inherit; }
+        .input { min-width: 240px; }
+        .select { min-width: 120px; }
+        .section.table-scroll { overflow-x: auto; }
+        .section table { width: 100%; min-width: 860px; border-collapse: collapse; table-layout: fixed; background: #fff !important; color: #1e1b16 !important; border: 1px solid #d7c7a4 !important; }
+        .section th { height: 38px; background: #fff8e7 !important; color: #111 !important; font-size: 13px; text-align: left; padding: 8px 10px; white-space: nowrap; border: 0 !important; border-bottom: 2px solid #d8a238 !important; }
+        .section td { min-height: 44px; background: #fff !important; color: #1e1b16 !important; border: 0 !important; border-bottom: 1px solid #e5d6b6 !important; padding: 9px 10px; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; }
+        .page .section table tbody tr td { background: #fff !important; color: #1e1b16 !important; }
+        .section td * { color: inherit; }
+        .page .section table tbody td b,
+        .page .section table tbody td strong,
+        .page .section table tbody td span { color: #1e1b16 !important; }
+        .section .muted { color: #655f54 !important; opacity: 1 !important; }
+        .section tbody tr.selected { background: #d8a238 !important; box-shadow: none; }
+        .section tbody tr.selected td { background: #d8a238 !important; color: #111 !important; border-bottom: 1px solid #c59022 !important; font-weight: 800; }
+        .page .section table tbody tr.selected td { background: #d8a238 !important; color: #111 !important; }
+        .section tbody tr.disabled td { color: #777 !important; background: #f7f7f7 !important; cursor: not-allowed; }
+        .section tbody tr:hover td { background: #fff8e8 !important; }
+        .amount { font-weight: 900; }
+        .status.wait, .status.ok, .status.bad, .status.draft { background: #fff; color: #111; border-color: #d8a238; }
+        .page .section table tbody td .status { color: #111 !important; }
+        .detail-layout { display: grid; grid-template-columns: 1.15fr .85fr; gap: 12px; align-items: start; }
+        .operation-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .tool-panel { border: 1px solid #d8a238; border-radius: 6px; padding: 12px; background: #fff; color: #111; min-height: 180px; }
+        .tool-title { font-weight: 900; margin-bottom: 8px; color: #1e1b16; }
+        .file-drop { min-height: 78px; border: 1px dashed #d8a238; border-radius: 6px; background: #fff; display: grid; place-items: center; text-align: center; padding: 10px; color: #111; margin-bottom: 10px; }
+        .form-line { display: grid; grid-template-columns: 92px 1fr; align-items: start; gap: 8px; margin-bottom: 8px; }
+        .draft-summary { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 8px; margin-bottom: 10px; }
+        .draft-chip { border: 1px solid #d8a238; background: #fff; color: #111; border-radius: 5px; padding: 9px 10px; }
+        .draft-chip b { display: block; font-size: 16px; margin-top: 2px; }
+        .actions-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+        .two-line { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .inline-link { color: #111; font-weight: 900; text-decoration: underline; text-underline-offset: 2px; margin-right: 8px; }
+        .footer-note { color: #111; border: 1px solid #d8a238; background: #fff; border-radius: 6px; padding: 10px 12px; font-size: 13px; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        .hide { display: none !important; }
+        .page .hint,
+        .page .risk-box,
+        .page .usage-box,
+        .page .empty-state {
+            background: #fff !important;
+            color: #111 !important;
+            border: 1px solid #d8a238 !important;
+            border-radius: 6px;
+        }
+        .page .usage-box strong,
+        .page .usage-box .muted,
+        .page .review-detail,
+        .page .review-detail strong,
+        .page .review-detail .muted,
+        .page .submission-detail,
+        .page .submission-detail strong,
+        .page .submission-detail .muted {
+            color: #111 !important;
+            opacity: 1 !important;
+        }
+        .page input,
+        .page select,
+        .page textarea {
+            background: #fff !important;
+            color: #111 !important;
+            border: 1px solid #d8a238 !important;
+            border-radius: 5px;
+            box-shadow: none !important;
+        }
+        .page input[type="file"] {
+            min-height: 38px;
+            padding: 8px 10px;
+        }
+        .page input[type="checkbox"] {
+            width: 18px !important;
+            min-width: 18px !important;
+            height: 18px !important;
+            padding: 0 !important;
+            accent-color: #d8a238;
+        }
+        .page .btn {
+            background: #d8a238;
+            color: #111;
+            border-color: #d8a238;
+        }
+        .page .btn.secondary,
+        .page .btn.dark {
+            background: #090909;
+            color: #d8a238;
+            border-color: #d8a238;
+        }
+        .page .btn.danger {
+            background: #090909;
+            color: #d8a238;
+            border-color: #d8a238;
+        }
+        .page .panel {
+            background: #fffdf7;
+            color: #111;
+            border: 1px solid #d8a238;
+            border-radius: 6px;
+        }
+        .page #section-review {
+            overflow-x: auto;
+        }
+        .page table.review-table {
+            min-width: 1320px;
+        }
+        .review-detail-panel { margin-top: 14px; display: grid; gap: 12px; }
+        .review-kpis { display: grid; grid-template-columns: repeat(6, minmax(130px, 1fr)); gap: 8px; }
+        .review-chip { background: #fff; border: 1px solid #d8a238; border-radius: 5px; padding: 9px 10px; color: #111; }
+        .review-chip span { display: block; color: #655f54 !important; font-size: 12px; }
+        .review-chip b { display: block; color: #111 !important; font-size: 16px; margin-top: 2px; }
+        .review-subsection { background: #fff; border: 1px solid #d8d1c2; border-radius: 6px; padding: 12px; color: #111; }
+        .review-subsection h3 { margin-bottom: 8px; }
+        .review-subsection.table-scroll { overflow-x: auto; }
+        .review-subsection table { min-width: 920px; }
+        .risk-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+        .review-note-box { border: 1px solid #d8a238; border-radius: 5px; padding: 10px; background: #fffdf7; color: #111; min-height: 42px; }
+        #activityDateCorrectionBody .activity-date-row { display: grid; grid-template-columns: minmax(190px, 1fr) 160px minmax(240px, 2fr) auto; gap: 8px; align-items: center; margin-top: 8px; }
+        .admin-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .admin-toolbar .filters { flex: 1; }
+        .admin-kpis { display: grid; grid-template-columns: repeat(5, minmax(130px, 1fr)); gap: 8px; margin-bottom: 12px; }
+        .admin-kpi { background: #fff; border: 1px solid #d8a238; border-radius: 5px; padding: 9px 10px; color: #111; }
+        .admin-kpi span { display: block; color: #655f54 !important; font-size: 12px; }
+        .admin-kpi b { display: block; color: #111 !important; font-size: 17px; margin-top: 2px; }
+        .admin-review-layout { display: grid; gap: 12px; }
+        .admin-review-table { min-width: 1180px !important; }
+        .admin-review-table td { cursor: pointer; }
+        .admin-application-grid { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: start; }
+        .admin-application-card { border: 1px solid #d8d1c2; border-radius: 6px; background: #fff; color: #111; padding: 12px; }
+        .admin-application-card h3 { margin-bottom: 8px; }
+        .admin-scroll-box { max-height: 360px; overflow: auto; border: 1px solid #e5d6b6; border-radius: 6px; background: #fff; }
+        .admin-scroll-box .admin-attachment-list { padding: 8px; }
+        .admin-application-card table { min-width: 860px !important; border: 0 !important; }
+        .admin-application-card th { position: sticky; top: 0; z-index: 1; }
+        .admin-attachment-list { display: grid; gap: 8px; }
+        .admin-attachment-row { border: 1px solid #e5d6b6; border-radius: 5px; background: #fff; padding: 9px 10px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+        .admin-attachment-main { min-width: 0; display: grid; gap: 3px; }
+        .admin-attachment-title { font-weight: 900; color: #111 !important; word-break: break-word; overflow-wrap: anywhere; }
+        .admin-attachment-meta { color: #655f54 !important; font-size: 12px; line-height: 1.45; word-break: break-word; overflow-wrap: anywhere; }
+        .admin-attachment-file { color: #111 !important; font-size: 12px; word-break: break-all; overflow-wrap: anywhere; }
+        .admin-attachment-actions { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; }
+        .admin-attachment-row .inline-link { margin-right: 0; }
+        .pool-ledger-box { margin-top: 6px; border: 1px solid #d8a238; background: #fffdf7; border-radius: 5px; padding: 8px; display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 6px; }
+        .pool-ledger-item { background: #fff; border: 1px solid #ead9b8; border-radius: 4px; padding: 6px 7px; color: #111; min-width: 0; }
+        .pool-ledger-item span { display: block; color: #655f54 !important; font-size: 11px; line-height: 1.25; }
+        .pool-ledger-item b { display: block; color: #111 !important; font-size: 13px; margin-top: 2px; word-break: break-word; overflow-wrap: anywhere; }
+        .pool-ledger-check { margin-top: 4px; color: #655f54 !important; font-size: 12px; line-height: 1.45; word-break: break-word; overflow-wrap: anywhere; }
+        .admin-card-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+        .admin-card-title-row h3 { margin-bottom: 0; }
+        @media (max-width: 760px) {
+            .admin-attachment-row { grid-template-columns: minmax(0, 1fr); align-items: start; }
+            .admin-attachment-actions { justify-content: flex-start; flex-wrap: wrap; white-space: normal; }
+        }
+        .admin-summary-table { min-width: 1120px !important; }
+        .ratio-cell { display: grid; grid-template-columns: minmax(70px, 1fr) 58px; gap: 8px; align-items: center; }
+        .ratio-track { height: 10px; border: 1px solid #d8a238; border-radius: 999px; background: #fff; overflow: hidden; }
+        .ratio-fill { height: 100%; background: #d8a238; }
+        .ratio-fill.warn { background: #b8860b; }
+        .ratio-fill.bad { background: #9f2727; }
+        .admin-risk-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+        .admin-risk-card { border: 1px solid #d8a238; border-radius: 6px; background: #fff; color: #111; padding: 12px; min-height: 96px; }
+        .admin-risk-card b { display: block; margin-bottom: 6px; color: #111 !important; }
+        .page .section-title,
+        .page .tool-title,
+        .page h2,
+        .page h3,
+        .page label {
+            color: #111 !important;
+        }
+        .page .panel table,
+        .page #section-duplicates table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff !important;
+            color: #111 !important;
+            border: 1px solid #d8a238 !important;
+            table-layout: fixed;
+        }
+        .page .panel th,
+        .page #section-duplicates th {
+            background: #fff8e7 !important;
+            color: #111 !important;
+            border-bottom: 2px solid #d8a238 !important;
+        }
+        .page .panel td,
+        .page #section-duplicates td {
+            background: #fff !important;
+            color: #111 !important;
+            border-bottom: 1px solid #eee4ce !important;
+        }
+        .page .panel tr.selected td {
+            background: #d8a238 !important;
+            color: #111 !important;
+            border-bottom-color: #c59022 !important;
+        }
+        .page .panel td *,
+        .page #section-duplicates td * {
+            color: inherit !important;
+        }
+        /* Keep dark action labels readable inside white/selected table rows. */
+        .page .panel td .btn.danger,
+        .page #section-duplicates td .btn.danger {
+            color: #f0d393 !important;
+            background: #111 !important;
+            border-color: #b98a2c !important;
+        }
+        .page .status,
+        .page table.review-table .status,
+        .page table.ledger-table .status,
+        .page table.submission-table .status,
+        .page table.match-table .status {
+            background: #fff !important;
+            color: #111 !important;
+            border: 1px solid #d8a238 !important;
+        }
+        .page .section table tbody tr.selected .status {
+            background: #fff !important;
+            color: #111 !important;
+            border-color: #d8a238 !important;
+        }
+        @media (max-width: 1100px) {
+            .summary, .detail-layout, .operation-grid, .draft-summary { grid-template-columns: 1fr; }
+            .review-kpis { grid-template-columns: 1fr 1fr; }
+            #activityDateCorrectionBody .activity-date-row { grid-template-columns: 1fr; }
+            .admin-kpis, .admin-application-grid, .admin-risk-grid { grid-template-columns: 1fr; }
+            .topbar { height: auto; padding: 12px 16px; align-items: flex-start; flex-direction: column; }
+            .section-head { align-items: flex-start; flex-direction: column; }
+        }
+    </style>
+    <link rel="icon" href="data:,">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="logo" aria-label="K⁺-SESSION">K⁺</div>
+            <div>
+                <div class="brand-title" id="pageTitle">发票工作台</div>
+                <div class="topbar-note">项目队列、明细、上传与无票提报</div>
+            </div>
+        </div>
+        <div class="top-actions">
+            <span id="userDisplay" class="sr-only"></span>
+            <button id="invoiceExportButton" class="btn secondary" data-export-action onclick="openInvoiceExport()">导出</button>
+            <button class="btn danger hide" id="resetInvoiceTestBtn" onclick="resetInvoiceTestData()">发票数据归零</button>
+            <button class="btn secondary" onclick="location.href='/approval.html'">返回首页</button>
+            <button class="btn danger" onclick="logout()">退出</button>
+        </div>
+    </header>
+
+    <main class="page">
+        <div id="pageStatus" class="uix-notice uix-notice-info" role="status">正在核对登录身份并加载发票数据...</div>
+        <div id="invoiceExportStatus" class="uix-export-status" data-invoice-export-status data-state="idle" role="status" aria-live="polite">可按当前页签可见范围导出发票。</div>
+        <section class="summary" aria-label="金额概览">
+            <div class="metric"><div class="label">应补发票金额</div><div class="value" id="totalExpected">¥0.00</div></div>
+            <div class="metric"><div class="label">已确认发票金额</div><div class="value" id="totalConfirmed">¥0.00</div></div>
+            <div class="metric"><div class="label">待审核发票金额</div><div class="value" id="totalPending">¥0.00</div></div>
+            <div class="metric"><div class="label">草稿占用金额</div><div class="value" id="totalDraft">¥0.00</div></div>
+            <div class="metric"><div class="label">可继续申请金额</div><div class="value" id="totalAvailable">¥0.00</div></div>
+        </section>
+
+        <nav class="tabs" aria-label="工作台标签">
+            <button class="tab active" onclick="showSection('mine', this)" id="mineTab">项目工作台</button>
+            <button class="tab" onclick="showSection('submissions', this)" id="submissionsTab">待审核项目</button>
+            <button class="tab" onclick="showSection('satisfied', this)" id="satisfiedTab">已完成项目</button>
+            <button class="tab" onclick="showSection('records', this)" id="recordsTab">递交记录</button>
+            <button class="tab" onclick="showSection('pools', this)" id="poolsTab">多余发票池</button>
+            <button class="tab hide" onclick="showSection('review', this)" id="reviewTab">发票审核</button>
+            <button class="tab hide" onclick="showSection('adminSummary', this)" id="adminSummaryTab">数据汇总</button>
+            <button class="tab hide" onclick="showSection('auditRecords', this)" id="auditRecordsTab">审核记录</button>
+            <button class="tab hide" onclick="showSection('adminRisk', this)" id="adminRiskTab">风险提醒（暂缓）</button>
+        </nav>
+
+        <div id="section-mine">
+            <section class="section table-scroll">
+                <div class="section-head">
+                    <div>
+                        <div class="section-title">第一行：项目</div>
+                        <div class="section-note">项目多时以表格为主，支持搜索、月份筛选和状态筛选。</div>
+                    </div>
+                    <div class="filters">
+                        <input class="input" id="projectSearch" placeholder="搜索项目编号 / 项目名称 / 供应商">
+                        <select class="select" id="projectYearFilter" onchange="syncInvoicePeriod('project')"><option value="">全部年份</option></select>
+                        <select class="select" id="projectMonthNumberFilter" onchange="syncInvoicePeriod('project')"><option value="">全年</option></select>
+                        <input id="projectMonthFilter" type="hidden" value="">
+                        <select class="select" id="projectStatusFilter">
+                            <option value="open">只看有缺口</option>
+                            <option value="draft">有草稿</option>
+                            <option value="all">全部状态</option>
+                        </select>
+                    </div>
+                </div>
+                <table class="project-table">
+                    <thead>
+                        <tr>
+                            <th style="width:116px;">项目编号</th>
+                            <th>项目名称</th>
+                            <th style="width:96px;">月份</th>
+                            <th style="width:130px;">应补</th>
+                            <th style="width:130px;">已补</th>
+                            <th style="width:130px;">草稿</th>
+                            <th style="width:130px;">缺口</th>
+                            <th style="width:120px;">状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectNav">
+                        <tr><td colspan="8" class="muted">正在读取项目队列...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="detail-layout">
+                <div class="section table-scroll">
+                    <div class="section-head">
+                        <div>
+                            <div class="section-title" id="activeProjectTitle">第二行：项目明细</div>
+                            <div class="section-note" id="activeProjectMeta">先选中一个项目，再选择供应商或替票对象。</div>
+                        </div>
+                    </div>
+                    <table class="detail-table">
+                        <thead>
+                            <tr>
+                                <th>供应商 / 替票对象</th>
+                                <th style="width:112px;">类型</th>
+                                <th style="width:110px;">应补</th>
+                                <th style="width:110px;">已补</th>
+                                <th style="width:110px;">草稿</th>
+                                <th style="width:110px;">缺口</th>
+                                <th style="width:118px;">状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailList">
+                            <tr><td colspan="7" class="muted">请选择项目</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">当前选中明细</div>
+                    <div class="draft-summary" style="grid-template-columns:1fr 1fr;margin-top:10px;">
+                        <div class="draft-chip"><span class="muted">应补金额</span><b id="selectedExpected">¥0.00</b></div>
+                        <div class="draft-chip"><span class="muted">当前缺口</span><b id="selectedMissing">¥0.00</b></div>
+                        <div class="draft-chip"><span class="muted">已补发票</span><b id="selectedInvoiced">¥0.00</b></div>
+                        <div class="draft-chip"><span class="muted">待提交草稿</span><b id="selectedDrafted">¥0.00</b></div>
+                    </div>
+                    <div class="footer-note">保存到项目待提交后，关闭系统再打开也会显示在这里，并继续占用缺口；识别复核完成但未保存时，只作为临时预览。</div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-head">
+                    <div>
+                        <div class="section-title">第三行：上传入口和无票操作入口</div>
+                        <div class="section-note">发票上传和无票提报并列，员工不需要在多个页面之间来回找入口。</div>
+                    </div>
+                </div>
+                <div class="operation-grid">
+                    <div class="tool-panel">
+                        <div class="tool-title">发票上传</div>
+                        <div class="file-drop">
+                            <div>
+                                <b>选择发票附件</b><br>
+                                <span>PDF / PNG / JPG，单批最多 12 张</span>
+                            </div>
+                        </div>
+                        <input type="file" id="invoiceFiles" accept=".pdf,.png,.jpg,.jpeg" multiple>
+                        <div class="actions-row" style="justify-content:flex-start;">
+                            <button class="btn" onclick="analyzeBatch()">识别并复核发票</button>
+                            <button class="btn danger" onclick="clearBatch()">清空本次匹配</button>
+                            <button class="btn secondary" onclick="downloadProjectSummary()">下载项目汇总表</button>
+                        </div>
+                        <p class="muted">本次勾选金额：<b class="amount" id="batchSelectedTotal">¥0.00</b>。识别复核阶段只预览，不计入已补。</p>
+                    </div>
+
+                    <div class="tool-panel">
+                        <div class="tool-title">无票提报</div>
+                        <div class="form-line">
+                            <label>无票金额</label>
+                            <input class="input" id="noInvoiceAmount" placeholder="输入无法提供发票的金额">
+                        </div>
+                        <div class="form-line">
+                            <label>原因说明</label>
+                            <textarea id="employeeNote" placeholder="供应商无法提供发票、后续补票安排或其他说明。"></textarea>
+                        </div>
+                        <div class="actions-row">
+                            <button class="btn secondary" onclick="saveNoInvoiceDraft()">保存无票说明</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section table-scroll">
+                <div class="section-head">
+                    <div>
+                        <div class="section-title">识别复核结果</div>
+                        <div class="section-note">只有勾选并保存到项目待提交后，才会形成草稿占用。</div>
+                    </div>
+                </div>
+                <div class="draft-summary">
+                    <div class="draft-chip"><span class="muted">合并应补</span><b id="needTotal">¥0.00</b></div>
+                    <div class="draft-chip"><span class="muted">本次勾选</span><b id="checkedTotal">¥0.00</b></div>
+                    <div class="draft-chip"><span class="muted">剩余缺口</span><b id="missingAfter">¥0.00</b></div>
+                    <div class="draft-chip"><span class="muted">多余入池</span><b id="poolTotal">¥0.00</b></div>
+                </div>
+                <table class="match-table">
+                    <thead>
+                        <tr>
+                            <th style="width:68px;">选中</th>
+                            <th style="width:190px;">发票号码</th>
+                            <th>销售方</th>
+                            <th style="width:110px;">金额</th>
+                            <th style="width:120px;">日期</th>
+                            <th style="width:150px;">状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matchBody">
+                        <tr><td colspan="6" class="muted">选择项目和明细后上传发票，识别复核结果会显示在这里。</td></tr>
+                    </tbody>
+                </table>
+                <div class="hint" id="riskTips">识别复核后，不符合的发票需要移除，不会保存，也不会提交管理员审核。</div>
+                <div class="actions-row">
+                    <button class="btn" onclick="saveCurrentBatch()">保存本次勾选到项目待提交</button>
+                </div>
+            </section>
+
+            <section class="section table-scroll">
+                <div class="section-head">
+                    <div>
+                        <div class="section-title">本项目待提交内容</div>
+                        <div class="section-note">这部分是服务端草稿，刷新、关闭、重新登录后仍应保留。</div>
+                    </div>
+                </div>
+                <div class="draft-summary">
+                    <div class="draft-chip"><span class="muted">发票草稿</span><b id="draftInvoiceSummary">0 张 / ¥0.00</b></div>
+                    <div class="draft-chip"><span class="muted">无票说明</span><b id="draftNoInvoiceSummary">0 条 / ¥0.00</b></div>
+                    <div class="draft-chip"><span class="muted">草稿占用</span><b id="draftOccupiedSummary">¥0.00</b></div>
+                    <div class="draft-chip"><span class="muted">剩余缺口</span><b id="draftRemainingSummary">¥0.00</b></div>
+                </div>
+                <table class="draft-table">
+                    <thead>
+                        <tr>
+                            <th style="width:132px;">草稿编号</th>
+                            <th>内容</th>
+                            <th style="width:130px;">金额</th>
+                            <th style="width:160px;">保存时间</th>
+                            <th style="width:150px;">状态</th>
+                            <th style="width:160px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="draftBody">
+                        <tr><td colspan="6" class="muted">当前项目暂无待提交草稿。</td></tr>
+                    </tbody>
+                </table>
+                <div class="actions-row">
+                    <button class="btn danger" onclick="clearDrafts()">清空本项目草稿</button>
+                    <button class="btn" onclick="submitDrafts()">提交发票审核</button>
+                </div>
+                <div id="draftBatchFeedback" class="uix-state-error" style="display:none;margin-top:12px" role="status" aria-live="polite"></div>
+            </section>
+        </div>
+
+        <div id="section-review" class="panel hide">
+            <div class="section-head">
+                <div>
+                    <h2>待审核发票批次</h2>
+                    <div class="section-note">只显示待审核的发票申请批次；已通过和已驳回批次请到审核记录中核对。</div>
+                </div>
+            </div>
+            <div class="admin-toolbar">
+                <div class="filters">
+                    <select class="select" id="reviewYearFilter" onchange="syncInvoicePeriod('review')"><option value="">全部年份</option></select><select class="select" id="reviewMonthNumberFilter" onchange="syncInvoicePeriod('review')"><option value="">全年</option></select><input id="reviewMonthFilter" type="hidden" value="">
+                    <select class="select" id="reviewApplicantFilter"><option value="">全部申请员工</option></select>
+                </div>
+            </div>
+            <div class="admin-kpis" id="reviewKpiBar"></div>
+            <div class="table-scroll admin-review-layout">
+            <table class="review-table admin-review-table">
+                <thead><tr><th>项目</th><th>申请员工</th><th>供应商/替票对象</th><th>付款通过编号</th><th>应补金额</th><th>本次申请</th><th>缺失金额</th><th>附件</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody id="reviewBody"></tbody>
+            </table>
+            </div>
+            <div class="review-detail-panel">
+                <h2>员工申请明细</h2>
+                <div id="reviewDetailBody" class="review-note-box">请选择一个待审核批次查看详情。</div>
+            </div>
+        </div>
+
+        <div id="section-adminSummary" class="panel hide">
+            <div class="section-head">
+                <div>
+                    <h2>数据汇总</h2>
+                    <div class="section-note">按月份、员工、供应商或替票对象查看项目发票缺失比例；这里不做审批动作。</div>
+                </div>
+            </div>
+            <div class="admin-toolbar">
+                <div class="filters">
+                    <select class="select" id="summaryYearFilter" onchange="syncInvoicePeriod('summary')"><option value="">全部年份</option></select><select class="select" id="summaryMonthNumberFilter" onchange="syncInvoicePeriod('summary')"><option value="">全年</option></select><input id="summaryMonthFilter" type="hidden" value="">
+                    <select class="select" id="summarySourceTypeFilter">
+                        <option value="employee">员工</option>
+                        <option value="supplier">供应商/替票对象</option>
+                    </select>
+                    <select class="select" id="summarySourceNameFilter"><option value="">全部数据源</option></select>
+                    <input class="input" id="summaryProjectSearch" placeholder="搜索项目编号 / 项目名称">
+                </div>
+                <span class="status">数据项可筛选</span>
+            </div>
+            <div class="admin-kpis" id="adminSummaryKpiBar"></div>
+            <div class="review-subsection" id="activityDateCorrectionPanel">
+                <h3>历史项目活动日期补录</h3>
+                <div class="section-note">只列出活动日期缺失的历史项目。Admin 必须依据原始证据填写日期和原因；已有日期不能从这里覆盖。</div>
+                <div id="activityDateCorrectionBody" class="review-note-box">正在读取缺失日期项目……</div>
+            </div>
+            <div class="table-scroll">
+                <table class="admin-summary-table">
+                    <thead>
+                        <tr>
+                            <th>月份</th>
+                            <th>数据源类型</th>
+                            <th>数据源名称</th>
+                            <th>项目</th>
+                            <th>应补发票金额</th>
+                            <th>已确认金额</th>
+                            <th>待审核金额</th>
+                            <th>草稿占用</th>
+                            <th>缺失金额</th>
+                            <th>缺失占比</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminSummaryBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="section-adminRisk" class="panel hide">
+            <div class="section-head">
+                <div>
+                    <h2>风险提醒（暂缓）</h2>
+                    <div class="section-note">当前阶段不做复杂风险控台，只在发票审核详情中保留必要提示。</div>
+                </div>
+                <span class="status">暂缓</span>
+            </div>
+            <div class="admin-risk-grid">
+                <div class="admin-risk-card"><b>重复发票</b><span class="muted">同一发票号码跨员工或跨项目占用时提醒。当前先以台账查重为准。</span></div>
+                <div class="admin-risk-card"><b>金额超额</b><span class="muted">本次申请金额超过明细缺口或发票可用余额时拦截。</span></div>
+                <div class="admin-risk-card"><b>购买方异常</b><span class="muted">购买方与 Admin 配置的单位全称不一致时提示。</span></div>
+                <div class="admin-risk-card"><b>附件缺失</b><span class="muted">审批详情中无法查看或下载发票附件时提示。</span></div>
+            </div>
+        </div>
+
+        <div id="section-submissions" class="panel hide">
+            <h2>待审核项目</h2>
+            <table class="submission-table">
+                <thead><tr><th>批次</th><th>项目/明细</th><th>发票</th><th>金额</th><th>状态</th><th>备注</th></tr></thead>
+                <tbody id="submissionBody"></tbody>
+            </table>
+        </div>
+
+        <div id="section-satisfied" class="panel hide">
+            <h2>已完成项目</h2>
+            <table class="ledger-table">
+                <thead><tr><th>项目</th><th>负责人</th><th>应补</th><th>已确认</th><th>状态</th><th>关联发票</th></tr></thead>
+                <tbody id="satisfiedBody"></tbody>
+            </table>
+        </div>
+
+        <div id="section-records" class="panel hide">
+            <h2>递交记录</h2>
+            <div id="closureEvidenceBox" class="review-note-box hide"></div>
+            <table class="submission-table">
+                <thead><tr><th>批次</th><th>项目/明细</th><th>发票</th><th>金额</th><th>状态</th><th>备注</th></tr></thead>
+                <tbody id="recordBody"></tbody>
+            </table>
+        </div>
+
+        <div id="section-pools" class="panel hide">
+            <h2>多余发票池</h2>
+            <table class="ledger-table">
+                <thead><tr id="poolHeadRow"><th>归属</th><th>发票号/时间</th><th>原票金额</th><th>已占用</th><th>可用余额</th><th>使用记录</th></tr></thead>
+                <tbody id="poolBody"></tbody>
+            </table>
+        </div>
+
+        <div id="section-auditRecords" class="panel hide">
+            <h2>审核记录</h2>
+            <div id="closureEvidenceAdminBox" class="review-note-box hide"></div>
+            <div class="filters">
+                <input class="input" id="auditRecordSearch" placeholder="搜索项目 / 员工 / 批次 / 发票号 / 备注">
+                <select class="select" id="auditRecordStatusFilter">
+                    <option value="">全部结果</option>
+                    <option value="已确认">已通过</option>
+                    <option value="已驳回">已驳回</option>
+                </select>
+                <select class="select" id="auditRecordUserFilter">
+                    <option value="">全部提交人</option>
+                </select>
+            </div>
+            <table class="ledger-table">
+                <thead><tr><th>审核编号</th><th>项目/批次</th><th>提交/审核</th><th>结果</th><th>发票</th><th>备注</th><th>操作</th></tr></thead>
+                <tbody id="auditRecordBody"></tbody>
+            </table>
+        </div>
+
+        <div id="section-ledger" class="panel hide">
+            <h2>发票记录</h2>
+            <table class="ledger-table">
+                <thead><tr><th>编号</th><th>负责人</th><th>发票号</th><th>销售方/购买方</th><th>金额</th><th>项目</th><th>状态</th></tr></thead>
+                <tbody id="ledgerBody"></tbody>
+            </table>
+        </div>
+
+        <div id="section-duplicates" class="panel hide">
+            <h2>重复发票号码</h2>
+            <table>
+                <thead><tr><th>发票号码</th><th>记录</th></tr></thead>
+                <tbody id="duplicateBody"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="invoiceExportDialog" class="uix-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="invoiceExportDialogTitle" style="display:none" tabindex="-1">
+        <section class="uix-modal-surface" aria-describedby="invoiceExportDialogDescription">
+            <div class="uix-modal-heading">
+                <h2 id="invoiceExportDialogTitle">导出发票</h2>
+                <button id="invoiceExportCloseButton" class="uix-modal-close" type="button" aria-label="关闭发票导出弹层" onclick="closeInvoiceExportDialog()">✕</button>
+            </div>
+            <p id="invoiceExportDialogDescription">发票表格按当前页签可见记录生成；附件包仅向系统管理员开放。</p>
+            <label for="invoiceExportFormat">导出格式</label>
+            <select id="invoiceExportFormat" class="input">
+                <option value="xlsx">XLSX（当前可见发票）</option>
+                <option value="csv">CSV（当前可见原始表）</option>
+                <option id="invoiceExportZipOption" value="zip">ZIP（授权附件包）</option>
+            </select>
+            <div class="uix-export-status" data-invoice-export-status data-state="idle" role="status" aria-live="polite">请选择格式后开始导出。</div>
+            <div class="uix-modal-actions">
+                <button class="uix-modal-secondary" type="button" onclick="closeInvoiceExportDialog()">取消</button>
+                <button id="invoiceExportConfirmButton" class="uix-modal-primary" type="button" data-export-action onclick="confirmInvoiceExport()">开始导出</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        let currentUser = '';
+        let currentRole = '';
+        let isAdmin = false;
+        let invoiceTestResetAllowed = false;
+        const MAX_FILES = 12;
+        let isAnalyzing = false;
+        let invoices = [];
+        let submissions = [];
+        let pools = [];
+        let auditRecords = [];
+        let summary = { rows: [], duplicates: [], totals: {} };
+        let activeProject = null;
+        let selectedKeys = new Set();
+        let batchItems = [];
+        let batchJobs = [];
+        let currentOcrBatchId = '';
+        let currentOcrContext = null;
+        let ocrPollTimer = null;
+        let draftBatches = [];
+        let closureEvidence = { drafts: [], ocrJobs: [], auditRecords: [] };
+        let activeReviewBatchId = '';
+
+        if (!token) location.href = '/login.html';
+
+        function setPageStatus(state, message) {
+            const target = document.getElementById('pageStatus');
+            target.className = `uix-notice uix-notice-${state}`;
+            target.textContent = message;
+            target.hidden = state === 'success';
+        }
+
+        async function initializeIdentity() {
+            let response;
+            try {
+                response = await authFetch('/api/check-auth', { cache: 'no-store' });
+            } catch (error) {
+                setPageStatus('error', '网络连接失败，无法核对当前登录身份。请检查服务后重试。');
+                throw error;
+            }
+            let auth;
+            try { auth = await response.json(); } catch (error) {
+                setPageStatus('error', '身份接口返回了无法解析的数据，请联系管理员。');
+                throw error;
+            }
+            if (!response.ok || !auth.authenticated) {
+                localStorage.clear();
+                location.href = '/login.html';
+                throw new Error('登录已失效');
+            }
+            currentUser = auth.username || '';
+            currentRole = auth.role || '';
+            isAdmin = currentRole === 'admin' || currentRole === 'approver';
+            invoiceTestResetAllowed = auth.capabilities?.invoiceTestReset === true;
+            localStorage.setItem('username', currentUser);
+            localStorage.setItem('role', currentRole);
+            const roleLabels = { user: '员工', approver: '审批岗', admin: '系统管理+审批' };
+            document.getElementById('userDisplay').textContent = `${currentUser}（${roleLabels[currentRole] || '未知角色'}）`;
+            if (isAdmin) {
+                ['reviewTab', 'adminSummaryTab', 'auditRecordsTab', 'adminRiskTab'].forEach(id => document.getElementById(id)?.classList.remove('hide'));
+                ['mineTab', 'submissionsTab', 'satisfiedTab', 'recordsTab'].forEach(id => document.getElementById(id)?.classList.add('hide'));
+                document.getElementById('pageTitle').textContent = '发票审核';
+                document.querySelector('.topbar-note').textContent = '发票审核、申请明细、审核记录与数据汇总';
+                showSection('review', document.getElementById('reviewTab'));
+            }
+            document.getElementById('resetInvoiceTestBtn')?.classList.toggle('hide', !invoiceTestResetAllowed);
+        }
+        ['projectSearch', 'projectMonthFilter', 'projectStatusFilter'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener(id === 'projectSearch' ? 'input' : 'change', () => {
+                if (blockDuringAnalyze()) return;
+                renderProjectNav();
+                const visibleProjects = filteredWorkbenchProjects();
+                if (activeProject && !visibleProjects.some(project => project.appId === activeProject)) {
+                    selectProject(visibleProjects[0]?.appId || '');
+                }
+            });
+        });
+        ['reviewMonthFilter', 'reviewApplicantFilter'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', () => renderReview());
+        });
+        ['summaryMonthFilter', 'summarySourceTypeFilter', 'summarySourceNameFilter', 'summaryProjectSearch'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener(id === 'summaryProjectSearch' ? 'input' : 'change', () => renderAdminSummary());
+        });
+        ['auditRecordSearch', 'auditRecordStatusFilter', 'auditRecordUserFilter'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener(id === 'auditRecordSearch' ? 'input' : 'change', () => renderAuditRecords());
+        });
+
+        function money(n) {
+            return '¥' + (Number(n) || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function moneyNumber(n) {
+            return Math.round(((Number(n) || 0) + Number.EPSILON) * 100) / 100;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+        }
+
+        function safeAttachmentPath(value) {
+            const path = String(value || '');
+            return path.startsWith('/attachments/') ? path : '';
+        }
+
+        function uniqueList(values) {
+            return [...new Set((values || []).filter(Boolean))];
+        }
+
+        function attachmentHtml(attachment) {
+            if (!attachment || !attachment.path) return '<span class="muted">无附件</span>';
+            const name = attachment.originalName || attachment.filename || '附件';
+            const href = escapeHtml(safeAttachmentPath(attachment.path));
+            return `
+                <a class="inline-link" href="${href}" target="_blank" rel="noopener">查看</a>
+                <a class="inline-link" href="${href}" download="${escapeHtml(name)}">下载</a>
+                <span class="muted">${escapeHtml(name)}</span>
+            `;
+        }
+
+        function attachmentName(attachment) {
+            return attachment?.originalName || attachment?.filename || '附件';
+        }
+
+        function attachmentActionsHtml(attachment) {
+            if (!attachment || !attachment.path) return '<span class="muted">无附件</span>';
+            const name = attachmentName(attachment);
+            const href = escapeHtml(safeAttachmentPath(attachment.path));
+            return `
+                <a class="inline-link" href="${href}" target="_blank" rel="noopener">查看</a>
+                <a class="inline-link" href="${href}" download="${escapeHtml(name)}">下载</a>
+            `;
+        }
+
+        function attachmentPackageButtonHtml(batchId, label = '下载发票包') {
+            if (!batchId) return '<span class="muted">无批次</span>';
+            return `<button class="btn secondary" type="button" onclick="downloadInvoiceAttachmentPackage('${encodeURIComponent(batchId)}')">${escapeHtml(label)}</button>`;
+        }
+
+        async function downloadInvoiceAttachmentPackage(encodedBatchId) {
+            const batchId = decodeURIComponent(encodedBatchId || '');
+            if (!batchId) return;
+            const resp = await authFetch('/api/invoice-submissions/' + encodeURIComponent(batchId) + '/attachment-package');
+            if (!resp.ok) {
+                let message = '发票包下载失败';
+                try {
+                    const data = await resp.json();
+                    message = data.error || message;
+                } catch (e) {
+                    message = await resp.text() || message;
+                }
+                alert(message);
+                return;
+            }
+            const blob = await resp.blob();
+            const disposition = resp.headers.get('Content-Disposition') || '';
+            let filename = `${batchId}-发票附件包.zip`;
+            const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/);
+            const asciiName = disposition.match(/filename="([^"]+)"/);
+            if (encodedName) {
+                try { filename = decodeURIComponent(encodedName[1]); } catch (e) {}
+            } else if (asciiName) {
+                filename = asciiName[1];
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function usableInvoiceAmount(item) {
+            const amount = Number(item?.amount || 0);
+            const available = Number(item?.availableAmount || 0);
+            return available > 0 ? Math.min(amount, available) : amount;
+        }
+
+        async function authFetch(url, options = {}) {
+            options.headers = options.headers || {};
+            options.headers.Authorization = 'Bearer ' + token;
+            const resp = await fetch(url, options);
+            if (resp.status === 401) location.href = '/login.html';
+            return resp;
+        }
+
+        function blockDuringAnalyze(message = '发票识别与规则复核中，请等待完成后再操作。') {
+            if (!isAnalyzing) return false;
+            setReviewNotice(message, true);
+            return true;
+        }
+
+        function setReviewNotice(message, busy = isAnalyzing) {
+            const riskTips = document.getElementById('riskTips');
+            if (!riskTips) return;
+            riskTips.textContent = message;
+            riskTips.classList.toggle('busy-note', !!busy);
+        }
+
+        function rowsByProject() {
+            const map = new Map();
+            (summary.rows || []).forEach(row => {
+                if (!map.has(row.appId)) map.set(row.appId, { appId: row.appId, projectName: row.projectName, applicant: row.applicant, rows: [] });
+                map.get(row.appId).rows.push(row);
+            });
+            return [...map.values()];
+        }
+
+        function projectTotals(project) {
+            const expected = (project?.rows || []).reduce((s, r) => s + Number(r.expectedAmount || 0), 0);
+            const occupiedMissing = (project?.rows || []).reduce((s, r) => s + Number(r.missingAmount || 0), 0);
+            const invoiced = (project?.rows || []).reduce((s, r) => s + Number(r.invoiceAmount || 0), 0);
+            const confirmed = (project?.rows || []).reduce((s, r) => s + rowConfirmedAmount(r), 0);
+            const pending = (project?.rows || []).reduce((s, r) => s + rowPendingAmount(r), 0);
+            const drafted = (project?.rows || []).reduce((s, r) => s + Number(r.draftAmount || 0), 0);
+            const occupied = (project?.rows || []).reduce((s, r) => s + Number(r.occupiedAmount ?? (Number(r.invoiceAmount || 0) + Number(r.draftAmount || 0))), 0);
+            const pendingCount = (project?.rows || []).reduce((s, r) => s + (r.matchedInvoices || []).filter(inv => inv.status === '待审核').length, 0);
+            const draftCount = (project?.rows || []).reduce((s, r) => s + (r.matchedDrafts || []).length, 0);
+            const finalMissing = Math.max(0, moneyNumber(expected - confirmed));
+            return {
+                expected: moneyNumber(expected),
+                missing: moneyNumber(occupiedMissing),
+                occupiedMissing: moneyNumber(occupiedMissing),
+                finalMissing,
+                invoiced: moneyNumber(invoiced),
+                confirmed: moneyNumber(confirmed),
+                pending: moneyNumber(pending),
+                drafted: moneyNumber(drafted),
+                occupied: moneyNumber(occupied),
+                pendingCount,
+                draftCount,
+                hasPending: pending > 0.01 || pendingCount > 0,
+                hasDraft: drafted > 0.01 || draftCount > 0
+            };
+        }
+
+        function getProjectAuditState(project) {
+            return projectTotals(project);
+        }
+
+        function shouldShowInEmployeeWorkbench(project) {
+            const state = getProjectAuditState(project);
+            return state.finalMissing > 0.01 && (state.occupiedMissing > 0.01 || state.hasDraft);
+        }
+
+        function shouldShowInPendingReview(batch) {
+            return isPendingBatch(batch);
+        }
+
+        function shouldShowInCompletedProject(project) {
+            const state = getProjectAuditState(project);
+            return state.finalMissing <= 0.01 && !state.hasPending && !state.hasDraft;
+        }
+
+        function shouldShowInSubmissionRecord() {
+            return true;
+        }
+
+        function workbenchProjects() {
+            return rowsByProject().filter(shouldShowInEmployeeWorkbench);
+        }
+
+        function satisfiedProjects() {
+            return rowsByProject().filter(shouldShowInCompletedProject);
+        }
+
+        function selectedRows() {
+            return (summary.rows || []).filter(row => selectedKeys.has(row.key));
+        }
+
+        function selectedNeed() {
+            return moneyNumber(selectedRows().reduce((sum, row) => sum + moneyNumber(row.missingAmount ?? row.expectedAmount ?? 0), 0));
+        }
+
+        function rowGroupKey(row) {
+            return `${row.isReplacementRow ? 'employee' : 'supplier'}:${row.normalizedSupplier || row.supplier || ''}`;
+        }
+
+        function sortedKeys(keys) {
+            return [...keys].sort();
+        }
+
+        function detailGroups(project) {
+            const map = new Map();
+            (project?.rows || []).forEach(row => {
+                const groupKey = rowGroupKey(row);
+                if (!map.has(groupKey)) {
+                    map.set(groupKey, {
+                        groupKey,
+                        supplier: row.supplier,
+                        supplierType: row.sourceType === 'debt-repayment' ? '欠款真实供应商' : (row.isReplacementRow ? '员工替票' : '授权供应商'),
+                        isDebtRepayment: row.sourceType === 'debt-repayment',
+                        isReplacementRow: row.isReplacementRow,
+                        keys: [],
+                        rows: [],
+                        expectedAmount: 0,
+                        missingAmount: 0,
+                        invoiceAmount: 0,
+                        draftAmount: 0,
+                        occupiedAmount: 0
+                    });
+                }
+                const group = map.get(groupKey);
+                if (row.sourceType === 'debt-repayment') {
+                    group.isDebtRepayment = true;
+                    group.supplierType = '欠款真实供应商';
+                }
+                group.keys.push(row.key);
+                group.rows.push(row);
+                group.expectedAmount = moneyNumber(group.expectedAmount + Number(row.expectedAmount || 0));
+                group.missingAmount = moneyNumber(group.missingAmount + Number(row.missingAmount || 0));
+                group.invoiceAmount = moneyNumber(group.invoiceAmount + Number(row.invoiceAmount || 0));
+                group.draftAmount = moneyNumber(group.draftAmount + Number(row.draftAmount || 0));
+                group.occupiedAmount = moneyNumber(group.occupiedAmount + Number(row.occupiedAmount ?? (Number(row.invoiceAmount || 0) + Number(row.draftAmount || 0))));
+            });
+            return [...map.values()].map(group => ({ ...group, keys: sortedKeys(group.keys) }));
+        }
+
+        function isGroupSelected(group) {
+            return group.keys.length > 0 && group.keys.every(key => selectedKeys.has(key));
+        }
+
+        function selectionError(rows) {
+            if (!rows.length) return '';
+            const firstKey = rowGroupKey(rows[0]);
+            const mixed = rows.some(row => rowGroupKey(row) !== firstKey);
+            if (!mixed) return '';
+            return '同一批次只能选择同一供应商，或同一员工替票对象的多条明细；不同名称请分批上传。';
+        }
+
+        function projectMonth(project) {
+            return (project?.rows || []).map(row => row.projectMonth).filter(Boolean).sort()[0] || '-';
+        }
+
+        function projectStatus(project) {
+            const { finalMissing, occupiedMissing, drafted, pending, pendingCount } = projectTotals(project);
+            if (finalMissing <= 0.01 && (pending > 0.01 || pendingCount > 0)) return { text: '待审核', cls: '' };
+            if (finalMissing <= 0.01) return { text: '已完成', cls: 'ok' };
+            if (drafted > 0.01) return { text: '部分已保存', cls: 'draft' };
+            if (pending > 0.01 || pendingCount > 0) return { text: occupiedMissing > 0.01 ? '部分待审' : '等待审核', cls: '' };
+            return { text: '待补票', cls: 'wait' };
+        }
+
+        function renderProjectFilters() {
+            const select = document.getElementById('projectMonthFilter');
+            if (!select) return;
+            const current = select.value;
+            const months = [...new Set(workbenchProjects().map(projectMonth).filter(month => month && month !== '-'))].sort().reverse();
+            setInvoicePeriodOptions('project', months);
+            select.value = current;
+        }
+
+        function filteredWorkbenchProjects() {
+            const search = (document.getElementById('projectSearch')?.value || '').trim().toLowerCase();
+            const month = document.getElementById('projectMonthFilter')?.value || '';
+            const statusFilter = document.getElementById('projectStatusFilter')?.value || 'open';
+            return workbenchProjects().filter(project => {
+                const { occupiedMissing, drafted } = projectTotals(project);
+                const projectText = [
+                    project.appId,
+                    project.projectName,
+                    ...(project.rows || []).map(row => row.supplier || '')
+                ].join(' ').toLowerCase();
+                if (search && !projectText.includes(search)) return false;
+                if (month && !String(projectMonth(project)).startsWith(month)) return false;
+                if (statusFilter === 'draft' && drafted <= 0.01) return false;
+                if (statusFilter === 'open' && occupiedMissing <= 0.01) return false;
+                return true;
+            });
+        }
+
+        function selectedGroupTotals() {
+            const rows = selectedRows();
+            return {
+                expected: rows.reduce((sum, row) => sum + Number(row.expectedAmount || 0), 0),
+                missing: rows.reduce((sum, row) => sum + Number(row.missingAmount || 0), 0),
+                invoiced: rows.reduce((sum, row) => sum + Number(row.invoiceAmount || 0), 0),
+                drafted: rows.reduce((sum, row) => sum + Number(row.draftAmount || 0), 0)
+            };
+        }
+
+        function renderAll() {
+            const totals = summary.totals || {};
+            document.getElementById('totalExpected').textContent = money(totals.expected);
+            document.getElementById('totalConfirmed').textContent = money(totals.confirmed);
+            document.getElementById('totalPending').textContent = money(totals.pendingAmount);
+            document.getElementById('totalDraft').textContent = money(totals.drafted);
+            document.getElementById('totalAvailable').textContent = money(totals.missing);
+            renderProjectFilters();
+            renderProjectNav();
+            const visibleProjects = filteredWorkbenchProjects();
+            const activeStillOpen = activeProject && visibleProjects.some(project => project.appId === activeProject);
+            if (!activeStillOpen && visibleProjects[0]) selectProject(visibleProjects[0].appId);
+            else if (!activeStillOpen) selectProject('');
+            else renderDetails();
+            renderLedger();
+            renderSubmissions();
+            renderSubmissionRecords();
+            renderClosureEvidence();
+            renderSatisfiedProjects();
+            renderPools();
+            renderReview();
+            renderAdminSummary();
+            renderAuditRecords();
+            renderDuplicates();
+            renderDrafts();
+        }
+
+        function renderProjectNav() {
+            const projects = filteredWorkbenchProjects();
+            document.getElementById('projectNav').innerHTML = projects.map(project => {
+                const { expected, missing, invoiced, drafted } = projectTotals(project);
+                const status = projectStatus(project);
+                return `
+                    <tr class="${activeProject === project.appId ? 'selected' : ''}" onclick="selectProject('${project.appId}')">
+                        <td>${project.appId}</td>
+                        <td><div class="two-line"><b>${project.projectName || '-'}</b><span class="muted">${(project.rows || []).length} 条待核对明细</span></div></td>
+                        <td>${projectMonth(project)}</td>
+                        <td class="amount">${money(expected)}</td>
+                        <td>${money(invoiced)}</td>
+                        <td>${money(drafted)}</td>
+                        <td class="amount">${money(missing)}</td>
+                        <td><span class="status ${status.cls}">${status.text}</span></td>
+                    </tr>
+                `;
+            }).join('') || '<tr><td colspan="8" class="muted">暂无符合筛选条件的待处理项目。</td></tr>';
+        }
+
+        function selectProject(appId) {
+            if (blockDuringAnalyze('发票识别与规则复核中，不能切换项目。请等待完成后再操作。')) return;
+            activeProject = appId;
+            selectedKeys = new Set();
+            batchItems = [];
+            const project = rowsByProject().find(p => p.appId === appId);
+            document.getElementById('activeProjectTitle').textContent = project ? `第二行：项目明细：${project.appId} ${project.projectName}` : '第二行：项目明细';
+            document.getElementById('activeProjectMeta').textContent = project ? '先选中一个供应商或替票对象，再上传发票或做无票提报。' : '先选中一个项目，再选择供应商或替票对象。';
+            clearBatch(false);
+            renderProjectNav();
+            renderDetails();
+            renderDrafts();
+        }
+
+        function toggleDetailGroup(groupKey) {
+            if (blockDuringAnalyze('发票识别与规则复核中，不能切换项目明细。请等待完成后再操作。')) return;
+            const project = rowsByProject().find(p => p.appId === activeProject);
+            const group = detailGroups(project).find(item => item.groupKey === groupKey);
+            if (!group) return;
+            if (group.missingAmount <= 0) {
+                alert('该项目明细已满足，不需要继续提交发票。');
+                return;
+            }
+            if (isGroupSelected(group)) {
+                group.keys.forEach(key => selectedKeys.delete(key));
+            } else {
+                const nextKeys = new Set(selectedKeys);
+                group.keys.forEach(key => nextKeys.add(key));
+                const nextRows = (summary.rows || []).filter(row => nextKeys.has(row.key));
+                const error = selectionError(nextRows);
+                if (error) {
+                    alert(error);
+                    return;
+                }
+                selectedKeys = nextKeys;
+            }
+            batchItems = [];
+            renderDetails();
+            renderBatch();
+        }
+
+        function renderDetails() {
+            const project = rowsByProject().find(p => p.appId === activeProject);
+            const groups = detailGroups(project);
+            document.getElementById('detailList').innerHTML = project ? groups.map(group => {
+                const selected = isGroupSelected(group);
+                const detailText = group.rows.map(row => `${row.item || ''}${row.content ? ' / ' + row.content : ''}${row.debtRepayment ? ` / ${row.debtRepayment.debtId} 按 ${(Number(row.debtRepayment.ratio || 0) * 100).toFixed(2)}% 分摊真实成本` : ''}`).filter(Boolean).join('；') || '明细';
+                const isSatisfied = group.missingAmount <= 0;
+                const status = isSatisfied ? '已满足' : (group.draftAmount > 0.01 ? '继续补票' : '待补票');
+                const statusClass = isSatisfied ? 'ok' : (group.draftAmount > 0.01 ? 'draft' : 'wait');
+                return `
+                    <tr class="${selected ? 'selected' : ''} ${isSatisfied ? 'disabled' : ''}" onclick="toggleDetailGroup('${group.groupKey}')">
+                        <td><div class="two-line"><b>${group.supplier || '-'}</b><span class="muted">合并 ${group.rows.length} 条明细：${detailText}</span></div></td>
+                        <td>${group.supplierType}</td>
+                        <td class="amount">${money(group.expectedAmount)}</td>
+                        <td>${money(group.invoiceAmount)}</td>
+                        <td>${money(group.draftAmount)}</td>
+                        <td class="amount">${money(group.missingAmount)}</td>
+                        <td><span class="status ${statusClass}">${selected ? '已选 / ' : ''}${status}</span></td>
+                    </tr>
+                `;
+            }).join('') : '<tr><td colspan="7" class="muted">请选择项目</td></tr>';
+            const totals = selectedGroupTotals();
+            document.getElementById('selectedExpected').textContent = money(totals.expected);
+            document.getElementById('selectedMissing').textContent = money(totals.missing);
+            document.getElementById('selectedInvoiced').textContent = money(totals.invoiced);
+            document.getElementById('selectedDrafted').textContent = money(totals.drafted);
+            renderTotals();
+        }
+
+        function validateFiles(files) {
+            if (!activeProject) { alert('请先选择项目'); return false; }
+            if (!selectedKeys.size) { alert('请至少选择一条项目明细'); return false; }
+            const error = selectionError(selectedRows());
+            if (error) { alert(error); return false; }
+            if (selectedNeed() <= 0) { alert('当前明细已满足，不需要继续上传发票。'); return false; }
+            if (!files.length) { alert('请先选择 PDF、PNG 或 JPG 发票'); return false; }
+            if (files.length > MAX_FILES) { alert('单次最多识别 ' + MAX_FILES + ' 张发票，扫描件或大文件建议拆批处理'); return false; }
+            const bad = [...files].find(file => !/\.(pdf|png|jpe?g)$/i.test(file.name));
+            if (bad) { alert('只接受 PDF、PNG 和 JPG：' + bad.name); return false; }
+            return true;
+        }
+
+        async function analyzeBatch() {
+            if (isAnalyzing) return;
+            const files = document.getElementById('invoiceFiles').files;
+            if (!validateFiles(files)) return;
+            const lockedProject = activeProject;
+            const lockedKeys = sortedKeys(selectedKeys);
+            currentOcrContext = { appId: lockedProject, expectedKeys: lockedKeys };
+            setAnalyzing(true);
+            setReviewNotice('已保存附件，正在进行发票识别与规则复核，请等待结果...');
+            const form = new FormData();
+            form.append('appId', lockedProject);
+            lockedKeys.forEach(key => form.append('expectedKeys', key));
+            [...files].forEach(file => form.append('files', file));
+            try {
+                const resp = await authFetch('/api/invoices/ocr-batch-v2', { method: 'POST', body: form });
+                const data = await resp.json();
+                if (!data.success) {
+                    alert(data.error || '识别复核失败');
+                    setReviewNotice(data.error || '识别复核失败', false);
+                    currentOcrContext = null;
+                    setAnalyzing(false);
+                    return;
+                }
+                currentOcrBatchId = data.batchId || '';
+                batchJobs = data.jobs || [];
+                batchItems = jobsToBatchItems(batchJobs);
+                setReviewNotice('发票识别与规则复核处理中：系统会逐张更新状态。');
+                renderBatch();
+                startOcrPolling();
+            } catch (err) {
+                alert('识别复核失败：' + err.message);
+                setReviewNotice('识别复核失败：' + err.message, false);
+                currentOcrContext = null;
+                setAnalyzing(false);
+            }
+        }
+
+        function jobsToBatchItems(jobs) {
+            return (jobs || []).map(job => {
+                if (job.item) return { ...job.item, ocrStatus: job.status, ocrJobId: job.id };
+                return {
+                    invoiceNo: '',
+                    sellerName: '',
+                    buyerName: '',
+                    amount: 0,
+                    invoiceDate: '',
+                    eligible: false,
+                    checked: false,
+                    ocrStatus: job.status,
+                    ocrJobId: job.id,
+                    reasonSummary: [job.status],
+                    attachment: job.attachment
+                };
+            });
+        }
+
+        function startOcrPolling() {
+            if (ocrPollTimer) clearInterval(ocrPollTimer);
+            ocrPollTimer = setInterval(loadOcrJobs, 2000);
+            loadOcrJobs();
+        }
+
+        async function loadOcrJobs() {
+            if (!currentOcrBatchId) return;
+            try {
+                const resp = await authFetch('/api/invoices/ocr-jobs?batchId=' + encodeURIComponent(currentOcrBatchId));
+                const data = await resp.json();
+                if (!data.success) return;
+                batchJobs = data.jobs || [];
+                if (currentOcrContext) {
+                    const expectedText = currentOcrContext.expectedKeys.join('|');
+                    const currentText = sortedKeys(selectedKeys).join('|');
+                    if (activeProject !== currentOcrContext.appId || currentText !== expectedText) {
+                        activeProject = currentOcrContext.appId;
+                        selectedKeys = new Set(currentOcrContext.expectedKeys);
+                        renderProjectNav();
+                        renderDetails();
+                    }
+                }
+                batchItems = jobsToBatchItems(batchJobs);
+                renderBatch();
+                const doneCount = batchJobs.filter(job => job.status === '已识别' || job.status === '识别失败需补录').length;
+                setReviewNotice(`发票识别与规则复核处理中：${doneCount}/${batchJobs.length} 已完成。识别失败的发票后续需要人工补录。`);
+                if (data.done) {
+                    clearInterval(ocrPollTimer);
+                    ocrPollTimer = null;
+                    setAnalyzing(false);
+                    setReviewNotice('发票识别与规则复核已完成。请勾选符合的发票；不符合或识别失败的发票需要移除或后续人工补录。', false);
+                }
+            } catch (err) {
+                if (ocrPollTimer) clearInterval(ocrPollTimer);
+                ocrPollTimer = null;
+                currentOcrContext = null;
+                setAnalyzing(false);
+                setReviewNotice('识别复核状态读取失败：' + err.message, false);
+            }
+        }
+
+        function setAnalyzing(active) {
+            isAnalyzing = active;
+            document.body.classList.toggle('is-busy', active);
+            document.querySelectorAll('button, input, select, textarea').forEach(el => {
+                if (active) {
+                    el.dataset.prevDisabled = el.disabled ? '1' : '0';
+                    el.disabled = true;
+                } else if (el.dataset.prevDisabled !== '1') {
+                    el.disabled = false;
+                }
+            });
+        }
+
+        function toggleInvoice(index) {
+            if (blockDuringAnalyze('发票识别与规则复核中，请等待完成后再勾选发票。')) return;
+            if (!batchItems[index] || !batchItems[index].eligible) return;
+            batchItems[index].checked = !batchItems[index].checked;
+            renderBatch();
+        }
+
+        function removeInvoice(index) {
+            if (blockDuringAnalyze('发票识别与规则复核中，请等待完成后再移除发票。')) return;
+            batchItems.splice(index, 1);
+            renderBatch();
+        }
+
+        function renderBatch() {
+            const rows = batchItems.length ? batchItems.map((item, index) => `
+                <tr>
+                    <td>${item.eligible ? `<input type="checkbox" ${item.checked ? 'checked' : ''} ${isAnalyzing ? 'disabled' : ''} onchange="toggleInvoice(${index})">` : '不可选'}</td>
+                    <td>${item.invoiceNo || '-'}<br><span class="muted">${item.attachment?.originalName || ''}</span></td>
+                    <td>${item.sellerName || '-'}</td>
+                    <td class="amount">${money(usableInvoiceAmount(item))}${Number(item.availableAmount || 0) > 0 && Number(item.availableAmount || 0) < Number(item.amount || 0) ? `<br><span class="muted">原票 ${money(item.amount)}</span>` : ''}</td>
+                    <td>${item.invoiceDate || '-'}</td>
+                    <td>
+                        <span class="status ${item.eligible ? 'ok' : 'bad'}">${item.ocrStatus && item.ocrStatus !== '已识别' ? item.ocrStatus : (item.eligible ? '符合' : '不符合')}</span>
+                        ${((item.reasonSummary || item.warnings || [])).length ? `<span class="match-reason">${(item.reasonSummary || item.warnings || []).join('；')}</span>` : ''}
+                    ${item.eligible || isAnalyzing ? '' : `<br><button class="btn danger" onclick="removeInvoice(${index})">移除</button>`}
+                    </td>
+                </tr>
+            `).join('') : '<tr><td colspan="6" class="muted">选择项目和明细后上传发票，识别复核结果会显示在这里。</td></tr>';
+            document.getElementById('matchBody').innerHTML = rows;
+            renderTotals();
+        }
+
+        function currentDetailLabel(keys = [...selectedKeys]) {
+            const rows = (summary.rows || []).filter(row => keys.includes(row.key));
+            if (!rows.length) return '-';
+            const supplier = rows[0].supplier || '-';
+            const type = rows.some(row => row.sourceType === 'debt-repayment') ? '欠款真实供应商' : (rows[0].isReplacementRow ? '员工替票' : '授权供应商');
+            const total = rows.reduce((sum, row) => sum + Number(row.missingAmount ?? row.expectedAmount ?? 0), 0);
+            return `${supplier} / ${type} / 合并${rows.length}条 / 应补${money(total)}`;
+        }
+
+        function renderTotals() {
+            const need = selectedNeed();
+            const checked = batchItems.filter(item => item.checked && item.eligible).reduce((s, item) => s + usableInvoiceAmount(item), 0);
+            const missing = Math.max(need - checked, 0);
+            const pool = Math.max(checked - need, 0);
+            document.getElementById('needTotal').textContent = money(need);
+            document.getElementById('checkedTotal').textContent = money(checked);
+            document.getElementById('missingAfter').textContent = money(missing);
+            document.getElementById('poolTotal').textContent = money(pool);
+            document.getElementById('batchSelectedTotal').textContent = money(checked);
+        }
+
+        async function saveCurrentBatch() {
+            if (isAnalyzing) { alert('发票识别与规则复核尚未完成，请等待结果出来后再保存'); return; }
+            const checkedItems = batchItems.filter(item => item.checked && item.eligible);
+            if (!activeProject) { alert('请先选择项目'); return; }
+            if (!selectedKeys.size) { alert('请先选择明细'); return; }
+            const error = selectionError(selectedRows());
+            if (error) { alert(error); return; }
+            if (selectedNeed() <= 0) { alert('当前明细已满足，不需要继续提交发票。'); return; }
+            if (!checkedItems.length) { alert('请先勾选符合的发票'); return; }
+            const keys = sortedKeys(selectedKeys);
+            const need = selectedNeed();
+            const checked = checkedItems.reduce((s, item) => s + usableInvoiceAmount(item), 0);
+            const draft = {
+                appId: activeProject,
+                expectedKeys: keys,
+                detailLabel: currentDetailLabel(keys),
+                need,
+                checked,
+                employeeNote: document.getElementById('employeeNote').value,
+                items: checkedItems
+            };
+            const resp = await authFetch('/api/invoice-drafts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(draft)
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                alert(data.error || '保存失败');
+                return;
+            }
+            alert('已保存到本项目待提交清单，尚未进入管理员审核。请确认项目全部明细后，再统一提交项目发票审核。');
+            clearBatch();
+            await loadData();
+        }
+
+        function renderDrafts() {
+            const projectDrafts = draftBatches.filter(draft => !activeProject || draft.appId === activeProject);
+            const invoiceDrafts = projectDrafts.filter(draft => !draft.noInvoice);
+            const noInvoiceDrafts = projectDrafts.filter(draft => draft.noInvoice);
+            const invoiceDraftAmount = invoiceDrafts.reduce((sum, draft) => sum + Number(draft.checked || 0), 0);
+            const noInvoiceAmount = noInvoiceDrafts.reduce((sum, draft) => sum + Number(draft.noInvoiceAmount || draft.checked || 0), 0);
+            const draftAmount = invoiceDraftAmount + noInvoiceAmount;
+            const draftFileCount = invoiceDrafts.reduce((sum, draft) => sum + ((draft.items || []).length), 0);
+            const activeProjectRows = (summary.rows || []).filter(row => row.appId === activeProject);
+            const remaining = activeProjectRows.reduce((sum, row) => sum + Number(row.missingAmount || 0), 0);
+            document.getElementById('draftInvoiceSummary').textContent = `${draftFileCount} 张 / ${money(invoiceDraftAmount)}`;
+            document.getElementById('draftNoInvoiceSummary').textContent = `${noInvoiceDrafts.length} 条 / ${money(noInvoiceAmount)}`;
+            document.getElementById('draftOccupiedSummary').textContent = money(draftAmount);
+            document.getElementById('draftRemainingSummary').textContent = money(remaining);
+            const rows = projectDrafts.length ? projectDrafts.map((draft, index) => {
+                const isNoInvoice = !!draft.noInvoice;
+                const detailTitle = isNoInvoice ? `${draft.detailLabel || '-'} / 无票提报` : (draft.detailLabel || '-');
+                const detailText = isNoInvoice
+                    ? (draft.employeeNote || '未填写原因说明')
+                    : ((draft.items || []).map(item => item.invoiceNo || '-').join('、') || '-');
+                const amount = isNoInvoice ? Number(draft.noInvoiceAmount || draft.checked || 0) : Number(draft.checked || 0);
+                const statusText = isNoInvoice ? '无票待提交' : '待提交';
+                return `
+                    <tr>
+                        <td>${draft.id || '-'}</td>
+                        <td><div class="two-line"><b>${detailTitle}</b><span class="muted">${detailText}</span></div></td>
+                        <td class="amount">${money(amount)}</td>
+                        <td>${draft.createdAt || '-'}</td>
+                        <td><span class="status draft">${statusText}</span></td>
+                        <td><button class="btn danger" onclick="removeDraft('${draft.id}')">移除</button></td>
+                    </tr>
+                `;
+            }).join('') : '<tr><td colspan="6" class="muted">当前项目暂无待提交草稿。保存本次勾选后会先进入这里，统一提交发票审核后才进入管理员审核。</td></tr>';
+            document.getElementById('draftBody').innerHTML = rows;
+        }
+
+        async function removeDraft(id) {
+            if (blockDuringAnalyze('发票识别与规则复核中，不能移除草稿。请等待完成后再操作。')) return;
+            const resp = await authFetch('/api/invoice-drafts/' + encodeURIComponent(id), { method: 'DELETE' });
+            const data = await resp.json();
+            if (!data.success) {
+                alert(data.error || '删除草稿失败');
+                return;
+            }
+            await loadData();
+        }
+
+        async function clearDrafts() {
+            if (blockDuringAnalyze('发票识别与规则复核中，不能清空草稿。请等待完成后再操作。')) return;
+            const projectDrafts = draftBatches.filter(draft => !activeProject || draft.appId === activeProject);
+            if (!projectDrafts.length) { alert('当前项目没有可清空的草稿。'); return; }
+            const succeeded = [];
+            const failed = [];
+            for (const draft of projectDrafts) {
+                try {
+                    const response = await authFetch('/api/invoice-drafts/' + encodeURIComponent(draft.id), { method: 'DELETE' });
+                    const text = await response.text();
+                    let result;
+                    try { result = text ? JSON.parse(text) : {}; } catch { throw new Error('接口返回非法 JSON'); }
+                    if (!response.ok || !result.success) throw new Error(result.error || `服务端返回 ${response.status}`);
+                    succeeded.push(draft.id);
+                } catch (error) {
+                    failed.push({ id: draft.id, error: error.message || '网络失败' });
+                }
+            }
+            await loadData();
+            const feedback = document.getElementById('draftBatchFeedback');
+            feedback.style.display = 'block';
+            if (failed.length) {
+                feedback.textContent = `草稿清空部分完成：成功 ${succeeded.length} 条，失败 ${failed.length} 条。失败项：${failed.map(item => `${item.id}（${item.error}）`).join('、')}。失败草稿仍保留，请核对后重试。`;
+            } else {
+                feedback.textContent = `已清空 ${succeeded.length} 条草稿。`;
+            }
+        }
+
+        async function submitDrafts() {
+            if (blockDuringAnalyze('发票识别与规则复核中，不能提交发票审核。请等待完成后再操作。')) return;
+            const projectDrafts = draftBatches.filter(draft => draft.appId === activeProject);
+            if (!projectDrafts.length) {
+                alert('当前项目还没有待提交草稿。请先保存至少一个明细批次。');
+                return;
+            }
+            if (!activeProject) { alert('请先选择项目'); return; }
+            const resp = await authFetch('/api/invoice-drafts/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ appId: activeProject })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                alert(data.error || '提交失败');
+                return;
+            }
+            alert('已统一提交项目发票审核：' + ((data.invoices || []).length) + ' 张发票，管理员审核页将按一个项目批次显示。');
+            clearBatch();
+            await loadData();
+        }
+
+        function clearBatch(resetSelection = true) {
+            if (ocrPollTimer) clearInterval(ocrPollTimer);
+            ocrPollTimer = null;
+            currentOcrBatchId = '';
+            currentOcrContext = null;
+            batchJobs = [];
+            setAnalyzing(false);
+            batchItems = [];
+            document.getElementById('invoiceFiles').value = '';
+            document.getElementById('employeeNote').value = '';
+            setReviewNotice('识别复核后，不符合的发票需要移除，不会保存，也不会提交管理员审核。', false);
+            if (resetSelection) selectedKeys = new Set();
+            renderBatch();
+            renderDetails();
+        }
+
+        function isClosedInvoiceEvidence(record) {
+            return record?.status === '已关闭'
+                || record?.projectClosure?.result === 'invalidated'
+                || record?.paymentCorrection?.result === 'invalidated';
+        }
+
+        function closureBadgeHtml(record) {
+            if (!isClosedInvoiceEvidence(record)) return '';
+            if (record?.paymentCorrection?.result === 'invalidated') {
+                const marker = record.paymentCorrection;
+                return `<br><span class="muted" data-payment-correction-audit="true">更正人: ${escapeHtml(marker.correctedBy || '-')} / 更正时间: ${escapeHtml(marker.correctedAt || '-')} / 原因: ${escapeHtml(marker.reason || '-')}</span>`;
+            }
+            const marker = record.projectClosure || {};
+            return `<br><span class="status bad">\u9879\u76ee\u5df2\u5173\u95ed / \u5386\u53f2\u8bc1\u636e</span><br><span class="muted">\u539f\u72b6\u6001: ${escapeHtml(marker.originalStatus || '-')} / \u5173\u95ed\u65f6\u95f4: ${escapeHtml(marker.closedAt || '-')} / \u539f\u56e0: ${escapeHtml(marker.reason || '-')}</span>`;
+        }
+
+        function renderLedger() {
+            document.getElementById('ledgerBody').innerHTML = invoices.length ? invoices.map(inv => `
+                <tr>
+                    <td>${inv.id}<br><span class="muted">${inv.createdAt || ''}</span></td>
+                    <td>${inv.owner || inv.createdBy || '-'}</td>
+                    <td>${inv.invoiceNo || '-'}</td>
+                    <td>${inv.sellerName || '-'}<br><span class="muted">\u8d2d\u65b9: ${inv.buyerName || '-'}</span></td>
+                    <td>${money(inv.amount)}</td>
+                    <td>${inv.appId || '-'}${closureBadgeHtml(inv)}</td>
+                    <td><span class="status">${inv.status || '\u5f85\u5ba1\u6838'}</span>${isClosedInvoiceEvidence(inv) ? '<br><span class="muted">\u4e0d\u8ba1\u5165\u5360\u7528\u6216\u4f59\u7968\u6c60</span>' : ''}</td>
+                </tr>
+            `).join('') : '<tr><td colspan="7" class="muted">\u6682\u65e0\u53d1\u7968\u8bb0\u5f55</td></tr>';
+        }
+
+        function submissionRowHtml(batch) {
+            const allocations = (batch.allocations || []).map(row => `
+                    <div>
+                        <strong>${row.supplier || '-'}</strong>
+                        <span class="muted"> / ${row.item || '-'}${row.content ? ' - ' + row.content : ''} / 占用 ${money(row.amount)}</span>
+                    </div>
+                `).join('');
+            const invoiceRows = (batch.invoices || []).map(inv => `
+                    <div>${inv.id || '-'} / ${inv.invoiceNo || '-'} / ${money(inv.amount)} / ${inv.status || '-'}<br>${attachmentHtml(inv.attachment)}</div>
+                `).join('');
+            return `
+                    <tr>
+                        <td>${batch.batchId || '-'}<br><span class="muted">${batch.createdAt || '-'}</span><br><span class="muted">提交人：${batch.createdBy || batch.owner || '-'}</span></td>
+                        <td>
+                            <div class="submission-detail">
+                                <strong>${batch.appId || '-'}</strong> ${batch.projectName || ''}${closureBadgeHtml(batch)}<br>
+                                ${allocations || '<span class="muted">暂无占用明细</span>'}
+                            </div>
+                        </td>
+                        <td>${(batch.invoiceNos || []).join('、') || '-'}<br><span class="muted">${invoiceRows || ''}</span></td>
+                        <td>${isClosedInvoiceEvidence(batch) ? '\u539f\u8bb0\u5f55\u91d1\u989d' : '\u672c\u6b21\u5360\u7528'} ${money(batch.invoiceAmount)}<br><span class="muted">\u539f\u7968\u5408\u8ba1 ${money(batch.invoiceTotalAmount)} / ${isClosedInvoiceEvidence(batch) ? '\u539f\u8bb0\u5f55\u4f59\u7968 (\u5df2\u5931\u6548 / \u672a\u5165\u6c60)' : '\u591a\u4f59\u5165\u6c60'} ${money(batch.poolAmount)}</span></td>
+                        <td><span class="status">${batch.status || '待审核'}</span></td>
+                        <td>${batch.employeeNote || '-'}<br><span class="muted">更新时间：${batch.updatedAt || '-'}</span></td>
+                    </tr>
+                `;
+        }
+
+        function renderSubmissions() {
+            const pendingSubmissions = submissions.filter(shouldShowInPendingReview);
+            document.getElementById('submissionBody').innerHTML = pendingSubmissions.length
+                ? pendingSubmissions.map(submissionRowHtml).join('')
+                : '<tr><td colspan="6" class="muted">暂无待审核发票批次。已提交并处理完的批次会进入递交记录。</td></tr>';
+        }
+
+        function renderSubmissionRecords() {
+            const records = submissions.filter(shouldShowInSubmissionRecord);
+            document.getElementById('recordBody').innerHTML = records.length
+                ? records.map(submissionRowHtml).join('')
+                : '<tr><td colspan="6" class="muted">\u6682\u65e0\u9012\u4ea4\u8bb0\u5f55.</td></tr>';
+        }
+
+        function renderClosureEvidence() {
+            const drafts = closureEvidence.drafts || [];
+            const jobs = closureEvidence.ocrJobs || [];
+            const audits = closureEvidence.auditRecords || [];
+            const rows = [
+                ...drafts.map(item => `<div><b>\u8349\u7a3f ${escapeHtml(item.id || '-')}</b> / ${escapeHtml(item.appId || '-')} / \u539f\u72b6\u6001 ${escapeHtml(item.projectClosure?.originalStatus || item.status || '\u8349\u7a3f')}<br>${(item.items || []).map(row => `${escapeHtml(row.invoiceNo || row.attachment?.originalName || '-')}<br>${attachmentHtml(row.attachment)}`).join(' / ') || '-'} ${closureBadgeHtml(item)}</div>`),
+                ...jobs.map(item => `<div><b>OCR ${escapeHtml(item.id || '-')}</b> / ${escapeHtml(item.appId || '-')} / \u539f\u72b6\u6001 ${escapeHtml(item.projectClosure?.originalStatus || item.status || '-')}<br>${attachmentHtml(item.attachment)} ${closureBadgeHtml(item)}</div>`),
+                ...audits.map(item => `<div><b>\u5ba1\u6838 ${escapeHtml(item.id || '-')}</b> / ${escapeHtml(item.appId || '-')} / ${escapeHtml(item.action || item.afterStatus || item.status || '-')}${closureBadgeHtml(item)}</div>`)
+            ];
+            ['closureEvidenceBox', 'closureEvidenceAdminBox'].forEach(id => {
+                const target = document.getElementById(id);
+                if (!target) return;
+                target.classList.toggle('hide', !rows.length);
+                target.innerHTML = rows.length ? `<strong>\u9879\u76ee\u5173\u95ed\u540e\u4fdd\u7559\u7684\u8349\u7a3f / OCR / \u5ba1\u6838\u8bc1\u636e</strong><div class="admin-attachment-list">${rows.join('')}</div>` : '';
+            });
+        }
+
+        function renderSatisfiedProjects() {
+            document.getElementById('satisfiedBody').innerHTML = satisfiedProjects().length ? satisfiedProjects().map(project => {
+                const { expected, confirmed } = projectTotals(project);
+                const matched = [];
+                project.rows.forEach(row => (row.matchedInvoices || []).forEach(inv => matched.push(inv)));
+                const invoiceText = matched.length
+                    ? matched.map(inv => `${inv.invoiceNo || inv.id} / ${money(inv.amount)} / ${inv.status}`).join('；')
+                    : '暂无发票记录';
+                return `
+                    <tr>
+                        <td>${project.appId}<br><span class="muted">${project.projectName}</span></td>
+                        <td>${project.applicant || '-'}</td>
+                        <td>${money(expected)}</td>
+                        <td>${money(confirmed)}</td>
+                        <td><span class="status ok">已完成</span></td>
+                        <td>${invoiceText}</td>
+                    </tr>
+                `;
+            }).join('') : '<tr><td colspan="6" class="muted">暂无已完成项目。</td></tr>';
+        }
+
+        function renderPools() {
+            const poolHeadRow = document.getElementById('poolHeadRow');
+            if (!isAdmin) {
+                poolHeadRow.innerHTML = '<th>供应商全称</th><th>发票号码</th><th>发票日期</th><th>可用余额</th><th>有效期</th><th>操作</th>';
+                document.getElementById('poolBody').innerHTML = pools.length ? pools.map((pool, index) => {
+                    const canUse = Number(pool.remainingAmount || 0) > 0.01 && pool.timeStatus !== '已过期';
+                    return `
+                        <tr>
+                            <td>${escapeHtml(pool.supplierName || '-')}</td>
+                            <td>${escapeHtml(pool.invoiceNo || '-')}</td>
+                            <td>${escapeHtml(pool.invoiceDate || '-')}</td>
+                            <td>${money(pool.remainingAmount)}</td>
+                            <td><span class="status ${pool.timeStatus === '已过期' ? 'bad' : 'ok'}">${escapeHtml(pool.timeStatus || '-')}</span></td>
+                            <td>${canUse ? `<button class="btn secondary" onclick="usePoolInvoice(${index})">用于当前明细</button>` : '-'}</td>
+                        </tr>`;
+                }).join('') : '<tr><td colspan="6" class="muted">暂无已确认真实供应商发票的可共享余额。</td></tr>';
+                return;
+            }
+            poolHeadRow.innerHTML = '<th>归属</th><th>发票号/时间</th><th>原票金额</th><th>已占用</th><th>可用余额</th><th>使用记录</th>';
+            document.getElementById('poolBody').innerHTML = pools.length ? pools.map((pool, index) => {
+                const ownerType = pool.ownerType === 'employee' ? '员工替票' : '供应商';
+                const usages = (pool.usages || []).map(usage => `
+                    <div class="pool-ledger-item">
+                        <strong>${escapeHtml(usage.id || '-')}</strong> / 项目 ${escapeHtml(usage.appId || '-')} / 员工 ${escapeHtml(usage.owner || '-')}<br>
+                        ${money(usage.amount)} / ${escapeHtml(usage.status || '-')}
+                        ${(usage.detailAllocations || []).length ? `<div class="muted">原分配明细：${usage.detailAllocations.map(detail => `${escapeHtml(detail.key || '-')} / ${escapeHtml(detail.supplier || '-')} / ${escapeHtml(detail.item || '-')} / ${escapeHtml(detail.content || '-')} / ${money(detail.amount)}`).join('；')}</div>` : ''}
+                    </div>
+                `).join('');
+                const canUse = Number(pool.remainingAmount || 0) > 0.01 && !pool.isExpired && pool.status !== '已过期';
+                const timeText = pool.poolStartAt
+                    ? `入池 ${escapeHtml(pool.poolStartAt)}<br>共享截止 ${escapeHtml(pool.availableUntil || pool.poolExpireAt || '-')}`
+                    : '入池时间未记录';
+                const statusClass = pool.status === '已过期' || pool.isExpired ? 'bad' : (pool.status === '可用' ? 'ok' : '');
+                const disabledReason = Number(pool.remainingAmount || 0) > 0.01 && !canUse
+                    ? `<br><span class="muted">${escapeHtml(pool.timeStatus || '当前不可复用')}</span>`
+                    : '';
+                return `
+                    <tr>
+                        <td>${escapeHtml(pool.owner || '-')}<br><span class="muted">${escapeHtml(ownerType)} / 入池月份 ${escapeHtml(pool.poolMonth || '-')}</span><br><span class="muted">来源员工：${escapeHtml(pool.sourceOwner || '-')}<br>来源项目：${escapeHtml(pool.sourceAppId || '-')}<br>来源记录：${escapeHtml(pool.sourceInvoiceId || '-')}<br>来源备注：${escapeHtml(pool.note || '-')}</span></td>
+                        <td>${escapeHtml(pool.invoiceNo || '-')}<br><span class="muted">开票 ${escapeHtml(pool.invoiceDate || '-')} / 开票月 ${escapeHtml(pool.invoiceMonth || '-')}</span><br><span class="muted">${timeText}</span><br>${attachmentHtml(pool.attachment)}</td>
+                        <td>${money(pool.invoiceTotalAmount)}</td>
+                        <td>${money(pool.usedAmount)}</td>
+                        <td><span class="status ${statusClass}">${escapeHtml(pool.status || '可用')}</span><br>${money(pool.remainingAmount)}${disabledReason}</td>
+                        <td>${usages || '-'}${canUse ? `<br><button class="btn secondary" onclick="usePoolInvoice(${index})">用于当前明细</button>` : ''}</td>
+                    </tr>
+                `;
+            }).join('') : '<tr><td colspan="6" class="muted">暂无可用多余发票池。发票金额大于本次缺口时，会在这里显示剩余额度。</td></tr>';
+        }
+
+        function normalizeLocalName(value) {
+            return String(value || '').replace(/[\s,，.。()（）【】\[\]_-]/g, '').replace(/有限公司|有限责任公司|公司/g, '').toLowerCase();
+        }
+
+        function usePoolInvoice(index) {
+            if (blockDuringAnalyze('发票识别与规则复核中，不能从多余发票池加入发票。请等待完成后再操作。')) return;
+            const pool = pools[index];
+            if (!pool) return;
+            if (!activeProject) { alert('请先在项目工作台选择项目'); return; }
+            if (!selectedKeys.size) { alert('请先选择要补票的项目明细'); return; }
+            const rows = selectedRows();
+            const error = selectionError(rows);
+            if (error) { alert(error); return; }
+            const firstRow = rows[0];
+            const rowType = firstRow?.isReplacementRow ? 'employee' : 'supplier';
+            const poolType = pool.ownerType ? (pool.ownerType === 'employee' ? 'employee' : 'supplier') : rowType;
+            const poolOwner = pool.owner || pool.supplierName || '';
+            if (poolType !== rowType) {
+                alert(poolType === 'employee' ? '这张余票属于员工替票池，请选择对应员工替票明细。' : '这张余票属于供应商发票池，请选择对应供应商明细。');
+                return;
+            }
+            if (poolType === 'employee' && normalizeLocalName(poolOwner) !== normalizeLocalName(firstRow?.supplier)) {
+                alert(`这张余票归属 ${poolOwner || '-'}，当前明细是 ${firstRow?.supplier || '-'}，不能跨替票对象使用。`);
+                return;
+            }
+            if (poolType === 'supplier' && normalizeLocalName(poolOwner) !== normalizeLocalName(firstRow?.supplier)) {
+                alert(`这张余票归属供应商 ${poolOwner || '-'}，当前明细供应商是 ${firstRow?.supplier || '-'}，不能跨供应商使用。`);
+                return;
+            }
+            const remaining = Number(pool.remainingAmount || 0);
+            if (remaining <= 0.01) { alert('这张余票已经没有可用余额。'); return; }
+            if (pool.isExpired || pool.status === '已过期' || pool.timeStatus === '已过期') {
+                alert(`这张余票已超过 1 个月共享有效期，截止时间：${pool.availableUntil || pool.poolExpireAt || '-'}`);
+                return;
+            }
+            if (batchItems.some(item => item.fromPool && item.invoiceNo === pool.invoiceNo)) {
+                alert('这张余票已经加入本次勾选。');
+                return;
+            }
+            batchItems.push({
+                invoiceNo: pool.invoiceNo || '',
+                buyerName: pool.buyerName || '',
+                sellerName: pool.sellerName || poolOwner || '',
+                amount: Number(pool.invoiceTotalAmount || remaining),
+                usedAmount: Number(pool.usedAmount || 0),
+                availableAmount: remaining,
+                allocationAmount: Math.min(remaining, selectedNeed()),
+                invoiceDate: pool.invoiceDate || '',
+                invoiceType: poolType === 'employee' ? '替用发票' : (pool.invoiceType || '发票'),
+                eligible: true,
+                checked: true,
+                resultText: '多余池可用',
+                warnings: [],
+                reasonSummary: [`来自多余发票池，可用 ${money(remaining)}；保存时服务端会重新校验余额。`],
+                poolOwnerType: pool.ownerType || '',
+                poolOwner: pool.owner || '',
+                uploadedAt: pool.uploadedAt || pool.poolStartAt || '',
+                poolStartAt: pool.poolStartAt || pool.uploadedAt || '',
+                poolExpireAt: pool.poolExpireAt || pool.availableUntil || '',
+                attachment: null,
+                fromPool: true
+            });
+            renderBatch();
+            showSection('mine', document.getElementById('mineTab'));
+            alert('已加入本次勾选，请确认金额后保存到项目待提交。');
+        }
+
+        function invoiceKeys(inv) {
+            const keys = Array.isArray(inv.expectedKeys) && inv.expectedKeys.length ? inv.expectedKeys : [inv.expectedKey].filter(Boolean);
+            return keys;
+        }
+
+        function detailRowsForInvoice(inv) {
+            const keySet = new Set(invoiceKeys(inv));
+            return (summary.rows || []).filter(row => keySet.has(row.key));
+        }
+
+        function renderInvoiceDetails(inv) {
+            if (Array.isArray(inv.detailAllocations) && inv.detailAllocations.length) {
+                const projectName = inv.projectName || inv.appId || '-';
+                const allocations = inv.detailAllocations.map(row => `
+                    <div>
+                        <strong>${row.supplier || '-'}</strong>
+                        <span class="muted"> / ${row.item || '-'}${row.content ? ' - ' + row.content : ''} / 本发票占用 ${money(row.amount)}</span>
+                    </div>
+                `).join('');
+                return `
+                    <div class="review-detail">
+                        <strong>${inv.appId || '-'}</strong> ${projectName}<br>
+                        ${allocations}
+                        <div class="muted">批次：${inv.batchId || '-'}</div>
+                    </div>
+                `;
+            }
+            const rows = detailRowsForInvoice(inv);
+            const projectName = rows[0]?.projectName || inv.projectName || inv.appId || '-';
+            const detailHtml = rows.length ? rows.map(row => `
+                <div>
+                    <strong>${row.supplier || '-'}</strong>
+                    <span class="muted"> / ${row.item || '-'}${row.content ? ' - ' + row.content : ''} / 应补 ${money(row.expectedAmount)} / 当前缺口 ${money(row.missingAmount)}</span>
+                </div>
+            `).join('') : `<div class="muted">${invoiceKeys(inv).join('、') || '-'}</div>`;
+            return `
+                <div class="review-detail">
+                    <strong>${inv.appId || '-'}</strong> ${projectName}<br>
+                    ${detailHtml}
+                    <div class="muted">旧记录未保存精确分摊，只显示关联明细。</div>
+                    <div class="muted">批次：${inv.batchId || '-'}</div>
+                </div>
+            `;
+        }
+
+        function duplicateUsageHtml(inv) {
+            const no = String(inv.invoiceNo || '').trim();
+            if (!no) return '';
+            const same = invoices.filter(item => String(item.invoiceNo || '').trim() === no);
+            if (same.length <= 1) return '';
+            const total = Number(inv.invoiceTotalAmount || inv.amount || 0);
+            const active = same.filter(item => item.status !== '已驳回' && !isClosedInvoiceEvidence(item));
+            const used = active.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+            const rows = same.map(item => {
+                const details = Array.isArray(item.detailAllocations) && item.detailAllocations.length
+                    ? item.detailAllocations.map(row => `${row.supplier}/${row.item || '-'}${row.content ? '-' + row.content : ''} 占用 ${money(row.amount)}`).join('、')
+                    : (detailRowsForInvoice(item).map(row => `${row.supplier}/${row.item || '-'}${row.content ? '-' + row.content : ''}`).join('、') || (item.expectedKeys || [item.expectedKey || '-']).join('、'));
+                const counts = isClosedInvoiceEvidence(item) ? '\u9879\u76ee\u5173\u95ed / \u5386\u53f2\u8bc1\u636e\u4e0d\u8ba1\u5165\u5360\u7528' : (item.status !== '\u5df2\u9a73\u56de' ? '\u8ba1\u5165\u5360\u7528' : '\u5df2\u9a73\u56de / \u4e0d\u8ba1\u5165\u5360\u7528');
+                return `<div>${item.id} ${counts} ${money(item.amount)}：${item.appId || '-'} / ${details} / ${item.status || '待审核'}</div>`;
+            }).join('');
+            const title = active.length ? '同票号拆分/占用说明' : '同票号历史记录';
+            const rejectedOnly = active.length ? '' : ' rejected-only';
+            return `
+                <div class="usage-box${rejectedOnly}">
+                    <strong>${title}</strong><br>
+                    原票金额 ${money(total)}，有效占用 ${money(used)}，可用余额 ${money(Math.max(total - used, 0))}<br>
+                    ${rows}
+                </div>
+            `;
+        }
+
+        function batchAmountHtml(batch) {
+            return `
+                <div><b>应补</b> ${money(batch.expectedAmount)}</div>
+                <div><b>本批</b> ${money(batch.invoiceAmount)}</div>
+                <div class="muted">已确认 ${money(batch.confirmedAmount)} / 待审核 ${money(batch.pendingAmount)}</div>
+                <div class="muted">草稿 ${money(batch.draftAmount)} / 当前缺口 ${money(batch.missingAmount)}</div>
+                ${Number(batch.poolAmount || 0) > 0 ? `<div class="muted">${isClosedInvoiceEvidence(batch) ? '\u539f\u8bb0\u5f55\u4f59\u7968 (\u5df2\u5931\u6548 / \u672a\u5165\u6c60)' : '\u591a\u4f59\u5165\u6c60'} ${money(batch.poolAmount)}</div>` : ''}
+            `;
+        }
+
+        function batchDetailHtml(batch) {
+            const rows = batch.allocations || [];
+            const head = rows.slice(0, 4).map(row => `
+                <div>
+                    <strong>${row.supplier || '-'}</strong>
+                    <span class="muted"> / ${row.item || '-'}${row.content ? ' - ' + row.content : ''} / 本批 ${money(row.amount)} / 缺口 ${money(row.missingAmount)}</span>
+                </div>
+            `).join('');
+            const more = rows.length > 4 ? `<div class="muted">另有 ${rows.length - 4} 条明细，后续详情页展开。</div>` : '';
+            return head + more || '<span class="muted">暂无占用明细</span>';
+        }
+
+        function batchInvoiceHtml(batch) {
+            const rows = batch.invoices || [];
+            const head = rows.slice(0, 3).map(inv => `
+                <div>
+                    ${inv.invoiceNo || inv.invoiceType || '-'} / ${inv.sellerName || '-'} / ${money(inv.amount)} / ${inv.status || '-'}<br>
+                    ${attachmentHtml(inv.attachment)}
+                </div>
+            `).join('');
+            const more = rows.length > 3 ? `<div class="muted">另有 ${rows.length - 3} 张发票，后续详情页展开。</div>` : '';
+            return `
+                <div>${rows.length} 条记录 / ${batch.attachmentCount || 0} 个附件</div>
+                <div class="muted">${(batch.invoiceNos || []).slice(0, 4).join('、') || '无发票号码'}</div>
+                ${head}${more}
+            `;
+        }
+
+        function batchRiskHtml(batch) {
+            const labels = batch.riskLabels || [];
+            const noInvoice = Number(batch.noInvoiceAmount || 0);
+            const labelHtml = labels.length
+                ? labels.map(label => `<span class="status">${label}</span>`).join('<br>')
+                : '<span class="status ok">无明显风险</span>';
+            return `
+                ${labelHtml}
+                ${noInvoice > 0 ? `<div class="muted">无票金额 ${money(noInvoice)}</div>` : ''}
+                <div class="muted">风险数：${batch.riskCount || 0}</div>
+            `;
+        }
+
+        function isPendingBatch(batch) {
+            const status = String(batch?.status || '待审核');
+            return status.includes('待审核') || status.includes('待审') || status.includes('部分待审');
+        }
+
+        function pendingReviewBatches() {
+            return submissions.filter(batch => isPendingBatch(batch) && !isClosedInvoiceEvidence(batch));
+        }
+
+        function visibleReviewBatches() {
+            return submissions.filter(batch => isPendingBatch(batch) || isClosedInvoiceEvidence(batch));
+        }
+
+        function reviewBatchById(batchId) {
+            return submissions.find(batch => batch.batchId === batchId) || null;
+        }
+
+        function syncSelectOptions(id, values, allLabel) {
+            const select = document.getElementById(id);
+            if (!select) return;
+            const current = select.value;
+            const uniqueValues = [...new Set(values.filter(Boolean))].sort();
+            select.innerHTML = `<option value="">${allLabel}</option>` + uniqueValues.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+            select.value = uniqueValues.includes(current) ? current : '';
+        }
+
+        function setInvoicePeriodOptions(prefix, values) {
+            const years = [...new Set(values.filter(Boolean).map(value => String(value).slice(0, 4)))].sort().reverse();
+            const yearSelect = document.getElementById(`${prefix}YearFilter`);
+            const monthSelect = document.getElementById(`${prefix}MonthNumberFilter`);
+            if (!yearSelect || !monthSelect) return;
+            const oldYear = yearSelect.value;
+            const oldMonth = monthSelect.value;
+            yearSelect.innerHTML = '<option value="">全部年份</option>' + years.map(year => `<option value="${year}">${year}年</option>`).join('');
+            monthSelect.innerHTML = '<option value="">全年</option>' + Array.from({length:12}, (_, index) => `<option value="${String(index + 1).padStart(2, '0')}">${index + 1}月</option>`).join('');
+            yearSelect.value = years.includes(oldYear) ? oldYear : '';
+            monthSelect.value = oldMonth;
+            syncInvoicePeriod(prefix, false);
+        }
+
+        function syncInvoicePeriod(prefix, rerender = true) {
+            const year = document.getElementById(`${prefix}YearFilter`)?.value || '';
+            const month = document.getElementById(`${prefix}MonthNumberFilter`)?.value || '';
+            document.getElementById(`${prefix}MonthFilter`).value = year && month ? `${year}-${month}` : year;
+            if (!rerender) return;
+            if (prefix === 'project') renderWorkbench();
+            if (prefix === 'review') renderReview();
+            if (prefix === 'summary') renderAdminSummary();
+        }
+
+        function reviewPaymentNo(batch) {
+            return batch.paymentNo || (batch.paymentIds || []).join('、') || '-';
+        }
+
+        function reviewSourceName(batch) {
+            return batch.detailSummary || uniqueList((batch.allocations || []).map(row => row.supplier).filter(Boolean)).join('、') || '-';
+        }
+
+        function renderReviewFilters() {
+            const visibleBatches = visibleReviewBatches();
+            setInvoicePeriodOptions('review', visibleBatches.map(batch => batch.projectMonth || ''));
+            syncSelectOptions('reviewApplicantFilter', visibleBatches.map(batch => batch.createdBy || batch.owner || ''), '全部申请员工');
+        }
+
+        function filteredReviewBatches() {
+            const month = document.getElementById('reviewMonthFilter')?.value || '';
+            const applicant = document.getElementById('reviewApplicantFilter')?.value || '';
+            return visibleReviewBatches().filter(batch => {
+                if (month && !String(batch.projectMonth || '').startsWith(month)) return false;
+                if (applicant && applicant !== (batch.createdBy || batch.owner || '')) return false;
+                return true;
+            });
+        }
+
+        function showReviewDetail(batchId) {
+            activeReviewBatchId = batchId || '';
+            renderReview();
+        }
+
+        function reviewKpi(label, value) {
+            return `<div class="review-chip"><span>${label}</span><b>${value}</b></div>`;
+        }
+
+        function poolLedgerHtml(inv) {
+            const ledger = inv.poolLedger || {};
+            if (!ledger.isPoolLedger) return '';
+            const isReuse = ledger.isPoolReuse || inv.fromPool;
+            const total = Number(ledger.invoiceTotalAmount || inv.invoiceTotalAmount || inv.amount || 0);
+            const current = Number(ledger.currentAmount || inv.amount || 0);
+            const usedOther = Number(ledger.usedExcludingCurrent || 0);
+            const remaining = Number(ledger.remainingAfter || Math.max(total - current - usedOther, 0));
+            const time = ledger.poolStartAt || inv.poolStartAt || inv.uploadedAt || '-';
+            return `
+                <div class="pool-ledger-box">
+                    <div class="pool-ledger-item"><span>记录类型</span><b>${isReuse ? '余票复用' : '原票入库'}</b></div>
+                    <div class="pool-ledger-item"><span>入库时间</span><b>${escapeHtml(time)}</b></div>
+                    <div class="pool-ledger-item"><span>原票金额</span><b>${money(total)}</b></div>
+                    <div class="pool-ledger-item"><span>本次申请</span><b>${money(current)}</b></div>
+                    <div class="pool-ledger-item"><span>已占用（不含本次）</span><b>${money(usedOther)}</b></div>
+                    <div class="pool-ledger-item"><span>当前剩余</span><b>${money(remaining)}</b></div>
+                </div>
+                <div class="pool-ledger-check">校验：本次申请 ${money(current)} + 已占用 ${money(usedOther)} + 当前剩余 ${money(remaining)} = 原票金额 ${money(total)}</div>
+            `;
+        }
+
+        function reviewAttachmentName(inv) {
+            const ledger = inv.poolLedger || {};
+            if ((!inv.attachment || !inv.attachment.path) && (ledger.isPoolReuse || inv.fromPool)) {
+                return '余票复用，本次不重复展示附件';
+            }
+            return attachmentName(inv.attachment);
+        }
+
+        function renderReviewDetail(batch) {
+            const target = document.getElementById('reviewDetailBody');
+            if (!target) return;
+            if (!batch) {
+                target.className = 'review-note-box';
+                target.innerHTML = '暂无可查看的项目申请批次。';
+                return;
+            }
+            target.className = 'review-detail-panel';
+            const canAudit = isPendingBatch(batch) && !isClosedInvoiceEvidence(batch);
+            const allocationRows = (batch.allocations || []).map(row => `
+                <tr>
+                    <td><strong>${escapeHtml(row.supplier || '-')}</strong><br><span class="muted">${escapeHtml(row.key || '-')}</span></td>
+                    <td>${escapeHtml(row.item || '-')}${row.content ? '<br><span class="muted">' + escapeHtml(row.content) + '</span>' : ''}</td>
+                    <td class="amount">${money(row.expectedAmount)}</td>
+                    <td class="amount">${money(row.amount)}</td>
+                    <td class="amount">${money(row.missingAmount)}</td>
+                    <td>${escapeHtml(batch.employeeNote || '-')}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="6" class="muted">暂无员工申请明细。</td></tr>';
+            const invoiceCards = (batch.invoices || []).map(inv => `
+                <div class="admin-attachment-row">
+                    <div class="admin-attachment-main">
+                        <div class="admin-attachment-title">${escapeHtml(inv.invoiceNo || inv.invoiceType || inv.id || '-')} <span class="status">${escapeHtml(inv.status || '-')}</span></div>
+                        <div class="admin-attachment-meta">
+                            销售方：${escapeHtml(inv.sellerName || '-')} / 购买方：${escapeHtml(inv.buyerName || '-')} / 日期：${escapeHtml(inv.invoiceDate || '-')}
+                        </div>
+                        <div class="admin-attachment-meta">
+                            ${isClosedInvoiceEvidence(inv) ? '\u539f\u7968\u91d1\u989d ' : '\u539f\u7968\u91d1\u989d '}${money(inv.invoiceTotalAmount)} / ${isClosedInvoiceEvidence(inv) ? '\u539f\u7533\u8bf7\u91d1\u989d ' : '\u672c\u6b21\u7533\u8bf7 '}${money(inv.amount)}${Number(inv.poolAmount || 0) > 0 ? (isClosedInvoiceEvidence(inv) ? ' / \u539f\u8bb0\u5f55\u4f59\u7968 (\u5df2\u5931\u6548 / \u672a\u5165\u6c60) ' : ' / \u591a\u4f59\u5165\u6c60 ') + money(inv.poolAmount) : ''}
+                        </div>
+                        ${isClosedInvoiceEvidence(inv) ? closureBadgeHtml(inv) : poolLedgerHtml(inv)}
+                        <div class="admin-attachment-file">${escapeHtml(reviewAttachmentName(inv))}</div>
+                    </div>
+                    <div class="admin-attachment-actions">${attachmentActionsHtml(inv.attachment)}</div>
+                </div>
+            `).join('') || '<div class="review-note-box">暂无发票附件。</div>';
+            const riskHtml = (batch.riskLabels || []).length
+                ? `<div class="review-note-box">风险提示：${(batch.riskLabels || []).map(label => `<span class="status">${escapeHtml(label)}</span>`).join(' ')}</div>`
+                : '';
+            target.innerHTML = `
+                <div class="review-kpis">
+                    ${reviewKpi('项目', `${escapeHtml(batch.appId || '-')} ${escapeHtml(batch.projectName || '')}`)}
+                    ${reviewKpi('申请员工', escapeHtml(batch.createdBy || batch.owner || '-'))}
+                    ${reviewKpi('付款通过编号', escapeHtml(reviewPaymentNo(batch)))}
+                    ${reviewKpi('供应商/替票对象', escapeHtml(reviewSourceName(batch)))}
+                    ${reviewKpi('本次申请', money(batch.invoiceAmount))}
+                    ${reviewKpi('缺失金额', money(batch.missingAmount))}
+                </div>
+                <div class="admin-application-grid">
+                    <div class="admin-application-card table-scroll">
+                        <h3>员工申请时提交的明细（${(batch.allocations || []).length} 条）</h3>
+                        <div class="admin-scroll-box">
+                            <table>
+                                <thead><tr><th>供应商/替票对象</th><th>明细</th><th>应补金额</th><th>本次申请</th><th>缺失金额</th><th>员工备注</th></tr></thead>
+                                <tbody>${allocationRows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="admin-application-card">
+                        <div class="admin-card-title-row">
+                            <h3>本申请的发票附件（${batch.invoiceCount || (batch.invoices || []).length} 张 / ${batch.attachmentCount || 0} 个附件）</h3>
+                            ${Number(batch.attachmentCount || 0) > 0 ? attachmentPackageButtonHtml(batch.batchId, '下载本批次发票包') : ''}
+                        </div>
+                        <div class="admin-scroll-box">
+                            <div class="admin-attachment-list">${invoiceCards}</div>
+                        </div>
+                    </div>
+                </div>
+                ${riskHtml}
+                ${Number(batch.noInvoiceAmount || 0) > 0 ? `<div class="review-note-box">无票金额：${money(batch.noInvoiceAmount)}</div>` : ''}
+                <div class="actions-row">
+                    ${canAudit ? `<button class="btn dark" onclick="setSubmissionStatus('${batch.batchId}', '已确认')">通过本申请</button><button class="btn danger" onclick="setSubmissionStatus('${batch.batchId}', '已驳回')">驳回本申请</button>` : '<span class="status">该申请已处理</span>'}
+                </div>
+            `;
+        }
+
+        function renderReview() {
+            if (!isAdmin) return;
+            renderReviewFilters();
+            const batches = filteredReviewBatches();
+            const pendingBatches = pendingReviewBatches();
+            const totalInvoiceAmount = batches.reduce((sum, batch) => sum + Number(batch.invoiceAmount || 0), 0);
+            const totalMissingAmount = batches.reduce((sum, batch) => sum + Number(batch.missingAmount || 0), 0);
+            document.getElementById('reviewKpiBar').innerHTML = `
+                <div class="admin-kpi"><span>当前列表</span><b>${batches.length} 条</b></div>
+                <div class="admin-kpi"><span>待审核</span><b>${pendingBatches.length} 条</b></div>
+                <div class="admin-kpi"><span>本次申请金额</span><b>${money(totalInvoiceAmount)}</b></div>
+                <div class="admin-kpi"><span>缺失金额</span><b>${money(totalMissingAmount)}</b></div>
+                <div class="admin-kpi"><span>发票附件</span><b>${batches.reduce((sum, batch) => sum + Number(batch.attachmentCount || 0), 0)} 个</b></div>
+            `;
+            if (!activeReviewBatchId || !batches.some(batch => batch.batchId === activeReviewBatchId)) {
+                activeReviewBatchId = batches[0]?.batchId || '';
+            }
+            document.getElementById('reviewBody').innerHTML = batches.length ? batches.map(batch => {
+                const canAudit = isPendingBatch(batch) && !isClosedInvoiceEvidence(batch);
+                return `
+                <tr class="${batch.batchId === activeReviewBatchId ? 'selected' : ''}" onclick="showReviewDetail('${batch.batchId}')">
+                    <td>
+                        <strong>${escapeHtml(batch.appId || '-')}</strong> ${escapeHtml(batch.projectName || '')}<br>
+                        <span class="muted">${escapeHtml(batch.batchId || '-')} / ${escapeHtml(batch.projectMonth || '-')}</span>
+                    </td>
+                    <td>${escapeHtml(batch.createdBy || batch.owner || '-')}</td>
+                    <td>${escapeHtml(reviewSourceName(batch))}</td>
+                    <td>${escapeHtml(reviewPaymentNo(batch))}</td>
+                    <td class="amount">${money(batch.expectedAmount)}</td>
+                    <td class="amount">${money(batch.invoiceAmount)}</td>
+                    <td class="amount">${money(batch.missingAmount)}</td>
+                    <td>${batch.invoiceCount || 0} 张<br><span class="muted">${batch.attachmentCount || 0} 个附件</span></td>
+                    <td><span class="status">${escapeHtml(batch.status || '待审核')}</span></td>
+                    <td>
+                        ${canAudit ? `<button class="btn dark" onclick="setSubmissionStatus('${batch.batchId}', '已确认')">通过</button><button class="btn danger" onclick="setSubmissionStatus('${batch.batchId}', '已驳回')">驳回</button>` : '<button class="btn secondary">查看</button>'}
+                    </td>
+                </tr>
+            `;
+            }).join('') : '<tr><td colspan="10" class="muted">暂无符合筛选条件的项目申请批次。</td></tr>';
+            renderReviewDetail(reviewBatchById(activeReviewBatchId));
+        }
+
+        function rowConfirmedAmount(row) {
+            return (row.matchedInvoices || [])
+                .filter(inv => inv.status === '已确认')
+                .reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+        }
+
+        function rowPendingAmount(row) {
+            return (row.matchedInvoices || [])
+                .filter(inv => inv.status === '待审核')
+                .reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+        }
+
+        function adminSummarySourceName(row, sourceType) {
+            return sourceType === 'employee' ? (row.applicant || '-') : (row.supplier || '-');
+        }
+
+        function adminSummarySourceLabel(row, sourceType) {
+            if (sourceType === 'employee') return '员工';
+            return row.isReplacementRow ? '替票对象' : '供应商';
+        }
+
+        function renderAdminSummaryFilters() {
+            const rows = summary.rows || [];
+            const sourceType = document.getElementById('summarySourceTypeFilter')?.value || 'employee';
+            setInvoicePeriodOptions('summary', rows.map(row => row.projectMonth || ''));
+            syncSelectOptions('summarySourceNameFilter', rows.map(row => adminSummarySourceName(row, sourceType)), '全部数据源');
+        }
+
+        function buildAdminSummaryRows() {
+            const rows = summary.rows || [];
+            const month = document.getElementById('summaryMonthFilter')?.value || '';
+            const sourceType = document.getElementById('summarySourceTypeFilter')?.value || 'employee';
+            const sourceName = document.getElementById('summarySourceNameFilter')?.value || '';
+            const search = (document.getElementById('summaryProjectSearch')?.value || '').trim().toLowerCase();
+            const groups = new Map();
+            rows.forEach(row => {
+                if (month && !String(row.projectMonth || '').startsWith(month)) return;
+                const currentSourceName = adminSummarySourceName(row, sourceType);
+                if (sourceName && currentSourceName !== sourceName) return;
+                const projectText = [row.appId, row.projectName].join(' ').toLowerCase();
+                if (search && !projectText.includes(search)) return;
+                const key = [row.projectMonth || '-', adminSummarySourceLabel(row, sourceType), currentSourceName, row.appId].join('|');
+                if (!groups.has(key)) {
+                    groups.set(key, {
+                        month: row.projectMonth || '-',
+                        sourceType: adminSummarySourceLabel(row, sourceType),
+                        sourceName: currentSourceName,
+                        appId: row.appId || '',
+                        projectName: row.projectName || '',
+                        expectedAmount: 0,
+                        confirmedAmount: 0,
+                        pendingAmount: 0,
+                        draftAmount: 0,
+                        missingAmount: 0
+                    });
+                }
+                const group = groups.get(key);
+                group.expectedAmount += Number(row.expectedAmount || 0);
+                group.confirmedAmount += rowConfirmedAmount(row);
+                group.pendingAmount += rowPendingAmount(row);
+                group.draftAmount += Number(row.draftAmount || 0);
+                group.missingAmount += Number(row.missingAmount || 0);
+            });
+            return [...groups.values()].map(row => ({
+                ...row,
+                expectedAmount: moneyNumber(row.expectedAmount),
+                confirmedAmount: moneyNumber(row.confirmedAmount),
+                pendingAmount: moneyNumber(row.pendingAmount),
+                draftAmount: moneyNumber(row.draftAmount),
+                missingAmount: moneyNumber(row.missingAmount)
+            })).sort((a, b) => String(b.month).localeCompare(String(a.month)) || String(a.sourceName).localeCompare(String(b.sourceName)) || String(a.appId).localeCompare(String(b.appId)));
+        }
+
+        function ratioHtml(missing, expected) {
+            const ratio = expected > 0 ? Math.max(0, Math.min(1, Number(missing || 0) / Number(expected || 0))) : 0;
+            const percent = ratio * 100;
+            const cls = percent >= 40 ? 'bad' : (percent >= 20 ? 'warn' : '');
+            return `
+                <div class="ratio-cell">
+                    <div class="ratio-track"><div class="ratio-fill ${cls}" style="width:${percent.toFixed(2)}%;"></div></div>
+                    <span>${percent.toFixed(2)}%</span>
+                </div>
+            `;
+        }
+
+        function renderAdminSummary() {
+            if (!isAdmin) return;
+            renderAdminSummaryFilters();
+            renderActivityDateCorrections();
+            const rows = buildAdminSummaryRows();
+            const totals = rows.reduce((acc, row) => {
+                acc.expected += row.expectedAmount;
+                acc.confirmed += row.confirmedAmount;
+                acc.pending += row.pendingAmount;
+                acc.draft += row.draftAmount;
+                acc.missing += row.missingAmount;
+                return acc;
+            }, { expected: 0, confirmed: 0, pending: 0, draft: 0, missing: 0 });
+            const totalRatio = totals.expected > 0 ? totals.missing / totals.expected * 100 : 0;
+            document.getElementById('adminSummaryKpiBar').innerHTML = `
+                <div class="admin-kpi"><span>应补发票金额</span><b>${money(totals.expected)}</b></div>
+                <div class="admin-kpi"><span>已确认发票金额</span><b>${money(totals.confirmed)}</b></div>
+                <div class="admin-kpi"><span>待审核发票金额</span><b>${money(totals.pending)}</b></div>
+                <div class="admin-kpi"><span>草稿占用金额</span><b>${money(totals.draft)}</b></div>
+                <div class="admin-kpi"><span>可继续申请金额</span><b>${money(totals.missing)}</b><small>${totalRatio.toFixed(2)}%</small></div>
+            `;
+            document.getElementById('adminSummaryBody').innerHTML = rows.length ? rows.map(row => `
+                <tr>
+                    <td>${escapeHtml(row.month)}</td>
+                    <td>${escapeHtml(row.sourceType)}</td>
+                    <td>${escapeHtml(row.sourceName)}</td>
+                    <td><strong>${escapeHtml(row.appId || '-')}</strong><br><span class="muted">${escapeHtml(row.projectName || '-')}</span></td>
+                    <td class="amount">${money(row.expectedAmount)}</td>
+                    <td class="amount">${money(row.confirmedAmount)}</td>
+                    <td class="amount">${money(row.pendingAmount)}</td>
+                    <td class="amount">${money(row.draftAmount)}</td>
+                    <td class="amount">${money(row.missingAmount)}</td>
+                    <td>${ratioHtml(row.missingAmount, row.expectedAmount)}</td>
+                </tr>
+            `).join('') : '<tr><td colspan="10" class="muted">暂无符合筛选条件的数据。</td></tr>';
+        }
+
+        function renderActivityDateCorrections() {
+            const target = document.getElementById('activityDateCorrectionBody');
+            if (!target) return;
+            const yearNow = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Shanghai', year: 'numeric' }).format(new Date()));
+            const historicalYears = (summary.rows || []).map(row => Number(String(row.projectMonth || '').slice(0, 4))).filter(Number.isFinite);
+            const historicalMin = historicalYears.length ? Math.min(...historicalYears) : yearNow - 1;
+            const historicalMax = yearNow + 3;
+            const missing = [...new Map((summary.rows || [])
+                .filter(row => row.activityDateMissing && row.appId)
+                .map(row => [row.appId, row])).values()];
+            target.innerHTML = missing.length ? missing.map((row, index) => `
+                <div class="activity-date-row" data-activity-date-row="${escapeHtml(row.appId)}">
+                    <strong>${escapeHtml(row.appId)} ${escapeHtml(row.projectName || '')}</strong>
+                    <input class="input" type="date" id="activityDate-${index}" min="${historicalMin}-01-01" max="${historicalMax}-12-31" aria-label="${escapeHtml(row.appId)} 活动日期">
+                    <input class="input" id="activityReason-${index}" placeholder="原始证据及补录原因" aria-label="${escapeHtml(row.appId)} 补录原因">
+                    <button class="btn dark" data-app-id="${escapeHtml(row.appId)}" onclick="correctActivityDate(this.dataset.appId, ${index})">保存补录</button>
+                </div>
+            `).join('') : '当前没有活动日期缺失、需要补录的历史项目。';
+        }
+
+        async function correctActivityDate(appId, index) {
+            const startDate = document.getElementById(`activityDate-${index}`)?.value || '';
+            const reason = document.getElementById(`activityReason-${index}`)?.value.trim() || '';
+            if (!startDate || !reason) {
+                alert('请填写活动日期和原始证据/补录原因。');
+                return;
+            }
+            if (!confirm(`确认依据原始证据为 ${appId} 补录活动日期 ${startDate}？`)) return;
+            const resp = await authFetch(`/api/application/${encodeURIComponent(appId)}/activity-date`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ startDate, reason, expectedVersion: 0 })
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) {
+                alert(data.error || '历史活动日期补录失败');
+                return;
+            }
+            await loadData();
+            alert(`${appId} 活动日期已补录，并已保存审计记录。`);
+        }
+
+        function renderAuditRecords() {
+            const target = document.getElementById('auditRecordBody');
+            if (!target) return;
+            renderAuditRecordFilters();
+            const records = filteredAuditRecords();
+            target.innerHTML = records.length ? records.map(record => {
+                const invoiceNos = (record.affectedInvoiceNos || []).join('、') || '-';
+                const details = (record.affectedDetails || []).map(detail => `${detail.supplier || '-'} / ${detail.item || '-'}${detail.content ? ' - ' + detail.content : ''}`).join('；');
+                const correctionButtons = (record.affectedInvoiceIds || [])
+                    .map(id => invoices.find(invoice => invoice.id === id))
+                    .filter(invoice => invoice?.status === '已确认')
+                    .map(invoice => `<button class="btn" data-invoice-id="${escapeHtml(invoice.id)}" onclick="correctConfirmedInvoice(this.dataset.invoiceId)">纠错 ${escapeHtml(invoice.id)}</button>`)
+                    .join('');
+                return `
+                    <tr>
+                        <td>${escapeHtml(record.id || '-')}<br><span class="muted">${escapeHtml(record.reviewedAt || '-')}</span></td>
+                        <td><strong>${escapeHtml(record.appId || '-')}</strong> ${escapeHtml(record.projectName || '')}<br><span class="muted">${escapeHtml(record.batchId || '-')}</span></td>
+                        <td>提交：${escapeHtml(record.submittedBy || record.owner || '-')}<br><span class="muted">审核：${escapeHtml(record.reviewer || '-')}</span></td>
+                        <td><span class="status">${escapeHtml(record.action || record.afterStatus || '-')}</span><br><span class="muted">${escapeHtml(record.afterStatus || '')}</span></td>
+                        <td>${escapeHtml(invoiceNos)}<br><span class="muted">${escapeHtml(details || '-')}</span></td>
+                        <td>${escapeHtml(record.note || '-')}<br><span class="muted">一共 ${record.invoiceCount || (record.affectedInvoiceIds || []).length || 0} 张 / ${money(record.amount)}</span></td>
+                        <td>${attachmentPackageButtonHtml(record.batchId, '下载发票包')}${correctionButtons}</td>
+                    </tr>
+                `;
+            }).join('') : '<tr><td colspan="7" class="muted">暂无符合筛选条件的审核记录。</td></tr>';
+        }
+
+        async function correctConfirmedInvoice(invoiceId) {
+            let reason = prompt(`请输入 ${invoiceId} 确认后纠错原因。原记录、附件和原审核结果将保留，状态改为已驳回并释放有效占用：`) || '';
+            reason = reason.trim();
+            if (!reason) {
+                alert('确认后纠错必须填写原因。');
+                return;
+            }
+            if (!confirm(`确认将 ${invoiceId} 从已确认纠错为已驳回？`)) return;
+            const resp = await authFetch('/api/invoices/' + encodeURIComponent(invoiceId), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: '已驳回', correctionReason: reason })
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) {
+                alert(data.error || '确认后纠错失败');
+                return;
+            }
+            await loadData();
+            alert(`${invoiceId} 已完成确认后纠错；原证据与更正审计均已保留。`);
+        }
+
+        function renderAuditRecordFilters() {
+            syncSelectOptions('auditRecordUserFilter', (auditRecords || []).map(record => record.submittedBy || record.owner || ''), '全部提交人');
+        }
+
+        function filteredAuditRecords() {
+            const search = (document.getElementById('auditRecordSearch')?.value || '').trim().toLowerCase();
+            const status = document.getElementById('auditRecordStatusFilter')?.value || '';
+            const submitter = document.getElementById('auditRecordUserFilter')?.value || '';
+            return (auditRecords || []).filter(record => {
+                if (status && !String(record.action || record.afterStatus || '').includes(status)) return false;
+                if (submitter && submitter !== (record.submittedBy || record.owner || '')) return false;
+                const details = (record.affectedDetails || []).map(detail => `${detail.supplier || ''} ${detail.item || ''} ${detail.content || ''}`).join(' ');
+                const text = [
+                    record.id,
+                    record.batchId,
+                    record.appId,
+                    record.projectName,
+                    record.submittedBy,
+                    record.owner,
+                    record.reviewer,
+                    record.action,
+                    record.afterStatus,
+                    record.note,
+                    (record.affectedInvoiceNos || []).join(' '),
+                    details
+                ].join(' ').toLowerCase();
+                return !search || text.includes(search);
+            });
+        }
+
+        function renderDuplicates() {
+            document.getElementById('duplicateBody').innerHTML = (summary.duplicates || []).length
+                ? summary.duplicates.map(d => `<tr><td>${d.invoiceNo}</td><td>${d.ids.join('、')}</td></tr>`).join('')
+                : '<tr><td colspan="2" class="muted">暂无重复发票号码</td></tr>';
+        }
+
+        async function setInvoiceStatus(id, status) {
+            const resp = await authFetch('/api/invoices/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            const data = await resp.json();
+            if (data.success) loadData();
+            else alert(data.error || '操作失败');
+        }
+
+        async function setSubmissionStatus(batchId, status) {
+            let note = '';
+            if (status === '已驳回') {
+                note = prompt('请输入驳回原因，员工端和审核记录会保留这条原因：') || '';
+                note = note.trim();
+                if (!note) {
+                    alert('驳回必须填写原因。');
+                    return;
+                }
+            } else if (!confirm('确认通过这个项目发票批次？')) {
+                return;
+            }
+            const resp = await authFetch('/api/invoice-submissions/' + encodeURIComponent(batchId), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, note })
+            });
+            const data = await resp.json();
+            if (data.success) loadData();
+            else alert(data.error || '操作失败');
+        }
+
+        function downloadProjectSummary() {
+            if (blockDuringAnalyze('发票识别与规则复核中，不能下载项目汇总。请等待完成后再操作。')) return;
+            if (!activeProject) { alert('请先选择项目'); return; }
+            window.open('/api/invoice-project-export?appId=' + encodeURIComponent(activeProject), '_blank');
+        }
+
+        async function saveNoInvoiceDraft() {
+            if (blockDuringAnalyze('发票识别与规则复核中，不能保存无票说明。请等待完成后再操作。')) return;
+            if (!activeProject) { alert('请先选择项目'); return; }
+            if (!selectedKeys.size) { alert('请先选择明细'); return; }
+            const error = selectionError(selectedRows());
+            if (error) { alert(error); return; }
+            const keys = sortedKeys(selectedKeys);
+            const need = selectedNeed();
+            if (need <= 0) { alert('当前明细已满足，不需要继续提交无票说明。'); return; }
+            const rawAmount = Number(document.getElementById('noInvoiceAmount').value || 0);
+            const amount = rawAmount > 0 ? Math.min(rawAmount, need) : need;
+            const note = document.getElementById('employeeNote').value.trim();
+            if (amount <= 0) { alert('当前明细没有可提报的缺口金额'); return; }
+            if (!note) { alert('请填写无票原因说明'); return; }
+            const resp = await authFetch('/api/invoice-drafts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    appId: activeProject,
+                    expectedKeys: keys,
+                    detailLabel: currentDetailLabel(keys),
+                    need,
+                    checked: amount,
+                    noInvoice: true,
+                    noInvoiceAmount: amount,
+                    employeeNote: note,
+                    items: []
+                })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                alert(data.error || '保存无票说明失败');
+                return;
+            }
+            alert('已保存无票说明到本项目待提交清单，尚未进入管理员审核。');
+            document.getElementById('noInvoiceAmount').value = '';
+            document.getElementById('employeeNote').value = '';
+            await loadData();
+        }
+
+        async function resetInvoiceTestData() {
+            if (blockDuringAnalyze('发票识别与规则复核中，不能执行发票数据归零。请等待完成后再操作。')) return;
+            if (!invoiceTestResetAllowed) {
+                alert('仅管理员可以使用测试归零按钮。');
+                return;
+            }
+            const confirmText = prompt('测试归零会清空发票记录、OCR队列和发票草稿，并把发票编号计数归 1。系统会先备份 data.json；项目、付款、用户、供应商和附件文件不会删除。请输入 RESET 确认执行。');
+            if (confirmText !== 'RESET') {
+                alert('确认文字不匹配，未执行归零。');
+                return;
+            }
+            const resp = await authFetch('/api/test/reset-invoice-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confirm: 'RESET_INVOICE_TEST_DATA' })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                alert(data.error || '发票数据归零失败');
+                return;
+            }
+            clearBatch(false);
+            await loadData();
+            alert(`发票数据已归零。归零前备份：${data.backupFile}`);
+        }
+
+        function showSection(name, btn) {
+            if (blockDuringAnalyze('发票识别与规则复核中，不能切换页面标签。请等待完成后再操作。')) return;
+            ['mine', 'submissions', 'satisfied', 'records', 'pools', 'review', 'adminSummary', 'auditRecords', 'adminRisk', 'ledger', 'duplicates'].forEach(n => {
+                const section = document.getElementById('section-' + n);
+                if (section) section.classList.toggle('hide', n !== name);
+            });
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            btn?.classList.add('active');
+        }
+
+        async function logout() {
+            await authFetch('/api/logout', { method: 'POST' });
+            localStorage.clear();
+            location.href = '/login.html';
+        }
+
+        async function loadData() {
+            setPageStatus('info', '正在加载发票工作台数据...');
+            try {
+                const resources = await Promise.all([
+                    ['/api/invoices', '发票台账'], ['/api/invoice-submissions', '递交记录'],
+                    ['/api/invoice-audit-records', '审核记录'], ['/api/invoice-pools', '多余发票池'],
+                    ['/api/invoice-drafts', '发票草稿']
+                ].map(async ([url, label]) => {
+                    const response = await authFetch(url);
+                    let body;
+                    try { body = await response.json(); } catch { throw new Error(`${label}返回非法 JSON`); }
+                    if (!response.ok) {
+                        const kind = response.status === 401 ? '登录已失效' : response.status === 403 ? '无权访问' : response.status === 409 ? '数据状态冲突' : `服务错误 ${response.status}`;
+                        const error = new Error(`${label}${kind}：${body.error || '请稍后重试'}`);
+                        error.status = response.status;
+                        throw error;
+                    }
+                    return body;
+                }));
+                const [data, submissionsData, auditData, poolsData, draftsData] = resources;
+                invoices = data.invoices || [];
+                summary = data.summary || summary;
+                closureEvidence = data.closureEvidence || closureEvidence;
+                submissions = submissionsData.submissions || [];
+                auditRecords = auditData.records || [];
+                pools = poolsData.pools || [];
+                draftBatches = draftsData.drafts || [];
+                renderAll();
+                setPageStatus('success', '发票数据加载完成');
+            } catch (error) {
+                setPageStatus(error.status === 403 ? 'warning' : 'error', error.message || '发票工作台加载失败，请重试。');
+            }
+        }
+
+        let invoiceExportBusy = false;
+        let invoiceExportReturnFocus = null;
+
+        function setInvoiceExportStatus(state, message) {
+            document.querySelectorAll('[data-invoice-export-status]').forEach(status => {
+                status.dataset.state = state;
+                status.textContent = message;
+            });
+        }
+
+        function openInvoiceExport() {
+            if (invoiceExportBusy) return;
+            invoiceExportReturnFocus = document.activeElement;
+            const dialog = document.getElementById('invoiceExportDialog');
+            const format = document.getElementById('invoiceExportFormat');
+            const zipOption = document.getElementById('invoiceExportZipOption');
+            zipOption.hidden = currentRole !== 'admin';
+            zipOption.disabled = currentRole !== 'admin';
+            format.value = 'xlsx';
+            dialog.style.display = 'flex';
+            requestAnimationFrame(() => format.focus());
+        }
+
+        function closeInvoiceExportDialog() {
+            if (invoiceExportBusy) return;
+            document.getElementById('invoiceExportDialog').style.display = 'none';
+            invoiceExportReturnFocus?.focus?.();
+            invoiceExportReturnFocus = null;
+        }
+
+        function invoiceIdsFromBatches(batches) {
+            const ids = new Set();
+            const batchIds = new Set();
+            (batches || []).forEach(batch => {
+                if (batch.batchId) batchIds.add(String(batch.batchId));
+                (batch.invoiceIds || []).forEach(id => ids.add(String(id)));
+                (batch.invoices || []).forEach(invoice => { if (invoice?.id) ids.add(String(invoice.id)); });
+            });
+            invoices.forEach(invoice => { if (batchIds.has(String(invoice.batchId || ''))) ids.add(String(invoice.id || '')); });
+            return [...ids].filter(Boolean);
+        }
+
+        function invoiceIdsForProjects(projectIds) {
+            const allowed = new Set((projectIds || []).map(value => String(value || '')).filter(Boolean));
+            return invoices.filter(invoice => allowed.has(String(invoice.appId || invoice.projectId || ''))).map(invoice => String(invoice.id || '')).filter(Boolean);
+        }
+
+        function visibleInvoiceIdsForActiveTab(activeTabId) {
+            switch (activeTabId) {
+                case 'mineTab': return invoiceIdsForProjects(filteredWorkbenchProjects().map(project => project.appId));
+                case 'submissionsTab': return invoiceIdsFromBatches(submissions.filter(shouldShowInPendingReview));
+                case 'satisfiedTab': return invoiceIdsForProjects(satisfiedProjects().map(project => project.appId));
+                case 'recordsTab': return invoiceIdsFromBatches(submissions.filter(shouldShowInSubmissionRecord));
+                case 'poolsTab': return null;
+                case 'reviewTab': return invoiceIdsFromBatches(filteredReviewBatches());
+                case 'adminSummaryTab': return invoiceIdsForProjects(buildAdminSummaryRows().map(row => row.appId));
+                case 'auditRecordsTab': {
+                    const records = filteredAuditRecords();
+                    const ids = new Set(records.flatMap(record => record.affectedInvoiceIds || []).map(String));
+                    const batchIds = new Set(records.map(record => String(record.batchId || '')).filter(Boolean));
+                    invoices.forEach(invoice => { if (batchIds.has(String(invoice.batchId || ''))) ids.add(String(invoice.id || '')); });
+                    return [...ids].filter(Boolean);
+                }
+                case 'adminRiskTab': return [];
+                default: return [];
+            }
+        }
+
+        async function confirmInvoiceExport() {
+            if (invoiceExportBusy) return;
+            const format = document.getElementById('invoiceExportFormat').value;
+            const scope = format === 'zip' ? 'attachments' : 'current';
+            const buttons = [...document.querySelectorAll('[data-export-action]')];
+            invoiceExportBusy = true;
+            buttons.forEach(button => {
+                button.dataset.exportLabel = button.textContent;
+                button.disabled = true;
+                button.setAttribute('aria-busy', 'true');
+                button.textContent = '正在生成...';
+            });
+            setInvoiceExportStatus('busy', `正在生成 ${format.toUpperCase()}，请勿重复点击。`);
+            let succeeded = false;
+            try {
+                const params = new URLSearchParams({ module: 'invoice', format, scope });
+                if (scope === 'current') {
+                    const activeTabId = document.querySelector('.tab.active')?.id || '';
+                    const visibleInvoiceIds = visibleInvoiceIdsForActiveTab(activeTabId);
+                    if (activeTabId === 'poolsTab') params.set('view', 'pool');
+                    else params.set('recordIds', visibleInvoiceIds.length ? visibleInvoiceIds.join(',') : '__NO_MATCH__');
+                }
+                const response = await authFetch('/api/exports?' + params.toString());
+                if (!response.ok) {
+                    const result = await response.json().catch(() => ({}));
+                    throw new Error(result.error || '导出失败');
+                }
+                const disposition = response.headers.get('Content-Disposition') || '';
+                const match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(await response.blob());
+                try { link.download = match ? decodeURIComponent(match[1]) : `invoice.${format}`; } catch (_) { link.download = `invoice.${format}`; }
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+                succeeded = true;
+                setInvoiceExportStatus('success', `${format.toUpperCase()} 已生成，下载已开始。`);
+            } catch (error) {
+                setInvoiceExportStatus('error', '导出失败：' + (error.message || '网络请求失败，请重试'));
+            } finally {
+                invoiceExportBusy = false;
+                buttons.forEach(button => {
+                    button.disabled = false;
+                    button.removeAttribute('aria-busy');
+                    button.textContent = button.dataset.exportLabel || '导出';
+                    delete button.dataset.exportLabel;
+                });
+            }
+            if (succeeded) closeInvoiceExportDialog();
+        }
+
+        function keepFocusInsideInvoiceExport(event) {
+            const dialog = document.getElementById('invoiceExportDialog');
+            if (dialog.style.display === 'none' || event.key !== 'Tab') return;
+            const focusable = [...dialog.querySelectorAll('button:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+                .filter(element => element.offsetParent !== null);
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+        document.getElementById('invoiceExportDialog').addEventListener('click', event => {
+            if (event.target === event.currentTarget) closeInvoiceExportDialog();
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') { closeInvoiceExportDialog(); return; }
+            keepFocusInsideInvoiceExport(event);
+        });
+
+        initializeIdentity().then(loadData).catch(() => {});
+    </script>
+</body>
+</html>
