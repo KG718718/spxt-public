@@ -149,7 +149,7 @@ async function login(username){return (await request('/api/login',null,{username
  });
  await check('real XLSX export is authorized and records an audit before returning bytes',async()=>{
   const before=state().exportAuditRecords.length;
-  const r=await fetch('http://127.0.0.1:'+f.port+'/api/exports?module=settlement&format=xlsx&scope=current',{headers:{Authorization:'Bearer '+admin}});
+  const r=await fetch('http://127.0.0.1:'+f.port+'/api/exports?module=bonus&format=xlsx&scope=current',{headers:{Authorization:'Bearer '+admin}});
   assert.equal(r.status,200,await (r.status!==200?r.text():Promise.resolve('')));
   const bytes=Buffer.from(await r.arrayBuffer());assert.equal(bytes.subarray(0,2).toString(),'PK');
   assert.equal(state().exportAuditRecords.length,before+1);
