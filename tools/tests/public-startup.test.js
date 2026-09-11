@@ -276,4 +276,36 @@ test('valid tax and historical snapshots are never rewritten',()=>{
     assert.deepEqual([...fs.files],before);assertNoWrites(fs);
 });
 
+
+for(const invoiceBuyerName of [null,'',false,23,[],{},'有限公司','bad\nname']){
+    test('invalid saved buyer stops startup without rewriting',()=>{
+        const fs=stateFs(existingState(),{invoiceBuyerName});const before=[...fs.files];
+        assert.throws(()=>loadStartupState(options(fs)),{code:'CONFIG_INVALID'});
+        assert.deepEqual([...fs.files],before);assertNoWrites(fs);
+    });
+}
+test('configured buyer and saved invoice values remain unchanged at startup',()=>{
+    const value=existingState();value.invoices=[{buyerName:'合成历史购买方',amount:71}];
+    const fs=stateFs(value,{invoiceBuyerName:' 合成新购买方有限公司 '});const before=[...fs.files];
+    const result=loadStartupState(options(fs));
+    assert.equal(result.config.invoiceBuyerName,' 合成新购买方有限公司 ');
+    assert.deepEqual(result.data,value);assert.deepEqual([...fs.files],before);assertNoWrites(fs);
+});
+for(const invoiceReplacementAllowed of [null,'true',1,{},[]]){
+    test('invalid saved employee authorization stops startup without rewriting',()=>{
+        const value=existingState();value.users[0].invoiceReplacementAllowed=invoiceReplacementAllowed;
+        const fs=stateFs(value);const before=[...fs.files];
+        assert.throws(()=>loadStartupState(options(fs)),{code:'STORE_INVALID'});
+        assert.deepEqual([...fs.files],before);assertNoWrites(fs);
+    });
+}
+test('explicit boolean authorization is preserved and missing field not auto-created',()=>{
+    const value=existingState();value.users[0].invoiceReplacementAllowed=false;
+    value.users.push({username:'authorized-fixture',role:'user',password:'synthetic-hash',invoiceReplacementAllowed:true});
+    value.users.push({username:'unconfigured-fixture',role:'user',password:'synthetic-hash'});
+    const fs=stateFs(value);const result=loadStartupState(options(fs));
+    assert.deepEqual(result.data,value);
+    assert.equal(Object.hasOwn(result.data.users[2],'invoiceReplacementAllowed'),false);assertNoWrites(fs);
+});
+
 console.log('Public startup checks passed: '+passed);

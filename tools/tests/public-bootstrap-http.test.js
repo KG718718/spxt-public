@@ -143,5 +143,37 @@ const hash=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).diges
         }finally{await taxFixture.stop();}
     }
 
+
+    for(const invoiceBuyerName of [null,'',false,'有限公司','合成购买方有限公司']){
+        const buyerFixture=await fixture();
+        try{
+            assert.equal((await call(buyerFixture,{method:'POST',payload:valid})).status,201);
+            fs.writeFileSync(buyerFixture.storage.configFile,JSON.stringify({invoiceBuyerName}));
+            await check('saved buyer configuration is validated before setup read',async()=>{
+                const dataHash=hash(buyerFixture.storage.dataFile),configHash=hash(buyerFixture.storage.configFile);
+                const ok=invoiceBuyerName==='合成购买方有限公司';
+                assert.equal((await call(buyerFixture)).status,ok?200:503);
+                assert.equal((await call(buyerFixture,{method:'POST',payload:valid})).status,ok?409:503);
+                assert.equal(hash(buyerFixture.storage.dataFile),dataHash);
+                assert.equal(hash(buyerFixture.storage.configFile),configHash);
+            });
+        }finally{await buyerFixture.stop();}
+    }
+    for(const invoiceReplacementAllowed of [false,true,'true',null]){
+        const permissionFixture=await fixture();
+        try{
+            assert.equal((await call(permissionFixture,{method:'POST',payload:valid})).status,201);
+            const data=JSON.parse(fs.readFileSync(permissionFixture.storage.dataFile,'utf8'));
+            data.users.push({username:'permission-fixture',role:'user',password:'synthetic-hash',invoiceReplacementAllowed});
+            fs.writeFileSync(permissionFixture.storage.dataFile,JSON.stringify(data));
+            await check('saved replacement authorization is validated without normalization',async()=>{
+                const before=hash(permissionFixture.storage.dataFile),ok=typeof invoiceReplacementAllowed==='boolean';
+                assert.equal((await call(permissionFixture)).status,ok?200:503);
+                assert.equal((await call(permissionFixture,{method:'POST',payload:valid})).status,ok?409:503);
+                assert.equal(hash(permissionFixture.storage.dataFile),before);
+            });
+        }finally{await permissionFixture.stop();}
+    }
+
     console.log('Public bootstrap HTTP checks: '+count+' passed');
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -3,6 +3,7 @@ const fsDefault = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { validateTaxRate } = require('./tax-config');
+const { validateInvoiceBuyerName } = require('./invoice-access-policy');
 
 const ARRAY_FIELDS = Object.freeze([
     'applications', 'payments', 'debts', 'clients', 'invoices', 'invoiceOcrJobs',
@@ -83,12 +84,19 @@ function validateState(value) {
             || (!hasCredential && !removedCredential)) {
             throw failure('STORE_INVALID', '账号结构非法或存在重复；请恢复正确数据，不会重建账号。');
         }
+        if (Object.hasOwn(account, 'invoiceReplacementAllowed') && typeof account.invoiceReplacementAllowed !== 'boolean') {
+            throw failure('STORE_INVALID', '员工替票授权结构非法，不会自动授权或重建账号。');
+        }
         seen.add(account.username);
     }
     return value;
 }
 function validateConfig(value) {
     if (!plainRecord(value)) throw failure('CONFIG_INVALID', '配置必须为对象。');
+    if (Object.hasOwn(value, 'invoiceBuyerName')) {
+        try { validateInvoiceBuyerName(value.invoiceBuyerName); }
+        catch { throw failure('CONFIG_INVALID', '购买方配置非法；请检查配置或恢复备份，不会使用默认单位。'); }
+    }
     if (Object.hasOwn(value, 'taxRate')) {
         try { validateTaxRate(value.taxRate); }
         catch { throw failure('CONFIG_INVALID', '税率配置非法；请检查配置或恢复备份，不会使用默认值。'); }
