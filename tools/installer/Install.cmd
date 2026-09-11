@@ -15,8 +15,12 @@ echo Downloading pinned Node 24.21.0 from nodejs.org ...
 if errorlevel 1 goto failed
 "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoLogo -NoProfile -Command "$ErrorActionPreference='Stop'; $stream=[System.IO.File]::OpenRead($env:KSESSION_BOOTSTRAP_ZIP); $hasher=[System.Security.Cryptography.SHA256]::Create(); try { $actual=[System.BitConverter]::ToString($hasher.ComputeHash($stream)).Replace('-','').ToLowerInvariant(); if ($actual -ne '158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541') { throw 'Official Node archive checksum mismatch' } } finally { $hasher.Dispose(); $stream.Dispose() }"
 if errorlevel 1 goto failed
-"%SystemRoot%\System32\tar.exe" -xf "%KSESSION_BOOTSTRAP_ZIP%" -C "%stage%"
+pushd "%stage%"
 if errorlevel 1 goto failed
+"%SystemRoot%\System32\tar.exe" -xf node.zip
+set "extractResult=%errorlevel%"
+popd
+if not "%extractResult%"=="0" goto failed
 "%stage%\node-v24.21.0-win-x64\node.exe" "%~dp0installer.js" --runtime "%stage%\node-v24.21.0-win-x64" --archive "%KSESSION_BOOTSTRAP_ZIP%" %*
 if errorlevel 1 goto failed
 echo Installation completed. Run Start.cmd in the chosen installation directory.
