@@ -25,7 +25,8 @@ check('altered permission paragraph fails',()=>{const f=fixture();f.license=f.li
 check('missing warranty disclaimer fails',()=>{const f=fixture();f.license=f.license.slice(0,f.license.indexOf('THE SOFTWARE IS PROVIDED'));assert.throws(()=>validateProjectLicense(f));});
 check('placeholder attribution fails',()=>{const f=fixture();f.license=f.license.replace('K-SESSION contributors','<COPYRIGHT HOLDER>');assert.throws(()=>validateProjectLicense(f));});
 check('third party notice is mandatory',()=>{const f=fixture();f.notices='';assert.throws(()=>validateProjectLicense(f));});
-check('line endings do not change legal terms',()=>{const f=fixture();const expected=validateProjectLicense(f).normalizedLicenseSha256;f.license=f.license.replace(/\n/g,'\r\n');assert.equal(validateProjectLicense(f).normalizedLicenseSha256,expected);});
+check('line endings do not change legal terms',()=>{const f=fixture();const expected=validateProjectLicense(f).normalizedLicenseSha256;f.license=f.license.replace(/\r\n/g,'\n').replace(/\n/g,'\r\n');assert.equal(validateProjectLicense(f).normalizedLicenseSha256,expected);});
+check('Windows notice line endings are accepted',()=>{const f=fixture();f.notices=f.notices.replace(/\r\n/g,'\n').replace(/\n/g,'\r\n');assert.equal(validateProjectLicense(f).spdx,'MIT');});
 check('validation never changes input',()=>{const f=fixture(),before=JSON.stringify(f);validateProjectLicense(f);assert.equal(JSON.stringify(f),before);});
 check('third party notices cannot be replaced with project license',()=>{const f=fixture();f.notices=f.license;assert.throws(()=>validateProjectLicense(f));});
 console.log('Public license checks: '+checks+' passed');

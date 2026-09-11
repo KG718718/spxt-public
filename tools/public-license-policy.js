@@ -9,8 +9,9 @@ function validateProjectLicense({manifest,lock,license,notices}={}) {
     const normalized=license.replace(/\r\n/g,'\n');
     const digest=crypto.createHash('sha256').update(normalized).digest('hex');
     if(digest!==LICENSE_SHA256) throw Error('MIT text or attribution differs from the reviewed original.');
-    if(typeof notices!=='string'||!notices.startsWith('# Third-party notices\n')||
-       !notices.includes('original license')||!notices.includes('does not replace'))
+    const normalizedNotices=typeof notices==='string'?notices.replace(/\r\n/g,'\n'):'';
+    if(!normalizedNotices.startsWith('# Third-party notices\n')||
+       !normalizedNotices.includes('original license')||!normalizedNotices.includes('does not replace'))
         throw Error('Third-party notices must preserve independent original terms.');
     return {spdx:'MIT',attribution:'K-SESSION contributors',normalizedLicenseSha256:digest};
 }

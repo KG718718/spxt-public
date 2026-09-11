@@ -9,3 +9,7 @@ The hosted collector now validates the root license before output, includes LICE
 Scope: LICENSE, THIRD_PARTY_NOTICES.md, package.json, package-lock.json, tools/public-license-policy.js, tools/check-public-licenses.js, tools/tests/public-license.test.js, README.md, PROJECT.md, license documentation and this task evidence. No business rule, internal source, runtime data, host or service change. No PR, main merge, Release or deployment.
 
 Still pending: native binary components, Node/OCR/assets license review and actual final distribution; complete server/pages, HTTP/browser, installation/upgrade/full restore and authorized two-machine LAN testing. The cloud license archive is not an application installer.
+
+## Windows line-ending regression
+
+First hosted run 34564584766 failed in the new license check: Git checkout supplied CRLF third-party notice text while the heading check expected LF. This was a checker compatibility defect, not missing permission terms. Normalize CRLF for notice validation and construct the CRLF license test from normalized LF; never rewrite original dependency notices. New Windows-notice regression added; 16 license cases pass with both LF and CRLF virtual checkout inputs. The first run is recorded as failed, not green.
