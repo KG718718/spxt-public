@@ -5,6 +5,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 if (process.env.GITHUB_ACTIONS !== 'true') throw Error('License inventory is restricted to the hosted candidate workspace.');
 const root = path.resolve(__dirname, '..');
+const {isLicenseNoticeName}=require('./public-license-policy');
 const lock = JSON.parse(fs.readFileSync(path.join(root,'package-lock.json'),'utf8'));
 const manifest = JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
 const licenseBytes = fs.readFileSync(path.join(root,'LICENSE'));
@@ -23,7 +24,7 @@ function collect(directory, relative='') {
         const full=path.join(directory,entry.name),rel=path.posix.join(relative,entry.name);
         if(entry.isSymbolicLink()) continue;
         if(entry.isDirectory()) output.push(...collect(full,rel));
-        else if(entry.isFile() && /^(licen[cs]e|copying|notice|copyright|third[._-]?party[._-](?:licen[cs]es?|notices?))([._-].*)?$/i.test(entry.name)) output.push({full,rel});
+        else if(entry.isFile() && isLicenseNoticeName(entry.name)) output.push({full,rel});
     }
     return output;
 }
@@ -68,7 +69,7 @@ for (const [key,locked] of Object.entries(lock.packages||{})) {
         files.push({outputPath,buffer});
         names.push({path:outputPath,bytes:buffer.length,sha256:sha256(buffer)});
     }
-    packages.push({name:manifest.name,version:manifest.version,license,dependencyPath:key,licenseSource,licenseFiles:names});
+    packages.push({name:manifest.name,version:manifest.version,license,dependencyPath:key,developmentOnly:locked.dev===true,licenseSource,licenseFiles:names});
 }
 fs.mkdirSync(path.dirname(reportRoot),{recursive:true});
 fs.mkdirSync(reportRoot); // Refuse a stale report rather than overwriting evidence.

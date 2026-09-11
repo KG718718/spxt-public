@@ -18,3 +18,7 @@ User confirmed Admin entry with no preset rate. Before correction validateConfig
 - Seven new hosted-only HTTP cases cover two deleted-account markers and five persisted tax values. They verify setup GET/POST outcomes and unchanged real fixture file hashes. Full cloud rerun pending this commit.
 - The HTTP server still hosts only the initialization handler, not the full application. Full login, deletion through the business API, five pages and packaging remain pending.
 - All fixture identities and amounts are synthetic. No source system files, business assets, services or production host were changed. No local public checkout/file/artifact, PR, main merge, Release or deployment.
+
+## Hosted result
+
+Commit 64f02003a901d3567a631ae80a9df3866bb0277a passed [Windows CI 34565987061](https://github.com/KG718718/spxt-public/actions/runs/34565987061): 408 checks in 13 test files, startup 65 and bootstrap HTTP 37, npm audit 0 vulnerabilities. No full application/browser/installer claim.

@@ -7,7 +7,7 @@ let checks=0;
 const check=(name,fn)=>{fn(); checks++; console.log('PASS '+name);};
 const licensePath=path.join(root,'LICENSE');
 check('approved root LICENSE exists',()=>assert.ok(fs.existsSync(licensePath),'root LICENSE is missing'));
-const {validateProjectLicense}=require('../public-license-policy');
+const {validateProjectLicense,isLicenseNoticeName}=require('../public-license-policy');
 const fixture=()=>({
     manifest:JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')),
     lock:JSON.parse(fs.readFileSync(path.join(root,'package-lock.json'),'utf8')),
@@ -29,4 +29,6 @@ check('line endings do not change legal terms',()=>{const f=fixture();const expe
 check('Windows notice line endings are accepted',()=>{const f=fixture();f.notices=f.notices.replace(/\r\n/g,'\n').replace(/\n/g,'\r\n');assert.equal(validateProjectLicense(f).spdx,'MIT');});
 check('validation never changes input',()=>{const f=fixture(),before=JSON.stringify(f);validateProjectLicense(f);assert.equal(JSON.stringify(f),before);});
 check('third party notices cannot be replaced with project license',()=>{const f=fixture();f.notices=f.license;assert.throws(()=>validateProjectLicense(f));});
+for(const name of ['LICENSE','LICENSE-MIT','NOTICE','NOTICES.txt','COPYING.LESSER','ThirdPartyNotices.txt','third_party_notices.md','Third-Party-Licenses.txt']) check('notice filename retained: '+name,()=>assert.equal(isLicenseNoticeName(name),true));
+for(const name of ['index.js','package.json','README.md']) check('non-notice filename filtered: '+name,()=>assert.equal(isLicenseNoticeName(name),false));
 console.log('Public license checks: '+checks+' passed');

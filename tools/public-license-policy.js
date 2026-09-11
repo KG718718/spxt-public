@@ -15,4 +15,7 @@ function validateProjectLicense({manifest,lock,license,notices}={}) {
         throw Error('Third-party notices must preserve independent original terms.');
     return {spdx:'MIT',attribution:'K-SESSION contributors',normalizedLicenseSha256:digest};
 }
-module.exports={validateProjectLicense};
+function isLicenseNoticeName(name) {
+    return /^(licen[cs]e|copying|notices?|copyright|third[ ._-]*party[ ._-]*(?:licen[cs]es?|notices?))([ ._-].*)?$/i.test(String(name));
+}
+module.exports={validateProjectLicense,isLicenseNoticeName};
