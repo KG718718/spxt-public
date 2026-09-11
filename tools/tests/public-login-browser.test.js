@@ -50,7 +50,7 @@ if (process.env.GITHUB_ACTIONS !== 'true') {
             }
             if (req.url === '/approval.html') {
                 res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
-                res.end('<!doctype html><title>Synthetic landing</title><p>仅用于测试登录页面跳转，非业务页面。</p>'); return;
+                res.end('<!doctype html><title>Synthetic landing</title><link rel="icon" href="data:,"><p>仅用于测试登录页面跳转，非业务页面。</p>'); return;
             }
             res.writeHead(404); res.end();
         });

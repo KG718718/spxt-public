@@ -23,3 +23,9 @@ A failing name-recognition probe showed ThirdPartyNotices.txt was missed by the 
 ## Verification status
 
 Inline/page-test/license scripts pass syntax checks. Browser acceptance and locked dependency validation are pending this commit's hosted run. Native runtime, OCR, full service/pages and final package license/installation gates remain pending. No PR, main merge, Release, deployment, local public checkout or company data/service change.
+
+
+### 首轮云端反例与最小修正
+
+- 运行 34566868014 中 14 项页面交互通过，最终 console 门禁失败：模拟登录跳转页缺少 favicon，浏览器请求 /favicon.ico 返回 404。首次安装/login.html 本身已经使用空 data favicon。
+- 只给测试专用跳转页补同样的 favicon；不放宽 console 零异常断言，不增加生产业务按钮，不冒充完整登录后业务验收。复跑结果待写入。
