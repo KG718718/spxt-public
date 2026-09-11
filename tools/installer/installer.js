@@ -28,17 +28,17 @@ async function main(){
   if(fs.existsSync(targetRuntime)){if(C.sha(fs.readFileSync(C.inside(targetRuntime,'node.exe')))!==dist.nodeExeSha256)throw Error('Existing runtime version or checksum mismatch');}
   const versions=C.inside(target,'versions');fs.mkdirSync(versions,{recursive:true});const version=C.inside(versions,release);
   const stage=C.inside(target,'.staging-'+require('node:crypto').randomBytes(12).toString('hex'));fs.mkdirSync(stage);
-  if(fs.existsSync(version)){C.verifyFiles(C.inside(version,'app'),m,true);if(!fs.existsSync(C.inside(version,'app/node_modules')))throw Error('Installed dependency directory missing');}
+  if(fs.existsSync(version)){C.verifyFiles(C.inside(version,'app'),m,true);C.dependencies(version);}
   else {
    const app=C.inside(stage,'app');fs.cpSync(path.join(bundle,'payload'),app,{recursive:true,force:false,errorOnExist:true});C.verifyFiles(app,m);
-   const npm=C.inside(runtime,'node_modules/npm/bin/npm-cli.js'),emptyRC=path.join(stage,'empty.npmrc');fs.writeFileSync(emptyRC,'',{flag:'wx'});
+   const npm=C.inside(runtime,'node_modules/npm/bin/npm-cli.js'),emptyRC=path.join(stage,'empty.npmrc');fs.writeFileSync(emptyRC,'',{flag:'wx'});const globalRC=path.join(stage,'empty.global.npmrc');fs.writeFileSync(globalRC,'',{flag:'wx'});
    console.log('Installing pinned dependencies from https://registry.npmjs.org/ (lifecycle scripts disabled)...');
-   const result=cp.spawnSync(node,[npm,'ci','--omit=dev','--ignore-scripts','--no-fund','--no-audit','--strict-ssl=true','--registry=https://registry.npmjs.org/','--userconfig='+emptyRC,'--globalconfig='+emptyRC,'--cache='+path.join(stage,'npm-cache')],{cwd:app,windowsHide:true,stdio:'inherit',timeout:600000,env:{...process.env,NODE_ENV:'production'}});
+   const result=cp.spawnSync(node,[npm,'ci','--omit=dev','--ignore-scripts','--no-fund','--no-audit','--strict-ssl=true','--registry=https://registry.npmjs.org/','--userconfig='+emptyRC,'--globalconfig='+globalRC,'--cache='+path.join(stage,'npm-cache')],{cwd:app,windowsHide:true,stdio:'inherit',timeout:600000,env:{...process.env,NODE_ENV:'production'}});
    if(result.error||result.status!==0)throw Error('Dependency installation failed; previous active version and instance unchanged');
    C.verifyFiles(app,m,true);
    cp.execFileSync(node,['-e',"for(const n of Object.keys(require('./package.json').dependencies))require(n);console.log('Dependency load check passed');"],{cwd:app,windowsHide:true,timeout:60000,stdio:'inherit'});
    const prepared=C.inside(stage,'version');fs.mkdirSync(prepared);fs.renameSync(app,path.join(prepared,'app'));fs.copyFileSync(path.join(bundle,'payload-manifest.json'),path.join(prepared,'payload-manifest.json'),fs.constants.COPYFILE_EXCL);
-   fs.renameSync(prepared,version);
+   C.dependencies(prepared,true);fs.renameSync(prepared,version);
   }
   if(!fs.existsSync(targetRuntime)){C.list(runtime);const stagedRuntime=path.join(stage,'runtime');fs.cpSync(runtime,stagedRuntime,{recursive:true,force:false,errorOnExist:true});if(C.sha(fs.readFileSync(path.join(stagedRuntime,'node.exe')))!==dist.nodeExeSha256)throw Error('Copied runtime checksum mismatch');fs.renameSync(stagedRuntime,targetRuntime);}
   for(const f of files){const dest=C.inside(target,f);if(!fs.existsSync(dest))fs.copyFileSync(C.inside(bundle,f),dest,fs.constants.COPYFILE_EXCL);}

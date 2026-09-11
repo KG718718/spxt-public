@@ -11,10 +11,11 @@ function main(){
  if(C.sha(fs.readFileSync(manifestFile))!==active.release)throw Error('Active program manifest checksum mismatch');
  const app=C.inside(version,'app');C.verifyFiles(app,C.readJSON(manifestFile),true);
  const node=C.inside(root,'runtime/node.exe');if(C.sha(fs.readFileSync(node))!==active.nodeExeSha256)throw Error('Runtime checksum mismatch');
- const unlock=C.acquire(root,'application');
+ const activeBytes=fs.readFileSync(C.inside(root,'active.json'),'utf8');const unlock=C.acquire(root,'application');
  let child,done=false;
  function release(){if(!done){done=true;unlock();}}
  try {
+  if(fs.readFileSync(C.inside(root,'active.json'),'utf8')!==activeBytes||JSON.parse(activeBytes).release!==active.release)throw Error('Active program changed before lock; restart launcher');C.dependencies(version);
   const instance=C.inside(root,'instance');fs.mkdirSync(instance,{recursive:true});
   const env={...process.env};for(const k of Object.keys(env))if(k.startsWith('KSESSION_')&&k!=='KSESSION_SKIP_STARTUP_JOBS')delete env[k];
   Object.assign(env,{PORT:String(port),KSESSION_HOST:a['--lan']?'0.0.0.0':'127.0.0.1',

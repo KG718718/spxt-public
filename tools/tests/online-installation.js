@@ -33,7 +33,7 @@ async function start(target){
   assert.equal(common.verifyPayload(bundle).files.length,32);
  });
  const target=path.join(work,'正式安装 中文 ! space');
- const bootstrap=await command('cmd.exe',['/d','/s','/c','""'+path.join(bundle,'Install.cmd')+'" --target "'+target+'""'],{env:{...process.env,KSESSION_INSTALL_NONINTERACTIVE:'1'}});
+ const bootstrap=await command('cmd.exe',['/d','/s','/c','""'+path.join(bundle,'Install.cmd')+'" --target "'+target+'""'],{windowsVerbatimArguments:true,env:{...process.env,KSESSION_INSTALL_NONINTERACTIVE:'1'}});
  fs.writeFileSync(path.join(evidence,'bootstrap.log'),bootstrap.output);
  await check('real CMD bootstrap downloads pinned official Node and installs npm lock',()=>assert.equal(bootstrap.code,0,bootstrap.output));
  const dist=JSON.parse(fs.readFileSync(path.join(bundle,'distribution.json')));
@@ -85,6 +85,25 @@ async function start(target){
  await check('payload corruption is rejected before any instance or pointer change',async()=>{
   const app=path.join(bundle,'payload','server.js'),prior=fs.readFileSync(app);fs.appendFileSync(app,'\n// tamper');try{const r=await install();assert.notEqual(r.code,0);assert.match(r.output,/checksum/i);assert.equal(fs.readFileSync(activeFile,'utf8'),pointer);assert.deepEqual(inventory(path.join(target,'instance')),stable);}finally{fs.writeFileSync(app,prior);}
  });
+
+ await check('installed dependency corruption prevents launch and reinstall without data writes',async()=>{
+  const file=path.join(target,'versions',active.release,'app','node_modules','nodemailer','package.json'),original=fs.readFileSync(file);fs.appendFileSync(file,'\n ');
+  try{const r=await install();assert.notEqual(r.code,0);assert.match(r.output,/dependency checksum/i);const launch=await command(path.join(target,'runtime','node.exe'),[path.join(target,'launcher.js'),'--no-browser']);assert.notEqual(launch.code,0);assert.match(launch.output,/dependency checksum/i);assert.deepEqual(inventory(path.join(target,'instance')),stable);assert.equal(fs.readFileSync(activeFile,'utf8'),pointer);}finally{fs.writeFileSync(file,original);}
+ });
+ await check('invalid port refuses launch without touching instance',async()=>{
+  const r=await command(path.join(target,'runtime','node.exe'),[path.join(target,'launcher.js'),'--no-browser','--port','70000']);assert.notEqual(r.code,0);assert.deepEqual(inventory(path.join(target,'instance')),stable);
+ });
+ await check('unofficial npm source is refused before installation changes',()=>{
+  const file=path.join(bundle,'payload','package-lock.json'),original=fs.readFileSync(file),value=JSON.parse(original);value.packages['node_modules/fflate'].resolved='https://example.com/untrusted.tgz';fs.writeFileSync(file,JSON.stringify(value));
+  try{assert.throws(()=>common.verifyNpm(path.join(bundle,'payload')),/Non-official/);assert.deepEqual(inventory(path.join(target,'instance')),stable);}finally{fs.writeFileSync(file,original);}
+ });
+ await check('real npm integrity failure leaves active program and instance unchanged',async()=>{
+  const lockFile=path.join(bundle,'payload','package-lock.json'),mf=path.join(bundle,'payload-manifest.json'),priorLock=fs.readFileSync(lockFile),priorManifest=fs.readFileSync(mf);
+  const lock=JSON.parse(priorLock);lock.packages['node_modules/fflate'].integrity='sha512-'+Buffer.alloc(64).toString('base64');fs.writeFileSync(lockFile,JSON.stringify(lock,null,2)+'\n');
+  const m=JSON.parse(priorManifest),r=m.files.find(x=>x.path==='package-lock.json'),b=fs.readFileSync(lockFile);r.bytes=b.length;r.sha256=sha(b);fs.writeFileSync(mf,JSON.stringify(m,null,2)+'\n');
+  try{const result=await install();fs.writeFileSync(path.join(evidence,'expected-integrity-failure.log'),result.output);assert.notEqual(result.code,0);assert.match(result.output,/integrity|checksum/i);assert.equal(fs.readFileSync(activeFile,'utf8'),pointer);assert.deepEqual(inventory(path.join(target,'instance')),stable);}finally{fs.writeFileSync(lockFile,priorLock);fs.writeFileSync(mf,priorManifest);}
+ });
+
  await check('same-schema upgrade keeps prior program and complete instance',async()=>{
   const app=path.join(bundle,'payload','server.js');fs.appendFileSync(app,'\n// synthetic same-schema program upgrade\n');
   const mf=path.join(bundle,'payload-manifest.json'),m=JSON.parse(fs.readFileSync(mf)),r=m.files.find(f=>f.path==='server.js'),b=fs.readFileSync(app);r.bytes=b.length;r.sha256=sha(b);fs.writeFileSync(mf,JSON.stringify(m,null,2)+'\n');

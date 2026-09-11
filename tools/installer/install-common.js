@@ -11,6 +11,13 @@ function noLinks(p){
 }
 function inside(root,relative){safeRelative(relative);const p=path.resolve(root,...relative.split('/'));const r=path.relative(root,p);if(r.startsWith('..')||path.isAbsolute(r))throw Error('Outside installation');noLinks(p);return p;}
 function list(root,prefix=''){noLinks(root);const result=[];for(const e of fs.readdirSync(root,{withFileTypes:true})){const rel=prefix+e.name,p=path.join(root,e.name);if(e.isSymbolicLink())throw Error('Source link refused');if(e.isDirectory())result.push(...list(p,rel+'/'));else if(e.isFile())result.push(rel);else throw Error('Special file refused');}return result.sort();}
+function dependencies(version,save=false){
+ const dir=inside(version,'app/node_modules'),files=list(dir).map(name=>({path:name,sha256:sha(fs.readFileSync(inside(dir,name)))}));
+ const dest=inside(version,'dependency-manifest.json');
+ if(save){fs.writeFileSync(dest,JSON.stringify({schema:1,files},null,2)+'\n',{flag:'wx'});}
+ else{const expected=readJSON(dest);if(expected.schema!==1||JSON.stringify(expected.files)!==JSON.stringify(files))throw Error('Installed dependency checksum mismatch; recover or reinstall into a new clean directory');}
+ return files.length;
+}
 function readJSON(p){return JSON.parse(fs.readFileSync(p,'utf8'));}
 function validateManifest(m){
  if(m.schemaVersion!==1||m.product!=='K-SESSION'||m.instanceSchema!==1||!Array.isArray(m.files)||m.files.length!==32)throw Error('Unsupported payload manifest');
@@ -37,4 +44,4 @@ function acquire(root,purpose){
 }
 function args(argv,allowed){const result={};for(let i=0;i<argv.length;i++){const key=argv[i];if(!Object.hasOwn(allowed,key)||Object.hasOwn(result,key))throw Error('Unknown or duplicate option: '+key);if(allowed[key]){if(!argv[i+1]||argv[i+1].startsWith('--'))throw Error('Missing value: '+key);result[key]=argv[++i];}else result[key]=true;}return result;}
 function verifyRoot(root){noLinks(root);const m=readJSON(inside(root,'install.json'));if(m.schema!==1||m.product!=='K-SESSION')throw Error('Unrecognized installation');return m;}
-module.exports={sha,safeRelative,noLinks,inside,list,readJSON,validateManifest,verifyFiles,verifyPayload,verifyNpm,atomicJSON,acquire,args,verifyRoot};
+module.exports={sha,safeRelative,noLinks,inside,list,readJSON,validateManifest,verifyFiles,verifyPayload,verifyNpm,dependencies,atomicJSON,acquire,args,verifyRoot};
