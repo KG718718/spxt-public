@@ -9,6 +9,7 @@ const password='Synthetic-Workflow-2026!',date=new Date().toISOString().slice(0,
 const [year,monthNumber]=month.split('-').map(Number),buyer='示例购买方测试单位',seller='示例供应商甲有限公司';
 const rules={profitBands:[{min:0,max:null,value:100}],kpi2Bands:[{min:0,max:null,value:1}],manualKpi2Threshold:0.8};
 let f,count=0;
+const smtpEnv={KSESSION_ENABLE_TEST_RESET:'1',KSESSION_MAIL_TEST_TRANSPORT_FILE:path.join(directory,'synthetic-smtp.jsonl'),KSESSION_SMTP_HOST:'smtp.example.invalid',KSESSION_SMTP_USER:'synthetic@example.invalid',KSESSION_SMTP_PASS:'synthetic-not-a-real-secret'};
 const disk=()=>fs.readFileSync(path.join(directory,'data.json'),'utf8');
 const state=()=>JSON.parse(disk());
 async function check(name,fn){await fn();count++;console.log('PASS '+name);}
@@ -17,7 +18,7 @@ async function request(url,token,body,method=body===undefined?'GET':'POST',statu
 }
 async function login(username){return (await request('/api/login',null,{username,password})).token;}
 (async()=>{try{
- f=await start(directory);assert.ok(f.port,f.output);
+ f=await start(directory,{env:smtpEnv});assert.ok(f.port,f.output);
  await request('/api/setup',null,{username:'flow-admin',password},'POST',201);
  const admin=await login('flow-admin');
  for(const username of ['flow-owner','flow-executor','flow-other'])await request('/api/users',admin,{username,password,role:'user',createPayeeAccount:username==='flow-owner'});
@@ -132,7 +133,7 @@ async function login(username){return (await request('/api/login',null,{username
   const before=disk();await request('/api/employee-settlements',admin,{employee:'flow-owner',activityMonth:month,selectedReimbursementSourceKeys:[]},'POST',409);assert.equal(disk(),before);
  });
 
- await check('default-disabled formal mail and template dry-run remain separate',async()=>{
+ await check('default-disabled formal mail and simulated template transport remain separate',async()=>{
   const renewed=await login('flow-owner');
   await request('/api/mail-reminders/templates',renewed,undefined,'GET',403);
   for(const type of ['businessBonus','executionExpense','employeeSettlement']){
@@ -141,9 +142,10 @@ async function login(username){return (await request('/api/login',null,{username
    const body={type,entityId:entity.id,recipient:'synthetic-recipient@example.invalid'};
    const before=JSON.stringify(state().mailSendRecords);
    const result=await request('/api/mail-reminders/template-test',admin,body);
-   assert.equal(result.result.dryRun,true,JSON.stringify(result));assert.equal(JSON.stringify(state().mailSendRecords),before);
+   assert.equal(result.result.success,true,JSON.stringify(result));assert.equal(JSON.stringify(state().mailSendRecords),before);
   }
   assert.equal(state().mailSendRecords.some(r=>r.status==='smtp_accepted'),false);
+  const captured=fs.readFileSync(path.join(directory,'synthetic-smtp.jsonl'),'utf8').trim().split('\n').map(JSON.parse);assert.equal(captured.length,3);assert.ok(captured.every(r=>r.to.includes('synthetic-recipient@example.invalid')));
  });
  await check('real XLSX export is authorized and records an audit before returning bytes',async()=>{
   const before=state().exportAuditRecords.length;
@@ -188,7 +190,7 @@ async function login(username){return (await request('/api/login',null,{username
  });
 
  await check('restart preserves cross-module amounts and snapshots',async()=>{
-  const before=disk();await f.stop();f=await start(directory);assert.ok(f.port,f.output);assert.equal(disk(),before);
+  const before=disk();await f.stop();f=await start(directory,{env:smtpEnv});assert.ok(f.port,f.output);assert.equal(disk(),before);
   const token=await login('flow-admin');assert.equal((await request('/api/invoice-summary',token)).totals.confirmed,500);
  });
  console.log('Public actual cross-module workflow: '+count+' passed.');
