@@ -44,7 +44,23 @@ SMTP 授权码使用 Windows 安全存储，跨 Windows 用户或异机恢复后
 
 正式邮件默认关闭且无发件配置。测试发送也可能是真实测试邮件，应仅在 Admin 明确配置和点击后使用。云端验收不发送真实邮件。恢复后先检查发送开关和收件范围。
 
-电子 PDF 优先文字解析。OCR 是可选增强，未配置时明确提示缺少引擎；参考仓库 OCR 安装说明，在 instance/runtime/ocr/ocr-env 配置 Python 环境。Python/Paddle/模型不包含在本包，须核对其平台和原许可证，不能宣称离线 OCR 已打包。
+电子 PDF 优先文字解析。OCR 是可选增强，未配置时明确提示缺少引擎；参考下方可选 OCR 手工安装说明，在 instance/runtime/ocr/ocr-env 配置 Python 环境。Python/Paddle/模型不包含在本包，须核对其平台和原许可证，不能宣称离线 OCR 已打包。
+
+
+### 可选 OCR 的手工安装
+
+不使用 OCR 时可以跳过，本安装器仍能启动。需要 OCR 时，在部署者自己的 Windows 上安装官方 Python 3.11 x64；用该 Python 创建虚拟环境到安装目录的 `instance/runtime/ocr/ocr-env`。
+
+停止服务后，在命令行用完整路径执行：
+
+```text
+"<Python 3.11 的安装路径>\python.exe" -m venv "<本系统安装目录>\instance\runtime\ocr\ocr-env"
+"<本系统安装目录>\instance\runtime\ocr\ocr-env\Scripts\python.exe" -m pip install -r "<本系统安装目录>\versions\<active.json 中的 release>\app\tools\ocr\requirements.txt"
+```
+
+把尖括号部分替换为本机真实路径，不要照抄占位符。首次识别可能还需从引擎官方模型来源下载模型；参考对应上游的网络及许可证要求。本候选的合成识别证据仅覆盖已记录版本，不宣称任意扫描件或模型都准确。启动器始终使用实例中的上述环境和随当前版本保存的 OCR 脚本。
+
+一般 SMTP 登录账号使用 Admin 配置的发件邮箱。如邮件提供商要求登录账号与发件地址不同，启动前可显式提供 `KSESSION_SMTP_USER`；授权码仍由 Admin 安全录入，不写进安装包。测试重置等开发开关不会被启动器继承。
 
 ## 6. 许可与候选边界
 

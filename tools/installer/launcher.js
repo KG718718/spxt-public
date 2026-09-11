@@ -17,7 +17,7 @@ function main(){
  try {
   if(fs.readFileSync(C.inside(root,'active.json'),'utf8')!==activeBytes||JSON.parse(activeBytes).release!==active.release)throw Error('Active program changed before lock; restart launcher');C.dependencies(version);
   const instance=C.inside(root,'instance');fs.mkdirSync(instance,{recursive:true});
-  const env={...process.env};for(const k of Object.keys(env))if(k.startsWith('KSESSION_')&&k!=='KSESSION_SKIP_STARTUP_JOBS')delete env[k];
+  const env={...process.env};for(const k of Object.keys(env))if(k.startsWith('KSESSION_')&&k!=='KSESSION_SKIP_STARTUP_JOBS'&&k!=='KSESSION_SMTP_USER')delete env[k];
   Object.assign(env,{PORT:String(port),KSESSION_HOST:a['--lan']?'0.0.0.0':'127.0.0.1',
    KSESSION_DATA_FILE:C.inside(instance,'data.json'),KSESSION_CONFIG_FILE:C.inside(instance,'config.json'),
    KSESSION_ATTACHMENTS_DIR:C.inside(instance,'attachments'),KSESSION_BACKUPS_DIR:C.inside(instance,'backups'),

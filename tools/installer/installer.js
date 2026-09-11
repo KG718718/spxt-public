@@ -36,7 +36,7 @@ async function main(){
    const result=cp.spawnSync(node,[npm,'ci','--omit=dev','--ignore-scripts','--no-fund','--no-audit','--strict-ssl=true','--registry=https://registry.npmjs.org/','--userconfig='+emptyRC,'--globalconfig='+globalRC,'--cache='+path.join(stage,'npm-cache')],{cwd:app,windowsHide:true,stdio:'inherit',timeout:600000,env:{...process.env,NODE_ENV:'production'}});
    if(result.error||result.status!==0)throw Error('Dependency installation failed; previous active version and instance unchanged');
    C.verifyFiles(app,m,true);
-   cp.execFileSync(node,['-e',"for(const n of Object.keys(require('./package.json').dependencies))require(n);console.log('Dependency load check passed');"],{cwd:app,windowsHide:true,timeout:60000,stdio:'inherit'});
+   cp.execFileSync(node,['-e',"for(const n of Object.keys(require('./package.json').dependencies))require(n==='write-excel-file'?'write-excel-file/node':n);console.log('Dependency load check passed');"],{cwd:app,windowsHide:true,timeout:60000,stdio:'inherit'});
    const prepared=C.inside(stage,'version');fs.mkdirSync(prepared);fs.renameSync(app,path.join(prepared,'app'));fs.copyFileSync(path.join(bundle,'payload-manifest.json'),path.join(prepared,'payload-manifest.json'),fs.constants.COPYFILE_EXCL);
    C.dependencies(prepared,true);fs.renameSync(prepared,version);
   }

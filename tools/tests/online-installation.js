@@ -11,7 +11,7 @@ const sha=x=>crypto.createHash('sha256').update(x).digest('hex');
 function inventory(dir){let r={};if(!fs.existsSync(dir))return r;for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())for(const [k,v]of Object.entries(inventory(p)))r[e.name+'/'+k]=v;else r[e.name]=sha(fs.readFileSync(p));}return r;}
 function command(exe,args,options={}){return new Promise(resolve=>{let output='';const child=cp.spawn(exe,args,{windowsHide:true,stdio:['ignore','pipe','pipe'],...options});child.stdout.on('data',b=>output+=b);child.stderr.on('data',b=>output+=b);child.once('error',e=>resolve({code:-1,output:output+e.message}));child.once('exit',code=>resolve({code,output}));});}
 async function start(target){
- const child=cp.spawn(path.join(target,'runtime','node.exe'),[path.join(target,'launcher.js'),'--no-browser','--port','0'],{windowsHide:true,stdio:['pipe','pipe','pipe'],env:{...process.env,KSESSION_SKIP_STARTUP_JOBS:'1'}});let output='',port=0;
+ const child=cp.spawn('cmd.exe',['/d','/s','/c','""'+path.join(target,'Start.cmd')+'" --no-browser --port 0"'],{windowsVerbatimArguments:true,windowsHide:true,stdio:['pipe','pipe','pipe'],env:{...process.env,KSESSION_SKIP_STARTUP_JOBS:'1'}});let output='',port=0;
  child.stdout.on('data',b=>{output+=b;const m=output.match(/running at http:\/\/127\.0\.0\.1:(\d+)/);if(m)port=+m[1];});child.stderr.on('data',b=>output+=b);
  const stopped=new Promise(r=>child.once('exit',r));
  for(let i=0;i<300&&!port&&child.exitCode===null;i++)await new Promise(r=>setTimeout(r,100));
