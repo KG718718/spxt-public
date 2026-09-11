@@ -71,11 +71,30 @@ async function start(target){
 
  await page.screenshot({path:path.join(evidence,'02-installed-login.png'),fullPage:true});
  const login=await running.call('/api/login',{method:'POST',body:{username:'installer-admin',password:'Synthetic-Install-Secret-42'}}),token=login.data.token;assert.equal(login.status,200);
+
+ await check('unconfigured employee form shows a configuration prompt without computing null as zero',async()=>{
+  const created=await running.call('/api/users',{method:'POST',token,body:{username:'installer-employee',password:'Synthetic-Employee-Secret-42',role:'user'}});
+  assert.equal(created.status,200,JSON.stringify(created));
+  const ec=await browser.newContext({viewport:{width:1440,height:1000}}),ep=await ec.newPage();
+  ep.on('pageerror',e=>errors.push(e.message));ep.on('console',m=>{if(['error','warning'].includes(m.type()))errors.push(m.text());});
+  try{
+   await ep.goto('http://127.0.0.1:'+running.port+'/login.html');await ep.locator('#loginForm').waitFor({state:'visible'});
+   await ep.locator('#username').fill('installer-employee');await ep.locator('#password').fill('Synthetic-Employee-Secret-42');await ep.locator('#loginSubmitButton').click();await ep.waitForURL('**/approval.html');
+   await ep.waitForFunction(()=>typeof authoritativeDataReady!=='undefined'&&authoritativeDataReady===true);
+   await ep.locator('#contractAmount').fill('1000');await ep.waitForFunction(()=>document.getElementById('totalTax')?.textContent==='待配置');
+   assert.doesNotMatch(await ep.locator('body').innerText(),/初始化失败/);assert.match(await ep.locator('#approvalInitializationError').innerText(),/税率/);
+   const data=JSON.parse(fs.readFileSync(path.join(target,'instance','data.json')));for(const k of ['applications','payments','invoices'])assert.deepEqual(data[k],[]);
+   await ep.screenshot({path:path.join(evidence,'03-unconfigured-employee.png'),fullPage:true});
+  }finally{await ec.close();}
+ });
+
  await check('new Admin explicitly configures tax; zero is not missing',async()=>{
   const before=await running.call('/api/config',{token});assert.equal(before.data.taxRate,null);
   const r=await running.call('/api/config',{method:'PUT',token,body:{taxRate:0,expectedVersion:before.data.configVersion}});
   assert.equal(r.status,200,JSON.stringify(r));assert.equal((await running.call('/api/config',{token})).data.taxRate,0);
  });
+ await page.reload();await page.waitForFunction(()=>document.getElementById('approvalFilterSummary')?.textContent!=='审批记录未加载');
+ await check('explicit zero restores a normal empty approval page',async()=>{assert.doesNotMatch(await page.locator('body').innerText(),/初始化失败|尚未配置税率/);assert.equal(await page.evaluate(()=>getTaxRate()),0);});
  await check('second launcher and installing while running fail without instance changes',async()=>{
   const before=inventory(path.join(target,'instance')),pointer=fs.readFileSync(activeFile,'utf8');
   const second=await command(path.join(target,'runtime','node.exe'),[path.join(target,'launcher.js'),'--no-browser','--port','0']);assert.notEqual(second.code,0);assert.match(second.output,/lock|running/i);

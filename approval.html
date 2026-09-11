@@ -414,10 +414,28 @@
         async function loadConfig() {
             const resp = await authFetch('/api/config');
             const result = await requiredJson(resp, '权威配置');
-            if (!result || typeof result !== 'object' || !result.serviceFeeRates || typeof result.serviceFeeRates !== 'object' || (typeof result.taxRate!=='number'||!Number.isFinite(result.taxRate))) {
+            const taxConfigured = result?.taxRateConfigured === true && typeof result.taxRate === 'number' && Number.isFinite(result.taxRate) && result.taxRate >= 0;
+            const taxUnconfigured = result?.taxRateConfigured === false && result.taxRate === null;
+            if (!result || typeof result !== 'object' || Array.isArray(result) || !result.serviceFeeRates || typeof result.serviceFeeRates !== 'object' || Array.isArray(result.serviceFeeRates) || (!taxConfigured && !taxUnconfigured)) {
                 throw new Error('权威配置字段不完整');
             }
             config = result;
+            if (taxUnconfigured) showConfigurationPending('尚未配置税率，请由 Admin 完成配置后刷新页面；需要税率的新计算与提交暂不可用，历史记录仍可查看。');
+        }
+
+
+        function showConfigurationPending(message) {
+            const banner = document.getElementById('approvalInitializationError');
+            banner.textContent = message;
+            banner.dataset.configurationPending = 'true';
+            banner.style.display = 'block';
+        }
+        function hideUnconfiguredBudget(message) {
+            showConfigurationPending(message);
+            const tax = document.getElementById('totalTax');
+            if (tax) tax.textContent = '待配置';
+            const summary = document.getElementById('summaryRow');
+            if (summary) summary.style.display = 'none';
         }
 
         // 获取服务费比例
@@ -431,7 +449,8 @@
         // 按配置税率计算合同中的税额比例
         function getTaxRate() {
             if (!authoritativeDataReady || !config) throw new Error('权威配置尚未就绪');
-            return 1 - 1/(1 + Number(config.taxRate));
+            if (config.taxRateConfigured !== true || typeof config.taxRate !== 'number' || !Number.isFinite(config.taxRate) || config.taxRate < 0) throw new Error('尚未配置税率，请由 Admin 完成配置后刷新页面。');
+            return 1 - 1/(1 + config.taxRate);
         }
 
         // ========== 附件上传 ==========
@@ -1380,6 +1399,24 @@
         }
         
         function calcBudget() {
+            if (!authoritativeDataReady || !config) return;
+            try {
+                getTaxRate(); // A missing rate is never coerced to zero.
+                const result = calcBudgetConfigured();
+                const summary = document.getElementById('summaryRow');
+                if (summary) summary.style.display = '';
+                const banner = document.getElementById('approvalInitializationError');
+                if (banner.dataset.configurationPending === 'true') {
+                    banner.style.display = 'none';
+                    delete banner.dataset.configurationPending;
+                }
+                return result;
+            } catch (error) {
+                if (!/尚未配置税率|请先由 Admin 配置完整服务费率/.test(error.message)) throw error;
+                hideUnconfiguredBudget(error.message);
+            }
+        }
+        function calcBudgetConfigured() {
             let totalAmount = 0;  // 金额合计
             let totalServiceFee = 0;  // 服务费合计
             
