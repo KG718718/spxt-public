@@ -48,7 +48,7 @@ async function login(username){return (await request('/api/login',null,{username
  await check('changing current tax does not rewrite an approved project snapshot',async()=>{
   await request('/api/config',admin,{expectedVersion:1,taxRate:0.05},'PUT');assert.equal(JSON.stringify(state().applications[0]),approvedProject);
  });
- const paymentBody={projectId:appId,approver:'flow-admin',items:state().applications[0].items,attachments:[],executionParticipants:[{username:'flow-executor',contribution:'Synthetic execution'}]};
+ const paymentBody={projectId:appId,approver:'flow-admin',items:state().applications[0].items.map(({projectItemId,...item})=>item),attachments:[],executionParticipants:[{username:'flow-executor',contribution:'Synthetic execution'}]};
  await check('payment follows approved project tax and immutable project evidence',async()=>{
   payId=(await request('/api/payment',employee,paymentBody)).id;assert.equal(payId,'PAY0001');
   const payment=state().payments[0];assert.equal(payment.taxRateSnapshot,0.02);assert.equal(payment.taxAmount,state().applications[0].taxAmount);

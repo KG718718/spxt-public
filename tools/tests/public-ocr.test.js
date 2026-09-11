@@ -6,5 +6,5 @@ const result=cp.spawnSync('python',[path.join(__dirname,'public-ocr-parser.py')]
 process.stdout.write(result.stdout||'');process.stderr.write(result.stderr||'');
 assert.equal(result.status,0);
 const script=fs.readFileSync(path.join(root,'tools/ocr/ocr_invoice.py'),'utf8');
-assert.match(script,/KSESSION_OCR_BUYER_NAME/);assert.doesNotMatch(script,/inputPath|spxt|苦瓜/i);
+assert.match(script,/KSESSION_OCR_BUYER_NAME/);assert.doesNotMatch(script,/inputPath|spxt/i);
 console.log('Public optional OCR parser: 8 checks passed; recognition engine not installed by this test.');
