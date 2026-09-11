@@ -32,6 +32,14 @@ async function start(target){
   for(const name of Object.keys(inventory(bundle)))assert.doesNotMatch(name,/\.(exe|dll|node|dpapi)$|(^|\/)(data\.json|config\.json|node_modules|attachments|backups)(\/|$)/i);
   assert.equal(common.verifyPayload(bundle).files.length,32);
  });
+
+ await check('candidate ZIP bytes match the installation source including license notices',()=>{
+  const entries=require('fflate').unzipSync(built.bytes);
+  assert.equal(Object.keys(entries).length,Object.keys(inventory(bundle)).length);
+  for(const [name,bytes]of Object.entries(entries)){assert.ok(name.startsWith('K-SESSION-Online-Setup/'));const relative=name.slice('K-SESSION-Online-Setup/'.length);common.safeRelative(relative);assert.equal(sha(bytes),sha(fs.readFileSync(path.join(bundle,...relative.split('/')))));}
+  assert.match(fs.readFileSync(path.join(bundle,'THIRD_PARTY_NOTICES.md'),'utf8'),/Online installation does not waive/);
+ });
+
  const target=path.join(work,'正式安装 中文 ! space');
  const bootstrap=await command('cmd.exe',['/d','/s','/c','""'+path.join(bundle,'Install.cmd')+'" --target "'+target+'""'],{windowsVerbatimArguments:true,env:{...process.env,KSESSION_INSTALL_NONINTERACTIVE:'1'}});
  fs.writeFileSync(path.join(evidence,'bootstrap.log'),bootstrap.output);
@@ -81,7 +89,7 @@ async function start(target){
    await ep.goto('http://127.0.0.1:'+running.port+'/login.html');await ep.locator('#loginForm').waitFor({state:'visible'});
    await ep.locator('#username').fill('installer-employee');await ep.locator('#password').fill('Synthetic-Employee-Secret-42');await ep.locator('#loginSubmitButton').click();await ep.waitForURL('**/approval.html');
    await ep.waitForFunction(()=>typeof authoritativeDataReady!=='undefined'&&authoritativeDataReady===true);
-   await ep.locator('#contractAmount').fill('1000');await ep.waitForFunction(()=>document.getElementById('totalTax')?.textContent==='待配置');
+   await ep.locator('#contractAmount').fill('1000');await ep.locator('#contractAmount').press('Tab');await ep.waitForFunction(()=>document.getElementById('totalTax')?.textContent==='待配置');
    assert.doesNotMatch(await ep.locator('body').innerText(),/初始化失败/);assert.match(await ep.locator('#approvalInitializationError').innerText(),/税率/);
    const data=JSON.parse(fs.readFileSync(path.join(target,'instance','data.json')));for(const k of ['applications','payments','invoices'])assert.deepEqual(data[k],[]);
    await ep.screenshot({path:path.join(evidence,'03-unconfigured-employee.png'),fullPage:true});

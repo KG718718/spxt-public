@@ -640,6 +640,7 @@
                         ...(canReview ? [] : [loadClientsForSelect(), loadSuppliersForSelect()])
                     ]);
                     authoritativeDataReady = true;
+                    if (!canReview) calcBudget();
                 } catch (error) {
                     setApprovalInitializationFailure(error);
                 }
