@@ -44,19 +44,7 @@ async function check(name,fn){await fn();report.checks.push(name);count++;consol
   assert.equal(data.users.length,1);assert.equal(data.users[0].username,'package-admin');
   for(const key of ['applications','payments','clients','suppliers','invoices','debts','bonusConfirmations','employeeSettlements'])assert.equal(data[key].length,0,key);
  });
- await check('same-version program replacement and restart preserve saved instance bytes',async()=>{
-  const before=fs.readFileSync(path.join(instance,'data.json'));await f.stop();
-  // Program-only replacement; never copy configuration or business data.
-  for(const record of built.manifest.files){
-   const target=path.join(programRoot,...record.path.split('/'));
-   fs.writeFileSync(target,unzipSync(built.bytes)['K-SESSION/'+record.path]);
-  }
-  f=await start(instance,{env,programRoot});assert.ok(f.port,f.output);
-  assert.deepEqual(fs.readFileSync(path.join(instance,'data.json')),before);
-  const setup=await f.call('/api/setup');assert.equal(setup.data.initializationRequired,false);
-  const login=await f.call('/api/login',{method:'POST',body:{username:'package-admin',password}});assert.equal(login.status,200);
- });
- await check('saved configuration and synthetic attachment survive program replacement',async()=>{
+ await check('prepare saved configuration, client and synthetic attachment for replacement',async()=>{
   const login=await f.call('/api/login',{method:'POST',body:{username:'package-admin',password}});
   const token=login.data.token;assert.ok(token);
   const config=await f.call('/api/config',{token,method:'PUT',body:{expectedVersion:0,taxRate:0}});
@@ -66,6 +54,19 @@ async function check(name,fn){await fn();report.checks.push(name);count++;consol
   const attachment=path.join(instance,'attachments','synthetic-backup-evidence.bin');
   fs.mkdirSync(path.dirname(attachment),{recursive:true});
   fs.writeFileSync(attachment,Buffer.from('Synthetic restore byte evidence; not an uploaded invoice.'));
+ });
+ await check('same-version program replacement and restart preserve saved instance bytes',async()=>{
+  const before=fs.readFileSync(path.join(instance,'data.json'));const preserved=['config.json','attachments/synthetic-backup-evidence.bin'].map(name=>[name,fs.readFileSync(path.join(instance,...name.split('/')))]);await f.stop();
+  // Program-only replacement; never copy configuration or business data.
+  for(const record of built.manifest.files){
+   const target=path.join(programRoot,...record.path.split('/'));
+   fs.writeFileSync(target,unzipSync(built.bytes)['K-SESSION/'+record.path]);
+  }
+  f=await start(instance,{env,programRoot});assert.ok(f.port,f.output);
+  assert.deepEqual(fs.readFileSync(path.join(instance,'data.json')),before);
+  for(const [name,bytes] of preserved)assert.deepEqual(fs.readFileSync(path.join(instance,...name.split('/'))),bytes);
+  const setup=await f.call('/api/setup');assert.equal(setup.data.initializationRequired,false);
+  const login=await f.call('/api/login',{method:'POST',body:{username:'package-admin',password}});assert.equal(login.status,200);
  });
  const snapshotTree=directory=>{
   const files={};
