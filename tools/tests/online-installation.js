@@ -61,6 +61,14 @@ async function start(target){
   const data=JSON.parse(fs.readFileSync(path.join(target,'instance','data.json')));assert.equal(data.users.length,1);for(const k of ['applications','payments','debts','suppliers','clients','invoices'])assert.deepEqual(data[k],[]);
  });
  await page.locator('#username').fill('installer-admin');await page.locator('#password').fill('Synthetic-Install-Secret-42');await page.locator('#loginSubmitButton').click();await page.waitForURL('**/approval.html');
+
+ await check('new unconfigured Admin can view an empty approval list without initialization failure',async()=>{
+  await page.waitForFunction(()=>document.getElementById('approvalFilterSummary')?.textContent!=='审批记录未加载');
+  assert.doesNotMatch(await page.locator('body').innerText(),/初始化失败|审批配置尚未就绪/);
+  assert.match(await page.locator('#approvalInitializationError').innerText(),/未配置.*税率|税率.*未配置/);
+  const rate=await page.evaluate(()=>{try{return {value:getTaxRate()};}catch(e){return {error:e.message};}});assert.match(rate.error,/税率/);
+ });
+
  await page.screenshot({path:path.join(evidence,'02-installed-login.png'),fullPage:true});
  const login=await running.call('/api/login',{method:'POST',body:{username:'installer-admin',password:'Synthetic-Install-Secret-42'}}),token=login.data.token;assert.equal(login.status,200);
  await check('new Admin explicitly configures tax; zero is not missing',async()=>{
