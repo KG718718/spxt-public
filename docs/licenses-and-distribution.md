@@ -2,13 +2,12 @@
 
 ## 2026-09-11 实际分发边界
 
-- 已构建并通过校验的 artifact 名称是 `application-core-only-not-installer`。32份允许文件中没有 Node、npm安装依赖、原生图形库、Python或OCR模型二进制；不要将源码核心ZIP当作完整离线安装包。
-- 原生图形依赖的包级MIT来源核对仍有效，但编入的Skia等第三方声明尚未完整核验；依赖清单的 `pending-before-distribution` 仍为未通过，不因其他CI全绿而自动放行。
-- 可选OCR在托管Windows通过实际安装与合成识别；用于验收的组件未被复制进程序包。识别成功不代表模型/二进制再分发权利已经审查完。
-- 已提交安装分发选项：仅打包已审查程序，首次安装再从官方来源获取锁定运行依赖。用户尚未选择，不擅自切换为联网安装器，也不把不分发依赖等同于免除使用者的许可证义务。
-- 核心程序包保留根MIT、第三方说明、精确依赖锁及文件哈希；最终选定分发形式后，仍需按真实随包内容重新核对原始声明。以上为工程证据，不是对未知第三方权利的保证。
-
-当前是采用 MIT 的公开候选，不是已完成的应用发行包。用户已确认 MIT 并恢复封装；根 LICENSE 使用中性的 K-SESSION contributors 项目贡献者署名，package.json 与锁文件根记录均为 MIT。private: true 仅防止误发布 npm。第三方权属与原许可不受项目署名替代。
+- 用户已确认在线安装；已验收产物 online-installer-candidate 的内层 K-SESSION-online-setup.zip 只含经审查源码、安装/启动脚本、锁文件、清单、MIT 和第三方说明。无 Node、npm 已安装二进制、Python、OCR 引擎或模型。
+- Windows 安装器从官方 HTTPS 来源取得固定 Node 24.21.0，校验归档与 node.exe 的 SHA256；保留官方原始 LICENSE。npm 仅使用官方注册表、精确锁文件与 integrity，保留依赖原始许可文件。
+- 在线下载不等于免除第三方许可；没有把包级 MIT 当成全部原生组件声明已完成。原生图形组件的完整再分发审查仍是未来离线整包的前置项，本候选不分发这些二进制。
+- 核心程序档案 application-core-only-not-installer 与在线安装器是不同产物，均不含实例或公司资产。外层 artifact 的合成截图、测试报告不会进入使用者安装 ZIP。
+- 原始项目 MIT 正文未修改。Windows CRLF 与 Git LF 的字节哈希不同，许可门禁按规范化原文核对；不得误称变更授权条款。第三方作者署名保留。
+- [实际封装、逐文件清单与验收](tasks/public-v1/batch-16-online-installer.md)，[CI](https://github.com/KG718718/spxt-public/actions/runs/34605839563)。候选未签名、未创建 Release；文件哈希不是法律权属或安全性保证。
 
 ## 用户本轮要求
 
@@ -24,7 +23,7 @@
 - 未安装的平台可选依赖单列，不冒充已经随当前安装包分发；最终包应再次按实际内容生成清单。
 - 第三方作者/组织署名必须保留，不能为了去公司品牌而删除依赖作者版权声明。Apache-2.0 对随附 NOTICE、许可副本等有分发要求。[Apache 原文](https://www.apache.org/licenses/LICENSE-2.0)
 
-## 正式打包前还需完成
+## 后续分发方式变化时继续适用的检查
 
 1. 已落实主 MIT 许可证、中性项目贡献者署名及根目录 LICENSE、README、package.json、锁文件根记录一致性；不代表已取得未知第三方权利或已核实特定公司权属。
 2. 安装包随附 LICENSE、THIRD_PARTY_NOTICES 及实际分发依赖的原始许可/NOTICE。许可证门禁不能只存在于源码仓库。
