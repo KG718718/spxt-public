@@ -65,7 +65,7 @@ async function start(target){
  const login=await running.call('/api/login',{method:'POST',body:{username:'installer-admin',password:'Synthetic-Install-Secret-42'}}),token=login.data.token;assert.equal(login.status,200);
  await check('new Admin explicitly configures tax; zero is not missing',async()=>{
   const before=await running.call('/api/config',{token});assert.equal(before.data.taxRate,null);
-  const r=await running.call('/api/config',{method:'POST',token,body:{taxRate:0,expectedVersion:before.data.version}});
+  const r=await running.call('/api/config',{method:'PUT',token,body:{taxRate:0,expectedVersion:before.data.configVersion}});
   assert.equal(r.status,200,JSON.stringify(r));assert.equal((await running.call('/api/config',{token})).data.taxRate,0);
  });
  await check('second launcher and installing while running fail without instance changes',async()=>{

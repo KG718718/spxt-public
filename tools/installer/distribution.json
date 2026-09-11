@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "nodeVersion": "24.21.0",
+  "platform": "win32-x64",
+  "nodeUrl": "https://nodejs.org/dist/v24.21.0/node-v24.21.0-win-x64.zip",
+  "nodeArchiveSha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+  "nodeExeSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+  "checksumsUrl": "https://nodejs.org/dist/v24.21.0/SHASUMS256.txt",
+  "npmRegistry": "https://registry.npmjs.org/"
+}
