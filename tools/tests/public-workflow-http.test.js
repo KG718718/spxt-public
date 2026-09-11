@@ -103,7 +103,7 @@ async function login(username){return (await request('/api/login',null,{username
   summary=await request('/api/invoice-summary',admin);assert.equal(summary.totals.confirmed,500);assert.equal(summary.totals.missing,0);
  });
  const preview=(await request('/api/bonus-preview?year='+year+'&month='+monthNumber,admin)).preview;
- const bonusRow=preview.rows.find(x=>x.applicationId===appId);
+ const bonusRow=preview.projectRows.find(x=>x.applicationId===appId);
  const confirm={applicationId:appId,paymentId:payId,rulesDigest:bonusRow.rulesDigest,finalBusinessBonus:100,executionBonuses:[{username:'flow-executor',amount:25}],confirmationNote:'Synthetic acceptance'};
  await check('stale bonus rule digest is rejected without writes',async()=>{
   const before=disk();await request('/api/bonus-confirmations',admin,{...confirm,rulesDigest:'stale'},'POST',409);assert.equal(disk(),before);

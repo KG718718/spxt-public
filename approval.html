@@ -2401,7 +2401,7 @@
             });
             
             const contractAmount = app.contractAmount || 0;
-            const totalTax = contractAmount > 0 ? (contractAmount * getTaxRate()) : 0;
+            const totalTax = Number.isFinite(Number(app.taxAmount)) ? Number(app.taxAmount) : (contractAmount > 0 ? (contractAmount * getTaxRate()) : 0);
             const totalCost = totalAmount + totalServiceFee + totalTax;
             const totalProfit = contractAmount - totalCost;
             const profitWithProxyRatio = contractAmount > 0 ? (totalProfit / contractAmount * 100) : 0;
@@ -2695,7 +2695,7 @@
             if (!proj) { alert('未找到项目'); return; }
             
             const contractAmount = proj.contractAmount || 0;
-            const originalTotalTax = contractAmount > 0 ? (contractAmount * getTaxRate()) : 0;
+            const originalTotalTax = Number.isFinite(Number(proj.taxAmount)) ? Number(proj.taxAmount) : (contractAmount > 0 ? (contractAmount * getTaxRate()) : 0);
             
             // 获取原项目数据
             let originalTotalAmount = 0;
@@ -3035,7 +3035,7 @@
                 if (item.isProxy === '是') proxyCost += (item.amount||0) + (item.serviceFee||0);
             });
             const contractAmount = app.contractAmount||0;
-            const totalTax = contractAmount > 0 ? (contractAmount * getTaxRate()) : 0;
+            const totalTax = Number.isFinite(Number(app.taxAmount)) ? Number(app.taxAmount) : (contractAmount > 0 ? (contractAmount * getTaxRate()) : 0);
             const totalCost = totalAmount + totalServiceFee + totalTax;
             const totalCostNoTax = totalAmount + totalServiceFee;
             const totalProfit = contractAmount - totalCost;

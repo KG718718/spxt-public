@@ -7935,7 +7935,9 @@ function handleRequest(req, res) {
                     missingProject.statusCode = 400;
                     throw missingProject;
                 }
-                assertProjectOpenForWrite(applications.find(app => app.id === requestedAppId), '提交OCR识别');
+                const requestedProject = applications.find(app => app.id === requestedAppId);
+                if (!userOwnsApplication(user, requestedProject)) throw Object.assign(new Error('无权关联该项目进行 OCR 识别'), { statusCode: 403 });
+                assertProjectOpenForWrite(requestedProject, '提交OCR识别');
             } catch (error) {
                 removeUploadedFiles(req.file);
                 res.writeHead(error.statusCode || 409);
@@ -7958,7 +7960,8 @@ function handleRequest(req, res) {
             }
             runLocalInvoiceOcr(req.file.path, (ocrErr, extracted) => {
                 if (ocrErr) {
-                    res.writeHead(500);
+                    removeUploadedFiles(req.file);
+                    res.writeHead(ocrErr.code === 'ocr-not-installed' ? 503 : 500);
                     res.end(JSON.stringify({ error: 'OCR识别失败：' + ocrErr.message }));
                     return;
                 }
