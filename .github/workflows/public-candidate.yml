@@ -1,0 +1,110 @@
+name: Public candidate checks
+on:
+  push:
+    branches: [codex/public-v1]
+    paths-ignore: ['**/*.md']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: public-candidate-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  windows-core:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.21.0'
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+      - name: Audit locked dependencies
+        run: npm audit --audit-level=low
+      - name: Synthetic core and startup checks
+        run: node tools/tests/run-public-tests.js
+      - name: Preserve source-only core package and verification
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: application-core-only-not-installer
+          path: |
+            .test-work/package-core-evidence/K-SESSION-application-core-only.zip
+            .test-work/package-core-evidence/PACKAGE-MANIFEST.json
+            .test-work/package-core-evidence/SHA256SUMS.txt
+            .test-work/package-core-evidence/report.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Collect original third-party license notices
+        run: node tools/check-public-licenses.js
+      - name: Preserve third-party license evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: third-party-license-evidence
+          path: .test-work/license-report
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve installation UI evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: first-install-login-ui-evidence
+          path: .test-work/login-browser-evidence
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve full application browser evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: full-application-ui-evidence
+          path: .test-work/full-ui-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+  optional-ocr:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ocr]')
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.11'
+      - name: Install optional OCR only on hosted runner
+        run: python -m pip install --disable-pip-version-check --no-cache-dir -r tools/ocr/requirements.txt
+      - name: Recognize generated synthetic invoice
+        run: python tools/tests/optional-ocr-engine.py
+      - name: Preserve synthetic OCR evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: optional-ocr-engine-evidence
+          path: .test-work/ocr-engine-evidence
+          if-no-files-found: warn
+          retention-days: 30
+
+  online-installer:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.21.0'
+      - run: npm ci --ignore-scripts
+      - name: Actual online bootstrap, installation, browser and recovery
+        run: node tools/tests/online-installation.js
+      - name: Preserve candidate installer and synthetic installation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: online-installer-candidate
+          path: .test-work/online-installer-evidence
+          if-no-files-found: error
+          retention-days: 30

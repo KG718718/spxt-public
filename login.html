@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录与首次安装 - K⁺-SESSION</title>
+    <link rel="stylesheet" href="/k-session-theme.css">
+    <link rel="icon" href="data:,">
+</head>
+<body class="ks-login-page">
+<main class="ks-login-card">
+    <section class="ks-login-form">
+        <div class="ks-brand" aria-label="K⁺-SESSION">
+            <div class="ks-brand-mark" aria-hidden="true">K⁺</div>
+            <div><strong>K⁺-SESSION</strong><small>项目运营管理系统</small></div>
+        </div>
+        <h1 class="ks-login-title" id="pageTitle">检查系统状态</h1>
+        <p class="ks-login-subtitle" id="pageHint">正在连接本机或已配置的服务。</p>
+        <form id="setupForm" hidden>
+            <div><label for="setupUsername">管理员账号</label>
+                <input id="setupUsername" name="setupUsername" type="text" autocomplete="username" required maxlength="80" placeholder="自行设置管理员账号"></div>
+            <div><label for="setupPassword">管理员密码</label>
+                <input id="setupPassword" name="setupPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="128" placeholder="12—128字符，无首尾空白"></div>
+            <div><label for="setupConfirm">再次输入密码</label>
+                <input id="setupConfirm" name="setupConfirm" type="password" autocomplete="new-password" required minlength="12" maxlength="128" placeholder="再次输入相同密码"></div>
+            <button id="setupSubmitButton" type="submit">创建管理员</button>
+        </form>
+        <form id="loginForm" hidden>
+            <div><label for="username">账号</label>
+                <input id="username" name="username" type="text" autocomplete="username" required maxlength="80" placeholder="请输入账号"></div>
+            <div><label for="password">密码</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128" placeholder="请输入密码"></div>
+            <button id="loginSubmitButton" type="submit">登录系统</button>
+        </form>
+        <div id="message" role="status" aria-live="polite" aria-atomic="true"></div>
+        <button id="checkStateButton" type="button" class="btn-danger">重新检查状态</button>
+    </section>
+    <section class="ks-login-visual" aria-label="系统简介">
+        <div class="ks-login-copy">
+            <small>K⁺-SESSION</small>
+            <h2>项目、审批与记录</h2>
+            <p>项目预算、付款申请、发票核对及奖金月结，在同一业务链中留存依据。</p>
+            <p>全新安装不带员工、供应商或业务记录。管理员自行建立账号与配置。</p>
+        </div>
+    </section>
+</main>
+<script>
+'use strict';
+(() => {
+    const el = id => document.getElementById(id);
+    let busy = false;
+    let mode = 'checking';
+    function message(text, state = 'info') {
+        el('message').textContent = text;
+        el('message').className = 'uix-notice uix-notice-' + state;
+    }
+    function setBusy(value) {
+        busy = value;
+        for (const id of ['setupSubmitButton', 'loginSubmitButton', 'checkStateButton']) {
+            el(id).disabled = value;
+            el(id).setAttribute('aria-busy', String(value));
+        }
+    }
+    function display(next) {
+        mode = next;
+        el('setupForm').hidden = next !== 'setup';
+        el('loginForm').hidden = next !== 'login';
+        el('pageTitle').textContent = next === 'setup' ? '首次安装' : next === 'login' ? '登录系统' : '检查系统状态';
+        el('pageHint').textContent = next === 'setup'
+            ? '仅限服务主机本机创建首个管理员；没有默认账号或密码。'
+            : next === 'login' ? '账号由管理员创建；忘记密码请联系管理员。'
+            : '状态未确认时不会创建账号或覆盖已有数据。';
+    }
+    async function request(url, options = {}) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+        try {
+            const response = await fetch(url, {cache: 'no-store', credentials: 'same-origin', ...options, signal: controller.signal});
+            const text = await response.text();
+            let data;
+            try { data = JSON.parse(text); }
+            catch { throw Error('服务返回了无法识别的数据，请检查服务状态。'); }
+            if (!data || typeof data !== 'object' || Array.isArray(data)) throw Error('服务返回格式异常，请检查服务状态。');
+            return {response, data};
+        } finally { clearTimeout(timeout); }
+    }
+    async function loadState() {
+        if (busy) return;
+        setBusy(true); display('checking'); message('正在检查系统状态…');
+        try {
+            const {response, data} = await request('/api/setup');
+            if (response.ok && typeof data.initializationRequired === 'boolean') {
+                display(data.initializationRequired ? 'setup' : 'login');
+                message(data.initializationRequired ? '请自行设置首个管理员。创建成功后再登录。' : '系统已初始化，请使用已有账号登录。');
+            } else if (response.status === 403) {
+                display('login');
+                message('当前地址不能执行首次安装。已有系统可正常登录；尚未初始化时，请在服务主机本机完成。');
+            } else {
+                display('error');
+                message(data.error || '无法确认系统状态。请检查服务或备份，不要删除已有数据。', 'error');
+            }
+        } catch (error) {
+            display('error');
+            message(error.name === 'AbortError' ? '状态检查超时，请检查网络后重试。' : error instanceof TypeError ? '无法连接服务，请检查网络后重试。' : error.message || '无法连接服务，请检查网络后重试。', 'error');
+        } finally { setBusy(false); }
+    }
+    el('checkStateButton').onclick = loadState;
+    el('setupForm').onsubmit = async event => {
+        event.preventDefault();
+        if (busy || mode !== 'setup') return;
+        const username = el('setupUsername').value;
+        const password = el('setupPassword').value;
+        if (!el('setupForm').reportValidity()) return;
+        if (username !== username.trim() || password !== password.trim()) {
+            message('账号与密码不能含首尾空白。', 'error'); return;
+        }
+        if (password !== el('setupConfirm').value) {
+            message('两次密码不一致，请重新核对。', 'error'); return;
+        }
+        setBusy(true); message('正在创建管理员，请勿重复提交…');
+        try {
+            const {response, data} = await request('/api/setup', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password})
+            });
+            if (response.status === 201 && data.success === true && data.initializationRequired === false) {
+                el('setupPassword').value = ''; el('setupConfirm').value = '';
+                el('username').value = username; display('login');
+                message('管理员已创建，请登录后配置使用者信息与业务参数。', 'success');
+                el('password').focus();
+            } else if (response.status === 409) {
+                el('setupPassword').value = ''; el('setupConfirm').value = ''; display('login');
+                message('系统已由另一请求完成初始化，请使用已有管理员账号登录。', 'warning');
+            } else {
+                if (response.status >= 500) display('error');
+                message(data.error || '创建请求未成功，请检查输入或重新检查状态。', 'error');
+            }
+        } catch {
+            display('error');
+            message('未能确认创建结果。请先重新检查状态；不要删除数据或重复创建。', 'error');
+        } finally { setBusy(false); }
+    };
+    el('loginForm').onsubmit = async event => {
+        event.preventDefault();
+        if (busy || mode !== 'login' || !el('loginForm').reportValidity()) return;
+        const username = el('username').value;
+        const password = el('password').value;
+        let redirecting = false;
+        setBusy(true); message('正在登录…');
+        try {
+            const {response, data} = await request('/api/login', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password})
+            });
+            if (response.ok && data.success === true && typeof data.token === 'string' && data.token
+                && ['admin', 'approver', 'user'].includes(data.role) && typeof data.username === 'string' && data.username) {
+                try {
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('role', data.role);
+                    localStorage.setItem('token', data.token);
+                } catch {
+                    message('浏览器无法保存登录状态。请允许本站存储后再登录。', 'error'); return;
+                }
+                el('password').value = ''; redirecting = true;
+                message('登录成功，正在进入系统。', 'success');
+                location.assign('/approval.html');
+            } else {
+                message(data.error || '登录失败，请核对账号和密码。', 'error');
+            }
+        } catch {
+            message('登录失败：无法确认服务响应，请检查网络后重试。', 'error');
+        } finally { if (!redirecting) setBusy(false); }
+    };
+    loadState();
+})();
+</script>
+</body>
+</html>
