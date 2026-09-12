@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## 1.0.0 正式发布阶段｜2026-09-12
+
+用户已明确授权：仅本仓库创建 PR、合并 main，建立 v1.0.0 标签及带安装包、校验文件和更新说明的正式 Release。此前“未授权 PR/合并/Release”均为历史阶段限制，本节替代；不授权任何已安装实例的部署、更新或数据操作。
+
+交付内容、发布日期及最终校验结果见 [v1.0.0 发布页](https://github.com/KG718718/spxt-public/releases/tag/v1.0.0)；执行与合并结果见 [PR #1](https://github.com/KG718718/spxt-public/pull/1) 和 [发布计划](docs/tasks/public-v1/batch-18-release-v1.md)。旧阶段测试只代表对应提交，不倒填为最终发布结果。
+
 ## 1.0.0 产品说明修订｜2026-09-11
 
 定位：面向广告公司的OA、财务核对和数据统计系统。版本元数据统一1.0.0，公开说明只介绍本产品及使用边界。本轮不改业务和网络逻辑；云端复验已通过：[CI 34609338291](https://github.com/KG718718/spxt-public/actions/runs/34609338291)，26份核心测试/742项检查、23项安装、6项可选OCR，审计0漏洞；代码 f5d7663f8d699bbf32d719b1a28bf916188c3ae4。PR/main合并与v1.0.0正式发布另待明确授权。详见[修订记录](docs/tasks/public-v1/batch-17-product-v1-docs.md)。下文此前结果保持其对应提交，不冒充1.0.0新包的测试结果。
