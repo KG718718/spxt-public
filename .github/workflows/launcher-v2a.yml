@@ -1,0 +1,44 @@
+name: Launcher Batch 2A Windows prototype
+on:
+  push:
+    branches: [codex/windows-installer-v1.1]
+    paths:
+      - 'tools/windows-launcher/**'
+      - 'tools/tests/windows-launcher/**'
+      - '.github/workflows/launcher-v2a.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: launcher-2a-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  launcher:
+    if: github.ref == 'refs/heads/codex/windows-installer-v1.1'
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Create isolated E drive workspace on hosted runner
+        shell: pwsh
+        run: |
+          if (!(Test-Path E:/)) {
+            $taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-e-drive'
+            New-Item -ItemType Directory -Path $taskDrive | Out-Null
+            subst E: $taskDrive
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot create isolated E workspace' }
+          }
+      - name: Pinned runtime and Go, GUI EXE, unit and actual-EXE integration
+        shell: pwsh
+        run: ./tools/tests/windows-launcher/ci.ps1 -Work "E:/KSESSION-launcher-${{ github.run_id }}" -Commit "${{ github.sha }}"
+      - name: Upload unsigned prototype and non-sensitive evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: K-SESSION-launcher-win-x64-${{ github.sha }}
+          path: E:/KSESSION-launcher-${{ github.run_id }}/artifact/
+          if-no-files-found: error
+          retention-days: 30

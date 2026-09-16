@@ -16,6 +16,14 @@
 
 ## 固定交付规则：ChatGPT 网页版交接卡
 
+## Batch 2A起：GitHub-first（2026-09-17）
+
+- 正式审查仓库KG718718/spxt-public，分支codex/windows-installer-v1.1。每个可审查阶段必须commit并仅push该开发分支；本地未提交状态不是正式验收版本。
+- EXE/ZIP/大型Runtime/非敏感日志使用GitHub Actions Artifact，不提交Git。验收必需证据必须可在GitHub获取。
+- 交接卡约500—1000中文字，必须写branch、受测commit SHA、Actions run ID、Artifact名称及PASS/FAIL；结果文档提交与受测代码提交区分，不能自引用伪造SHA。
+- main、v1.0.0、正式Release冻结，禁止force push；每批完成即停，不自动进入下批。
+- 以上替代旧“结果文档仅留本地”等交接策略；完整原始技术证据和交接卡/剪贴板规则保留。
+
 自2026-09-16起，本公开项目每个 Batch / 子任务结束（包括失败、阻塞和纯文档任务）时，除原有技术报告外，必须在对应任务目录生成 CHATGPT-HANDOFF.md，不需要再次询问。不得用同一根目录文件覆盖其他任务交接历史。
 
 - 内容必须独立、自包含，默认800–1800中文字；明确实际完成、未完成、事实/测试、阻塞、Git状态、下一Batch准入和上级决策点。缺失数字写N/A，旧测试注明来源，不得冒充本轮复测。

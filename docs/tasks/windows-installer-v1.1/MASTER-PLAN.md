@@ -1,5 +1,11 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## Batch 2A已获实施授权 / GitHub-first｜2026-09-17
+
+R5A已获上级验收PASS FOR WINDOWS 10 BETA TRACK；当前只进入Desktop Launcher Prototype，不做Setup/OCR/Release。L2入口batch-2a/intent.md、LAUNCHER-TECH-DECISION.md（Spec）、LAUNCHER-LIFECYCLE.md（Plan）、acceptance.md；原任务书已批准这些目标和实现范围。
+
+正式审查KG718718/spxt-public的codex/windows-installer-v1.1分支。每个可审查阶段commit+push；代码/测试/workflow及必要报告须可从GitHub读取，EXE/ZIP/非敏感证据使用Actions Artifact，不提交Git。不再以未提交工作区作为验收版本。交接卡精简500—1000中文字，列branch、受测SHA、Actions run、Artifact、PASS/FAIL；文档收尾提交与受测code SHA分别说明。main/v1.0.0/Release冻结、禁止force push、任务完成后停止。覆盖历史本地报告待提交规则。
+
 ## R5A 验收状态｜2026-09-16
 
 **PASS FOR WINDOWS 10 BETA TRACK，等待上级验收，不自动进入Batch2。** R5检查点a3fa006、精确Git锁字节修复/最终源码37586d2已仅推开发分支。Hosted 35112295648完整26/26套742项、0失败/跳过，文件/目录symlink通过；fresh20生产包无Canvas/Skia/addon，许可0未解决项。Win10 19045开发机staging及新解包各12项Smoke通过。Runtime ZIP 48,284,049字节，SHA256 bfb9581ef089ca7bd8a8d695d776a7c91a2407c871e1affbbe3b479e001c36e2，未发布；结果详见batch-1c/RESULT.md（PROJECT入口为docs/tasks/windows-installer-v1.1/batch-1c/RESULT.md）。
