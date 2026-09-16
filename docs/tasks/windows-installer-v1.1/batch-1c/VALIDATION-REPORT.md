@@ -1,5 +1,13 @@
 # Batch 1C — 验证报告
 
+## R5A 最新验收结果｜2026-09-16
+
+**PASS FOR WINDOWS 10 BETA TRACK。** 最终受测/构建提交37586d24fe0d26da398d67b62fb1ed06fc19bd94，Hosted 35112295648：26/26套、742检查、0失败/0跳过、文件/目录symlink通过。fresh生产20包，pdfjs4.10.38 generic，无pdf-parse/Canvas/Skia/addon；许可0未解决项。Win10 19045开发机staging与全新解包各12项Smoke通过，真实PDF函数8样本、Excel、上传、备份、重启与hash不变已验。
+
+ZIP bfb9581ef089ca7bd8a8d695d776a7c91a2407c871e1affbbe3b479e001c36e2，48,284,049字节；解包1,038文件/136,831,186字节。Manifest ec00f453d0b158adaabf16f4120506b997bb0dfaf6b4fff8de3bd38f085dec99。首次构建的CRLF工作区锁hash与Git LF blob不一致已通过精确策略修复、重新CI/fresh build解决，未改业务或放宽门禁。
+
+详见[RESULT当前完整结果](RESULT.md#r5a-当前结果2026-09-16)，包含原始证据索引、许可24份原文、hash/源码对照、范围、失败保留、未验收项。产物仅保留E盘源码外migration-r5a-01/artifact；不是Setup，不发Release。Win11实机转未来社区验证，不再阻塞本阶段；当前并非干净机认证。不进入Batch2，等待上级批准。以下均为历史时点，不覆盖本节。
+
 ## Batch 1C-R2 当前验证｜2026-09-16
 
 **审计证据检查通过，不代表Batch通过。Batch1C-R2=BLOCKED，删除条件D不成立。**

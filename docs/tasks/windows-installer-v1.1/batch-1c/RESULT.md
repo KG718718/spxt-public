@@ -1,5 +1,36 @@
 # Batch 1C — Runtime Build Prototype 结果
 
+## R5A 当前结果｜2026-09-16
+
+**Batch 1C PASS FOR WINDOWS 10 BETA TRACK。** 本轮Runtime门禁完成，停止等待上级验收；未进入Batch2，尚无Launcher/Setup或对普通用户的Release。
+
+- R5候选检查点：`a3fa006d02ab60bbadc9ae5a23ad05c9656d5b76`。构建锁字节修复及最终受测源码/构建工具：`37586d24fe0d26da398d67b62fb1ed06fc19bd94`。均仅推开发分支。
+- Hosted Windows Server：[35110942262](https://github.com/KG718718/spxt-public/actions/runs/35110942262) 与最终 [35112295648](https://github.com/KG718718/spxt-public/actions/runs/35112295648) 均26/26套、742项套件报告检查通过，fail=0、skipped=0。文件/目录symlink preflight均通过；原startup-filesystem19项完成，未改断言或跳过。计数为各套件报告检查数，不是逐个assert数量。
+- fresh Node官方归档与官方SHASUMS、exe哈希一致；Node24.21.0 x64/npm11.19.0。全新build-04从Git blob取32个应用文件，fresh npm ci --omit=dev --omit=optional，独立缓存/staging；未复用旧Runtime/node_modules。
+- pdfjs-dist精确4.10.38 generic；pdf-parse/Canvas/Skia/额外.node、DLL、EXE、WASM均0。20生产包、977个node_modules文件、41,243,731字节；Node自身exe单独保留，不计为额外addon。锁内optional声明保留，实际省略策略仍以完整审计为前提。
+- 20 npm包许可原文及PDF CMap/字体通知，加Node官方LICENSE，共24份原文引用；unresolved distribution items=0。旧Skia许可为NOT APPLICABLE TO NEW RUNTIME GRAPH，不能写成旧路线已获许可批准。
+- Win10专业版x64 10.0.19045开发机：staging和全新“中文+空格”解包路径各12项Smoke通过。包内Node、服务、Admin初始化、登录、8类PDF、Excel、中文附件、备份、重启/数据保留及包前后hash不变。仅使用外置合成实例；不调用系统Node/npm/Python/Git执行核心功能。
+- PDF真实server提取函数在独立受限进程中测试，native/Canvas/Skia加载、PDF外网请求尝试均0。没有把函数级追踪说成OS级断网；上游generic Node提醒如实保留。Runtime真实浏览器未另跑，HTTP/功能Smoke与Hosted整站浏览器测试分开记录。
+- Runtime守卫41、合成完整性14、打包拒绝反例3均通过；拒绝失败CI、错误源码提交、错误Smoke manifest，均无ZIP输出。
+
+### 最终技术产物（不是安装器）
+- 文件：`K-SESSION-runtime-prototype-win-x64.zip`及外置同名`.sha256`。
+- ZIP SHA256：`bfb9581ef089ca7bd8a8d695d776a7c91a2407c871e1affbbe3b479e001c36e2`。
+- ZIP：48,284,049字节；解包：136,831,186字节；文件1,038个。
+- Manifest SHA256：`ec00f453d0b158adaabf16f4120506b997bb0dfaf6b4fff8de3bd38f085dec99`。
+- 最终package-lock Git blob SHA256：`7e650d8d4141d888ab7cc81da25fa094f0e36ffaa0f2152d5066346633e8b2b5`。
+- 新解包目录重验全部hash/manifest、32应用文件与源码commit逐字节一致、Node/20依赖、无Canvas/Skia/业务数据以及服务/PDF/Excel等12项完整Smoke；全部通过。archive-report的PENDING是压缩时点，后续完成证据在unpacked-inspection与unpacked-smoke中，不回写原始阶段记录。
+- Artifact保存在源码外`output/windows-installer-v1.1/batch-1c/migration-r5a-01/artifact/`；未推Git、未上传Release。应用元数据仍1.0.0，所属开发轨道v1.1；此为Runtime原型，不冒充1.1安装器。
+
+### 返工、边界与后续
+首次build-03被门禁正确拒绝：R5审计固定的是工作区CRLF锁文件hash（111d…），Git blob为LF（7e650…），规范化后内容一致。仅修正策略为实际Git blob hash、增加守卫，不改依赖版本/业务规则；重新提交、全回归并fresh build-04。失败证据保留。Node首次下载超时，随后从同一官方地址续传并核对完整SHA256，未用旧归档冒充新下载。
+
+当前Win10只是有开发环境的主要测试机，不是干净机认证，也不代表全部Win10版本。Win11为预期兼容、待未来Setup Beta后的社区实机验证；按本次用户决定不再阻塞Batch2。Win10具体维护渠道/更新版本清单、干净机器、外部浏览器自动打开、Launcher、Setup、安装/升级/卸载、OCR、签名及Pre-release仍未实施或验收。本轮无业务模型/财务/权限/HTML/CSS/Install/Start改动，无真实数据或其他用途版本访问。
+
+### 证据与Git交付
+原始证据均在源码外`migration-r5a-01/`：checkpoint.json、两个hosted目录、fresh-toolchain.json、build-03/build-report.json、build-04/build-report.json/modules.json、runtime-inspection.json、win10-smoke/、integrity-tests/、archive-negative/report.json、artifact/、unpacked-smoke/、unpacked-inspection.json。报告不包含凭据或业务内容。
+技术提交37586d2已推送并由最终CI验证；本次结果文档留工作区等待上级验收，未另行提交。main/v1.0.0未改，无PR/Release；不要自动进入下一Batch。下文只保留各历史时点，不覆盖本节。
+
 ## Batch 1C-R5 当前结论｜2026-09-16
 
 **BLOCKED — 完整回归被当前Windows测试环境阻断；未证明PDF迁移导致业务回归。** PDF.js精确4.10.38 generic及删除pdf-parse已在工作区实施；fresh20生产包无Canvas/Skia/额外native，实际server提取函数8样本三轮通过。原26套测试在浏览器和文档复验后25套完成，startup-filesystem因Windows symlink EPERM在14项后中止，余项未验证。测试退出非零与已证业务缺陷分开记录，不能放行。

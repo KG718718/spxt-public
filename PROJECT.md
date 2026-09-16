@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## R5A 验收状态｜2026-09-16
+
+**PASS FOR WINDOWS 10 BETA TRACK，等待上级验收，不自动进入Batch2。** R5检查点a3fa006、精确Git锁字节修复/最终源码37586d2已仅推开发分支。Hosted 35112295648完整26/26套742项、0失败/跳过，文件/目录symlink通过；fresh20生产包无Canvas/Skia/addon，许可0未解决项。Win10 19045开发机staging及新解包各12项Smoke通过。Runtime ZIP 48,284,049字节，SHA256 bfb9581ef089ca7bd8a8d695d776a7c91a2407c871e1affbbe3b479e001c36e2，未发布；结果详见batch-1c/RESULT.md（PROJECT入口为docs/tasks/windows-installer-v1.1/batch-1c/RESULT.md）。
+
+Win10是当前主要开发机测试平台，不是干净机认证；Win11待Setup Beta后社区实测，不承诺已支持。无Launcher/Setup/OCR实施、main/tag/Release操作。技术代码已提交；本次最终结果文档留工作区等待验收。下面策略和历史记录按各自时点解释。
+
 ## Batch 1C-R5A 续行授权｜2026-09-16
 
 当前用户批准Windows10 x64 Beta优先，Win11转为Setup完成后社区实机验证，未验证前不承诺支持。允许先提交R5测试候选并只推开发分支；GitHub Hosted Windows补文件/目录symlink及原26套完整回归。通过后再fresh Runtime、许可、Win10开发机包内Node smoke、ZIP及全新解包复验。当前执行中，没有新的PASS或发行物结论；不进入Launcher/Setup/OCR/main/Release。
