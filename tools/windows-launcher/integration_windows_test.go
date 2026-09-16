@@ -159,7 +159,7 @@ func TestLauncherIntegration(t *testing.T) {
 		t.Fatal("ordinary user control window is hidden")
 	}
 	pass("X03 control window visible even when parent requests hidden startup")
-	if !strings.EqualFold(procPath(pid), filepath.Join(root, "runtime", "node.exe")) {
+	if !sameFile(procPath(pid), filepath.Join(root, "runtime", "node.exe")) {
 		t.Fatal("wrong Node path")
 	}
 	pass("L02 absolute packaged Node")
@@ -234,7 +234,7 @@ func TestLauncherIntegration(t *testing.T) {
 	conn.Close()
 	pass("L08 external occupant remains alive")
 	// Only intentionally terminate exact test-owned Node after matching image and current test event.
-	if !strings.EqualFold(procPath(cpid), filepath.Join(root, "runtime", "node.exe")) {
+	if !sameFile(procPath(cpid), filepath.Join(root, "runtime", "node.exe")) {
 		t.Fatal("wrong test PID")
 	}
 	h, e := syscall.OpenProcess(1, false, cpid)

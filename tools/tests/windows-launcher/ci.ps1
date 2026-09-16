@@ -35,6 +35,10 @@ try {
 } finally {Pop-Location}
 Copy-Item -LiteralPath (Join-Path $env:KSESSION_TEST_EVIDENCE 'integration.json') -Destination $taskArtifact
 Copy-Item -LiteralPath (Join-Path $taskBuild 'build-report.json') -Destination (Join-Path $taskArtifact 'runtime-build-report.json')
+# Reject accidental build caches or synthetic instance material in the public artifact.
+foreach($taskEntry in Get-ChildItem -LiteralPath $taskArtifact) {
+ if($taskEntry.Name -notin @('launcher','integration-test.log','integration.json','runtime-build-report.json')) {throw 'Unexpected artifact content'}
+}
 # Do not upload instance data/logs, credentials, caches or downloaded toolchains.
 Compress-Archive -LiteralPath $taskPackage -DestinationPath (Join-Path $taskArtifact 'K-SESSION-launcher-runtime-prototype.zip')
 Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $taskArtifact 'K-SESSION-launcher-runtime-prototype.zip') | ForEach-Object { "$($_.Hash.ToLower())  K-SESSION-launcher-runtime-prototype.zip" } | Set-Content -Encoding ascii (Join-Path $taskArtifact 'runtime-ZIP-SHA256.txt')

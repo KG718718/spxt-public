@@ -10,11 +10,12 @@ $taskManifest=Join-Path $taskRoot 'manifest/runtime-manifest.json'
 $taskHash=(Get-FileHash -LiteralPath $taskManifest -Algorithm SHA256).Hash.ToLower()
 New-Item -ItemType Directory -Path $taskOutput | Out-Null
 $env:GOOS='windows';$env:GOARCH='amd64';$env:CGO_ENABLED='0';$env:GOTOOLCHAIN='local'
-$env:GOCACHE=Join-Path (Split-Path $taskOutput) 'go-cache'
-$env:GOTMPDIR=Join-Path (Split-Path $taskOutput) 'go-temp'
+$taskScratch=Join-Path (Split-Path $taskRoot) 'launcher-build-cache'
+$env:GOCACHE=Join-Path $taskScratch 'go-cache'
+$env:GOTMPDIR=Join-Path $taskScratch 'go-temp'
 New-Item -ItemType Directory -Force -Path $env:GOCACHE,$env:GOTMPDIR | Out-Null
 $env:TEMP=$env:GOTMPDIR;$env:TMP=$env:GOTMPDIR
-$env:GOPROXY='off';$env:GOSUMDB='off'
+$env:GOPROXY='off';$env:GOSUMDB='off';$env:GOENV='off';$env:GOFLAGS='';$env:GOEXPERIMENT=''
 Push-Location $PSScriptRoot
 try {
  & $GoExe test -count=1 -run 'Test(RelativePathSafety|EnvironmentAllowlist|InstanceOutsidePackage|RuntimeMissing|JobOwnsOnlyChild)$' ./...

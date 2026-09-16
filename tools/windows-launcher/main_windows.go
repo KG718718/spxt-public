@@ -290,7 +290,7 @@ func sameWindowOwner(hwnd uintptr, exe string) bool {
 	b := make([]uint16, 32768)
 	size := uint32(len(b))
 	r, _ := call(kernel32, "QueryFullProcessImageNameW", uintptr(h), 0, uintptr(unsafe.Pointer(&b[0])), uintptr(unsafe.Pointer(&size)))
-	return r != 0 && strings.EqualFold(syscall.UTF16ToString(b[:size]), exe)
+	return r != 0 && sameFile(syscall.UTF16ToString(b[:size]), exe)
 }
 func dispatchExisting(class, exe string, stop bool) bool {
 	for i := 0; i < 100; i++ {

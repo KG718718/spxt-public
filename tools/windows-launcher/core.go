@@ -52,6 +52,14 @@ func hashFile(p string) (string, error) {
 	_, e = io.Copy(h, f)
 	return hex.EncodeToString(h.Sum(nil)), e
 }
+func sameFile(a, b string) bool {
+	x, e := os.Stat(a)
+	if e != nil {
+		return false
+	}
+	y, e := os.Stat(b)
+	return e == nil && os.SameFile(x, y)
+}
 func within(parent, child string) bool {
 	r, e := filepath.Rel(parent, child)
 	return e == nil && (r == "." || (!filepath.IsAbs(r) && r != ".." && !strings.HasPrefix(r, ".."+string(os.PathSeparator))))
