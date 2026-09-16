@@ -1,0 +1,92 @@
+# Batch 1C — Runtime 构建报告
+
+## 构建身份与操作
+
+仅公开仓库 `KG718718/spxt-public`；源码 commit、Node/npm、lock/manifest 哈希见 [RESULT](RESULT.md)。构建工具目前未提交，其实际字节哈希随生成的 manifest.build.toolFiles 保存；取件应用 commit 不冒充构建工具 commit。
+
+执行入口为 `tools/windows-runtime/build.ps1 -OutputDirectory <E盘源码外的新目录>`。脚本要求 PowerShell 7（ProcessStartInfo.ArgumentList/Environment）；这是构建工具需求，不是最终用户运行要求。当前目录已存在即拒绝，不清理、不覆盖旧结果。重复构建可传入本轮已下载官方 Node ZIP，通过官网清单及字节哈希重新核对，仍新建 toolchain、空 npmrc、cache、生产依赖与 staging，不能复用旧 node_modules。
+
+1. 核对 origin 是指定公开仓库，只接受完整 commit。
+2. 从 Git 对象读取 distribution/允许清单/锁文件；官方 HTTPS 精确地址及哈希验证，不用 latest。
+3. 下载官方 Node 归档，校验后解压，校验 exe；实际运行 v24.21.0/npm11.19.0。
+4. 从指定 commit 原样写入 32 个应用文件，保持现有扁平 HTML/CSS/JS 路径。
+5. 独立空 user/global npmrc、E盘 cache/temp；环境变量采用白名单，不继承 NODE_OPTIONS/NODE_PATH/npm token/registry/proxy。源码只取允许文件，不带项目 .npmrc。
+6. 执行 `npm ci --omit=dev --include=optional --ignore-scripts --bin-links=false --audit=false --fund=false --strict-ssl=true --registry=https://registry.npmjs.org/`，显式传入空配置与独立 cache。实际 npm 版本已固定记录；其升级提示没有被执行。本轮未运行漏洞审计，不能由安装成功推出安全审查通过。
+7. 实际磁盘包集合与 Win32 x64 非开发锁定图逐项比对，23 项齐全；锁文件字节不变。保留完整第三方包资源，不按 test/docs 文件名盲删上游内容。
+8. 原始许可复制、PE架构与导入/延迟导入检查、Canvas真实图像读写、PDF动态加载与资源库存。
+9. 生成依赖清单、manifest、全部 payload SHA256。manifest 不自哈希，SHA256SUMS 不包含自身，未来 ZIP 哈希在包外。
+10. 暂存目录完整性通过；原生许可门禁返回失败，停止生成 ZIP。归档实现已写入，但本轮没有越过门禁执行，不宣称归档/解包代码已验收。
+
+## 暂存目录与排除
+
+```text
+KSESSION-RUNTIME/
+  runtime/node.exe
+  app/<32个既有应用文件>
+  app/node_modules/<23个生产包>
+  licenses/node/LICENSE
+  licenses/npm-packages/<原始声明>
+  manifest/dependencies.json
+  manifest/runtime-manifest.json
+  hashes/SHA256SUMS.txt
+```
+
+总计 1,199 文件 / 194,275,955 字节；32份依赖/Node许可文件引用，另有 app 原始项目 LICENSE/THIRD_PARTY_NOTICES。PDF worker/cMap/font/wasm等资源库存196项，包含其中的许可原文，不等于196个功能分支均已测试。
+
+没有 launcher/instance，没有用户 data/config/附件/备份/SMTP/Token/Cookie。无 npm CLI/cache、开发工具、Playwright、浏览器、Python、OCR引擎/模型。保留原白名单两个 OCR 源码文件，不等于引擎包含。开发机诊断产生的合成实例、日志、XLSX仅在外置 evidence，未进入暂存包。
+
+## 实际生产依赖
+
+| 包 | 版本 |
+| --- | --- |
+| @napi-rs/canvas | 0.1.80 |
+| @napi-rs/canvas-win32-x64-msvc | 0.1.80 |
+| append-field | 1.0.0 |
+| buffer-from | 1.1.2 |
+| busboy | 1.6.0 |
+| concat-stream | 2.0.0 |
+| fflate | 0.8.3 |
+| inherits | 2.0.4 |
+| media-typer | 0.3.0 |
+| mime-db | 1.52.0 |
+| mime-types | 2.1.35 |
+| multer | 2.3.0 |
+| nodemailer | 9.1.1 |
+| pdf-parse | 2.4.5 |
+| pdfjs-dist | 5.4.296 |
+| readable-stream | 3.6.2 |
+| safe-buffer | 5.2.1 |
+| streamsearch | 1.1.0 |
+| string_decoder | 1.3.0 |
+| type-is | 1.6.18 |
+| typedarray | 0.0.6 |
+| util-deprecate | 1.0.2 |
+| write-excel-file | 4.1.1 |
+
+开发依赖 playwright-core 和9个非目标平台 canvas optional 包不在实际集合中。名称、版本、官方 resolved、integrity、许可引用详见外置 manifest/dependencies.json。
+
+## Native 初步结果
+
+- `runtime/node.exe`：93,580,104字节，AMD64 PE32+，哈希符合官方；导入 CRYPT32、WS2_32、USER32、dbghelp、ADVAPI32、IPHLPAPI、USERENV、SHELL32、ole32、WINMM、KERNEL32；静态未发现延迟导入。
+- `app/node_modules/@napi-rs/canvas-win32-x64-msvc/skia.win32-x64-msvc.node`：26,272,256字节，AMD64 PE32+；SHA256 `30646342fc284109aa9542155287d37147c97132d5168cf621f851a9c69e0c99`。
+- Canvas 导入 bcryptprimitives、api-ms-win-core-synch-l1-2-0、ADVAPI32、kernel32、ntdll，静态未发现延迟导入。包内 Node require 成功，16×16 PNG 生成与读回成功。
+- PDFParse 与 pdfjs legacy 动态 import 实际解析到包内路径；真实合成文本解析通过。原生 DLL 动态追踪及 Win11干净机未执行；以上不能证明所有Windows版本无需额外组件，也没有从System32复制任何DLL。
+
+## 许可证门禁
+
+已收集 npm/Node 原始声明，Canvas 平台包采用公开仓库既有精确父包 MIT 映射。重新读取官方 npm 元数据，其 gitHead 为 `dda1b258dac667b4c66b94bbd4d70aa79ea4503a`，与既有映射一致。
+
+该 Canvas 上游提交的 `.gitmodules` 指向 google/skia，Git tree固定 Skia子模块 `1fdbea293a53b270e3f5e74c92cc6670d68412ff`。这证明还需核查其原生组成，不证明 npm预编译二进制与全部子依赖许可已形成完整链路。未拿单份MIT覆盖Skia及其第三方组件；保持 pending-before-distribution，ZIP输出锁闭。
+
+公开来源：[Node校验清单](https://nodejs.org/dist/v24.21.0/SHASUMS256.txt)、[平台包精确版本元数据](https://registry.npmjs.org/@napi-rs/canvas-win32-x64-msvc/0.1.80)、[Canvas固定提交子模块](https://github.com/Brooooooklyn/canvas/blob/dda1b258dac667b4c66b94bbd4d70aa79ea4503a/.gitmodules)。这是工程证据完整性判断，不是法律合规意见。
+
+## 构建历史与证据
+
+E盘源码外 `output/windows-installer-v1.1/batch-1c/`：
+
+- `build-01/`：第一次新鲜安装成功，收集器因 busboy 锁文件未记录 license 而误判停止。已修正**新构建器**：锁中有 license 才比对其值，始终要求包元数据受支持且具备原文；不改锁、不豁免原文。保留失败现场。
+- `build-02/`：新鲜 npm ci，完成上述暂存/清单/探针；停于真实原生许可门禁，`build-report.json` SHA256 `e056a1e972cead68026ef1cce227e9bcd6789b533366d8d0a9a2cdb6114b4713`。
+- `build-02/modules.json` SHA256 `bc6814ad7862097b2470205b859c68f17db41bcc430e086638be86d8bcce7699`。
+- `npm-ci.log`、manifest、hash清单、原始上游Node归档均留存；不要将官方Node.zip误称为K-SESSION Runtime.zip。
+
+没有清理、覆盖、推送以上材料。归档大小、压缩比、解包复验和字节可复现尚无结论。

@@ -1,6 +1,6 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
-状态：Batch 0 规划轨道；不是已实现的安装功能，也不是 v1.1 发布承诺。
+状态：Batch 0/1A/1B已获批准；Batch 1C已实施但FAIL，原生许可及干净Windows 11离线G1未完成，没有Runtime ZIP，不允许进入Batch 2。当前仅固定交接卡规则，不开展新Batch。
 记录日期：2026-09-16。范围仅为公开仓库 [KG718718/spxt-public](https://github.com/KG718718/spxt-public)。
 
 ## 已确认基线与入口
@@ -11,6 +11,9 @@
 - 已确认决定与未决技术方案见 [DECISIONS.md](DECISIONS.md)。
 - 验收门禁见 [ACCEPTANCE.md](ACCEPTANCE.md)。
 - Batch 0 只建立文档和分支，不修改业务源码、Install.cmd、运行版本字段或构建配置。
+- Batch 1A 历史入口：[Intent](batch-1a/intent.md)、[架构草案](batch-1a/spec.md)、[设计计划](batch-1a/plan.md)、[验收](batch-1a/acceptance.md)。其原始交付状态保留；后续批准以当前 Batch 1B 正式任务书和 Decisions 增量记录为准。
+- Batch 1B设计入口：[Runtime Plan](batch-1b/RUNTIME-PLAN.md)、[Dependency Closure](batch-1b/DEPENDENCY-CLOSURE.md)、[Validation Plan](batch-1b/VALIDATION-PLAN.md)。原设计报告保留其交付时点状态，后续已获批准。
+- Batch 1C入口：[RESULT](batch-1c/RESULT.md)、[网页版交接卡](batch-1c/CHATGPT-HANDOFF.md)。暂存Runtime和开发机诊断不等于完整G1通过。
 
 ## 最终产品目标（尚未实现）
 
@@ -74,4 +77,101 @@
 
 每个 Batch 先确认范围、方案和验收标准，再实施。只提交审查过的公开资料；不纳入审计临时文件、本机配置或非公开资产。风险、失败与未测试项如实记录，不能以候选完成代替发布通过。
 
-本轮到 Batch 0 回单为止；未经新的明确授权，不进入 Batch 1，不生成 Setup.exe、Runtime 闭包或 OCR 安装产物。
+Batch 0/1A/1B已经获准，Batch 1C Runtime实施已执行但门禁未通过。当前停止于Batch 1C；不得以交接文档完成自动进入Batch 2、生成Launcher/Setup或开展新Batch。
+
+### ChatGPT 网页版交接卡固定规则
+
+从现在开始，每个Batch/子任务结束，自动在其对应任务目录额外生成CHATGPT-HANDOFF.md（本规则落地时先补当前1C），无须重复询问。该文件须独立、自包含，网页版不读取其他本地文件也能了解实际结果、技术事实、测试、未完成项、阻塞、Git状态、下一阶段准入和待上级决定事项。
+
+默认800–1800中文字，保持下列固定格式；不放完整日志，没有的值写N/A，不编造。成功/失败/阻塞/有条件通过必须区分；文档子任务通过不能掩盖所在Batch失败，历史测试必须注明非本轮复测。
+
+严禁Token、API Key、Cookie、密码、SMTP授权码、真实客户/发票/附件内容及其他用途版本内容。生成前进行内容检查，原RESULT、BUILD/VALIDATION REPORT、JSON evidence、logs、hashes全部保留，交接卡不替代原始证据。
+
+每次生成后，最终回复必须以单独代码块完整输出文件全文。Windows允许时尝试将全文复制到剪贴板，例如：
+
+```powershell
+Get-Content -Raw "<CHATGPT-HANDOFF.md实际路径>" | Set-Clipboard
+```
+
+仅在复制成功后，最终回复首行写：“网页版交接卡已生成并复制到剪贴板，直接到 ChatGPT 网页版 Ctrl+V 即可。”
+
+失败或环境不支持时，首行写：“网页版交接卡已生成，请复制下方代码块全部内容到 ChatGPT 网页版。”
+
+剪贴板失败不导致Batch失败；不得虚报成功。本规则立即作为本项目后续所有Batch/子任务的固定执行标准，不等于允许继续实施或发布。
+
+### ChatGPT 网页版交接卡固定模板
+
+```text
+===== CHATGPT HANDOFF BEGIN =====
+
+项目：
+K⁺-SESSION 公开版 Windows 一键安装重构
+
+当前 Batch：
+<Batch编号和名称>
+
+结论：
+<PASS / FAIL / BLOCKED / PASS WITH CONDITIONS>
+
+一句话结论：
+<1-3句话说明真正结果>
+
+【本轮实际完成】
+- ...
+
+【关键数字 / 技术事实】
+- source commit:
+- HEAD:
+- Node:
+- npm:
+- Runtime大小:
+- 文件数:
+- 生产依赖数:
+- Artifact:
+- SHA256:
+没有的写 N/A，不要编造。
+
+【实际测试结果】
+- ...
+
+【未完成 / 未验证】
+- ...
+
+【当前阻塞】
+1. ...
+
+【本轮修改范围】
+- 新增：
+- 修改：
+- 明确未修改：
+
+【Git状态】
+- branch:
+- HEAD:
+- working tree:
+- commit:
+- push:
+- PR:
+- Release:
+- main是否修改:
+- v1.0.0是否修改:
+
+【安全与边界】
+- 是否访问内部版：
+- 是否包含真实业务数据：
+- 是否包含账号/Token/密码：
+- 是否修改业务逻辑：
+
+【下一阶段判断】
+- 是否允许进入下一 Batch：
+- 原因：
+
+【需要 ChatGPT 网页版决定】
+1. ...
+
+【详细报告文件】
+- RESULT.md
+- 其他报告...
+
+===== CHATGPT HANDOFF END =====
+```

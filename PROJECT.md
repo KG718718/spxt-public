@@ -1,5 +1,33 @@
 # K⁺-SESSION｜项目状态
 
+## 固定交付规则：网页版交接卡｜2026-09-16
+
+用户确认每个Batch/子任务结束自动生成自包含CHATGPT-HANDOFF.md，最终回复完整代码块输出，并在Windows允许时复制到剪贴板；失败不改变技术验收结果。规则已写入公开AGENTS.md与Master Plan，立即生效。当前已补[Batch 1C交接卡](docs/tasks/windows-installer-v1.1/batch-1c/CHATGPT-HANDOFF.md)，原始报告与证据保留。本次仅文档规则落地，未复测、未构建、未进入新Batch；1C仍为FAIL，不放行Batch 2。
+
+## Windows installer v1.1 / Batch 1C Runtime Prototype｜2026-09-16
+
+用户已批准 Batch 1B，授权本轮 Runtime 实施，不授权 Launcher/Setup/Release。已新增独立构建/验证工具，只从公开 commit 49b3e35c68468b3c61e3ad19ed379ce057d17886 取件；32个应用文件不变，官方Node24.21.0/npm11.19.0及23个fresh生产依赖完成暂存组装，manifest/hash和原生/PDF加载通过。E盘源码外暂存1,199文件/194,275,955字节。
+
+**Batch 1C FAIL，未放行Batch 2。** Canvas原生嵌入组件许可尚未闭合，构建器拒绝生成ZIP；当前仅Windows10开发机，不具备干净Win11离线G1证据。29项守卫、14项合成完整性反例、12项开发机功能诊断通过，不能替代正式G1。详见 [RESULT](docs/tasks/windows-installer-v1.1/batch-1c/RESULT.md)、[构建报告](docs/tasks/windows-installer-v1.1/batch-1c/RUNTIME-BUILD-REPORT.md)、[验证报告](docs/tasks/windows-installer-v1.1/batch-1c/VALIDATION-REPORT.md)。
+
+没有修改业务源码/锁文件/原安装脚本，没有Runtime ZIP/Setup/Launcher，没有提交/推送/CI/PR/Release/合并/部署。main/v1.0.0未改；既有未提交1A/1B设计保留。合成实例只在E盘外置诊断目录，服务已停止。下一步先处理本批许可与目标环境门禁，不提前进入Batch 2/3。
+
+## Windows installer v1.1 / Batch 1B 实施设计｜2026-09-16
+
+用户正式任务书已批准 Batch 1A 的 Runtime 架构方向：私有 Node x64、原应用、构建阶段完整生产依赖和未来 Setup，保留外部浏览器；不采用 Electron/SEA/用户端 npm 安装。当前仅进入 Batch 1B 设计，不进入实现。
+
+交付入口：[Runtime Plan](docs/tasks/windows-installer-v1.1/batch-1b/RUNTIME-PLAN.md)、[Dependency Closure](docs/tasks/windows-installer-v1.1/batch-1b/DEPENDENCY-CLOSURE.md)、[Validation Plan](docs/tasks/windows-installer-v1.1/batch-1b/VALIDATION-PLAN.md)。覆盖未来包布局、流水线输入输出/失败条件、23项静态生产依赖候选、原生/PDF资源/许可、Manifest、离线验证、容量预算与Batch 2门禁。
+
+旧 Batch 1A 五文档原样保留，授权进展以本节及 Decisions 增量记录为准。当前 HEAD 仍为 49b3e35c68468b3c61e3ad19ed379ce057d17886，设计文档未提交。没有改业务源码、下载生产依赖、生成 Runtime/Setup、启动服务或运行实际功能测试；没有提交/推送/PR/CI/Release/合并/部署。原生许可及实际闭包/离线能力仍待实施核验，设计 PASS 不等于可以进入 Batch 2。下一步等待本轮架构验收。
+
+## Windows installer v1.1 / Batch 1A 设计阶段｜2026-09-16
+
+用户已验收 Batch 0，并授权 Architecture Decision，仅设计、不写代码。复用 codex/windows-installer-v1.1，已提交基线为 49b3e35c68468b3c61e3ad19ed379ce057d17886；v1.0.0/main 84cbb324a4f63bef094d2c21d70eba841205a7a7 保持冻结。
+
+当前 [Batch 1A 设计](docs/tasks/windows-installer-v1.1/batch-1a/spec.md) 推荐私有 Node、原样应用与构建时生产依赖；仅为待评审建议。L2 [Intent](docs/tasks/windows-installer-v1.1/batch-1a/intent.md)、[Plan](docs/tasks/windows-installer-v1.1/batch-1a/plan.md)、[Acceptance](docs/tasks/windows-installer-v1.1/batch-1a/acceptance.md) 记录范围与门禁。
+
+没有实施 Runtime 闭包、Launcher、Setup 或 OCR，没有修改业务源码或现有安装脚本；本轮无提交/推送/CI/PR/Release/合并/部署。文档草案在当前已授权公开源码副本待评审，不新增副本/工作树。下一步是架构评审，不是自动进入 Build。总目标见 [Master Plan](docs/tasks/windows-installer-v1.1/MASTER-PLAN.md)。以下旧阶段状态只代表历史，不覆盖本节。
+
 ## 1.0.0 正式发布阶段｜2026-09-12
 
 用户已明确授权：仅本仓库创建 PR、合并 main，建立 v1.0.0 标签及带安装包、校验文件和更新说明的正式 Release。此前“未授权 PR/合并/Release”均为历史阶段限制，本节替代；不授权任何已安装实例的部署、更新或数据操作。
