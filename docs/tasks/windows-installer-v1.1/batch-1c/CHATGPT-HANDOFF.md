@@ -5,90 +5,91 @@ K⁺-SESSION 公开版 Windows 一键安装重构
 公开仓库：KG718718/spxt-public
 
 当前 Batch：
-Batch 1C-R1 — Checkpoint + Native License Closure + Runtime ZIP + G1
+Batch 1C-R2 — Dead Dependency Audit + Conditional Dependency Pruning
 
 结论：
-FAIL
+BLOCKED
 
 一句话结论：
-检查点已提交并推送；原生证据调查有实质进展，但再分发证据仍未闭合。
-按任务书停止fresh构建和ZIP生成；正式G1也缺合格Win11环境。没有进入Batch 2/3。
+业务源码未发现pdf-parse调用，但pdfjs-dist有独立的canvas依赖，并实际加载Skia；删除pdf-parse不能消除该链。删除条件D不成立，B也未满足，已停止删除和重建，不进入Batch 2。
 
 【本轮实际完成】
-- 审查并提交原1A/1B/1C文档、交接规则、构建/测试原型，共25文件；未纳入依赖、缓存、ZIP、实例、日志或秘密。
-- 从官方npm、GitHub及Gitiles取得54份原文和逐文件URL/SHA，核实Canvas精确版本、Skia子模块、发布证明、实际native及ICU数据。
-- 新增原生闭包报告、只读证据收集工具与一致性测试；编写干净Win11准备说明及22项正式G1要求。
+- R1的10份文档/工具审查、提交并仅推送指定开发分支；未提交依赖、缓存、ZIP、实例、日志或秘密。
+- 审计公开commit全部135文件和32应用允许文件，区分业务、测试、构建、声明及传递依赖，并追踪动态require/import。
+- 在E盘源码外全新目录安装未改的生产依赖，用实际包图、npm explain、第三方源码及加载探针交叉核对。
+- 生成完整审计与本卡；原R1调查、旧Runtime及失败证据保留。
 
 【关键数字 / 技术事实】
-- source commit: 49b3e35c68468b3c61e3ad19ed379ce057d17886（旧build-02应用取件）
-- HEAD / checkpoint: 468d62357fe4861a9a3015df23a7b6c1862b858a
-- Node: 旧暂存24.21.0 x64；npm: 旧构建11.19.0
-- Runtime大小: 旧暂存194,275,955字节；本轮无新Runtime
-- 文件数: 旧暂存1,199；生产依赖数: 23
-- Artifact: N/A；ZIP大小及SHA256: N/A
-- 旧manifest SHA256:
-  0c9967b54b219a26d484beb16f2b194c1f8659875c2f76dbc7a8e5076e8b101c
-- Canvas两包均0.1.80，gitHead dda1b258dac667b4c66b94bbd4d70aa79ea4503a；
-  Skia 1fdbea293a53b270e3f5e74c92cc6670d68412ff。
-- unresolved distribution items = 3个工作项，不是3个未知组件。
+- source commit: 2aeaa4089520a99829f1b9981b7b5ea2bfa9e295（本轮审计）
+- HEAD: 同上；旧Runtime source仍为49b3e35，并非本轮重建。
+- Node: 24.21.0 x64
+- npm: 11.19.0
+- Runtime大小: 本轮N/A；旧暂存194,275,955字节。
+- 文件数: fresh node_modules 1,131；旧Runtime 1,199。
+- 生产依赖数: 删除前23；删除后N/A，未删除；当前仍23。
+- fresh node_modules大小: 98,604,168字节，不是Runtime总大小。
+- Artifact: N/A；Runtime ZIP未生成。
+- SHA256: ZIP=N/A；原lock不变：
+  c4050d95db6d40702a222ee9da9e43d74c5d36a8e5be73583e1dc2f08d9a5bf5
+- pdf-parse实际使用：业务未发现；host-smoke确实调用PDFParse.getText，旧安装器也动态加载它。
+- pdf-parse是否删除：否；package/lock是否改变：否。
+- canvas/Skia：仍存在且加载；不能标“dependency removed”或“license approved”。
 
 【实际测试结果】
-- 本轮复跑29项守卫、14项合成完整性反例通过。
-- 新增75项证据一致性检查通过；只证明来源/hash/身份对应及缺项事实，不代表许可批准。
-- 旧Runtime1199文件完整性复验通过，manifest不变，distribution仍BLOCKED-native-license。
-- npm provenance仅解码与摘要对应核验，未做Sigstore密码学验签。
-- 前轮12项开发机功能诊断未重跑，不冒充正式G1。
-- 9个CJS及PowerShell语法、diff检查通过；32个应用文件相对冻结main零差异。
+- fresh npm ci、npm ls、npm explain均exit0；实际23包路径/版本与锁定Windows x64生产图一致。
+- 仅import业务使用的pdfjs入口，实际加载canvas和skia.node，未加载pdf-parse；白名单环境复验一致。
+- package/lock字节不变，探针前后1,131依赖文件hash不变。
+- 32应用文件对HEAD及冻结main零差异；3个外置审计助手语法与最终diff检查通过。
+- 上述是依赖审计，不是业务PDF回归、许可批准或G1。
 
 【未完成 / 未验证】
-- fresh Runtime、Runtime ZIP、全新目录解包复验均未执行。
-- 干净Win11离线、普通用户、只读程序目录、22项G1及真实浏览器截图均未执行。
-- Launcher、Setup、OCR安装均未实施。
+- 未执行依赖删除，故没有删除后的普通/中文/多页PDF及完整业务回归。
+- 上传、Excel、初始化、登录、备份、host-smoke本轮未重跑；前轮12项诊断仅是历史结果。
+- 未重建Runtime、生成ZIP/新manifest或解包验证。
+- Win11 G1未执行；Launcher/Setup/OCR安装未实施。
 
 【当前阻塞】
-1. U1：精确Canvas源码不含Cargo.lock；Rust范围依赖及AVIF/AOM、mimalloc等传递组件的发布时版本/声明未齐。
-2. U2：Skia配方及当前静态库摘要已取得，但缺该npm二进制实际链接输入/完整组件图；对应Windows CI artifact已过期。
-3. U3：据实际组件冻结最终原文、版权、致谢、许可路径及静态CRT材料，尚未完成。
-4. 当前执行主机是Windows10专业版x64/build19045开发机；没有获交付合格Win11测试环境。未改网络、ACL或创建VM。
+1. D失败：根直接pdfjs-dist → optional canvas → Windows x64 native，不经过pdf-parse仍成立。
+2. B未满足：现有host-smoke是真正API测试，不只是可删包名检查。
+3. 原R1的Rust解析依赖、Skia实际链接组件及最终适用声明三个工作项未关闭。
+4. 尚无合格干净Win11 G1环境，不能用Win10开发机代替。
+任务模板中“pdf-parse仍为实际运行依赖”不准确；本卡没有把测试调用冒充业务必需性。
 
 【本轮修改范围】
-- 新增：NATIVE-LICENSE-CLOSURE.md、G1-ENVIRONMENT-REQUIREMENTS.md、证据收集器、证据测试。
-- 修改：RESULT、BUILD REPORT、VALIDATION REPORT、本卡、公开PROJECT、MASTER-PLAN。
-- 明确未修改：业务源码、package/lock、Install/Start、许可门禁、旧Runtime、历史发行物。
+- 新增：DEPENDENCY-USAGE-AUDIT.md；源码外审计助手与JSON/hash证据。
+- 修改：RESULT、BUILD REPORT、VALIDATION REPORT、NATIVE-LICENSE-CLOSURE、本卡、公开PROJECT、MASTER-PLAN。
+- 明确未修改：业务源码、package/lock、既有构建/测试门禁、Install/Start、旧Runtime和发行物。
 
 【Git状态】
 - branch: codex/windows-installer-v1.1
-- HEAD: 468d62357fe4861a9a3015df23a7b6c1862b858a
-- working tree: 非clean；R1续行6份已跟踪MD修改、4新增文件，暂存区为空
-- commit: 检查点已提交，25文件，+1613/-4；R1续行资料未再次提交
-- push: 仅检查点已推指定开发分支并回读一致；R1续行资料未推送
-- PR: 无；Release: 本轮无
-- main是否修改: 否；v1.0.0是否修改: 否
-- main/tag仍为84cbb324a4f63bef094d2c21d70eba841205a7a7
+- HEAD: 2aeaa4089520a99829f1b9981b7b5ea2bfa9e295
+- working tree: R2七份tracked MD修改、一份新增MD；暂存区为空。
+- commit: R1检查点10文件，+496/-46；R2报告未额外提交。
+- push: 仅R1检查点已推指定分支并远端回查一致；R2报告未推。
+- PR: 本轮无；Release: 本轮无。
+- main是否修改: 否；v1.0.0是否修改: 否。
+- main/tag仍为84cbb324a4f63bef094d2c21d70eba841205a7a7。
 
 【安全与边界】
-- 是否访问内部版：否；公司使用版也未访问。
+- 是否访问内部版：否；公司版也未访问。
 - 是否包含真实业务数据：否。
-- 是否包含账号/Token/密码：本卡、提交和新增证据无真实凭据；未读取私有配置。
-- 是否修改业务逻辑：否；未发送邮件、未启动应用服务、未放松门禁。
+- 是否包含账号/Token/密码：提交、报告及新审计证据均无凭据。
+- 是否修改业务逻辑：否；未启动应用服务、创建业务实例或发送邮件。
 
 【下一阶段判断】
 - 是否允许进入下一 Batch：否。
-- 原因：许可、ZIP、解包和正式G1门禁未满足；本轮结论是FAIL，不是PASS WITH CONDITIONS。
+- 原因：条件删除路线未获准执行；原生许可、Runtime ZIP和G1仍未关闭。
 
 【需要 ChatGPT 网页版决定】
-1. 验收检查点与证据调查。决定如何取得该精确上游发布的组件/声明清单；若选择重编native或调整依赖，须另行批准，不能用今天解析的依赖冒充旧二进制来源。
-2. 提供或明确授权准备干净Windows11 x64测试环境；先关闭许可缺项再构建同一hash的ZIP并执行G1。
-3. 本轮停止，不自动进入Launcher或Setup。
+1. 验收本次审计：单删pdf-parse不能解决canvas/Skia阻塞。
+2. 决定继续R1许可闭合，或另立PDF依赖架构评估；任何省略optional、补polyfill、替换/升级PDF实现均需新授权。
+3. 后续提供合格Win11 G1环境。本轮已停止，不自动进入新Batch。
 
 【详细报告文件】
 docs/tasks/windows-installer-v1.1/batch-1c/：
-- RESULT.md
-- RUNTIME-BUILD-REPORT.md
-- VALIDATION-REPORT.md
-- NATIVE-LICENSE-CLOSURE.md（完整来源、SHA及缺项）
-- G1-ENVIRONMENT-REQUIREMENTS.md
-- CHATGPT-HANDOFF.md
-原文/JSON位于E盘源码外native-license-r1-02；初次收集及旧失败现场全部保留，不进入Git或Runtime。
+DEPENDENCY-USAGE-AUDIT.md、RESULT.md、RUNTIME-BUILD-REPORT.md、
+VALIDATION-REPORT.md、NATIVE-LICENSE-CLOSURE.md、
+G1-ENVIRONMENT-REQUIREMENTS.md、CHATGPT-HANDOFF.md。
+原始证据在E盘项目output/windows-installer-v1.1/batch-1c/dependency-audit-r2-01/，不进入Git或Runtime。
 
 ===== CHATGPT HANDOFF END =====

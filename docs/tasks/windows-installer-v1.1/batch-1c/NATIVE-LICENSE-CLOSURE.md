@@ -1,5 +1,13 @@
 # Batch 1C-R1 — Native License Closure
 
+## Batch 1C-R2 增量复核
+
+R1原调查随检查点`2aeaa4089520a99829f1b9981b7b5ea2bfa9e295`提交并推送。本轮未补充/批准许可，也未绕过门禁。
+
+fresh原lock安装及pdfjs独立import实测证明Canvas/Skia仍存在、仍加载：不是pdf-parse独占链。Windows native SHA仍为`30646342fc284109aa9542155287d37147c97132d5168cf621f851a9c69e0c99`，与以下R1研究对象一致。因此**不得标NOT APPLICABLE — dependency removed，也不得标license approved**；下列U1/U2/U3三个未关闭分发工作项保持。
+
+Batch1C-R2按条件D失败报告BLOCKED；它没有把R1许可工程门禁FAIL改成PASS，也没有实际生成Runtime ZIP。详见[依赖使用审计](DEPENDENCY-USAGE-AUDIT.md)。以下全部R1调查和原文来源保留。
+
 日期：2026-09-16。**工程门禁 FAIL — native distribution evidence incomplete**。
 unresolved distribution items = **3 个工作项（不是 3 个未知组件）**。
 本报告仅建立工程分发证据，不提供法律意见，不将缺证据等同于已发现侵权。

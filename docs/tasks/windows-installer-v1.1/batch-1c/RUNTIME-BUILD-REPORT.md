@@ -1,5 +1,26 @@
 # Batch 1C — Runtime 构建报告
 
+## Batch 1C-R2 当前状态｜只做依赖审计，未重建Runtime
+
+R1的10文件已提交/推送为`2aeaa4089520a99829f1b9981b7b5ea2bfa9e295`。本轮以该commit的原package/lock在新的外置`dependency-audit-r2-01/fresh-input`安装生产依赖，不复制32个应用文件、不启动server、不调用Runtime构建器。
+
+| 指标 | 本轮实际结果 |
+| --- | --- |
+| Node / npm | 已核实官方toolchain Node24.21.0 x64 / npm11.19.0 |
+| 安装方式 | fresh npm ci，omit=dev/include=optional/ignore-scripts/bin-links=false；公开registry、严格TLS、独立空配置/cache及白名单环境 |
+| package SHA256 | ed2b5d3bf20450c301ae531395fe5bb95c8de07df7f181f254d47843fe928bde |
+| lock SHA256 | c4050d95db6d40702a222ee9da9e43d74c5d36a8e5be73583e1dc2f08d9a5bf5 |
+| 实际生产依赖数 | 23，与原lock的Windows x64图一致 |
+| node_modules大小/文件 | 98,604,168字节/1,131文件，仅依赖目录，不是Runtime |
+| 删除后包数/大小 | N/A，条件D失败，未执行删除 |
+| Canvas / Skia | 仍存在；仅import pdfjs即可加载native |
+| 新Runtime / manifest / ZIP / ZIP SHA | 全部N/A，未执行构建/出包 |
+| Win11 G1 | 未执行 |
+
+证据图、npm原始输出、安装实物清单、加载trace及hash见DEPENDENCY-USAGE-AUDIT.md。未升级npm（其升级提示未执行）、未手改lock、未省略optional、未修改23包/Canvas构建断言或原license gate。
+
+原build-02及其source49b3e35、1,199文件/194,275,955字节、manifest不变；本轮没有重新构建它，旧规模不能冒充R2产物。R1原生闭包仍不完整。R2报告尚未额外提交；以下记录保留各原时点事实。
+
 ## Batch 1C-R1 续行
 
 检查点468d62357fe4861a9a3015df23a7b6c1862b858a已提交并推送指定开发分支；原构建工具现可由该commit追溯。**旧build-02不是用此commit重新构建**，其source/manifest/toolFiles保持原值。

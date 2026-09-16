@@ -1,5 +1,48 @@
 # Batch 1C — Runtime Build Prototype 结果
 
+## Batch 1C-R2 当前结论｜2026-09-16
+
+**BLOCKED — 删除条件D不满足；独立pdfjs-dist → canvas依赖仍存在。** 本批审计完成，不执行依赖清理、不进入Batch2/3。详细分类、引用行、动态调用链和fresh依赖图见[DEPENDENCY-USAGE-AUDIT.md](DEPENDENCY-USAGE-AUDIT.md)。
+
+### 先完成R1检查点
+
+仅审查并暂存原R1的10份文档/工具文件：6份tracked MD、2新增MD、2新增CJS。未纳入node_modules、staging、cache、ZIP、实例、日志、秘密或真实数据。git diff --check通过，仅既有LF/CRLF提示。
+
+- checkpoint/source/当前HEAD：`2aeaa4089520a99829f1b9981b7b5ea2bfa9e295`。
+- 提交：`docs(runtime): checkpoint Batch 1C-R1 native license evidence`，10files、+496/-46。
+- 已仅普通push到codex/windows-installer-v1.1，远端只读回查同SHA；main与v1.0.0仍为`84cbb324a4f63bef094d2c21d70eba841205a7a7`。
+- 不改tag/Release、不force push、不合并main、无PR。R1原证据和旧build-02完整保留。
+
+### 实际审计结果
+
+1. 对该公开commit全部135文件静态搜索并检查动态加载/路径拼接；32应用文件中未发现pdf-parse调用。PDF文本实际直接import pdfjs-dist/legacy/build/pdf.mjs。
+2. 原host-smoke调用PDFParse.getText()，不是只核包名；旧在线安装器还会动态require全部根生产依赖。二者不能冒充业务代码使用pdf-parse，但也不能忽略。
+3. 在新E盘源码外目录，用原package/lock fresh npm ci，23个Win32 x64生产包与lock逐项一致；npm ls/explain均exit0。没有复用旧node_modules。
+4. npm explain及安装实物确认pdfjs-dist的独立optional canvas路径。只导入该pdfjs入口的全新进程实际加载Canvas/Skia，没有加载pdf-parse；用白名单环境复验一致。
+5. 因D不满足（B也未满足），未删除任何包、未修改package/lock、未生成dependency变更diff。删除前23包，删除后N/A；当前仍23包。
+
+任务书中“任一失败则pdf-parse仍为实际运行依赖”的固定句不能准确表述此处事实。本轮明确区分“业务未调用pdf-parse”与“当前PDF依赖仍加载canvas”，不编造前者是业务必需。
+
+### 本轮实测与未执行
+
+fresh node_modules共1,131文件/98,604,168字节，**不是Runtime包**。Node24.21.0 x64/npm11.19.0；native与R1同hash。安装前后package/lock不变，trace后依赖文件hash不变；32应用文件对HEAD/冻结main零差异。3个外置审计助手语法、Git空白/范围检查通过，证据文件逐项hash留存。
+
+没有执行删除后完整业务/PDF/上传/导出/初始化/登录/备份/host-smoke回归，没有新Runtime/manifest/ZIP/解包，没有Win11G1；不能将原12项诊断或本次import探针当成本批功能回归。Runtime ZIP与SHA256均N/A。
+
+原R1再分发证据仍有U1/U2/U3三个未关闭工作项；不能标NOT APPLICABLE或license approved。当前Win10开发环境不能替代指定干净Win11G1。
+
+### 文件、Git与边界
+
+- R2新增：本目录DEPENDENCY-USAGE-AUDIT.md。
+- R2修改：本目录RESULT、RUNTIME-BUILD-REPORT、VALIDATION-REPORT、NATIVE-LICENSE-CLOSURE、CHATGPT-HANDOFF，公开PROJECT、MASTER-PLAN；共7份tracked MD修改+1新增MD。
+- R2报告未额外提交/推送，暂存区为空；HEAD/远端为已推R1检查点。`git diff --stat`只计7份tracked文件，不能遗漏新增审计报告。
+- 外置证据：项目output/windows-installer-v1.1/batch-1c/dependency-audit-r2-01；同级3个审计助手不进入Git/Runtime。全新cache/安装材料仅用于依赖审计，无业务实例；没有清理/覆盖旧输出。
+- 明确未改：业务源码、package/lock、Install/Start、既有构建/测试/许可门禁、旧Runtime、main/v1.0.0。未访问内部/公司版、真实数据或账号配置、未启动应用服务、未发送邮件、未安装OCR。
+
+下一步必须由上级决定继续R1原生闭包，或另立PDF依赖架构评估；本轮不实施替代方案，停止等待验收。
+
+## 以下为R1历史报告（其HEAD/未提交状态仅代表原交付时点）
+
 ## Batch 1C-R1 当前结论｜2026-09-16
 
 **Batch 1C FAIL — native distribution evidence incomplete**。未进入Batch 2/3。

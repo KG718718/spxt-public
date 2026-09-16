@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## Windows installer v1.1 / Batch 1C-R2 依赖审计｜2026-09-16
+
+R1的10份文档/工具已提交并推送检查点`2aeaa4089520a99829f1b9981b7b5ea2bfa9e295`到codex/windows-installer-v1.1。仅公开版135文件审计及原lock fresh安装完成：23生产包，pdfjs-dist有独立optional canvas路径，只导入其业务入口即可加载Skia，未加载pdf-parse。应用业务未发现pdf-parse调用，但原host-smoke确实调用PDFParse.getText，不能说整个源码树未用。
+
+**Batch1C-R2 BLOCKED：删除条件D不成立，B亦未满足。** 未删依赖、未改package/lock或32应用文件、不做Runtime重建/ZIP、不进入Batch2。原R1三个许可缺项与Win11G1环境阻塞保留。报告7份MD修改+1新增MD尚未额外提交，HEAD/远端仍为R1检查点；外置证据不入Git。详见[结果](docs/tasks/windows-installer-v1.1/batch-1c/RESULT.md)、[依赖审计](docs/tasks/windows-installer-v1.1/batch-1c/DEPENDENCY-USAGE-AUDIT.md)、[交接卡](docs/tasks/windows-installer-v1.1/batch-1c/CHATGPT-HANDOFF.md)。以下为历史状态，不覆盖本节。
+
 ## Windows installer v1.1 / Batch 1C-R1 续行｜2026-09-16
 
 已建立并推送检查点`468d62357fe4861a9a3015df23a7b6c1862b858a`到codex/windows-installer-v1.1（25文件），main/v1.0.0未动。随后仅收集公开原生来源和许可证据，54份原文及hash齐备，但Rust解析依赖、Skia实际链接来源/组件图、最终适用声明仍有3个未关闭分发工作项。**Batch 1C FAIL — native distribution evidence incomplete**；不生成ZIP、不改许可门禁、不进入Batch 2/3。

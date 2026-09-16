@@ -1,5 +1,27 @@
 # Batch 1C — 验证报告
 
+## Batch 1C-R2 当前验证｜2026-09-16
+
+**审计证据检查通过，不代表Batch通过。Batch1C-R2=BLOCKED，删除条件D不成立。**
+
+| 检查 | 本轮结论 |
+| --- | --- |
+| R1暂存范围与diff-check | 10文件MD/CJS，未包含运行/审计原始产物、实例或凭据；检查通过，checkpoint2aeaa40已推指定分支 |
+| 静态审计 | 135文件、32应用allowlist、业务/安装/测试/构建/包声明分类及动态调用点检查完成 |
+| fresh npm ci | exit0，23包；新的E盘cache/temp/安装目录，未复用旧node_modules |
+| npm ls / explain | 均exit0；有独立pdfjs-dist → optional canvas路径 |
+| 磁盘依赖对lock | 包路径与版本逐项相同；非Windows平台包/dev依赖未安装 |
+| 实际pdfjs import trace | 原包入口加载Canvas及skia.node，无pdf-parse加载；白名单环境再验结果同hash |
+| 安装/探针零业务修改 | 两个包文件hash不变；1,131依赖文件前后hash不变；32应用对HEAD及冻结main零差异 |
+| 外置助手语法 | dependency-audit、pdfjs-import-probe、verify-dependency-audit三个CJS通过 |
+| 最终Git范围/空白/敏感模式检查 | 仅R2八份文档变动，暂存区为空；通过（LF/CRLF提示非错误） |
+| 删除后完整业务及PDF普通/中文/多页回归 | **NOT RUN**，未满足删除准入，不存在删除后的候选 |
+| 上传/Excel/初始化/登录/备份/host-smoke新回归 | **NOT RUN**；原12项为前轮历史，不借用其PASS |
+| 新Runtime、ZIP、fresh解包 | **NOT RUN** |
+| 干净Win11离线/浏览器G1 | **NOT RUN**；本机Win10开发环境不能替代 |
+
+外置verification.json记录输入hash、模块trace、目录零写入和证据hash；不是测试实例。没有创建业务账号/数据或启动应用服务，没有改网络/ACL、删除旧输出或放松原native gate。R1的75项证据检查和29/14项守卫结果仅保留历史，本轮不伪报重跑。
+
 ## Batch 1C-R1 复核｜2026-09-16
 
 本轮29项runtime-guards复跑PASS；14项合成完整性反例在新建integrity-r1目录PASS；native-evidence.test.cjs **75项PASS**。后者是来源/hash/身份/缺项的一致性校验，不是许可PASS；npm attestations只解码检查对应关系，未进行签名验证。

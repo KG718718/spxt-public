@@ -1,6 +1,6 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
-状态：Batch 0/1A/1B已获批准；Batch 1C-R1已建立并推送检查点468d623，收集54份原生来源证据，但仍有3个未关闭分发工作项，结论FAIL。许可门禁保持，未fresh构建/生成Runtime ZIP；干净Windows 11离线G1环境也未具备。不允许进入Batch 2。本轮续行报告与收集工具尚未提交，详见batch-1c/RESULT.md。
+状态：Batch 0/1A/1B已获批准；R1结果已提交/推送检查点2aeaa40。Batch1C-R2完成135文件审计及原lock fresh安装23包，确认pdfjs-dist独立引入并加载Canvas/Skia，删除条件D失败（B亦未满足），结论BLOCKED。未删依赖、未改业务、未重建Runtime或生成ZIP，原3个许可缺项及干净Win11G1阻塞保留，不允许进入Batch2。R2八份报告/索引文档尚未额外提交，详见batch-1c/RESULT.md和DEPENDENCY-USAGE-AUDIT.md。
 记录日期：2026-09-16。范围仅为公开仓库 [KG718718/spxt-public](https://github.com/KG718718/spxt-public)。
 
 ## 已确认基线与入口
