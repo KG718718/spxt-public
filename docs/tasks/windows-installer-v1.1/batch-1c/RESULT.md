@@ -1,5 +1,13 @@
 # Batch 1C — Runtime Build Prototype 结果
 
+## Batch 1C-R4 当前结论｜2026-09-16
+
+**Batch 1C-R4 PASS；推荐pdfjs-dist@4.10.38 generic，仅允许提交迁移评审。** 官方npm无更晚正式4.x，三候选均用R3原8份合成PDF三轮8/8，总72/72；文本/完整transform/页数无退化，Node24实测。omit-optional安装各1包、canvas/Skia/native加载0、原生/WASM文件0、目录hash前后相同。4.10.38固定兼容提醒每轮1条，非零警告；不能隐去或宣称官方支持generic全部Node功能。安全官方包公告3条、精确版本查询未命中，历史major无已证维护承诺，不保证无漏洞。
+
+R3报告提交51a014b，首轮暂存检查发现两处末尾空行后用追加提交a760f05修正；最终checkpoint/HEAD `a760f0544dc5b966bad33c91b38204f504f97bb2`已仅推开发分支并回查；main/v1.0.0仍84cbb324a4f63bef094d2c21d70eba841205a7a7。R4新增PDF-4X-SELECTION.md、PDF-4X-MATRIX.json、PDF-MIGRATION-PLAN.md；更新本文件、CHATGPT-HANDOFF.md、公开PROJECT.md、MASTER-PLAN.md，未额外提交推送。
+
+未改业务/正式依赖/构建器/安装启动脚本，未生成Runtime/安装包，无OCR、main合并、Release。正式pdf-parse的必需canvas和5.4.296链仍在，联合迁移及新图/新门禁须另批；旧Runtime原生许可/G1仍阻塞，不能进入Batch2。原始实验为E盘源码外pdf-4x-r4-01/，无真实PDF或其他用途版本访问。详细证据及下一步批准事项见三份新报告和交接卡。下文保留历史时点。
+
 ## Batch 1C-R3 当前结论｜2026-09-16
 
 **PASS — viable text-only PDF alternative found。** 仅PDF文本架构Spike通过，不等于Batch1C Runtime整体通过。R2文档检查点`8b177a0026f34067fb66a9ad5fa715a577ff56bc`已仅推送开发分支并回查；R3报告尚未提交/推送。

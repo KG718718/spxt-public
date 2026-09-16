@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## Windows installer v1.1 / Batch 1C-R4 版本选择｜2026-09-16
+
+**PASS，推荐pdfjs-dist精确4.10.38 generic，正式迁移未获批、未执行。** 官方npm确认它是最后正式4.x；4.8.69/4.9.155/4.10.38以R3字节不变8样本各3轮均通过（72/72），文本/完整transform/页数与R3基线一致。隔离omit-optional安装各1包，实际native/canvas/Skia加载均0，前后hash不变。4.10.38每轮1条上游generic Node提醒保留，非DOM缺失错误；历史major维护承诺未取得，不能说绝对安全。官方3条公开包公告及精确版本查询均未命中候选。
+
+R3七份报告及空白修正已普通提交/仅推开发分支；最终检查点/HEAD `a760f0544dc5b966bad33c91b38204f504f97bb2`，远端回查一致，main/v1.0.0未变。R4新增3份报告、修改4份状态MD，未额外提交推送。正式package/lock/server/32应用文件及构建器未改；实验依赖/样本/证据均留源码外E盘，无业务数据。后续需单独批准联合删除pdf-parse、generic入口/本地资源适配、完整生产图和测试/许可门禁重审；不进入Batch2，不做Launcher/Setup/OCR/Release。见[版本选择](docs/tasks/windows-installer-v1.1/batch-1c/PDF-4X-SELECTION.md)、[三轮矩阵](docs/tasks/windows-installer-v1.1/batch-1c/PDF-4X-MATRIX.json)、[静态迁移计划](docs/tasks/windows-installer-v1.1/batch-1c/PDF-MIGRATION-PLAN.md)、[交接卡](docs/tasks/windows-installer-v1.1/batch-1c/CHATGPT-HANDOFF.md)。下文为历史时点。
+
 ## Windows installer v1.1 / Batch 1C-R3 PDF架构Spike｜2026-09-16
 
 R2八份文档已提交并仅推送开发分支检查点`8b177a0026f34067fb66a9ad5fa715a577ff56bc`，远端回查一致；main/v1.0.0未变。R3结论为 **PASS — viable text-only PDF alternative found**：官方pdfjs-dist4.8.69 generic在Node24、禁addon/文件白名单下，8类合成PDF三轮全过，canvas/Skia/native均无；这是历史版本的技术可行性，不是批准降级或无漏洞保证。5.4.296无canvas导入失败；6.3.289 legacy仍有DOM警告；其他纯JS候选问题详见报告。

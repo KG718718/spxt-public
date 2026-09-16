@@ -1,6 +1,6 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
-状态：Batch0/1A/1B已批准；R2八份文档已提交/推送检查点8b177a0。Batch1C-R3架构Spike PASS：官方PDF.js4.8.69 generic无需canvas/Skia/native，8类合成PDF三轮通过；仅证明存在可行替代，不批准正式降级/迁移。需上级选择历史版本维护成本、最新6.3.289纯文本边界或返回R1许可路线。正式依赖/业务/构建门禁未改，Runtime原许可/G1阻塞保留，不进入Batch2。R3报告及索引未提交/推送；首轮隔离失效已披露并作废复测，详见batch-1c/PDF-ARCHITECTURE-SPIKE.md、SECURITY-COMPARISON.md及CHATGPT-HANDOFF.md。
+状态：Batch0/1A/1B已批准；R3已提交/推送最终检查点a760f05。Batch1C-R4选型PASS：最新正式4.x为4.10.38；4.8.69/4.9.155/4.10.38各8样本三轮全过、与R3基线一致，推荐4.10.38 generic。实际隔离omit-optional安装无canvas/Skia/native；上游optional声明仍在，4.10.38的Node兼容提醒和历史major维护风险保留。仅完成选型/静态迁移计划，正式package/lock/server/构建门禁未改；须另批联合删除pdf-parse及完整闭包/业务回归/G1。R4三新报告与四状态文档未提交，不进入Batch2，不生成Runtime/Launcher/Setup/OCR/Release。详见batch-1c/PDF-4X-SELECTION.md、PDF-4X-MATRIX.json、PDF-MIGRATION-PLAN.md及CHATGPT-HANDOFF.md；原R1门禁不自动解除。
 记录日期：2026-09-16。范围仅为公开仓库 [KG718718/spxt-public](https://github.com/KG718718/spxt-public)。
 
 ## 已确认基线与入口

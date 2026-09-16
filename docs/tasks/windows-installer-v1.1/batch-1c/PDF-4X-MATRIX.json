@@ -1,0 +1,5544 @@
+{
+  "schemaVersion": 1,
+  "batch": "1C-R4",
+  "status": "PASS",
+  "recommendation": "4.10.38",
+  "scope": "selection and static migration readiness only; no production migration",
+  "checkedOn": "2026-09-16",
+  "sourceCommit": "a760f0544dc5b966bad33c91b38204f504f97bb2",
+  "checkpoint": {
+    "r3Reports": "51a014b8c2bae2ab03ebd82deb4991d80459f77b",
+    "r3WhitespaceFollowup": "a760f0544dc5b966bad33c91b38204f504f97bb2",
+    "pushedBranch": "codex/windows-installer-v1.1",
+    "remoteVerified": true,
+    "mainAndTag": "84cbb324a4f63bef094d2c21d70eba841205a7a7"
+  },
+  "node": "v24.21.0",
+  "npm": "11.19.0",
+  "platform": "Windows 10 Pro 19045 x64 development host; NOT clean Win11 G1",
+  "versions": {
+    "stable4x": [
+      "4.0.189",
+      "4.0.269",
+      "4.0.379",
+      "4.1.392",
+      "4.2.67",
+      "4.3.136",
+      "4.4.168",
+      "4.5.136",
+      "4.6.82",
+      "4.7.76",
+      "4.8.69",
+      "4.9.124",
+      "4.9.155",
+      "4.10.38"
+    ],
+    "selected": [
+      "4.8.69",
+      "4.9.155",
+      "4.10.38"
+    ],
+    "latest": {
+      "latest": "6.3.289"
+    },
+    "times": {
+      "4.8.69": "2024-11-02T18:53:29.750Z",
+      "4.9.155": "2024-12-05T21:23:22.696Z",
+      "4.10.38": "2025-01-01T13:41:09.258Z"
+    }
+  },
+  "fixtures": [
+    {
+      "file": "01-english.pdf",
+      "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+      "bytes": 1445,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "SYNTHETIC TEST ONLY",
+          "Ordinary PDF text extraction."
+        ]
+      ],
+      "expectedEmpty": false,
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "02-chinese.pdf",
+      "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+      "bytes": 8859,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "合成测试发票",
+          "购买方示例公司",
+          "销售方演示公司",
+          "金额12345.67"
+        ]
+      ],
+      "expectedEmpty": false,
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "03-multipage.pdf",
+      "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+      "bytes": 22693,
+      "expectedPages": 3,
+      "expectedText": [
+        [
+          "SYNTHETIC PAGE 1",
+          "12345.67"
+        ],
+        [
+          "SYNTHETIC PAGE 2",
+          "987.65"
+        ],
+        [
+          "SYNTHETIC PAGE 3",
+          "END"
+        ]
+      ],
+      "expectedEmpty": false,
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "04-embedded-font.pdf",
+      "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+      "bytes": 21789,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "EMBEDDED VERA FONT",
+          "Invoice TESTINV20260001",
+          "Total 12345.67"
+        ]
+      ],
+      "expectedEmpty": false,
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "05-cmap-nonembedded.pdf",
+      "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+      "bytes": 2440,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "非嵌入字体样本",
+          "中文测试",
+          "金额987.65"
+        ]
+      ],
+      "expectedEmpty": false,
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "06-numbers.pdf",
+      "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+      "bytes": 1543,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "SYNTHETIC INVOICE - NOT A REAL DOCUMENT",
+          "INVOICE TESTINV20260001",
+          "TAX ID SYNTHETIC-TAX-001",
+          "NET 12345.67",
+          "TAX 740.74",
+          "TOTAL 13086.41",
+          "LEADING ZERO 00001234567890"
+        ]
+      ],
+      "expectedEmpty": false,
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "07-rotation.pdf",
+      "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+      "bytes": 21753,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "ROTATED PAGE 90",
+          "AMOUNT 12345.67"
+        ]
+      ],
+      "expectedEmpty": false,
+      "rotation": 90,
+      "synthetic": true
+    },
+    {
+      "file": "08-scanned.pdf",
+      "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+      "bytes": 4211,
+      "expectedPages": 1,
+      "expectedText": [
+        []
+      ],
+      "expectedEmpty": true,
+      "rotation": 0,
+      "synthetic": true
+    }
+  ],
+  "fixtureManifestHash": "247acb2e7f92a98d784f963b15943ddbda523f108040a1aaa563b838e173ae89",
+  "r3MatrixHash": "d41a87e0f289ecd4d7ac73c851d78bca09253f2ed22fc5305cc44370f813219f",
+  "evidence": {
+    "rawMatrix": "output/windows-installer-v1.1/batch-1c/pdf-4x-r4-01/matrix.json",
+    "sha256": "150b10d4dde157da22365b0d5bcedb83c42b62d601b54059ec9b630d21403113",
+    "sources": [
+      {
+        "path": "advisories-4.10.38.json",
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "path": "advisories-4.8.69.json",
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "path": "advisories-4.9.155.json",
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "path": "advisory-2024.json",
+        "bytes": 3865,
+        "sha256": "ca584b8bcc6b0058ad5936b9a106530f1374177aafdf6b98bb92a124f99bba44"
+      },
+      {
+        "path": "advisory-2026.json",
+        "bytes": 2782,
+        "sha256": "4e4b1705a839b048bc375c1305771b1a966b48c52a8e60a66c4309a3d7e33ac8"
+      },
+      {
+        "path": "global-package-advisories.json",
+        "bytes": 10101,
+        "sha256": "fa6704d58a9e0c03cbd6cd44152f472ce2f665faf5ac823137f7363870c968ca"
+      },
+      {
+        "path": "index.json",
+        "bytes": 4782,
+        "sha256": "071ffee72ca7e0f07a7315006776ccae9e1af963bd69448eb99cd327d4aa61c7"
+      },
+      {
+        "path": "latest-release.json",
+        "bytes": 24123,
+        "sha256": "0553b126a5316ba3a2189691955aecc71c31b01e94be6ce0ad4e0b0f49809edc"
+      },
+      {
+        "path": "mozilla-advisories.json",
+        "bytes": 7119,
+        "sha256": "6dcf8cc8dc63012abbecefed72a2cf7646ea0a2569befb7b81d8abca5ccfcfda"
+      },
+      {
+        "path": "node-utils-api-4.10.38.json",
+        "bytes": 5296,
+        "sha256": "2bc2100d04bdeb3ace2ca566587dab95353e71575e1e365a78371b698cc4c751"
+      },
+      {
+        "path": "node-utils-api-4.10.38.json.decoded.txt",
+        "bytes": 3218,
+        "sha256": "2f2b7ac122ef846525f64a42c147ca6c8b35a891257483974ac08e41bac9c2ca"
+      },
+      {
+        "path": "node-utils-api-4.8.69.json",
+        "bytes": 6763,
+        "sha256": "82ec9d6d4717e6c75bd9d384c6f4f147b0d2ac961ce7a9db4d0d145805920273"
+      },
+      {
+        "path": "node-utils-api-4.8.69.json.decoded.txt",
+        "bytes": 4287,
+        "sha256": "0c519d7ee060d5297a0e4c8f47397ca89dcea8bf54ce8610869a2b0f63cbc68b"
+      },
+      {
+        "path": "node-utils-api-4.9.155.json",
+        "bytes": 4994,
+        "sha256": "e2dc4dca3189f3315cc6cfa624c0fe0eaaed8ae2ede6348191411e80feefe2e5"
+      },
+      {
+        "path": "node-utils-api-4.9.155.json.decoded.txt",
+        "bytes": 3000,
+        "sha256": "61205e0919e06cc47695ad56cc0472311e691ac51cec36a22b1bf73454cb2893"
+      },
+      {
+        "path": "policy-via-api.json",
+        "bytes": 2466,
+        "sha256": "9529966359c0e96cb5584bc0c4fce5fa2873ccb7aeaadd2662d731a6b40f83d2"
+      },
+      {
+        "path": "policy-via-api.json.decoded.txt",
+        "bytes": 1200,
+        "sha256": "47edbf155bf742e059dfb3ea25051864ad87aa02e1ba5a36e07c6d341fbf9eec"
+      },
+      {
+        "path": "registry.json",
+        "bytes": 2103138,
+        "sha256": "3caaa77270b8900701dc7ceef5c92f801bd86f9785e64f702ca4857def4cf05d"
+      },
+      {
+        "path": "release-4.10.38.json",
+        "bytes": 11040,
+        "sha256": "320d9fd1e15f97995ab40fc5cab0a82774aaec4f4757d867ab0089ab45ab058c"
+      },
+      {
+        "path": "release-4.8.69.json",
+        "bytes": 12863,
+        "sha256": "7482b6ff33f1cafcd2a67a7a11b2aeb5d908e92aab2cbea60de929c444fa9d26"
+      },
+      {
+        "path": "release-4.9.155.json",
+        "bytes": 7007,
+        "sha256": "1039edeeed007e3d9818359331aac9e36d6735968d8f883b15b24ca23f705685"
+      },
+      {
+        "path": "supplement-index.json",
+        "bytes": 2461,
+        "sha256": "e90ea06210d8ed053970343ca1fa12090347d64997aae6edfb644a9080d174ef"
+      },
+      {
+        "path": "tag-4.10.38.json",
+        "bytes": 341,
+        "sha256": "25f4b23b0fad46f0ba2632dd49a478336cde4458db91d09f978c5d43d0b44201"
+      },
+      {
+        "path": "tag-4.8.69.json",
+        "bytes": 339,
+        "sha256": "c42dabfbd31bc7b7a8eb0fcbbdf3b2cf0ac5fb49823b0d21e6d5153fde5bb740"
+      },
+      {
+        "path": "tag-4.9.155.json",
+        "bytes": 341,
+        "sha256": "80755072c23a13ae969b3bb88a30e322cba8f629d30fc5d043155fd066012245"
+      },
+      {
+        "path": "upstream-branches.json",
+        "bytes": 197,
+        "sha256": "868397994df75a2cde05d313343d82bd9c8eccfa086241429e9e3122f4a6ca8c"
+      },
+      {
+        "path": "warning-change.json",
+        "bytes": 17245,
+        "sha256": "cdc2f371c98a726aadf6394d04d89c6dd49c58aaac64ccd740045888821ef2a7"
+      }
+    ]
+  },
+  "security": {
+    "mozilla": [
+      {
+        "ghsa": "GHSA-hq66-cqwq-w95j",
+        "severity": "high",
+        "published": "2026-07-28T20:25:54Z",
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "pdfjs-dist"
+            },
+            "vulnerable_version_range": ">= 5.6.83",
+            "patched_versions": "6.2.108",
+            "vulnerable_functions": []
+          }
+        ]
+      },
+      {
+        "ghsa": "GHSA-wgrm-67xf-hhpq",
+        "severity": "high",
+        "published": "2024-05-06T19:56:32Z",
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "pdfjs-dist"
+            },
+            "vulnerable_version_range": "<= 4.1.392",
+            "patched_versions": "4.2.67",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "github": [
+      {
+        "ghsa": "GHSA-hq66-cqwq-w95j",
+        "severity": "high",
+        "published": "2026-08-06T21:12:27Z",
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "pdfjs-dist"
+            },
+            "vulnerable_version_range": ">= 5.6.83, < 6.2.108",
+            "first_patched_version": "6.2.108",
+            "vulnerable_functions": []
+          }
+        ]
+      },
+      {
+        "ghsa": "GHSA-wgrm-67xf-hhpq",
+        "severity": "high",
+        "published": "2024-05-07T10:25:08Z",
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "pdfjs-dist"
+            },
+            "vulnerable_version_range": "<= 4.1.392",
+            "first_patched_version": "4.2.67",
+            "vulnerable_functions": []
+          }
+        ]
+      },
+      {
+        "ghsa": "GHSA-7jg2-jgv3-fmr4",
+        "severity": "high",
+        "published": "2022-05-14T01:22:02Z",
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "pdfjs-dist"
+            },
+            "vulnerable_version_range": ">= 2.0.0, < 2.0.550",
+            "first_patched_version": "2.0.550",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "pdfjs-dist"
+            },
+            "vulnerable_version_range": "< 1.10.100",
+            "first_patched_version": "1.10.100",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "maintenance": {
+      "latest": "v6.3.289",
+      "branches": [
+        "master"
+      ],
+      "supported4xBackportPromiseFound": false,
+      "explicit4xEOLDateFound": false,
+      "interpretation": "Historical major without evidenced active maintenance/LTS guarantee; not a claim of a documented EOL date."
+    }
+  },
+  "candidates": [
+    {
+      "version": "4.8.69",
+      "status": "PASS",
+      "recommended": false,
+      "publishedNpm": "2024-11-02T18:53:29.750Z",
+      "publishedGitHub": "2024-11-02T18:51:14Z",
+      "releaseURL": "https://github.com/mozilla/pdf.js/releases/tag/v4.8.69",
+      "tagObject": {
+        "sha": "3634dab10ca7dbaf0ca536f645465b231c88f862",
+        "type": "commit",
+        "url": "https://api.github.com/repos/mozilla/pdf.js/git/commits/3634dab10ca7dbaf0ca536f645465b231c88f862"
+      },
+      "deprecated": null,
+      "registryDist": {
+        "shasum": "61ea5d66863d49b40e5eacbd4070341175bdda2e",
+        "tarball": "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.8.69.tgz",
+        "fileCount": 350,
+        "integrity": "sha512-IHZsA4T7YElCKNNXtiLgqScw4zPd3pG9do8UrznC757gMd7UPeHSL2qwNNMJo4r79fl8oj1Xx+1nh2YkzdMpLQ==",
+        "signatures": [
+          {
+            "sig": "MEQCIAt7vx2jY/lc7fA/pShz2EaZF0vFJQrQmEh4SNsETF4XAiBifQxHC20lcKn/+let9sWN0DFY6KyVt48ciCjaoBK76Q==",
+            "keyid": "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA"
+          }
+        ],
+        "attestations": {
+          "url": "https://registry.npmjs.org/-/npm/v1/attestations/pdfjs-dist@4.8.69",
+          "provenance": {
+            "predicateType": "https://slsa.dev/provenance/v1"
+          }
+        },
+        "unpackedSize": 36908686
+      },
+      "packages": [
+        {
+          "name": "pdfjs-dist",
+          "version": "4.8.69",
+          "license": "Apache-2.0",
+          "engines": {
+            "node": ">=18"
+          },
+          "dependencies": {},
+          "optionalDependencies": {
+            "canvas": "^3.0.0-rc2",
+            "path2d": "^0.2.1"
+          },
+          "file": "pdfjs-dist/package.json"
+        }
+      ],
+      "installPolicy": "npm install --omit=dev --omit=optional --ignore-scripts; official unmodified npm package",
+      "installedPackageCount": 1,
+      "requiredTransitivePackageCount": 0,
+      "lockGraph": [
+        {
+          "path": "",
+          "version": "0.0.0",
+          "optional": false,
+          "dev": false,
+          "dependencies": {
+            "pdfjs-dist": "4.8.69"
+          },
+          "optionalDependencies": {},
+          "installed": false
+        },
+        {
+          "path": "node_modules/base64-js",
+          "version": "1.5.1",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/base64-js/-/base64-js-1.5.1.tgz",
+          "integrity": "sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/bl",
+          "version": "4.1.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "buffer": "^5.5.0",
+            "inherits": "^2.0.4",
+            "readable-stream": "^3.4.0"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/bl/-/bl-4.1.0.tgz",
+          "integrity": "sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/buffer",
+          "version": "5.7.1",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "base64-js": "^1.3.1",
+            "ieee754": "^1.1.13"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/buffer/-/buffer-5.7.1.tgz",
+          "integrity": "sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/canvas",
+          "version": "3.2.3",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "node-addon-api": "^7.0.0",
+            "prebuild-install": "^7.1.3"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/canvas/-/canvas-3.2.3.tgz",
+          "integrity": "sha512-PzE5nJZPz72YUAfo8oTp0u3fqqY7IzlTubneAihqDYAUcBk7ryeCmBbdJBEdaH0bptSOe2VT2Zwcb3UaFyaSWw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/chownr",
+          "version": "1.1.4",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/chownr/-/chownr-1.1.4.tgz",
+          "integrity": "sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/decompress-response",
+          "version": "6.0.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "mimic-response": "^3.1.0"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/decompress-response/-/decompress-response-6.0.0.tgz",
+          "integrity": "sha512-aW35yZM6Bb/4oJlZncMH2LCoZtJXTRxES17vE3hoRiowU2kWHaJKFkSBDnDR+cm9J+9QhXmREyIfv0pji9ejCQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/deep-extend",
+          "version": "0.6.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/deep-extend/-/deep-extend-0.6.0.tgz",
+          "integrity": "sha512-LOHxIOaPYdHlJRtCQfDIVZtfw/ufM8+rVj649RIHzcm/vGwQRXFt6OPqIFWsm2XEMrNIEtWR64sY1LEKD2vAOA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/detect-libc",
+          "version": "2.1.2",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz",
+          "integrity": "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/end-of-stream",
+          "version": "1.4.5",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "once": "^1.4.0"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/end-of-stream/-/end-of-stream-1.4.5.tgz",
+          "integrity": "sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/expand-template",
+          "version": "2.0.3",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/expand-template/-/expand-template-2.0.3.tgz",
+          "integrity": "sha512-XYfuKMvj4O35f/pOXLObndIRvyQ+/+6AhODh+OKWj9S9498pHHn/IMszH+gt0fBCRWMNfk1ZSp5x3AifmnI2vg==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/fs-constants",
+          "version": "1.0.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/fs-constants/-/fs-constants-1.0.0.tgz",
+          "integrity": "sha512-y6OAwoSIf7FyjMIv94u+b5rdheZEjzR63GTyZJm5qh4Bi+2YgwLCcI/fPFZkL5PSixOt6ZNKm+w+Hfp/Bciwow==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/github-from-package",
+          "version": "0.0.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/github-from-package/-/github-from-package-0.0.0.tgz",
+          "integrity": "sha512-SyHy3T1v2NUXn29OsWdxmK6RwHD+vkj3v8en8AOBZ1wBQ/hCAQ5bAQTD02kW4W9tUp/3Qh6J8r9EvntiyCmOOw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/ieee754",
+          "version": "1.2.1",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/ieee754/-/ieee754-1.2.1.tgz",
+          "integrity": "sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/inherits",
+          "version": "2.0.4",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz",
+          "integrity": "sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/ini",
+          "version": "1.3.8",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/ini/-/ini-1.3.8.tgz",
+          "integrity": "sha512-JV/yugV2uzW5iMRSiZAyDtQd+nxtUnjeLt0acNdw98kKLrvuRVyB80tsREOE7yvGVgalhZ6RNXCmEHkUKBKxew==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/mimic-response",
+          "version": "3.1.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/mimic-response/-/mimic-response-3.1.0.tgz",
+          "integrity": "sha512-z0yWI+4FDrrweS8Zmt4Ej5HdJmky15+L2e6Wgn3+iK5fWzb6T3fhNFq2+MeTRb064c6Wr4N/wv0DzQTjNzHNGQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/minimist",
+          "version": "1.2.8",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz",
+          "integrity": "sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/mkdirp-classic",
+          "version": "0.5.3",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/mkdirp-classic/-/mkdirp-classic-0.5.3.tgz",
+          "integrity": "sha512-gKLcREMhtuZRwRAfqP3RFW+TK4JqApVBtOIftVgjuABpAtpxhPGaDcfvbhNvD0B8iD1oUr/txX35NjcaY6Ns/A==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/napi-build-utils",
+          "version": "2.0.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/napi-build-utils/-/napi-build-utils-2.0.0.tgz",
+          "integrity": "sha512-GEbrYkbfF7MoNaoh2iGG84Mnf/WZfB0GdGEsM8wz7Expx/LlWf5U8t9nvJKXSp3qr5IsEbK04cBGhol/KwOsWA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/node-abi",
+          "version": "3.96.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "semver": "^7.3.5"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/node-abi/-/node-abi-3.96.0.tgz",
+          "integrity": "sha512-rebQ/lz7i0EkoLzUVSrKRzA69zMkwLp95kKMWoMDkkM00Suxz0D7zEQPwRml5fQum24mj7bPvmlgLAmu2JCiYg==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/node-addon-api",
+          "version": "7.1.1",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/node-addon-api/-/node-addon-api-7.1.1.tgz",
+          "integrity": "sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/once",
+          "version": "1.4.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "wrappy": "1"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/once/-/once-1.4.0.tgz",
+          "integrity": "sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/path2d",
+          "version": "0.2.2",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/path2d/-/path2d-0.2.2.tgz",
+          "integrity": "sha512-+vnG6S4dYcYxZd+CZxzXCNKdELYZSKfohrk98yajCo1PtRoDgCTrrwOvK1GT0UoAdVszagDVllQc0U1vaX4NUQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/pdfjs-dist",
+          "version": "4.8.69",
+          "optional": false,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {
+            "canvas": "^3.0.0-rc2",
+            "path2d": "^0.2.1"
+          },
+          "resolved": "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.8.69.tgz",
+          "integrity": "sha512-IHZsA4T7YElCKNNXtiLgqScw4zPd3pG9do8UrznC757gMd7UPeHSL2qwNNMJo4r79fl8oj1Xx+1nh2YkzdMpLQ==",
+          "installed": true
+        },
+        {
+          "path": "node_modules/prebuild-install",
+          "version": "7.1.3",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "detect-libc": "^2.0.0",
+            "expand-template": "^2.0.3",
+            "github-from-package": "0.0.0",
+            "minimist": "^1.2.3",
+            "mkdirp-classic": "^0.5.3",
+            "napi-build-utils": "^2.0.0",
+            "node-abi": "^3.3.0",
+            "pump": "^3.0.0",
+            "rc": "^1.2.7",
+            "simple-get": "^4.0.0",
+            "tar-fs": "^2.0.0",
+            "tunnel-agent": "^0.6.0"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/prebuild-install/-/prebuild-install-7.1.3.tgz",
+          "integrity": "sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/pump",
+          "version": "3.0.4",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "end-of-stream": "^1.1.0",
+            "once": "^1.3.1"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/pump/-/pump-3.0.4.tgz",
+          "integrity": "sha512-VS7sjc6KR7e1ukRFhQSY5LM2uBWAUPiOPa/A3mkKmiMwSmRFUITt0xuj+/lesgnCv+dPIEYlkzrcyXgquIHMcA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/rc",
+          "version": "1.2.8",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "deep-extend": "^0.6.0",
+            "ini": "~1.3.0",
+            "minimist": "^1.2.0",
+            "strip-json-comments": "~2.0.1"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/rc/-/rc-1.2.8.tgz",
+          "integrity": "sha512-y3bGgqKj3QBdxLbLkomlohkvsA8gdAiUQlSBJnBhfn+BPxg4bc62d8TcBW15wavDfgexCgccckhcZvywyQYPOw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/readable-stream",
+          "version": "3.6.2",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "inherits": "^2.0.3",
+            "string_decoder": "^1.1.1",
+            "util-deprecate": "^1.0.1"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-3.6.2.tgz",
+          "integrity": "sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/safe-buffer",
+          "version": "5.2.1",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.2.1.tgz",
+          "integrity": "sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/semver",
+          "version": "7.8.5",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/semver/-/semver-7.8.5.tgz",
+          "integrity": "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/simple-concat",
+          "version": "1.0.1",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/simple-concat/-/simple-concat-1.0.1.tgz",
+          "integrity": "sha512-cSFtAPtRhljv69IK0hTVZQ+OfE9nePi/rtJmw5UjHeVyVroEqJXP1sFztKUy1qU+xvz3u/sfYJLa947b7nAN2Q==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/simple-get",
+          "version": "4.0.1",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "decompress-response": "^6.0.0",
+            "once": "^1.3.1",
+            "simple-concat": "^1.0.0"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/simple-get/-/simple-get-4.0.1.tgz",
+          "integrity": "sha512-brv7p5WgH0jmQJr1ZDDfKDOSeWWg+OVypG99A/5vYGPqJ6pxiaHLy8nxtFjBA7oMa01ebA9gfh1uMCFqOuXxvA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/string_decoder",
+          "version": "1.3.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "safe-buffer": "~5.2.0"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-1.3.0.tgz",
+          "integrity": "sha512-hkRX8U1WjJFd8LsDJ2yQ/wWWxaopEsABU1XfkM8A+j0+85JAGppt16cr1Whg6KIbb4okU6Mql6BOj+uup/wKeA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/strip-json-comments",
+          "version": "2.0.1",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/strip-json-comments/-/strip-json-comments-2.0.1.tgz",
+          "integrity": "sha512-4gB8na07fecVVkOI6Rs4e7T6NOTki5EmL7TUduTs6bu3EdnSycntVJ4re8kgZA+wx9IueI2Y11bfbgwtzuE0KQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/tar-fs",
+          "version": "2.1.5",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "chownr": "^1.1.1",
+            "mkdirp-classic": "^0.5.2",
+            "pump": "^3.0.0",
+            "tar-stream": "^2.1.4"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/tar-fs/-/tar-fs-2.1.5.tgz",
+          "integrity": "sha512-OboTd8mmMhZDNPV+UjQcK9yKAatXu2aJ+r1w4im1Otd4M4fl2hwvdoXUxIYHFTHWK/3y3FarBP70v3vwmGlOxw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/tar-stream",
+          "version": "2.2.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "bl": "^4.0.3",
+            "end-of-stream": "^1.4.1",
+            "fs-constants": "^1.0.0",
+            "inherits": "^2.0.3",
+            "readable-stream": "^3.1.1"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/tar-stream/-/tar-stream-2.2.0.tgz",
+          "integrity": "sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/tunnel-agent",
+          "version": "0.6.0",
+          "optional": true,
+          "dev": false,
+          "dependencies": {
+            "safe-buffer": "^5.0.1"
+          },
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/tunnel-agent/-/tunnel-agent-0.6.0.tgz",
+          "integrity": "sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/util-deprecate",
+          "version": "1.0.2",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz",
+          "integrity": "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/wrappy",
+          "version": "1.0.2",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "resolved": "https://registry.npmjs.org/wrappy/-/wrappy-1.0.2.tgz",
+          "integrity": "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==",
+          "installed": false
+        }
+      ],
+      "bytes": 36909256,
+      "files": 351,
+      "packageBytes": 36908686,
+      "packageFiles": 350,
+      "packageHashBefore": "b1c786a9207aa4ae7cf43d37508a0e8c442445181707befc5b00b02237d40c7a",
+      "packageHashAfter": "b1c786a9207aa4ae7cf43d37508a0e8c442445181707befc5b00b02237d40c7a",
+      "nodeModulesHashBefore": "013df169dce40c6a9e514982fec293111098ba22b6ce4f729c92171fa9a73aa8",
+      "nodeModulesHashAfter": "013df169dce40c6a9e514982fec293111098ba22b6ce4f729c92171fa9a73aa8",
+      "nativeFiles": [],
+      "wasmFiles": [],
+      "canvasLoaded": false,
+      "skiaLoaded": false,
+      "advisoryMatches": [],
+      "licenseFiles": [
+        {
+          "path": "pdfjs-dist/cmaps/LICENSE",
+          "bytes": 2080,
+          "sha256": "aa92ab5a472974865a96fd4a4e9c13bb41bf6fe1b309cb6b8da48bc9e19839a2"
+        },
+        {
+          "path": "pdfjs-dist/LICENSE",
+          "bytes": 10174,
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "pdfjs-dist/standard_fonts/LICENSE_FOXIT",
+          "bytes": 1553,
+          "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7"
+        },
+        {
+          "path": "pdfjs-dist/standard_fonts/LICENSE_LIBERATION",
+          "bytes": 4414,
+          "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b"
+        }
+      ],
+      "passedPerRound": [
+        8,
+        8,
+        8
+      ],
+      "importMedianMs": 17.475899999999996,
+      "processMedianMs": 348.66319999999996,
+      "results": [
+        {
+          "file": "01-english.pdf",
+          "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "SYNTHETIC TEST ONLY",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d0_f1"
+              },
+              {
+                "str": "Ordinary PDF text extraction.",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d0_f1"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 70.95460000000001,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "02-chinese.pdf",
+          "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "合成测试发票",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d1_f3"
+              },
+              {
+                "str": "购买方示例公司",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d1_f3"
+              },
+              {
+                "str": "销售方演示公司",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d1_f3"
+              },
+              {
+                "str": "金额12345.67",
+                "x": 45,
+                "y": 380,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  380
+                ],
+                "fontName": "g_d1_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 13.064699999999988,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "03-multipage.pdf",
+          "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+          "pageCount": 3,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "SYNTHETIC PAGE 1",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d2_f3"
+              },
+              {
+                "str": "12345.67",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d2_f3"
+              }
+            ],
+            [
+              {
+                "str": "SYNTHETIC PAGE 2",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d2_f3"
+              },
+              {
+                "str": "987.65",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d2_f3"
+              }
+            ],
+            [
+              {
+                "str": "SYNTHETIC PAGE 3",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d2_f3"
+              },
+              {
+                "str": "END",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d2_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            },
+            {
+              "pageNumber": 2,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            },
+            {
+              "pageNumber": 3,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 10.018299999999982,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "04-embedded-font.pdf",
+          "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "EMBEDDED VERA FONT",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d3_f3"
+              },
+              {
+                "str": "Invoice TESTINV20260001",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d3_f3"
+              },
+              {
+                "str": "Total 12345.67",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d3_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 5.505099999999999,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "05-cmap-nonembedded.pdf",
+          "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "非嵌入字体样本",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d4_f3"
+              },
+              {
+                "str": "中文测试",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d4_f3"
+              },
+              {
+                "str": "金额987.65",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d4_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 49.3912,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "06-numbers.pdf",
+          "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "SYNTHETIC INVOICE - NOT A REAL DOCUMENT",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "INVOICE TESTINV20260001",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "TAX ID SYNTHETIC-TAX-001",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "NET 12345.67",
+                "x": 45,
+                "y": 380,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  380
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "TAX 740.74",
+                "x": 45,
+                "y": 340,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  340
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "TOTAL 13086.41",
+                "x": 45,
+                "y": 300,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  300
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "LEADING ZERO 00001234567890",
+                "x": 45,
+                "y": 260,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  260
+                ],
+                "fontName": "g_d5_f1"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 2.6975000000000193,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "07-rotation.pdf",
+          "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "ROTATED PAGE 90",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d6_f3"
+              },
+              {
+                "str": "AMOUNT 12345.67",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d6_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 90,
+              "view": [
+                0,
+                0,
+                842,
+                595
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 5.7827000000000055,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "08-scanned.pdf",
+          "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            []
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 3.6295000000000073,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        }
+      ],
+      "rounds": [
+        {
+          "round": 1,
+          "status": 0,
+          "processMs": 1672.4886999999999,
+          "importMs": 17.475899999999996,
+          "version": "4.8.69",
+          "getDocumentType": "function",
+          "warnings": [],
+          "errors": [],
+          "stderr": "",
+          "nativeLoads": [],
+          "canvasRequires": [],
+          "canvasLoaded": false,
+          "skiaLoaded": false,
+          "networkAttempts": [],
+          "fileReads": [
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/UniGB-UCS2-H.bcmap"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/Adobe-GB1-UCS2.bcmap"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/08-scanned.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/08-scanned.pdf"
+            }
+          ],
+          "moduleLoads": [
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            }
+          ],
+          "globalsBefore": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "globalsAfter": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "outputSHA256": "ebb2b571d238d0cd5af9eaf4a8041c77b3790e87ec0ec19062ad40f841ba5bcc",
+          "cases": [
+            {
+              "file": "01-english.pdf",
+              "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "02-chinese.pdf",
+              "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "03-multipage.pdf",
+              "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+              "pass": true,
+              "pageCount": 3,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "04-embedded-font.pdf",
+              "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "05-cmap-nonembedded.pdf",
+              "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "06-numbers.pdf",
+              "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "07-rotation.pdf",
+              "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "08-scanned.pdf",
+              "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "status": 0,
+          "processMs": 314.78130000000056,
+          "importMs": 16.60119999999999,
+          "version": "4.8.69",
+          "getDocumentType": "function",
+          "warnings": [],
+          "errors": [],
+          "stderr": "",
+          "nativeLoads": [],
+          "canvasRequires": [],
+          "canvasLoaded": false,
+          "skiaLoaded": false,
+          "networkAttempts": [],
+          "fileReads": [
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/UniGB-UCS2-H.bcmap"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/Adobe-GB1-UCS2.bcmap"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/08-scanned.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/08-scanned.pdf"
+            }
+          ],
+          "moduleLoads": [
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            }
+          ],
+          "globalsBefore": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "globalsAfter": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "outputSHA256": "ebb2b571d238d0cd5af9eaf4a8041c77b3790e87ec0ec19062ad40f841ba5bcc",
+          "cases": [
+            {
+              "file": "01-english.pdf",
+              "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "02-chinese.pdf",
+              "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "03-multipage.pdf",
+              "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+              "pass": true,
+              "pageCount": 3,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "04-embedded-font.pdf",
+              "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "05-cmap-nonembedded.pdf",
+              "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "06-numbers.pdf",
+              "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "07-rotation.pdf",
+              "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "08-scanned.pdf",
+              "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "status": 0,
+          "processMs": 348.66319999999996,
+          "importMs": 17.987300000000005,
+          "version": "4.8.69",
+          "getDocumentType": "function",
+          "warnings": [],
+          "errors": [],
+          "stderr": "",
+          "nativeLoads": [],
+          "canvasRequires": [],
+          "canvasLoaded": false,
+          "skiaLoaded": false,
+          "networkAttempts": [],
+          "fileReads": [
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/UniGB-UCS2-H.bcmap"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/Adobe-GB1-UCS2.bcmap"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/08-scanned.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/08-scanned.pdf"
+            }
+          ],
+          "moduleLoads": [
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            }
+          ],
+          "globalsBefore": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "globalsAfter": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "outputSHA256": "ebb2b571d238d0cd5af9eaf4a8041c77b3790e87ec0ec19062ad40f841ba5bcc",
+          "cases": [
+            {
+              "file": "01-english.pdf",
+              "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "02-chinese.pdf",
+              "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "03-multipage.pdf",
+              "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+              "pass": true,
+              "pageCount": 3,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "04-embedded-font.pdf",
+              "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "05-cmap-nonembedded.pdf",
+              "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "06-numbers.pdf",
+              "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "07-rotation.pdf",
+              "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "08-scanned.pdf",
+              "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "4.9.155",
+      "status": "PASS",
+      "recommended": false,
+      "publishedNpm": "2024-12-05T21:23:22.696Z",
+      "publishedGitHub": "2024-12-05T21:21:18Z",
+      "releaseURL": "https://github.com/mozilla/pdf.js/releases/tag/v4.9.155",
+      "tagObject": {
+        "sha": "a4eb8407c1b3695be0d1f91791f393655b476dd9",
+        "type": "commit",
+        "url": "https://api.github.com/repos/mozilla/pdf.js/git/commits/a4eb8407c1b3695be0d1f91791f393655b476dd9"
+      },
+      "deprecated": null,
+      "registryDist": {
+        "shasum": "80c9fc7f5411a4cf00751cdea242ffd8b0f23a96",
+        "tarball": "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.9.155.tgz",
+        "fileCount": 354,
+        "integrity": "sha512-epRZn6DQQKCOEqbmFsxkiMBm1MHaNrnr6T4VBNP0bsDvdJdmrWcZbS5cgJXW68P0d3uJTlFhF6Wms2tlSgPYig==",
+        "signatures": [
+          {
+            "sig": "MEUCIQC9E5WkYZ9+DCkr9l/azqXfwhsr0XxsPGYJ/QC/lUDU1wIgE6Vgd2a3dAODb1HQrYoM9KN9Z0g/40+OnX8cafK6ids=",
+            "keyid": "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA"
+          }
+        ],
+        "attestations": {
+          "url": "https://registry.npmjs.org/-/npm/v1/attestations/pdfjs-dist@4.9.155",
+          "provenance": {
+            "predicateType": "https://slsa.dev/provenance/v1"
+          }
+        },
+        "unpackedSize": 37211600
+      },
+      "packages": [
+        {
+          "name": "pdfjs-dist",
+          "version": "4.9.155",
+          "license": "Apache-2.0",
+          "engines": {
+            "node": ">=20"
+          },
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas": "^0.1.64"
+          },
+          "file": "pdfjs-dist/package.json"
+        }
+      ],
+      "installPolicy": "npm install --omit=dev --omit=optional --ignore-scripts; official unmodified npm package",
+      "installedPackageCount": 1,
+      "requiredTransitivePackageCount": 0,
+      "lockGraph": [
+        {
+          "path": "",
+          "version": "0.0.0",
+          "optional": false,
+          "dev": false,
+          "dependencies": {
+            "pdfjs-dist": "4.9.155"
+          },
+          "optionalDependencies": {},
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas-android-arm64": "0.1.100",
+            "@napi-rs/canvas-darwin-arm64": "0.1.100",
+            "@napi-rs/canvas-darwin-x64": "0.1.100",
+            "@napi-rs/canvas-linux-arm-gnueabihf": "0.1.100",
+            "@napi-rs/canvas-linux-arm64-gnu": "0.1.100",
+            "@napi-rs/canvas-linux-arm64-musl": "0.1.100",
+            "@napi-rs/canvas-linux-riscv64-gnu": "0.1.100",
+            "@napi-rs/canvas-linux-x64-gnu": "0.1.100",
+            "@napi-rs/canvas-linux-x64-musl": "0.1.100",
+            "@napi-rs/canvas-win32-arm64-msvc": "0.1.100",
+            "@napi-rs/canvas-win32-x64-msvc": "0.1.100"
+          },
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas/-/canvas-0.1.100.tgz",
+          "integrity": "sha512-xglYA6q3XO5P3BNJYxVZ1IV7DLVjp1Py6nwag88YntrS+3vKHyYcMqXVS4ZztJmwz2uGvz1FWhI/4LgbR5uQDA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-android-arm64",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "android"
+          ],
+          "cpu": [
+            "arm64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-android-arm64/-/canvas-android-arm64-0.1.100.tgz",
+          "integrity": "sha512-hjhCKhntPv9+t4ckHymdx0phYNcVW+GKQR6Lzw2zE+pOVjOplSmtx9nNNknTjbEDLcuLZqA1y8ufKg1XfgftzQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-darwin-arm64",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "darwin"
+          ],
+          "cpu": [
+            "arm64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-darwin-arm64/-/canvas-darwin-arm64-0.1.100.tgz",
+          "integrity": "sha512-2PcswRaC7Ly645DGt88///zuFDhJxJYdKAs1uU3mfk1atYkXufgcgLfBpk6Tm12nCQBaNt1wpybuPZ4qOhTo8A==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-darwin-x64",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "darwin"
+          ],
+          "cpu": [
+            "x64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-darwin-x64/-/canvas-darwin-x64-0.1.100.tgz",
+          "integrity": "sha512-ePNZtj7pNIva/siZMg+HmbeozkIjqUIYdoymH8HaA3qK7LfzFN4WMBM8G6HQ9ZC+H3+Dnn5pqtiXpgLykaPOhw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-arm-gnueabihf",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "arm"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-arm-gnueabihf/-/canvas-linux-arm-gnueabihf-0.1.100.tgz",
+          "integrity": "sha512-d5cDB48oWFGU8/XPhUOFAlySgb/VAu7D+s8fi55K1Pcfg8aPplHWqMgibhVLU8ky7Pyg/fuiVLz4Nf3JrSTuUA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-arm64-gnu",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "arm64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-arm64-gnu/-/canvas-linux-arm64-gnu-0.1.100.tgz",
+          "integrity": "sha512-rDxgxRu69RvDlX/bh9o22DxLsGr8EqsNgotL9+RwQE1S0b0cqeatqsw6aW45mukm0B42DIAaAacKaYQ8cqS1nw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-arm64-musl",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "arm64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-arm64-musl/-/canvas-linux-arm64-musl-0.1.100.tgz",
+          "integrity": "sha512-K3mDW66N+xT2/V439u1alFANiBUjdEx2gLiNYnCmUsva5jZMxWTjafBYwTzYK+EMFMHrUoabuU+T1BIP5CgbYQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-riscv64-gnu",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "riscv64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-riscv64-gnu/-/canvas-linux-riscv64-gnu-0.1.100.tgz",
+          "integrity": "sha512-mooqUBTIsccZpnoQC4NgrC1v6C1vof39etLNMnBwCY+p0gajWJvAHLGQ6g/gGyS5YrpDW+GefSN4+Cvcr08UWw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-x64-gnu",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "x64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-x64-gnu/-/canvas-linux-x64-gnu-0.1.100.tgz",
+          "integrity": "sha512-1eCvkDCazm7FFhsT7DfGOdSaHgZVK3bt/dSBl5EWHOWmnz+I7j8tPseJqqD81NF+MH21jKUK4wQSDjN0mdhnTg==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-x64-musl",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "x64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-x64-musl/-/canvas-linux-x64-musl-0.1.100.tgz",
+          "integrity": "sha512-20arT6lnI19S68qNlii73TSEDbECNgzMz2EpldC1V3mZFuRkeujXkcebRk0LRJe9SEUAooYiLokfMViY8IX7yA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-win32-arm64-msvc",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "win32"
+          ],
+          "cpu": [
+            "arm64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-win32-arm64-msvc/-/canvas-win32-arm64-msvc-0.1.100.tgz",
+          "integrity": "sha512-DZFFT1wIAg37LJw37yhMRFfjATd3vTQzjZ1Yki8u2vhO6Hi5VE6BVaGQ1aaDu7xb4iMErz+9EOwjpS7xcxFeBw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-win32-x64-msvc",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "win32"
+          ],
+          "cpu": [
+            "x64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-win32-x64-msvc/-/canvas-win32-x64-msvc-0.1.100.tgz",
+          "integrity": "sha512-MyT1j3mHC2+Lu4pBi9mKyMJhtP6U7k7EldY7sj/uS5gJA65gTXt8MefJQXLJo5d/vZbuWmfxzkEUNc/urV3pHA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/pdfjs-dist",
+          "version": "4.9.155",
+          "optional": false,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas": "^0.1.64"
+          },
+          "resolved": "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.9.155.tgz",
+          "integrity": "sha512-epRZn6DQQKCOEqbmFsxkiMBm1MHaNrnr6T4VBNP0bsDvdJdmrWcZbS5cgJXW68P0d3uJTlFhF6Wms2tlSgPYig==",
+          "installed": true
+        }
+      ],
+      "bytes": 37212151,
+      "files": 355,
+      "packageBytes": 37211600,
+      "packageFiles": 354,
+      "packageHashBefore": "56919257c599c7b96cd3ca10e5afc3711cd2842500480a458cf7c825b8a828ee",
+      "packageHashAfter": "56919257c599c7b96cd3ca10e5afc3711cd2842500480a458cf7c825b8a828ee",
+      "nodeModulesHashBefore": "1af8f5baa131031b56d06b2d726581b4a57d3cc17a5350923aea0483dd34faf1",
+      "nodeModulesHashAfter": "1af8f5baa131031b56d06b2d726581b4a57d3cc17a5350923aea0483dd34faf1",
+      "nativeFiles": [],
+      "wasmFiles": [],
+      "canvasLoaded": false,
+      "skiaLoaded": false,
+      "advisoryMatches": [],
+      "licenseFiles": [
+        {
+          "path": "pdfjs-dist/cmaps/LICENSE",
+          "bytes": 2080,
+          "sha256": "aa92ab5a472974865a96fd4a4e9c13bb41bf6fe1b309cb6b8da48bc9e19839a2"
+        },
+        {
+          "path": "pdfjs-dist/LICENSE",
+          "bytes": 10174,
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "pdfjs-dist/standard_fonts/LICENSE_FOXIT",
+          "bytes": 1553,
+          "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7"
+        },
+        {
+          "path": "pdfjs-dist/standard_fonts/LICENSE_LIBERATION",
+          "bytes": 4414,
+          "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b"
+        }
+      ],
+      "passedPerRound": [
+        8,
+        8,
+        8
+      ],
+      "importMedianMs": 17.904299999999992,
+      "processMedianMs": 389.1851000000006,
+      "results": [
+        {
+          "file": "01-english.pdf",
+          "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "SYNTHETIC TEST ONLY",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d0_f1"
+              },
+              {
+                "str": "Ordinary PDF text extraction.",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d0_f1"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 96.9049,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "02-chinese.pdf",
+          "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "合成测试发票",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d1_f3"
+              },
+              {
+                "str": "购买方示例公司",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d1_f3"
+              },
+              {
+                "str": "销售方演示公司",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d1_f3"
+              },
+              {
+                "str": "金额12345.67",
+                "x": 45,
+                "y": 380,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  380
+                ],
+                "fontName": "g_d1_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 16.847200000000015,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "03-multipage.pdf",
+          "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+          "pageCount": 3,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "SYNTHETIC PAGE 1",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d2_f3"
+              },
+              {
+                "str": "12345.67",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d2_f3"
+              }
+            ],
+            [
+              {
+                "str": "SYNTHETIC PAGE 2",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d2_f3"
+              },
+              {
+                "str": "987.65",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d2_f3"
+              }
+            ],
+            [
+              {
+                "str": "SYNTHETIC PAGE 3",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d2_f3"
+              },
+              {
+                "str": "END",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d2_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            },
+            {
+              "pageNumber": 2,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            },
+            {
+              "pageNumber": 3,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 14.61960000000002,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "04-embedded-font.pdf",
+          "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "EMBEDDED VERA FONT",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d3_f3"
+              },
+              {
+                "str": "Invoice TESTINV20260001",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d3_f3"
+              },
+              {
+                "str": "Total 12345.67",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d3_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 6.212800000000016,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "05-cmap-nonembedded.pdf",
+          "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "非嵌入字体样本",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d4_f3"
+              },
+              {
+                "str": "中文测试",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d4_f3"
+              },
+              {
+                "str": "金额987.65",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d4_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 64.0969,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "06-numbers.pdf",
+          "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "SYNTHETIC INVOICE - NOT A REAL DOCUMENT",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "INVOICE TESTINV20260001",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "TAX ID SYNTHETIC-TAX-001",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "NET 12345.67",
+                "x": 45,
+                "y": 380,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  380
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "TAX 740.74",
+                "x": 45,
+                "y": 340,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  340
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "TOTAL 13086.41",
+                "x": 45,
+                "y": 300,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  300
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "LEADING ZERO 00001234567890",
+                "x": 45,
+                "y": 260,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  260
+                ],
+                "fontName": "g_d5_f1"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 3.807900000000018,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "07-rotation.pdf",
+          "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "ROTATED PAGE 90",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d6_f3"
+              },
+              {
+                "str": "AMOUNT 12345.67",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d6_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 90,
+              "view": [
+                0,
+                0,
+                842,
+                595
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 5.717499999999973,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "08-scanned.pdf",
+          "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            []
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 3.356800000000021,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        }
+      ],
+      "rounds": [
+        {
+          "round": 1,
+          "status": 0,
+          "processMs": 389.1851000000006,
+          "importMs": 23.553300000000007,
+          "version": "4.9.155",
+          "getDocumentType": "function",
+          "warnings": [],
+          "errors": [],
+          "stderr": "",
+          "nativeLoads": [],
+          "canvasRequires": [],
+          "canvasLoaded": false,
+          "skiaLoaded": false,
+          "networkAttempts": [],
+          "fileReads": [
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/UniGB-UCS2-H.bcmap"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/Adobe-GB1-UCS2.bcmap"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/08-scanned.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/08-scanned.pdf"
+            }
+          ],
+          "moduleLoads": [
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            }
+          ],
+          "globalsBefore": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "globalsAfter": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "outputSHA256": "ebb2b571d238d0cd5af9eaf4a8041c77b3790e87ec0ec19062ad40f841ba5bcc",
+          "cases": [
+            {
+              "file": "01-english.pdf",
+              "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "02-chinese.pdf",
+              "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "03-multipage.pdf",
+              "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+              "pass": true,
+              "pageCount": 3,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "04-embedded-font.pdf",
+              "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "05-cmap-nonembedded.pdf",
+              "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "06-numbers.pdf",
+              "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "07-rotation.pdf",
+              "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "08-scanned.pdf",
+              "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "status": 0,
+          "processMs": 995.5204000000012,
+          "importMs": 17.904299999999992,
+          "version": "4.9.155",
+          "getDocumentType": "function",
+          "warnings": [],
+          "errors": [],
+          "stderr": "",
+          "nativeLoads": [],
+          "canvasRequires": [],
+          "canvasLoaded": false,
+          "skiaLoaded": false,
+          "networkAttempts": [],
+          "fileReads": [
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/UniGB-UCS2-H.bcmap"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/Adobe-GB1-UCS2.bcmap"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/08-scanned.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/08-scanned.pdf"
+            }
+          ],
+          "moduleLoads": [
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            }
+          ],
+          "globalsBefore": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "globalsAfter": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "outputSHA256": "ebb2b571d238d0cd5af9eaf4a8041c77b3790e87ec0ec19062ad40f841ba5bcc",
+          "cases": [
+            {
+              "file": "01-english.pdf",
+              "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "02-chinese.pdf",
+              "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "03-multipage.pdf",
+              "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+              "pass": true,
+              "pageCount": 3,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "04-embedded-font.pdf",
+              "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "05-cmap-nonembedded.pdf",
+              "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "06-numbers.pdf",
+              "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "07-rotation.pdf",
+              "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "08-scanned.pdf",
+              "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "status": 0,
+          "processMs": 297.40610000000015,
+          "importMs": 17.582800000000006,
+          "version": "4.9.155",
+          "getDocumentType": "function",
+          "warnings": [],
+          "errors": [],
+          "stderr": "",
+          "nativeLoads": [],
+          "canvasRequires": [],
+          "canvasLoaded": false,
+          "skiaLoaded": false,
+          "networkAttempts": [],
+          "fileReads": [
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/UniGB-UCS2-H.bcmap"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/Adobe-GB1-UCS2.bcmap"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/08-scanned.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/08-scanned.pdf"
+            }
+          ],
+          "moduleLoads": [
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            }
+          ],
+          "globalsBefore": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "globalsAfter": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "outputSHA256": "ebb2b571d238d0cd5af9eaf4a8041c77b3790e87ec0ec19062ad40f841ba5bcc",
+          "cases": [
+            {
+              "file": "01-english.pdf",
+              "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "02-chinese.pdf",
+              "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "03-multipage.pdf",
+              "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+              "pass": true,
+              "pageCount": 3,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "04-embedded-font.pdf",
+              "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "05-cmap-nonembedded.pdf",
+              "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "06-numbers.pdf",
+              "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "07-rotation.pdf",
+              "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "08-scanned.pdf",
+              "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "4.10.38",
+      "status": "PASS",
+      "recommended": true,
+      "publishedNpm": "2025-01-01T13:41:09.258Z",
+      "publishedGitHub": "2025-01-01T13:39:30Z",
+      "releaseURL": "https://github.com/mozilla/pdf.js/releases/tag/v4.10.38",
+      "tagObject": {
+        "sha": "f9bea397f817100a186d0ced2aa3d4b85813b637",
+        "type": "commit",
+        "url": "https://api.github.com/repos/mozilla/pdf.js/git/commits/f9bea397f817100a186d0ced2aa3d4b85813b637"
+      },
+      "deprecated": null,
+      "registryDist": {
+        "shasum": "3ee698003790dc266cc8b55c0e662ccb9ae18f53",
+        "tarball": "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.10.38.tgz",
+        "fileCount": 355,
+        "integrity": "sha512-/Y3fcFrXEAsMjJXeL9J8+ZG9U01LbuWaYypvDW2ycW1jL269L3js3DVBjDJ0Up9Np1uqDXsDrRihHANhZOlwdQ==",
+        "signatures": [
+          {
+            "sig": "MEYCIQDqYwNgHeVJKpVwB8mgcV7HLn4ZN5zgUglKRniCEhnCIgIhAPaLar1xJVmuB+MnVk8ZWCwIRPhXPA2Sv1lQ35+bFPAk",
+            "keyid": "SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA"
+          }
+        ],
+        "attestations": {
+          "url": "https://registry.npmjs.org/-/npm/v1/attestations/pdfjs-dist@4.10.38",
+          "provenance": {
+            "predicateType": "https://slsa.dev/provenance/v1"
+          }
+        },
+        "unpackedSize": 37350025
+      },
+      "packages": [
+        {
+          "name": "pdfjs-dist",
+          "version": "4.10.38",
+          "license": "Apache-2.0",
+          "engines": {
+            "node": ">=20"
+          },
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas": "^0.1.65"
+          },
+          "file": "pdfjs-dist/package.json"
+        }
+      ],
+      "installPolicy": "npm install --omit=dev --omit=optional --ignore-scripts; official unmodified npm package",
+      "installedPackageCount": 1,
+      "requiredTransitivePackageCount": 0,
+      "lockGraph": [
+        {
+          "path": "",
+          "version": "0.0.0",
+          "optional": false,
+          "dev": false,
+          "dependencies": {
+            "pdfjs-dist": "4.10.38"
+          },
+          "optionalDependencies": {},
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas-android-arm64": "0.1.100",
+            "@napi-rs/canvas-darwin-arm64": "0.1.100",
+            "@napi-rs/canvas-darwin-x64": "0.1.100",
+            "@napi-rs/canvas-linux-arm-gnueabihf": "0.1.100",
+            "@napi-rs/canvas-linux-arm64-gnu": "0.1.100",
+            "@napi-rs/canvas-linux-arm64-musl": "0.1.100",
+            "@napi-rs/canvas-linux-riscv64-gnu": "0.1.100",
+            "@napi-rs/canvas-linux-x64-gnu": "0.1.100",
+            "@napi-rs/canvas-linux-x64-musl": "0.1.100",
+            "@napi-rs/canvas-win32-arm64-msvc": "0.1.100",
+            "@napi-rs/canvas-win32-x64-msvc": "0.1.100"
+          },
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas/-/canvas-0.1.100.tgz",
+          "integrity": "sha512-xglYA6q3XO5P3BNJYxVZ1IV7DLVjp1Py6nwag88YntrS+3vKHyYcMqXVS4ZztJmwz2uGvz1FWhI/4LgbR5uQDA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-android-arm64",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "android"
+          ],
+          "cpu": [
+            "arm64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-android-arm64/-/canvas-android-arm64-0.1.100.tgz",
+          "integrity": "sha512-hjhCKhntPv9+t4ckHymdx0phYNcVW+GKQR6Lzw2zE+pOVjOplSmtx9nNNknTjbEDLcuLZqA1y8ufKg1XfgftzQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-darwin-arm64",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "darwin"
+          ],
+          "cpu": [
+            "arm64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-darwin-arm64/-/canvas-darwin-arm64-0.1.100.tgz",
+          "integrity": "sha512-2PcswRaC7Ly645DGt88///zuFDhJxJYdKAs1uU3mfk1atYkXufgcgLfBpk6Tm12nCQBaNt1wpybuPZ4qOhTo8A==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-darwin-x64",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "darwin"
+          ],
+          "cpu": [
+            "x64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-darwin-x64/-/canvas-darwin-x64-0.1.100.tgz",
+          "integrity": "sha512-ePNZtj7pNIva/siZMg+HmbeozkIjqUIYdoymH8HaA3qK7LfzFN4WMBM8G6HQ9ZC+H3+Dnn5pqtiXpgLykaPOhw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-arm-gnueabihf",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "arm"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-arm-gnueabihf/-/canvas-linux-arm-gnueabihf-0.1.100.tgz",
+          "integrity": "sha512-d5cDB48oWFGU8/XPhUOFAlySgb/VAu7D+s8fi55K1Pcfg8aPplHWqMgibhVLU8ky7Pyg/fuiVLz4Nf3JrSTuUA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-arm64-gnu",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "arm64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-arm64-gnu/-/canvas-linux-arm64-gnu-0.1.100.tgz",
+          "integrity": "sha512-rDxgxRu69RvDlX/bh9o22DxLsGr8EqsNgotL9+RwQE1S0b0cqeatqsw6aW45mukm0B42DIAaAacKaYQ8cqS1nw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-arm64-musl",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "arm64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-arm64-musl/-/canvas-linux-arm64-musl-0.1.100.tgz",
+          "integrity": "sha512-K3mDW66N+xT2/V439u1alFANiBUjdEx2gLiNYnCmUsva5jZMxWTjafBYwTzYK+EMFMHrUoabuU+T1BIP5CgbYQ==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-riscv64-gnu",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "riscv64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-riscv64-gnu/-/canvas-linux-riscv64-gnu-0.1.100.tgz",
+          "integrity": "sha512-mooqUBTIsccZpnoQC4NgrC1v6C1vof39etLNMnBwCY+p0gajWJvAHLGQ6g/gGyS5YrpDW+GefSN4+Cvcr08UWw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-x64-gnu",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "x64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-x64-gnu/-/canvas-linux-x64-gnu-0.1.100.tgz",
+          "integrity": "sha512-1eCvkDCazm7FFhsT7DfGOdSaHgZVK3bt/dSBl5EWHOWmnz+I7j8tPseJqqD81NF+MH21jKUK4wQSDjN0mdhnTg==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-linux-x64-musl",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "linux"
+          ],
+          "cpu": [
+            "x64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-linux-x64-musl/-/canvas-linux-x64-musl-0.1.100.tgz",
+          "integrity": "sha512-20arT6lnI19S68qNlii73TSEDbECNgzMz2EpldC1V3mZFuRkeujXkcebRk0LRJe9SEUAooYiLokfMViY8IX7yA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-win32-arm64-msvc",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "win32"
+          ],
+          "cpu": [
+            "arm64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-win32-arm64-msvc/-/canvas-win32-arm64-msvc-0.1.100.tgz",
+          "integrity": "sha512-DZFFT1wIAg37LJw37yhMRFfjATd3vTQzjZ1Yki8u2vhO6Hi5VE6BVaGQ1aaDu7xb4iMErz+9EOwjpS7xcxFeBw==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/@napi-rs/canvas-win32-x64-msvc",
+          "version": "0.1.100",
+          "optional": true,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {},
+          "os": [
+            "win32"
+          ],
+          "cpu": [
+            "x64"
+          ],
+          "resolved": "https://registry.npmjs.org/@napi-rs/canvas-win32-x64-msvc/-/canvas-win32-x64-msvc-0.1.100.tgz",
+          "integrity": "sha512-MyT1j3mHC2+Lu4pBi9mKyMJhtP6U7k7EldY7sj/uS5gJA65gTXt8MefJQXLJo5d/vZbuWmfxzkEUNc/urV3pHA==",
+          "installed": false
+        },
+        {
+          "path": "node_modules/pdfjs-dist",
+          "version": "4.10.38",
+          "optional": false,
+          "dev": false,
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas": "^0.1.65"
+          },
+          "resolved": "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.10.38.tgz",
+          "integrity": "sha512-/Y3fcFrXEAsMjJXeL9J8+ZG9U01LbuWaYypvDW2ycW1jL269L3js3DVBjDJ0Up9Np1uqDXsDrRihHANhZOlwdQ==",
+          "installed": true
+        }
+      ],
+      "bytes": 37350576,
+      "files": 356,
+      "packageBytes": 37350025,
+      "packageFiles": 355,
+      "packageHashBefore": "6aaed893788395210fc4707438c3d29b82120d337b6149bcd5ee3ac23f7710ed",
+      "packageHashAfter": "6aaed893788395210fc4707438c3d29b82120d337b6149bcd5ee3ac23f7710ed",
+      "nodeModulesHashBefore": "831b9298c0200a7b349ec2570a01a4ea1671a9d528a12b6a8d0730eaf2f5baa2",
+      "nodeModulesHashAfter": "831b9298c0200a7b349ec2570a01a4ea1671a9d528a12b6a8d0730eaf2f5baa2",
+      "nativeFiles": [],
+      "wasmFiles": [],
+      "canvasLoaded": false,
+      "skiaLoaded": false,
+      "advisoryMatches": [],
+      "licenseFiles": [
+        {
+          "path": "pdfjs-dist/cmaps/LICENSE",
+          "bytes": 2080,
+          "sha256": "aa92ab5a472974865a96fd4a4e9c13bb41bf6fe1b309cb6b8da48bc9e19839a2"
+        },
+        {
+          "path": "pdfjs-dist/LICENSE",
+          "bytes": 10174,
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "pdfjs-dist/standard_fonts/LICENSE_FOXIT",
+          "bytes": 1553,
+          "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7"
+        },
+        {
+          "path": "pdfjs-dist/standard_fonts/LICENSE_LIBERATION",
+          "bytes": 4414,
+          "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b"
+        }
+      ],
+      "passedPerRound": [
+        8,
+        8,
+        8
+      ],
+      "importMedianMs": 20.333,
+      "processMedianMs": 407.2824999999975,
+      "results": [
+        {
+          "file": "01-english.pdf",
+          "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "SYNTHETIC TEST ONLY",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d0_f1"
+              },
+              {
+                "str": "Ordinary PDF text extraction.",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d0_f1"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 78.71349999999998,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "02-chinese.pdf",
+          "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "合成测试发票",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d1_f3"
+              },
+              {
+                "str": "购买方示例公司",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d1_f3"
+              },
+              {
+                "str": "销售方演示公司",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d1_f3"
+              },
+              {
+                "str": "金额12345.67",
+                "x": 45,
+                "y": 380,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  380
+                ],
+                "fontName": "g_d1_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 13.767799999999994,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "03-multipage.pdf",
+          "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+          "pageCount": 3,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "SYNTHETIC PAGE 1",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d2_f3"
+              },
+              {
+                "str": "12345.67",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d2_f3"
+              }
+            ],
+            [
+              {
+                "str": "SYNTHETIC PAGE 2",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d2_f3"
+              },
+              {
+                "str": "987.65",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d2_f3"
+              }
+            ],
+            [
+              {
+                "str": "SYNTHETIC PAGE 3",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d2_f3"
+              },
+              {
+                "str": "END",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d2_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            },
+            {
+              "pageNumber": 2,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            },
+            {
+              "pageNumber": 3,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 9.827200000000005,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "04-embedded-font.pdf",
+          "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "EMBEDDED VERA FONT",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d3_f3"
+              },
+              {
+                "str": "Invoice TESTINV20260001",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d3_f3"
+              },
+              {
+                "str": "Total 12345.67",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d3_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 4.937600000000003,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "05-cmap-nonembedded.pdf",
+          "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "非嵌入字体样本",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d4_f3"
+              },
+              {
+                "str": "中文测试",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d4_f3"
+              },
+              {
+                "str": "金额987.65",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d4_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 50.948500000000024,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "06-numbers.pdf",
+          "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "SYNTHETIC INVOICE - NOT A REAL DOCUMENT",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "INVOICE TESTINV20260001",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "TAX ID SYNTHETIC-TAX-001",
+                "x": 45,
+                "y": 420,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  420
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "NET 12345.67",
+                "x": 45,
+                "y": 380,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  380
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "TAX 740.74",
+                "x": 45,
+                "y": 340,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  340
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "TOTAL 13086.41",
+                "x": 45,
+                "y": 300,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  300
+                ],
+                "fontName": "g_d5_f1"
+              },
+              {
+                "str": "LEADING ZERO 00001234567890",
+                "x": 45,
+                "y": 260,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  260
+                ],
+                "fontName": "g_d5_f1"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 2.5438000000000045,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "07-rotation.pdf",
+          "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            [
+              {
+                "str": "ROTATED PAGE 90",
+                "x": 45,
+                "y": 500,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  500
+                ],
+                "fontName": "g_d6_f3"
+              },
+              {
+                "str": "AMOUNT 12345.67",
+                "x": 45,
+                "y": 460,
+                "transform": [
+                  16,
+                  0,
+                  0,
+                  16,
+                  45,
+                  460
+                ],
+                "fontName": "g_d6_f3"
+              }
+            ]
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 90,
+              "view": [
+                0,
+                0,
+                842,
+                595
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 7.461100000000016,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        },
+        {
+          "file": "08-scanned.pdf",
+          "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+          "pageCount": 1,
+          "getPageType": "function",
+          "docDestroyType": "function",
+          "pages": [
+            []
+          ],
+          "pageMetadata": [
+            {
+              "pageNumber": 1,
+              "rotate": 0,
+              "view": [
+                0,
+                0,
+                595,
+                842
+              ],
+              "getTextContentType": "function"
+            }
+          ],
+          "missing": [],
+          "loaded": true,
+          "pass": true,
+          "ms": 4.33869999999996,
+          "equalToR3Baseline": true,
+          "equalToR3Generic": true
+        }
+      ],
+      "rounds": [
+        {
+          "round": 1,
+          "status": 0,
+          "processMs": 325.514799999999,
+          "importMs": 18.976200000000006,
+          "version": "4.10.38",
+          "getDocumentType": "function",
+          "warnings": [
+            {
+              "level": "log",
+              "text": "Warning: Please use the `legacy` build in Node.js environments."
+            }
+          ],
+          "errors": [],
+          "stderr": "",
+          "nativeLoads": [],
+          "canvasRequires": [],
+          "canvasLoaded": false,
+          "skiaLoaded": false,
+          "networkAttempts": [],
+          "fileReads": [
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/UniGB-UCS2-H.bcmap"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/Adobe-GB1-UCS2.bcmap"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/08-scanned.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/08-scanned.pdf"
+            }
+          ],
+          "moduleLoads": [
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            }
+          ],
+          "globalsBefore": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "globalsAfter": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "outputSHA256": "ebb2b571d238d0cd5af9eaf4a8041c77b3790e87ec0ec19062ad40f841ba5bcc",
+          "cases": [
+            {
+              "file": "01-english.pdf",
+              "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "02-chinese.pdf",
+              "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "03-multipage.pdf",
+              "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+              "pass": true,
+              "pageCount": 3,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "04-embedded-font.pdf",
+              "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "05-cmap-nonembedded.pdf",
+              "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "06-numbers.pdf",
+              "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "07-rotation.pdf",
+              "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "08-scanned.pdf",
+              "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "status": 0,
+          "processMs": 485.7758999999987,
+          "importMs": 33.61369999999998,
+          "version": "4.10.38",
+          "getDocumentType": "function",
+          "warnings": [
+            {
+              "level": "log",
+              "text": "Warning: Please use the `legacy` build in Node.js environments."
+            }
+          ],
+          "errors": [],
+          "stderr": "",
+          "nativeLoads": [],
+          "canvasRequires": [],
+          "canvasLoaded": false,
+          "skiaLoaded": false,
+          "networkAttempts": [],
+          "fileReads": [
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/UniGB-UCS2-H.bcmap"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/Adobe-GB1-UCS2.bcmap"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/08-scanned.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/08-scanned.pdf"
+            }
+          ],
+          "moduleLoads": [
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            }
+          ],
+          "globalsBefore": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "globalsAfter": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "outputSHA256": "ebb2b571d238d0cd5af9eaf4a8041c77b3790e87ec0ec19062ad40f841ba5bcc",
+          "cases": [
+            {
+              "file": "01-english.pdf",
+              "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "02-chinese.pdf",
+              "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "03-multipage.pdf",
+              "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+              "pass": true,
+              "pageCount": 3,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "04-embedded-font.pdf",
+              "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "05-cmap-nonembedded.pdf",
+              "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "06-numbers.pdf",
+              "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "07-rotation.pdf",
+              "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "08-scanned.pdf",
+              "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "status": 0,
+          "processMs": 407.2824999999975,
+          "importMs": 20.333,
+          "version": "4.10.38",
+          "getDocumentType": "function",
+          "warnings": [
+            {
+              "level": "log",
+              "text": "Warning: Please use the `legacy` build in Node.js environments."
+            }
+          ],
+          "errors": [],
+          "stderr": "",
+          "nativeLoads": [],
+          "canvasRequires": [],
+          "canvasLoaded": false,
+          "skiaLoaded": false,
+          "networkAttempts": [],
+          "fileReads": [
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/manifest.json"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/01-english.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/02-chinese.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/03-multipage.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/04-embedded-font.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/05-cmap-nonembedded.pdf"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/UniGB-UCS2-H.bcmap"
+            },
+            {
+              "api": "fs.promises.readFile",
+              "path": "candidate/node_modules/pdfjs-dist/cmaps/Adobe-GB1-UCS2.bcmap"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/06-numbers.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/07-rotation.pdf"
+            },
+            {
+              "api": "fs.readFileSync",
+              "path": "fixtures/08-scanned.pdf"
+            },
+            {
+              "api": "fs.openSync",
+              "path": "fixtures/08-scanned.pdf"
+            }
+          ],
+          "moduleLoads": [
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.mjs"
+            },
+            {
+              "url": "candidate/node_modules/pdfjs-dist/build/pdf.worker.mjs"
+            }
+          ],
+          "globalsBefore": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "globalsAfter": {
+            "DOMMatrix": "undefined",
+            "ImageData": "undefined",
+            "Path2D": "undefined"
+          },
+          "outputSHA256": "ebb2b571d238d0cd5af9eaf4a8041c77b3790e87ec0ec19062ad40f841ba5bcc",
+          "cases": [
+            {
+              "file": "01-english.pdf",
+              "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "02-chinese.pdf",
+              "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "03-multipage.pdf",
+              "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+              "pass": true,
+              "pageCount": 3,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "04-embedded-font.pdf",
+              "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "05-cmap-nonembedded.pdf",
+              "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "06-numbers.pdf",
+              "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "07-rotation.pdf",
+              "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            },
+            {
+              "file": "08-scanned.pdf",
+              "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+              "pass": true,
+              "pageCount": 1,
+              "equalToR3Baseline": true,
+              "equalToR3Generic": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "formal": {
+    "changed": false,
+    "packageLockEntries": {
+      "pdf-parse": {
+        "version": "2.4.5",
+        "resolved": "https://registry.npmjs.org/pdf-parse/-/pdf-parse-2.4.5.tgz",
+        "integrity": "sha512-mHU89HGh7v+4u2ubfnevJ03lmPgQ5WU4CxAVmTSh/sxVTEDYd1er/dKS/A6vg77NX47KTEoihq8jZBLr8Cxuwg==",
+        "license": "Apache-2.0",
+        "dependencies": {
+          "@napi-rs/canvas": "0.1.80",
+          "pdfjs-dist": "5.4.296"
+        },
+        "bin": {
+          "pdf-parse": "bin/cli.mjs"
+        },
+        "engines": {
+          "node": ">=20.16.0 <21 || >=22.3.0"
+        },
+        "funding": {
+          "type": "github",
+          "url": "https://github.com/sponsors/mehmet-kozan"
+        }
+      },
+      "pdfjs-dist": {
+        "version": "5.4.296",
+        "resolved": "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-5.4.296.tgz",
+        "integrity": "sha512-DlOzet0HO7OEnmUmB6wWGJrrdvbyJKftI1bhMitK7O2N8W2gc757yyYBbINy9IDafXAV9wmKr9t7xsTaNKRG5Q==",
+        "license": "Apache-2.0",
+        "engines": {
+          "node": ">=20.16.0 || >=22.3.0"
+        },
+        "optionalDependencies": {
+          "@napi-rs/canvas": "^0.1.80"
+        }
+      },
+      "@napi-rs/canvas": {
+        "version": "0.1.80",
+        "resolved": "https://registry.npmjs.org/@napi-rs/canvas/-/canvas-0.1.80.tgz",
+        "integrity": "sha512-DxuT1ClnIPts1kQx8FBmkk4BQDTfI5kIzywAaMjQSXfNnra5UFU9PwurXrl+Je3bJ6BGsp/zmshVVFbCmyI+ww==",
+        "license": "MIT",
+        "workspaces": [
+          "e2e/*"
+        ],
+        "engines": {
+          "node": ">= 10"
+        },
+        "optionalDependencies": {
+          "@napi-rs/canvas-android-arm64": "0.1.80",
+          "@napi-rs/canvas-darwin-arm64": "0.1.80",
+          "@napi-rs/canvas-darwin-x64": "0.1.80",
+          "@napi-rs/canvas-linux-arm-gnueabihf": "0.1.80",
+          "@napi-rs/canvas-linux-arm64-gnu": "0.1.80",
+          "@napi-rs/canvas-linux-arm64-musl": "0.1.80",
+          "@napi-rs/canvas-linux-riscv64-gnu": "0.1.80",
+          "@napi-rs/canvas-linux-x64-gnu": "0.1.80",
+          "@napi-rs/canvas-linux-x64-musl": "0.1.80",
+          "@napi-rs/canvas-win32-x64-msvc": "0.1.80"
+        }
+      },
+      "@napi-rs/canvas-win32-x64-msvc": {
+        "version": "0.1.80",
+        "resolved": "https://registry.npmjs.org/@napi-rs/canvas-win32-x64-msvc/-/canvas-win32-x64-msvc-0.1.80.tgz",
+        "integrity": "sha512-Z8jPsM6df5V8B1HrCHB05+bDiCxjE9QA//3YrkKIdVDEwn5RKaqOxCJDRJkl48cJbylcrJbW4HxZbTte8juuPg==",
+        "cpu": [
+          "x64"
+        ],
+        "license": "MIT",
+        "optional": true,
+        "os": [
+          "win32"
+        ],
+        "engines": {
+          "node": ">= 10"
+        }
+      }
+    },
+    "fileHashes": [
+      {
+        "file": "package.json",
+        "workingCopyByteSHA256": "232324b9e425f27bbc5df66b4ae5ce594bf7671e4a2dd6fe62246cf29bd2a89b",
+        "gitBlobSHA256": "ed2b5d3bf20450c301ae531395fe5bb95c8de07df7f181f254d47843fe928bde"
+      },
+      {
+        "file": "package-lock.json",
+        "workingCopyByteSHA256": "525a74cd4e17e0bf1dbb6bd0253c57c1a26ab74fc7a93ce0962e19a3b5fa3257",
+        "gitBlobSHA256": "c4050d95db6d40702a222ee9da9e43d74c5d36a8e5be73583e1dc2f08d9a5bf5"
+      },
+      {
+        "file": "server.js",
+        "workingCopyByteSHA256": "ede35bf26ca02578006a0282e39fb61aa1200014258254f4c78e52dac4fa1375",
+        "gitBlobSHA256": "11938893209c4d4b701cc0a7fc9893db8e5b342945b41b1650a9def6528568d3"
+      }
+    ]
+  },
+  "limitations": [
+    "No OS-level offline/firewall test",
+    "Node fs API and ESM/CJS hooks observe JavaScript file/module operations, not all OS DLL/file reads",
+    "Not full invoice extraction/business/UI regression",
+    "No native by installation omit-optional policy, not no optional native declaration",
+    "No Launcher/Setup/OCR/Runtime artifact",
+    "Exact 4.10.38 generic Node advisory warning retained, not suppressed",
+    "Historical major; future advisories must be monitored"
+  ]
+}
