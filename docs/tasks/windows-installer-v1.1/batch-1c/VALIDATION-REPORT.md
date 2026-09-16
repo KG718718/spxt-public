@@ -92,3 +92,12 @@ E盘项目输出区 `output/windows-installer-v1.1/batch-1c/`，不在公开源�
 无截图：没有伪用旧图或API响应充当浏览器截图。没有清理任何运行材料；诊断服务均已停止。本次未运行原仓库全套业务回归（无业务修改），未运行OCR/LAN/邮件真实投递/安装/升级/卸载测试。
 
 正式结论是 **Batch 1C FAIL（许可和目标环境门禁未满足）**，不是“仅文档待补”的PASS。下一次仍在Batch 1C补齐原生许可、ZIP实产实验、干净Win11完整G1，并提供对应同一artifact哈希的真实浏览器证据。
+# Batch 1C-R5 验证增量｜2026-09-16
+
+**未通过完整门禁，不生成ZIP。** 原公开26套全部尝试：首轮23成功；full-browser启动超时后复验21项通过；product-docs边界描述禁词在R4原Git基线也失败，同义文档修正后8项通过。当前25/26套完成，startup-filesystem14项通过后Windows创建文件符号链接EPERM，其后反例未执行。未放宽测试、未改业务/权限规则、未提升系统权限。
+
+同R3/R4原字节8PDF三轮24/24；执行实际server提取函数，文字/transform/页数与R4一致，native/canvas/Skia/网络尝试0，目录hash前后相同；扫描空文本正确。另故意损坏文件后连续与并发正常。真实旧函数的非嵌入中文因未配CMap为空，新版已恢复；其他7类输出一致。固定generic提示保留，损坏样本Indexing提示不冒充正常样本warning。
+
+40项Runtime守卫和14项合成完整性、语法/diff检查通过。新Runtime/包内Node smoke/最终license/ZIP/解包与Win11 G1均未执行；不能据依赖暂存或源码测试宣称它们通过。完整原始记录见源码外migration-r5-01及PDF-MIGRATION-RESULT.md。
+
+以下保留以前阶段的验证记录，不覆盖上述状态。

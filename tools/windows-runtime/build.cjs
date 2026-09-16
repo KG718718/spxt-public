@@ -1,6 +1,5 @@
 'use strict';
-// Builds only from public Git blobs. A pending native-license gate retains staging,
-// exits nonzero and intentionally does not emit a redistributable ZIP.
+// Builds staging only from reviewed public Git blobs. ZIP requires separate test gates.
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),os=require('node:os');
 const {sha,safePath,inside,writeNew,writeJSON,inventory,productionEntries,cleanEnvironment,inspectPE,assertArchiveAllowed}=require('./common.cjs');
 const [commit,outArg,toolArg,git]=process.argv.slice(2);
@@ -12,6 +11,7 @@ const env=cleanEnvironment(temp),node=path.join(tool,'node.exe');
 function command(exe,args,extra={}){return cp.execFileSync(exe,args,{env,windowsHide:true,maxBuffer:32*1024*1024,timeout:180000,...extra});}
 function blob(name){safePath(name);return command(git,['-C',repo,'show',commit+':'+name]);}
 const json=name=>JSON.parse(blob(name));
+const policy=json('tools/windows-runtime/closure-policy.json');
 const dist=json('tools/installer/distribution.json'),spec=json('tools/package-manifest.json'),lock=json('package-lock.json');
 const report={sourceCommit:commit,sourceTree:command(git,['-C',repo,'rev-parse',commit+'^{tree}']).toString().trim(),platform:'win32-x64',os:{type:os.type(),release:os.release(),arch:os.arch()},checks:[],failures:[],artifact:null};
 const stage=path.join(out,'KSESSION-RUNTIME'),app=path.join(stage,'app');
@@ -22,8 +22,13 @@ try {
   if(report.nodeVersion!=='v'+dist.nodeVersion)throw Error('Actual Node version mismatch');
   const npm=path.join(tool,'node_modules/npm/bin/npm-cli.js');
   report.npmVersion=command(node,[npm,'--version']).toString().trim();
-  const entries=productionEntries(lock);
-  if(entries.length!==23)throw Error('Expected reviewed 23-package closure; inspect before changing baseline');
+  if(sha(blob('package-lock.json'))!==policy.packageLockSha256)throw Error('Lock differs from reviewed optional dependency audit');
+  for(const f of inventory(__dirname))if(sha(blob('tools/windows-runtime/'+f.path))!==f.sha256)throw Error('Build tools differ from source commit: '+f.path);
+  report.buildToolCommit=commit;
+  const entries=productionEntries(lock,{omitOptional:true});
+  if(entries.length!==policy.productionPackageCount||entries.some(e=>/canvas|skia|pdf-parse/i.test(e.path)))throw Error('Reviewed production graph mismatch');
+  for(const e of entries){const opts=e.optionalDependencies||{};if(Object.keys(opts).length&&(e.path!=='node_modules/pdfjs-dist'||JSON.stringify(opts)!==JSON.stringify({'@napi-rs/canvas':'^0.1.65'})))throw Error('Unreviewed optional declaration');
+    for(const dep of Object.keys(e.dependencies||{})){let at=e.path,found=false;while(at){const candidate=at+'/node_modules/'+dep;if(entries.some(x=>x.path===candidate)){found=true;break;}at=at.includes('/node_modules/')?at.slice(0,at.lastIndexOf('/node_modules/')):'';}if(!found&&!entries.some(x=>x.path==='node_modules/'+dep))throw Error('Required dependency omitted: '+dep);}}
   if(spec.applicationFiles.length!==32)throw Error('Application allowlist changed');
   for(const name of spec.applicationFiles)writeNew(path.join(app,safePath(name)),blob(name));
   const pkg=JSON.parse(fs.readFileSync(path.join(app,'package.json')));
@@ -31,11 +36,11 @@ try {
   report.packageLockHash=sha(fs.readFileSync(path.join(app,'package-lock.json')));
   const userRC=path.join(out,'empty-user.npmrc'),globalRC=path.join(out,'empty-global.npmrc');
   writeNew(userRC,'');writeNew(globalRC,'');
-  const flags=['ci','--omit=dev','--include=optional','--ignore-scripts','--bin-links=false','--audit=false','--fund=false','--strict-ssl=true','--registry=https://registry.npmjs.org/', '--userconfig='+userRC,'--globalconfig='+globalRC,'--cache='+path.join(out,'npm-cache')];
+  const flags=['ci','--omit=dev','--omit=optional','--ignore-scripts','--bin-links=false','--audit=false','--fund=false','--strict-ssl=true','--registry=https://registry.npmjs.org/', '--userconfig='+userRC,'--globalconfig='+globalRC,'--cache='+path.join(out,'npm-cache')];
   console.log('Installing fresh production closure from public registry...');
   const npmLog=command(node,[npm,...flags],{cwd:app});writeNew(path.join(out,'npm-ci.log'),npmLog);
   if(sha(fs.readFileSync(path.join(app,'package-lock.json')))!==report.packageLockHash)throw Error('npm changed lockfile');
-  // Verify the installed graph AND disk package directories; optional omission is not success.
+  // Verify exact installed graph and disk directories; unknown omissions/additions fail.
   const actual=[];
   function packageDirs(base,rel='node_modules') {
     for(const e of fs.readdirSync(base,{withFileTypes:true})) {
@@ -58,6 +63,7 @@ try {
     const base=path.join(app,entry.path),p=JSON.parse(fs.readFileSync(path.join(base,'package.json')));
     const expectedName=entry.path.split('node_modules/').at(-1);
     if(p.name!==expectedName||p.version!==entry.version)throw Error('Installed package mismatch: '+entry.path);
+    if(JSON.stringify(p.optionalDependencies||{})!==JSON.stringify(entry.optionalDependencies||{}))throw Error('Installed optional declaration mismatch');
     const lic=typeof p.license==='string'?p.license:p.license?.type||(p.licenses?.length===1?p.licenses[0].type:null);
     if((entry.license&&lic!==entry.license)||!['MIT','MIT-0','ISC','Apache-2.0'].includes(lic))throw Error('License metadata requires review: '+p.name);
     let notices=inventory(base).filter(f=>noticeName.test(path.posix.basename(f.path))).map(f=>({rel:f.path,bytes:fs.readFileSync(path.join(base,f.path))}));
@@ -86,34 +92,24 @@ try {
   report.dependencies=dependencies.map(({name,version})=>({name,version}));
   report.dependencyCount=dependencies.length;
   report.nativeFiles=inventory(stage).filter(f=>/\.(exe|node|dll)$/i.test(f.path)).map(f=>({...f,...inspectPE(fs.readFileSync(path.join(stage,f.path)))}));
-  const expectedNative='app/node_modules/@napi-rs/canvas-win32-x64-msvc/skia.win32-x64-msvc.node';
-  if(!report.nativeFiles.some(f=>f.path===expectedNative))throw Error('Canvas native binding missing');
+  if(report.nativeFiles.length!==1||report.nativeFiles[0].path!=='runtime/node.exe')throw Error('Unexpected native dependency in Runtime');
+  if(inventory(path.join(app,'node_modules')).some(f=>/(^|\/)(?:@napi-rs\/canvas[^/]*|canvas|pdf-parse)(?:\/|$)/i.test(f.path)||/\.(node|dll|exe|wasm)$/i.test(f.path)))throw Error('Native/WASM chain remains on disk');
   report.pdfResources=inventory(path.join(app,'node_modules/pdfjs-dist')).filter(f=>/(^|\/)(cmaps|standard_fonts|wasm)\/|pdf\.worker.*\.mjs$/.test(f.path));
-  for(const required of ['cmaps/','standard_fonts/','wasm/','legacy/build/pdf.worker.mjs'])if(!report.pdfResources.some(f=>f.path.includes(required)))throw Error('PDF resource missing: '+required);
+  for(const required of [...policy.requiredPdfResources,...policy.requiredPdfNotices])if(!fs.existsSync(path.join(app,'node_modules/pdfjs-dist',safePath(required))))throw Error('PDF resource/notice missing: '+required);
   const probe=command(path.join(stage,'runtime/node.exe'),[path.resolve(__dirname,'../tests/windows-runtime/modules.cjs'),stage],{cwd:app});
   writeNew(path.join(out,'modules.json'),probe);report.moduleProbe=JSON.parse(probe);
-  report.checks.push('pinned-node','source-blobs','fresh-npm-ci','exact-production-graph','original-package-notices','x64-PE','canvas-functional','pdf-dynamic-import','pdf-resource-inventory');
-  report.license={nativeReview:'pending-before-distribution',nativeEvidence:[],reason:'Exact platform package maps to parent MIT; compiled Skia dependency notices are not yet established by approved source evidence.'};
+  report.checks.push('pinned-node','source-blobs','fresh-npm-ci','exact-production-graph','original-package-notices','x64-PE','no-additional-native','pdf-dynamic-import','pdf-resource-inventory');
+  writeNew(path.join(stage,'manifest/closure-policy.json'),blob('tools/windows-runtime/closure-policy.json'));
+  report.license={route:'pure-js-npm',nativeReview:'NOT APPLICABLE TO NEW RUNTIME GRAPH',unresolvedDistributionItems:0,additionalNativeFiles:0,dependencyCount:dependencies.length,originalNoticeCount:licenseItems.reduce((n,item)=>n+item.files.length,0),dependencyManifestHash:sha(fs.readFileSync(path.join(stage,'manifest/dependencies.json'))),policyHash:sha(blob('tools/windows-runtime/closure-policy.json')),nodeLicenseHash:sha(fs.readFileSync(path.join(tool,'LICENSE'))),reason:'Original Node distribution license and all actual npm/PDF CMap/font notices retained. No npm native components shipped; historical R1 native review remains unresolved for old graph.'};
+  assertArchiveAllowed(report.license);
   const payload=inventory(stage);
-  const manifest={format:'k-session-runtime',manifestSchema:1,product:'K-SESSION',version:pkg.version,platform:'win32-x64',sourceRepository:'https://github.com/KG718718/spxt-public',sourceCommit:commit,sourceTree:report.sourceTree,nodeVersion:dist.nodeVersion,nodeHash:dist.nodeExeSha256,nodeArchiveHash:dist.nodeArchiveSha256,packageLockHash:report.packageLockHash,build:{npmVersion:report.npmVersion,os:report.os,flags:['ci','--omit=dev','--include=optional','--ignore-scripts','--bin-links=false'],toolFiles:inventory(__dirname)},dependencies,files:payload,licenses:licenseItems,nativeLicenseReview:report.license,instanceSchema:1,businessDataIncluded:false,launcherIncluded:false,ocrEngineIncluded:false,runtimeIncluded:true,entrypoint:'app/server.js',instanceContract:'Explicit external KSESSION_* paths required; prototype is not a launcher or installer.'};
+  const manifest={format:'k-session-runtime',manifestSchema:1,product:'K-SESSION',version:pkg.version,platform:'win32-x64',sourceRepository:'https://github.com/KG718718/spxt-public',sourceCommit:commit,sourceTree:report.sourceTree,nodeVersion:dist.nodeVersion,nodeHash:dist.nodeExeSha256,nodeArchiveHash:dist.nodeArchiveSha256,packageLockHash:report.packageLockHash,build:{toolCommit:commit,npmVersion:report.npmVersion,os:report.os,flags:['ci','--omit=dev','--omit=optional','--ignore-scripts','--bin-links=false'],toolFiles:inventory(__dirname)},dependencies,files:payload,licenses:licenseItems,nativeLicenseReview:report.license,instanceSchema:1,businessDataIncluded:false,launcherIncluded:false,ocrEngineIncluded:false,runtimeIncluded:true,entrypoint:'app/server.js',instanceContract:'Explicit external KSESSION_* paths required; prototype is not a launcher or installer.'};
   writeJSON(path.join(stage,'manifest/runtime-manifest.json'),manifest);
   const summed=inventory(stage);writeNew(path.join(stage,'hashes/SHA256SUMS.txt'),summed.map(f=>f.sha256+'  '+f.path).join('\n')+'\n');
   report.fileCount=summed.length+1;report.uncompressedBytes=inventory(stage).reduce((sum,f)=>sum+f.bytes,0);
   report.manifestHash=sha(fs.readFileSync(path.join(stage,'manifest/runtime-manifest.json')));
   const {verify}=require('./verify.cjs');verify(stage);report.checks.push('manifest-and-exact-file-set');
-  // This gate is intentionally fail-closed. A later reviewed native license implementation
-  // must supply exact component evidence; changing this string is not a review.
-  assertArchiveAllowed(report.license);
-  const {createRequire}=require('node:module');
-  const {zipSync,unzipSync}=createRequire(path.join(app,'package.json'))('fflate');
-  const contents=Object.fromEntries(inventory(stage).map(f=>['KSESSION-RUNTIME/'+f.path,[fs.readFileSync(path.join(stage,f.path)),{mtime:new Date('2026-01-01T00:00:00Z')}]]));
-  const bytes=zipSync(contents,{level:6}),unpacked=unzipSync(bytes),files=inventory(stage);
-  if(Object.keys(unpacked).length!==files.length)throw Error('ZIP file count mismatch');
-  for(const f of files)if(sha(unpacked['KSESSION-RUNTIME/'+f.path])!==f.sha256)throw Error('ZIP roundtrip mismatch');
-  const filename='K-SESSION-runtime-prototype-win-x64.zip';
-  writeNew(path.join(out,'artifacts',filename),bytes);
-  writeNew(path.join(out,'artifacts',filename+'.sha256'),sha(bytes)+'  '+filename+'\n');
-  report.artifact={filename,bytes:bytes.length,sha256:sha(bytes)};
+  // Successful staging is not a ZIP gate. A future finalizer must verify matching test evidence.
 } catch(e) {report.failures.push(e.message);process.exitCode=1;}
 finally {
   report.status=report.failures.length?'FAIL':'PASS';

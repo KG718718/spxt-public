@@ -1,5 +1,19 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## 当前生效策略：R5A / Windows 10 Beta 优先（2026-09-16）
+
+用户已批准：阶段1以Windows 10 x64为主要测试平台，先完成一键安装Beta；Windows 11 x64预期兼容，尚待社区实机验证，不是已验证支持。Win11不再阻塞本次Runtime及Batch2准入。Windows10 32-bit、8/8.1、7不支持，ARM不作承诺。
+
+本轮允许R5测试候选检查点，仅推codex/windows-installer-v1.1；用GitHub Hosted Windows Server验证文件/目录symlink及原26套测试，不替代消费版Windows验证。26/26全部完成且无skip，PDF迁移/生产图/许可闭包、当前Win10开发机包内Node smoke、Runtime ZIP及全新解包复验全部通过后，可报告PASS FOR WINDOWS 10 BETA TRACK；仍需上级批准进入Batch2。
+
+Runtime不是普通用户安装软件，本轮不发Release/Pre-release，不改main/tag/v1.0.0，不做Launcher/Setup/OCR。未来Batch2/3完成后，才规划K-SESSION-Setup-1.1.0-beta.1.exe Pre-release和WINDOWS-11-TESTING.md（下载/hash/安装/功能/诊断反馈，不含业务数据或凭据）。当前不生成该社区指南，不宣称干净机认证。Windows10具体版本/系统更新渠道与生命周期风险仍需正式发布前明确。
+
+本节覆盖下文以及历史Batch1A/1B/1C材料中的Win11当前阻塞和“测试通过才可提交候选”的旧要求；原历史事实保留。
+
+## 最新：Batch 1C-R5，未通过完整门禁
+
+2026-09-16用户授权受控迁移，工作区已实现精确PDF.js4.10.38 generic并删除无业务调用pdf-parse。fresh生产图20包、无Canvas/Skia/native，实际server提取8样本三轮通过。原测试25/26套完成，startup文件系统安全反例受Windows符号链接权限阻断（14项后中止）；不削弱测试或修改系统权限。R4检查点f7dc474已仅推开发分支，R5未提交；构建器适配未验收，无fresh Runtime/ZIP/最终许可/G1。先补足测试环境权限并续行R5，禁止进入Batch2。见batch-1c/PDF-MIGRATION-RESULT.md与CHATGPT-HANDOFF.md。下面为上阶段状态。
+
 状态：Batch0/1A/1B已批准；R3已提交/推送最终检查点a760f05。Batch1C-R4选型PASS：最新正式4.x为4.10.38；4.8.69/4.9.155/4.10.38各8样本三轮全过、与R3基线一致，推荐4.10.38 generic。实际隔离omit-optional安装无canvas/Skia/native；上游optional声明仍在，4.10.38的Node兼容提醒和历史major维护风险保留。仅完成选型/静态迁移计划，正式package/lock/server/构建门禁未改；须另批联合删除pdf-parse及完整闭包/业务回归/G1。R4三新报告与四状态文档未提交，不进入Batch2，不生成Runtime/Launcher/Setup/OCR/Release。详见batch-1c/PDF-4X-SELECTION.md、PDF-4X-MATRIX.json、PDF-MIGRATION-PLAN.md及CHATGPT-HANDOFF.md；原R1门禁不自动解除。
 记录日期：2026-09-16。范围仅为公开仓库 [KG718718/spxt-public](https://github.com/KG718718/spxt-public)。
 

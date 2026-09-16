@@ -21,4 +21,10 @@ assert.equal(assertArchiveAllowed({nativeReview:'complete',nativeEvidence:[{sha2
 const env = cleanEnvironment('E:\\synthetic\\tmp', {SystemRoot:'C:\\Windows',NODE_PATH:'private',NODE_OPTIONS:'--require=private',NPM_TOKEN:'secret',npm_config_registry:'private'});
 for (const k of ['NODE_PATH','NODE_OPTIONS','NPM_TOKEN','npm_config_registry']) {assert.equal(env[k],undefined);checks++;}
 assert.equal(env.TEMP,'E:\\synthetic\\tmp'); checks++;
+const jsLicense={route:'pure-js-npm',nativeReview:'NOT APPLICABLE TO NEW RUNTIME GRAPH',unresolvedDistributionItems:0,additionalNativeFiles:0,dependencyCount:20,originalNoticeCount:24,dependencyManifestHash:'a'.repeat(64),policyHash:'b'.repeat(64),nodeLicenseHash:'c'.repeat(64)};
+assert.equal(assertArchiveAllowed(jsLicense),true);checks++;
+for(const change of [{unresolvedDistributionItems:1},{additionalNativeFiles:1},{dependencyCount:19},{originalNoticeCount:23},{policyHash:''},{dependencyManifestHash:''},{nodeLicenseHash:''},{nativeReview:'complete'}]){assert.throws(()=>assertArchiveAllowed({...jsLicense,...change}));checks++;}
+const optionalLock={...lock,packages:{...lock.packages,'node_modules/native':{...valid,optional:true}}};
+assert.equal(productionEntries(optionalLock).length,2);checks++;
+assert.equal(productionEntries(optionalLock,{omitOptional:true}).length,1);checks++;
 console.log(JSON.stringify({suite:'runtime-guards',passed:checks}));

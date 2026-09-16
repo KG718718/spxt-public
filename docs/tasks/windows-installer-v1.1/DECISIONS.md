@@ -1,5 +1,15 @@
 # Windows installer v1.1 决策登记
 
+## 当前生效策略：R5A / Windows 10 Beta 优先（2026-09-16）
+
+用户已批准：阶段1以Windows 10 x64为主要测试平台，先完成一键安装Beta；Windows 11 x64预期兼容，尚待社区实机验证，不是已验证支持。Win11不再阻塞本次Runtime及Batch2准入。Windows10 32-bit、8/8.1、7不支持，ARM不作承诺。
+
+本轮允许R5测试候选检查点，仅推codex/windows-installer-v1.1；用GitHub Hosted Windows Server验证文件/目录symlink及原26套测试，不替代消费版Windows验证。26/26全部完成且无skip，PDF迁移/生产图/许可闭包、当前Win10开发机包内Node smoke、Runtime ZIP及全新解包复验全部通过后，可报告PASS FOR WINDOWS 10 BETA TRACK；仍需上级批准进入Batch2。
+
+Runtime不是普通用户安装软件，本轮不发Release/Pre-release，不改main/tag/v1.0.0，不做Launcher/Setup/OCR。未来Batch2/3完成后，才规划K-SESSION-Setup-1.1.0-beta.1.exe Pre-release和WINDOWS-11-TESTING.md（下载/hash/安装/功能/诊断反馈，不含业务数据或凭据）。当前不生成该社区指南，不宣称干净机认证。Windows10具体版本/系统更新渠道与生命周期风险仍需正式发布前明确。
+
+本节覆盖下文以及历史Batch1A/1B/1C材料中的Win11当前阻塞和“测试通过才可提交候选”的旧要求；原历史事实保留。
+
 日期：2026-09-16。以下已确认项来源为用户 Batch 0 任务授权；未决项不构成技术选型批准。
 
 ## 已确认决定

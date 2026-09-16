@@ -1,5 +1,17 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 1C-R5A 续行授权｜2026-09-16
+
+当前用户批准Windows10 x64 Beta优先，Win11转为Setup完成后社区实机验证，未验证前不承诺支持。允许先提交R5测试候选并只推开发分支；GitHub Hosted Windows补文件/目录symlink及原26套完整回归。通过后再fresh Runtime、许可、Win10开发机包内Node smoke、ZIP及全新解包复验。当前执行中，没有新的PASS或发行物结论；不进入Launcher/Setup/OCR/main/Release。
+
+完整门禁见MASTER-PLAN/ACCEPTANCE/DECISIONS顶部R5A策略；该授权覆盖下面R5旧提交阻塞。仅复用当前公开目录，不访问其他用途版本，不创建Agent/工作树。
+
+## Windows installer v1.1 / Batch 1C-R5｜2026-09-16
+
+**R5未通过：完整回归门禁受Windows符号链接权限阻断；不等于已证PDF迁移回归。** R4已提交/仅推开发分支检查点f7dc474。工作区已精确迁移PDF.js4.10.38 generic并移除pdf-parse；fresh生产图20包、无Canvas/Skia/native，真实提取函数8样本三轮通过。26套原测试首轮23成功；浏览器/文档复验通过后25套完成，startup-filesystem在14项通过后symlink EPERM中止。未改系统权限、业务规则或测试断言。
+
+R5尚未提交/推送，构建器适配为未验收草稿；没有新commit Runtime、ZIP、最终许可集合或G1。需有符号链接权限的隔离Windows环境补跑，不能宣称仅G1待验。未进入Batch2/Launcher/Setup/OCR/Release；main/v1.0.0不变。见[迁移结果](docs/tasks/windows-installer-v1.1/batch-1c/PDF-MIGRATION-RESULT.md)与[交接卡](docs/tasks/windows-installer-v1.1/batch-1c/CHATGPT-HANDOFF.md)。以下为历史记录。
+
 ## Windows installer v1.1 / Batch 1C-R4 版本选择｜2026-09-16
 
 **PASS，推荐pdfjs-dist精确4.10.38 generic，正式迁移未获批、未执行。** 官方npm确认它是最后正式4.x；4.8.69/4.9.155/4.10.38以R3字节不变8样本各3轮均通过（72/72），文本/完整transform/页数与R3基线一致。隔离omit-optional安装各1包，实际native/canvas/Skia加载均0，前后hash不变。4.10.38每轮1条上游generic Node提醒保留，非DOM缺失错误；历史major维护承诺未取得，不能说绝对安全。官方3条公开包公告及精确版本查询均未命中候选。

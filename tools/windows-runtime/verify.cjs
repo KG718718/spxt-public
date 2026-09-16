@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path');
-const {inventory,sha,safePath}=require('./common.cjs');
+const {inventory,sha,safePath,assertArchiveAllowed,productionEntries}=require('./common.cjs');
 function verify(root) {
   root=path.resolve(root);
   const actual=inventory(root),mf='manifest/runtime-manifest.json',hf='hashes/SHA256SUMS.txt';
@@ -19,7 +19,21 @@ function verify(root) {
   const calculated=actual.filter(f=>f.path!==hf).map(f=>f.sha256+'  '+f.path).join('\n')+'\n';
   if(fs.readFileSync(path.join(root,hf),'utf8')!==calculated)throw Error('Hash inventory mismatch');
   if(sha(fs.readFileSync(path.join(root,'runtime/node.exe')))!==m.nodeHash||sha(fs.readFileSync(path.join(root,'app/package-lock.json')))!==m.packageLockHash)throw Error('Identity mismatch');
-  return {files:actual.length,manifestHash:sha(fs.readFileSync(path.join(root,mf))),integrity:'PASS',distribution:m.nativeLicenseReview?.nativeReview==='complete'?'requires-separate-approval':'BLOCKED-native-license'};
+  let distribution='BLOCKED-native-license';
+  if(m.nativeLicenseReview?.route==='pure-js-npm'){
+    const license=m.nativeLicenseReview;assertArchiveAllowed(license);
+    const hashFile=f=>sha(fs.readFileSync(path.join(root,f)));
+    if(hashFile('manifest/dependencies.json')!==license.dependencyManifestHash||hashFile('manifest/closure-policy.json')!==license.policyHash||hashFile('licenses/node/LICENSE')!==license.nodeLicenseHash)throw Error('License proof identity mismatch');
+    const policy=JSON.parse(fs.readFileSync(path.join(root,'manifest/closure-policy.json'))),lock=JSON.parse(fs.readFileSync(path.join(root,'app/package-lock.json')));
+    const entries=productionEntries(lock,{omitOptional:true});
+    if(m.packageLockHash!==policy.packageLockSha256||entries.length!==20||m.dependencies.length!==20)throw Error('Reviewed closure mismatch');
+    if(actual.some(f=>/^app\/node_modules\//.test(f.path)&&(/(^|\/)(?:@napi-rs\/canvas[^/]*|canvas|pdf-parse)(?:\/|$)/i.test(f.path)||/\.(exe|node|dll|wasm)$/i.test(f.path))))throw Error('Forbidden production chain');
+    for(const entry of entries){const dep=m.dependencies.find(d=>d.path==='app/'+entry.path),p=JSON.parse(fs.readFileSync(path.join(root,'app',entry.path,'package.json')));if(!dep||dep.version!==entry.version||p.name!==dep.name||p.version!==dep.version)throw Error('Actual dependency mismatch');}
+    for(const entry of m.licenses)for(const f of entry.files){safePath(f.path);if(hashFile(f.path)!==f.sha256)throw Error('Original notice missing/changed');}
+    for(const f of [...policy.requiredPdfResources,...policy.requiredPdfNotices])if(!actual.some(x=>x.path==='app/node_modules/pdfjs-dist/'+f))throw Error('PDF resource missing');
+    distribution='prototype-license-closure-complete; tests and G1 remain separate';
+  }
+  return {files:actual.length,manifestHash:sha(fs.readFileSync(path.join(root,mf))),integrity:'PASS',distribution};
 }
 module.exports={verify};
 if(require.main===module)console.log(JSON.stringify(verify(process.argv[2])));

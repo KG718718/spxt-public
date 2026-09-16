@@ -3398,7 +3398,7 @@ let pdfjsLoader = null;
 
 async function loadPdfjs() {
     if (!pdfjsLoader) {
-        pdfjsLoader = import('pdfjs-dist/legacy/build/pdf.mjs');
+        pdfjsLoader = import('pdfjs-dist/build/pdf.mjs');
     }
     return pdfjsLoader;
 }
@@ -3457,26 +3457,49 @@ function buildPdfCoordinateText(items) {
 async function extractPdfTextVariants(filePath) {
     const pdfjs = await loadPdfjs();
     const bytes = new Uint8Array(fs.readFileSync(filePath));
-    const doc = await pdfjs.getDocument({
+    const pdfjsRoot = path.dirname(require.resolve('pdfjs-dist/package.json'));
+    const resourceDir = name => path.join(pdfjsRoot, name).replace(/\\/g, '/') + '/';
+    const loadingTask = pdfjs.getDocument({
         data: bytes,
-        disableWorker: true,
-        useSystemFonts: true
-    }).promise;
-
-    let defaultText = '';
-    let coordinateText = '';
-    for (let pageNo = 1; pageNo <= doc.numPages; pageNo++) {
-        const page = await doc.getPage(pageNo);
-        const content = await page.getTextContent();
-        defaultText += content.items.map(item => item.str || '').join('\n') + '\n';
-        coordinateText += buildPdfCoordinateText(content.items) + '\n';
-        page.cleanup();
+        useSystemFonts: true,
+        isEvalSupported: false,
+        cMapUrl: resourceDir('cmaps'),
+        cMapPacked: true,
+        standardFontDataUrl: resourceDir('standard_fonts'),
+        useWorkerFetch: false
+    });
+    let parseFailed = false;
+    try {
+        const doc = await loadingTask.promise;
+        let defaultText = '';
+        let coordinateText = '';
+        for (let pageNo = 1; pageNo <= doc.numPages; pageNo++) {
+            const page = await doc.getPage(pageNo);
+            let pageFailed = false;
+            try {
+                const content = await page.getTextContent();
+                defaultText += content.items.map(item => item.str || '').join('\n') + '\n';
+                coordinateText += buildPdfCoordinateText(content.items) + '\n';
+            } catch (error) {
+                pageFailed = true;
+                throw error;
+            } finally {
+                try { page.cleanup(); } catch (error) {
+                    if (!pageFailed) throw error;
+                    console.warn('PDF page cleanup failed after text extraction error');
+                }
+            }
+        }
+        return { defaultText: defaultText.trim(), coordinateText: coordinateText.trim() };
+    } catch (error) {
+        parseFailed = true;
+        throw error;
+    } finally {
+        try { await loadingTask.destroy(); } catch (error) {
+            if (!parseFailed) throw error;
+            console.warn('PDF document cleanup failed after text extraction error');
+        }
     }
-    await doc.destroy();
-    return {
-        defaultText: defaultText.trim(),
-        coordinateText: coordinateText.trim()
-    };
 }
 
 function uniqueList(values) {

@@ -1,5 +1,11 @@
 # Batch 1C — Runtime Build Prototype 结果
 
+## Batch 1C-R5 当前结论｜2026-09-16
+
+**BLOCKED — 完整回归被当前Windows测试环境阻断；未证明PDF迁移导致业务回归。** PDF.js精确4.10.38 generic及删除pdf-parse已在工作区实施；fresh20生产包无Canvas/Skia/额外native，实际server提取函数8样本三轮通过。原26套测试在浏览器和文档复验后25套完成，startup-filesystem因Windows symlink EPERM在14项后中止，余项未验证。测试退出非零与已证业务缺陷分开记录，不能放行。
+
+R4检查点f7dc4745b16e30b39d6e5401390d11098e84f555已提交/仅推开发分支；R5全回归未通过，不建立R5提交/推送、不用旧commit构建新文件。没有fresh Runtime/ZIP/最终许可闭包/Win11 G1，不是only G1 pending。保留全部变更和外置证据，未改业务规则/Windows权限、不进Batch2。详情见PDF-MIGRATION-RESULT.md及CHATGPT-HANDOFF.md。历史调查保留；下面只代表相应时点。
+
 ## Batch 1C-R4 当前结论｜2026-09-16
 
 **Batch 1C-R4 PASS；推荐pdfjs-dist@4.10.38 generic，仅允许提交迁移评审。** 官方npm无更晚正式4.x，三候选均用R3原8份合成PDF三轮8/8，总72/72；文本/完整transform/页数无退化，Node24实测。omit-optional安装各1包、canvas/Skia/native加载0、原生/WASM文件0、目录hash前后相同。4.10.38固定兼容提醒每轮1条，非零警告；不能隐去或宣称官方支持generic全部Node功能。安全官方包公告3条、精确版本查询未命中，历史major无已证维护承诺，不保证无漏洞。
@@ -55,7 +61,7 @@ fresh node_modules共1,131文件/98,604,168字节，**不是Runtime包**。Node2
 - R2修改：本目录RESULT、RUNTIME-BUILD-REPORT、VALIDATION-REPORT、NATIVE-LICENSE-CLOSURE、CHATGPT-HANDOFF，公开PROJECT、MASTER-PLAN；共7份tracked MD修改+1新增MD。
 - R2报告未额外提交/推送，暂存区为空；HEAD/远端为已推R1检查点。`git diff --stat`只计7份tracked文件，不能遗漏新增审计报告。
 - 外置证据：项目output/windows-installer-v1.1/batch-1c/dependency-audit-r2-01；同级3个审计助手不进入Git/Runtime。全新cache/安装材料仅用于依赖审计，无业务实例；没有清理/覆盖旧输出。
-- 明确未改：业务源码、package/lock、Install/Start、既有构建/测试/许可门禁、旧Runtime、main/v1.0.0。未访问内部/公司版、真实数据或账号配置、未启动应用服务、未发送邮件、未安装OCR。
+- 明确未改：业务源码、package/lock、Install/Start、既有构建/测试/许可门禁、旧Runtime、main/v1.0.0。未访问其他用途版本、真实数据或账号配置、未启动应用服务、未发送邮件、未安装OCR。
 
 下一步必须由上级决定继续R1原生闭包，或另立PDF依赖架构评估；本轮不实施替代方案，停止等待验收。
 

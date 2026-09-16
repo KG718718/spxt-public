@@ -5,6 +5,7 @@ const {createRequire}=require('node:module'),{pathToFileURL}=require('node:url')
 const {cleanEnvironment,inside,writeNew,writeJSON,sha}=require('../../windows-runtime/common.cjs');
 const {verify}=require('../../windows-runtime/verify.cjs');
 const stage=path.resolve(process.argv[2]),evidence=path.resolve(process.argv[3]),app=path.join(stage,'app'),node=path.join(stage,'runtime/node.exe');
+const fixtures=path.resolve(process.argv[4]);
 if(!/^E:\\/i.test(evidence)||inside(stage,evidence)||inside(path.resolve(__dirname,'../../..'),evidence)||evidence===stage)throw Error('Evidence must be external to package/source on E drive');
 fs.mkdirSync(evidence);fs.mkdirSync(path.join(evidence,'temp'));
 const instance=path.join(evidence,'合成实例 with spaces');fs.mkdirSync(instance);
@@ -19,7 +20,7 @@ const report={qualification:'Windows build host, external network NOT blocked; n
 let child,stopped,output='',port;
 async function check(name,fn){await fn();report.checks.push(name);console.log('PASS '+name);}
 async function start(){
-  port=0;child=cp.spawn(node,[path.join(app,'server.js')],{env,cwd:app,windowsHide:true,stdio:['ignore','pipe','pipe']});
+  port=0;child=cp.spawn(node,['--no-addons',path.join(app,'server.js')],{env,cwd:app,windowsHide:true,stdio:['ignore','pipe','pipe']});
   stopped=new Promise(resolve=>{child.once('exit',resolve);child.once('error',e=>{output+='spawn failed: '+e.message;resolve();});});
   child.stdout.on('data',b=>{output+=b;const match=String(b).match(/running at http:\/\/127\.0\.0\.1:(\d+)/);if(match)port=+match[1];});child.stderr.on('data',b=>output+=b);
   for(let i=0;i<120&&!port&&child.exitCode===null;i++)await new Promise(r=>setTimeout(r,100));
@@ -53,12 +54,12 @@ function samplePDF(){
   let token;
   await check('V06 login',async()=>{const r=await call('/api/login',{username,password});assert.equal(r.status,200);token=r.data.token;assert.ok(token);});
   const load=createRequire(path.join(app,'package.json')),pdf=samplePDF();
-  await check('V07 synthetic PDF library text (NOT full invoice UI)',async()=>{
-    const pdfjs=await import(pathToFileURL(load.resolve('pdfjs-dist/legacy/build/pdf.mjs')).href);
-    const doc=await pdfjs.getDocument({data:new Uint8Array(pdf),disableWorker:true,useSystemFonts:true}).promise;
-    try{const page=await doc.getPage(1),text=await page.getTextContent();assert.match(text.items.map(i=>i.str).join(' '),/Synthetic runtime PDF 12345/);}finally{await doc.destroy();}
-    const {PDFParse}=load('pdf-parse'),parser=new PDFParse({data:new Uint8Array(pdf)});
-    try{assert.match((await parser.getText()).text,/Synthetic runtime PDF 12345/);}finally{await parser.destroy();}
+  await check('V07 actual server extraction functions, eight fixed synthetic PDFs',async()=>{
+    const probe=path.join(__dirname,'pdf-business.cjs');
+    const bytes=cp.execFileSync(node,['--permission','--allow-fs-read='+app,'--allow-fs-read='+fixtures,'--allow-fs-read='+probe,'--no-addons',probe,app,fixtures],{env,cwd:app,windowsHide:true,timeout:60000,maxBuffer:4*1024*1024});
+    const result=JSON.parse(bytes);assert.equal(result.status,'PASS');assert.equal(result.cases.length,8);assert.ok(result.cases.every(r=>r.pass));
+    assert.deepEqual(result.canvasLoads,[]);assert.deepEqual(result.nativeLoads,[]);assert.deepEqual(result.networkAttempts,[]);
+    writeNew(path.join(evidence,'pdf-business.json'),bytes);report.pdfTrace={canvasLoads:0,skiaLoads:0,nativeAddonLoads:0,externalNetworkAttempts:0,qualification:'Actual server extraction functions in separate guarded process; not a viewer or OS-wide trace'};
   });
   await check('V08 XLSX via original export API, no Office',async()=>{
     const r=await fetch('http://127.0.0.1:'+port+'/api/exports?module=admin&format=xlsx&scope=all',{signal:AbortSignal.timeout(10000),headers:{Authorization:'Bearer '+token}});

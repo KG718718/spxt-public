@@ -35,14 +35,14 @@ function inventory(root) {
   }
   walk(root);return result.sort((a,b)=>a.path.localeCompare(b.path,'en'));
 }
-function productionEntries(lock) {
+function productionEntries(lock, {omitOptional=false}={}) {
   if(lock.lockfileVersion!==3 || !lock.packages?.[''])throw Error('Expected v3 lock');
   const entries=[];
   for(const [key,item] of Object.entries(lock.packages)) {
     if(!key)continue;
     safePath(key);
     if(!key.startsWith('node_modules/') || item.link)throw Error('Unsafe dependency path/link');
-    if(item.dev)continue;
+    if(item.dev || (omitOptional && item.optional))continue;
     const match=(values,want)=>!values || (!values.includes('!'+want) && (values.includes(want)||values.every(x=>x.startsWith('!'))));
     if(!match(item.os,'win32')||!match(item.cpu,'x64'))continue;
     const u=new URL(item.resolved);
@@ -79,6 +79,10 @@ function inspectPE(b) {
   return {machine:'AMD64',imports,delayImports};
 }
 function assertArchiveAllowed(license) {
+  if(license.route==='pure-js-npm') {
+    if(license.nativeReview!=='NOT APPLICABLE TO NEW RUNTIME GRAPH'||license.unresolvedDistributionItems!==0||license.additionalNativeFiles!==0||license.dependencyCount!==20||license.originalNoticeCount<24||!/^[a-f0-9]{64}$/.test(license.dependencyManifestHash||'')||!/^[a-f0-9]{64}$/.test(license.policyHash||'')||!/^[a-f0-9]{64}$/.test(license.nodeLicenseHash||''))throw Error('Pure-JS license/closure evidence missing; no ZIP generated');
+    return true;
+  }
   if(license.nativeReview!=='complete'||!Array.isArray(license.nativeEvidence)||!license.nativeEvidence.length)throw Error('Native license gate: review and exact component evidence required; no ZIP generated');
   for(const item of license.nativeEvidence)if(!/^[a-f0-9]{64}$/.test(item.sha256)||!safePath(item.path).startsWith('licenses/native/'))throw Error('Invalid native evidence');
   return true;

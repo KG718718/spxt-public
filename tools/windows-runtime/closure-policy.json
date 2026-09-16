@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "review": "Batch 1C-R5 OPTIONAL-DEPENDENCY-AUDIT.md",
+  "packageLockSha256": "111d06d74430c218ee90eb7fcc26ecb8c76888f3395f465c46f7fa1b9c7721ee",
+  "productionPackageCount": 20,
+  "pdfjsVersion": "4.10.38",
+  "optionalPolicy": "omit-all-reviewed-text-only",
+  "allowedOptionalRoot": {"name": "pdfjs-dist", "dependency": "@napi-rs/canvas", "range": "^0.1.65"},
+  "additionalNativeFiles": 0,
+  "requiredPdfNotices": ["LICENSE", "cmaps/LICENSE", "standard_fonts/LICENSE_FOXIT", "standard_fonts/LICENSE_LIBERATION"],
+  "requiredPdfResources": ["build/pdf.mjs", "build/pdf.worker.mjs", "cmaps/UniGB-UCS2-H.bcmap", "cmaps/Adobe-GB1-UCS2.bcmap", "standard_fonts/LiberationSans-Regular.ttf"]
+}

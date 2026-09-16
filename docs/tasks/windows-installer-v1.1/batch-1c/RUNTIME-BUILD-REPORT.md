@@ -1,5 +1,13 @@
 # Batch 1C — Runtime 构建报告
 
+## Batch 1C-R5｜未执行正式Runtime构建
+
+R4提交f7dc474已保存/推送。R5工作区新lock fresh生产依赖审计20包/977文件/41,243,947字节，native/Canvas/Skia0，许可原文初步记录23份。**这是依赖审计暂存，不是Runtime；没有包内Node、新manifest、最终许可集合、ZIP或解包验收。**
+
+构建器/校验器与modules/host-smoke已适配为工作区草稿；新的精确lock与optional规则、20包必需可达性、资源/无原生检查、原始许可及hash门禁保留。旧Canvas gate不再适用于新图但仍保留历史分支。ZIP需全回归、完整新包许可、Runtime smoke通过后独立授权门禁；本轮尚未实现/执行最终归档收口。
+
+原全回归剩startup-filesystem权限阻断，按任务要求不建立R5checkpoint；因此不能以新源码commit fresh build。Runtime大小/文件数/ZIP SHA/source与build-tool新commit均N/A，未复用旧node_modules或旧Runtime身份。license unresolved=N/A，不能预填0。补测通过后续行原R5。以下旧构建信息不代表本轮。
+
 ## Batch 1C-R2 当前状态｜只做依赖审计，未重建Runtime
 
 R1的10文件已提交/推送为`2aeaa4089520a99829f1b9981b7b5ea2bfa9e295`。本轮以该commit的原package/lock在新的外置`dependency-audit-r2-01/fresh-input`安装生产依赖，不复制32个应用文件、不启动server、不调用Runtime构建器。
