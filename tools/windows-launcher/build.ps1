@@ -13,6 +13,7 @@ $env:GOOS='windows';$env:GOARCH='amd64';$env:CGO_ENABLED='0';$env:GOTOOLCHAIN='l
 $env:GOCACHE=Join-Path (Split-Path $taskOutput) 'go-cache'
 $env:GOTMPDIR=Join-Path (Split-Path $taskOutput) 'go-temp'
 New-Item -ItemType Directory -Force -Path $env:GOCACHE,$env:GOTMPDIR | Out-Null
+$env:TEMP=$env:GOTMPDIR;$env:TMP=$env:GOTMPDIR
 $env:GOPROXY='off';$env:GOSUMDB='off'
 Push-Location $PSScriptRoot
 try {

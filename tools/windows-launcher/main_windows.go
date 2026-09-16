@@ -328,6 +328,9 @@ func (c *controller) makeWindow() error {
 		call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr(b.text))), 0x50010000, b.x, 110, 170, 35, hwnd, b.id, inst, 0)
 	}
 	call(user32, "ShowWindow", hwnd, 5)
+	// First ShowWindow can inherit SW_HIDE from the parent STARTUPINFO.
+	// The user-facing control panel must remain reachable even from a hidden parent.
+	call(user32, "ShowWindow", hwnd, 5)
 	call(user32, "UpdateWindow", hwnd)
 	call(user32, "SetTimer", hwnd, 1, 500, 0)
 	return nil

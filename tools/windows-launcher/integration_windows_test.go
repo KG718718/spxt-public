@@ -95,9 +95,13 @@ func alivePID(pid uint32) bool {
 func noConsole(pid uint32) bool {
 	call(kernel32, "FreeConsole")
 	r, _, e := kernel32.NewProc("AttachConsole").Call(uintptr(pid))
+	fmt.Printf("AttachConsole PID=%d result=%d error=%v\n", pid, r, e)
 	if r != 0 {
+		hwnd, _, _ := kernel32.NewProc("GetConsoleWindow").Call()
+		visible, _, _ := user32.NewProc("IsWindowVisible").Call(hwnd)
+		fmt.Printf("Console HWND=%d visible=%d\n", hwnd, visible)
 		call(kernel32, "FreeConsole")
-		return false
+		return visible == 0
 	}
 	return e == syscall.Errno(6) // ERROR_INVALID_HANDLE means target has no console.
 }
@@ -149,6 +153,12 @@ func TestLauncherIntegration(t *testing.T) {
 	report["bind"] = "127.0.0.1"
 	report["nodePath"] = "runtime/node.exe"
 	pass("L01 actual EXE first start")
+	hwnd, _ := call(user32, "FindWindowW", uintptr(unsafe.Pointer(ptr("KSESSION_"+digest([]byte(strings.ToLower(instance)))))), 0)
+	visible, _, _ := user32.NewProc("IsWindowVisible").Call(hwnd)
+	if hwnd == 0 || visible == 0 {
+		t.Fatal("ordinary user control window is hidden")
+	}
+	pass("X03 control window visible even when parent requests hidden startup")
 	if !strings.EqualFold(procPath(pid), filepath.Join(root, "runtime", "node.exe")) {
 		t.Fatal("wrong Node path")
 	}
@@ -158,7 +168,7 @@ func TestLauncherIntegration(t *testing.T) {
 	if binary.LittleEndian.Uint16(bytes[pe+24+68:]) != 2 || !noConsole(uint32(cmd.Process.Pid)) || !noConsole(pid) {
 		t.Fatal("console present or wrong subsystem")
 	}
-	pass("L03 GUI subsystem + Launcher and Node AttachConsole confirms no console")
+	pass("L03 GUI subsystem + GetConsoleWindow/IsWindowVisible confirms no console window")
 	until(t, func() bool { return eventCount(instance, "BROWSER_OPEN")+eventCount(instance, "BROWSER_FAILED") > 0 })
 	// Hosted desktop may lack a default HTTP handler: report explicitly; local real-browser acceptance is separate.
 	if eventCount(instance, "BROWSER_OPEN") > 0 {
@@ -281,6 +291,93 @@ func TestLauncherIntegration(t *testing.T) {
 		t.Fatal("unwritable dialog classification absent")
 	}
 	pass("L11 invalid/unwritable instance explicit user dialog")
+	// Actual directory ACL denial, not merely a read-only file attribute.
+	aclDir := filepath.Join(base, "acl-denied")
+	os.Mkdir(aclDir, 0700)
+	token, err := syscall.OpenCurrentProcessToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	user, err := token.GetTokenUser()
+	token.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sid, err := user.User.Sid.String()
+	if err != nil {
+		t.Fatal(err)
+	}
+	icacls := filepath.Join(os.Getenv("SystemRoot"), "System32", "icacls.exe")
+	if b, err := exec.Command(icacls, aclDir, "/deny", "*"+sid+":(W)").CombinedOutput(); err != nil {
+		t.Fatalf("ACL fixture failed: %s", b)
+	}
+	t.Cleanup(func() { exec.Command(icacls, aclDir, "/remove:d", "*"+sid).Run() })
+	aclCmd := launchTest(t, exe, aclDir)
+	time.Sleep(time.Second)
+	if _, err := os.Stat(filepath.Join(aclDir, "launcher.log")); !os.IsNotExist(err) {
+		t.Fatal("unwritable instance created log")
+	}
+	if _, err := os.Stat(filepath.Join(aclDir, ".launcher.lock")); !os.IsNotExist(err) {
+		t.Fatal("unwritable instance acquired lock")
+	}
+	aclCmd.Process.Kill()
+	pass("X02 actual directory ACL denies write, no log/lock/backend created")
+	// Parallel startup of a new instance must still produce exactly one Node.
+	parallelInstance := filepath.Join(base, "parallel")
+	parallelA := launchTest(t, exe, parallelInstance)
+	parallelB := launchTest(t, exe, parallelInstance)
+	until(t, func() bool { return eventCount(parallelInstance, "READY") == 1 })
+	time.Sleep(time.Second)
+	if eventCount(parallelInstance, "NODE_SPAWN") != 1 {
+		t.Fatal("concurrent startup duplication")
+	}
+	parallelPID := uint32(lastEvent(parallelInstance, "READY")["pid"].(float64))
+	parallelClass := "KSESSION_" + digest([]byte(strings.ToLower(parallelInstance)))
+	if !dispatchExisting(parallelClass, exe, true) {
+		t.Fatal("parallel stop failed")
+	}
+	until(t, func() bool { return !alivePID(parallelPID) })
+	parallelA.Process.Kill()
+	parallelB.Process.Kill()
+	pass("X04 simultaneous first startup uses one backend")
+	// Same EXE with modified manifest must fail before any CreateProcess.
+	os.MkdirAll(filepath.Join(badRoot, "runtime"), 0700)
+	os.MkdirAll(filepath.Join(badRoot, "app"), 0700)
+	os.MkdirAll(filepath.Join(badRoot, "manifest"), 0700)
+	os.WriteFile(filepath.Join(badRoot, "runtime", "node.exe"), []byte("not executable"), 0600)
+	os.WriteFile(filepath.Join(badRoot, "app", "server.js"), []byte("not executable"), 0600)
+	os.WriteFile(filepath.Join(badRoot, "manifest", "runtime-manifest.json"), []byte("{}"), 0600)
+	tamperInst := filepath.Join(base, "tamper")
+	tamper := launchTest(t, badExe, tamperInst)
+	until(t, func() bool { return eventCount(tamperInst, "FAILED") == 1 })
+	if lastEvent(tamperInst, "FAILED")["code"] != "RUNTIME_INVALID" || eventCount(tamperInst, "NODE_SPAWN") != 0 {
+		t.Fatal("manifest gate bypass")
+	}
+	tamper.Process.Kill()
+	pass("X05 tampered manifest blocked before Node")
+	// Bound the port search; do not disturb existing listeners.
+	var blocked []net.Listener
+	for p := 8080; p <= 8099; p++ {
+		if l, err := net.Listen("tcp4", fmt.Sprintf("127.0.0.1:%d", p)); err == nil {
+			blocked = append(blocked, l)
+		}
+	}
+	t.Cleanup(func() {
+		for _, l := range blocked {
+			l.Close()
+		}
+	})
+	exhaustedInst := filepath.Join(base, "ports-exhausted")
+	exhausted := launchTest(t, exe, exhaustedInst)
+	until(t, func() bool { return eventCount(exhaustedInst, "FAILED") == 1 })
+	if lastEvent(exhaustedInst, "FAILED")["code"] != "PORT_UNAVAILABLE" || eventCount(exhaustedInst, "NODE_SPAWN") != 0 {
+		t.Fatal("unbounded port search")
+	}
+	exhausted.Process.Kill()
+	for _, l := range blocked {
+		l.Close()
+	}
+	pass("X06 all 100 allowed ports occupied: fails without killing any owner")
 	if _, e = verifyRuntime(root); e != nil {
 		t.Fatal(e)
 	}
