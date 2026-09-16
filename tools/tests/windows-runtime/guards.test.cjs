@@ -27,4 +27,8 @@ for(const change of [{unresolvedDistributionItems:1},{additionalNativeFiles:1},{
 const optionalLock={...lock,packages:{...lock.packages,'node_modules/native':{...valid,optional:true}}};
 assert.equal(productionEntries(optionalLock).length,2);checks++;
 assert.equal(productionEntries(optionalLock,{omitOptional:true}).length,1);checks++;
+// Policy pins Git's LF blob, not the checkout's platform-specific CRLF bytes.
+const fs=require('node:fs'),path=require('node:path'),{sha}=require('../../windows-runtime/common.cjs');
+const reviewed=JSON.parse(fs.readFileSync(path.join(__dirname,'../../windows-runtime/closure-policy.json')));
+assert.equal(sha(Buffer.from(fs.readFileSync(path.join(__dirname,'../../../package-lock.json'),'utf8').replace(/\r\n/g,'\n'))),reviewed.packageLockSha256);checks++;
 console.log(JSON.stringify({suite:'runtime-guards',passed:checks}));

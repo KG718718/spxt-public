@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "review": "Batch 1C-R5 OPTIONAL-DEPENDENCY-AUDIT.md",
-  "packageLockSha256": "111d06d74430c218ee90eb7fcc26ecb8c76888f3395f465c46f7fa1b9c7721ee",
+  "packageLockSha256": "7e650d8d4141d888ab7cc81da25fa094f0e36ffaa0f2152d5066346633e8b2b5",
   "productionPackageCount": 20,
   "pdfjsVersion": "4.10.38",
   "optionalPolicy": "omit-all-reviewed-text-only",
