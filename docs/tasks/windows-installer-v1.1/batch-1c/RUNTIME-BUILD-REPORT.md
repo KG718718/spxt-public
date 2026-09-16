@@ -1,5 +1,17 @@
 # Batch 1C — Runtime 构建报告
 
+## Batch 1C-R1 续行
+
+检查点468d62357fe4861a9a3015df23a7b6c1862b858a已提交并推送指定开发分支；原构建工具现可由该commit追溯。**旧build-02不是用此commit重新构建**，其source/manifest/toolFiles保持原值。
+
+本轮收集54份原始公开证据，新增只读下载收集器及证据一致性测试；详见[NATIVE-LICENSE-CLOSURE.md](NATIVE-LICENSE-CLOSURE.md)。仍有3个未关闭分发工作项，license gate未改。
+
+按任务书顺序，许可未PASS即不进行fresh npm ci、新staging、新manifest、新ZIP或解包验证。以下为旧构建实测记录，不能当作本轮重建结果。Runtime ZIP/source build tool commit/ZIP大小/ZIP SHA均无新的值，Artifact=N/A。未改变旧32文件应用、23依赖、Node哈希或旧1199文件目录。
+
+R1新增工具/报告未再次提交，HEAD仍为检查点。证据在源码外native-license-r1、native-license-r1-02，既有build-01/build-02和诊断实例不清理、不覆盖。
+
+## 以下为初次1C构建记录
+
 ## 构建身份与操作
 
 仅公开仓库 `KG718718/spxt-public`；源码 commit、Node/npm、lock/manifest 哈希见 [RESULT](RESULT.md)。构建工具目前未提交，其实际字节哈希随生成的 manifest.build.toolFiles 保存；取件应用 commit 不冒充构建工具 commit。

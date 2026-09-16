@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## Windows installer v1.1 / Batch 1C-R1 续行｜2026-09-16
+
+已建立并推送检查点`468d62357fe4861a9a3015df23a7b6c1862b858a`到codex/windows-installer-v1.1（25文件），main/v1.0.0未动。随后仅收集公开原生来源和许可证据，54份原文及hash齐备，但Rust解析依赖、Skia实际链接来源/组件图、最终适用声明仍有3个未关闭分发工作项。**Batch 1C FAIL — native distribution evidence incomplete**；不生成ZIP、不改许可门禁、不进入Batch 2/3。
+
+29守卫+14完整性反例复跑通过，新增75项证据一致性检查通过；旧Runtime1199文件hash不变。没有fresh Runtime构建或G1：当前是Windows10开发机，没有合格Win11环境，已编写22项G1准备说明。没有访问其他版本/真实数据、改业务代码或安装/发布。R1续行工具与报告仍未提交，HEAD为检查点；检查点push不代表R1报告已push。详见[本轮结果](docs/tasks/windows-installer-v1.1/batch-1c/RESULT.md)、[原生许可缺项](docs/tasks/windows-installer-v1.1/batch-1c/NATIVE-LICENSE-CLOSURE.md)、[交接卡](docs/tasks/windows-installer-v1.1/batch-1c/CHATGPT-HANDOFF.md)。以下历史状态不覆盖本节。
+
 ## 固定交付规则：网页版交接卡｜2026-09-16
 
 用户确认每个Batch/子任务结束自动生成自包含CHATGPT-HANDOFF.md，最终回复完整代码块输出，并在Windows允许时复制到剪贴板；失败不改变技术验收结果。规则已写入公开AGENTS.md与Master Plan，立即生效。当前已补[Batch 1C交接卡](docs/tasks/windows-installer-v1.1/batch-1c/CHATGPT-HANDOFF.md)，原始报告与证据保留。本次仅文档规则落地，未复测、未构建、未进入新Batch；1C仍为FAIL，不放行Batch 2。

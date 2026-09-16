@@ -1,5 +1,45 @@
 # Batch 1C — Runtime Build Prototype 结果
 
+## Batch 1C-R1 当前结论｜2026-09-16
+
+**Batch 1C FAIL — native distribution evidence incomplete**。未进入Batch 2/3。
+
+### 检查点已完成
+
+先核对全部已修改/未跟踪文件，允许清单25文件，无依赖、缓存、ZIP、staging、实例、日志、私有配置或真实数据入暂存区。敏感凭据模式与git diff --check通过，按明确授权提交：
+
+- checkpoint / 当前HEAD：`468d62357fe4861a9a3015df23a7b6c1862b858a`。
+- commit：`windows-runtime: checkpoint batch 1a-1c prototype`。
+- 25 files changed, 1613 insertions(+), 4 deletions(-)。检查点后工作树clean。
+- 已普通快进push到`codex/windows-installer-v1.1`，远端回读同SHA；未推main、未force push、无PR/Release。
+- 远端main与v1.0.0仍为`84cbb324a4f63bef094d2c21d70eba841205a7a7`。本轮未对Release执行写操作。
+
+### 原生闭包调查与停止点
+
+新增[NATIVE-LICENSE-CLOSURE.md](NATIVE-LICENSE-CLOSURE.md)，收集54份官方npm/GitHub/Gitiles原文和逐文件来源/SHA，确认精确Canvas/Skia提交、包内native、ICU资源及公开发布证明。仍有U1 Rust解析依赖、U2 Skia实际链接输入与组件图、U3最终适用声明3个未关闭分发工作项；具体证据及最短续行路径见报告。
+
+不是简单“查不到MIT”：已取得多份原始声明，但该提交没有Cargo.lock，公开Windows CI artifact过期，发布证明没有原生组件全表。未绕过或改写现有license gate，未修改package-lock，未升级/重编native。
+
+由于许可未PASS，本轮**没有**fresh Runtime构建、Runtime ZIP、ZIP解包复验。旧build-02未改；其source commit仍为49b3e35c68468b3c61e3ad19ed379ce057d17886，不能冒称由检查点commit重新构建。
+
+当前Windows10开发机不符合G1。新增[G1-ENVIRONMENT-REQUIREMENTS.md](G1-ENVIRONMENT-REQUIREMENTS.md)，包含准入、环境记录、同一ZIP hash、只读包/包外实例、22项用例与真实浏览器证据要求。未创建VM、改防火墙、启动业务服务或伪报G1。
+
+### 本轮验证与改动
+
+- 29项既有守卫、14项新合成完整性反例复跑通过。
+- 新证据测试75项通过，覆盖54份原文hash、来源边界、精确提交、attestation摘要对应及native/ICU实际字节；没有进行Sigstore验签，不能称许可批准。
+- 旧build-02：1199文件完整性复验PASS、distribution仍BLOCKED-native-license；manifest hash不变。
+- 原12项功能诊断为前轮结果，本轮不复跑、不升级为G1。无实际浏览器/截图、无离线或非管理员新结论。
+- 新增：本目录NATIVE-LICENSE-CLOSURE.md、G1-ENVIRONMENT-REQUIREMENTS.md，tools/windows-runtime/collect-native-evidence.cjs、tools/tests/windows-runtime/native-evidence.test.cjs。
+- 修改：本目录RESULT、RUNTIME-BUILD-REPORT、VALIDATION-REPORT、CHATGPT-HANDOFF，公开PROJECT与MASTER-PLAN。
+- 未修改业务源码、锁文件、Install/Start、原构建门禁、既有Runtime、v1.0.0。未访问其他用途版本/真实数据、未发送邮件。
+
+本轮续行资料保留在工作树，未额外提交/推送；**当前HEAD和远端仍为已完成的检查点468d623**。Git状态非clean（6份已跟踪Markdown修改+4新增文件），暂存区为空；不要将检查点已推送理解为本轮续行报告也已推送。停止等待上级验收，不自动进入新阶段。
+
+原始证据在源码外`output/windows-installer-v1.1/batch-1c/native-license-r1-02/`：sources.json SHA256 `01f10823fadb4573c352e99fc3b0545e934c89b22fda1c79fb9d928f1a8f6e6c`；native-review-check.json SHA256 `ef99ec68d29cdb1c28c3493b928809bd9ad60bd84f547a16c3ef654f3d7bdee6`。初次收集目录及所有旧失败现场保留，不进入Git/Runtime。
+
+## 以下为初次1C历史报告（保留原时点事实）
+
 日期：2026-09-16。**Batch 1C FAIL，未达到验收条件，不能进入 Batch 2。**
 
 已完成构建/验证脚本和一份可运行的 Runtime 暂存目录；没有生成要求的 Runtime ZIP。不是 Setup、Launcher、Release 或 v1.1.0。

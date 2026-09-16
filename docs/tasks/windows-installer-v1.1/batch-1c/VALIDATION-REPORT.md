@@ -1,5 +1,21 @@
 # Batch 1C — 验证报告
 
+## Batch 1C-R1 复核｜2026-09-16
+
+本轮29项runtime-guards复跑PASS；14项合成完整性反例在新建integrity-r1目录PASS；native-evidence.test.cjs **75项PASS**。后者是来源/hash/身份/缺项的一致性校验，不是许可PASS；npm attestations只解码检查对应关系，未进行签名验证。
+
+最终9个CJS语法检查与build.ps1语法解析通过；tracked与4个新增文件diff空白检查通过（首次发现新报告末尾空行，已修正复查）。32个应用白名单文件相对冻结main差异为0。新增/修改文件敏感凭据模式未命中；未更改Git行尾配置，LF/CRLF提示保留。
+
+证据收集54份成功、2个404（Cargo.lock及探查jconfig.h.in），均原样记录。没有删除失败记录或用“收集完成”替代组件闭包。sources.json/native-review-check.json及原文保存在源码外native-license-r1-02；报告列全URL、revision和SHA。
+
+旧Runtime完整性复验：1199文件、manifest SHA256 `0c9967b54b219a26d484beb16f2b194c1f8659875c2f76dbc7a8e5076e8b101c` 不变；distribution仍BLOCKED-native-license。没有生成/解压Runtime ZIP，不得称ZIP复验PASS。
+
+本机Win32_OperatingSystem只读核验为Windows10专业版10.0.19045/build19045/x64，不满足干净Win11要求。**G1 ENVIRONMENT BLOCKED**；详见[G1准备说明](G1-ENVIRONMENT-REQUIREMENTS.md)，22项正式用例本轮均未执行，无真实浏览器截图。未改网络/ACL，未创建VM，未启动应用服务。
+
+下列原12项功能诊断是历史结果，本轮未重跑。未用旧截图/CI/PATH隔离冒充新G1。原业务测试未复跑（未改业务代码）。最终技术状态仍为FAIL，原因是native distribution evidence incomplete；不是仅因测试环境不足而报告BLOCKED。
+
+## 以下为初次1C验证记录
+
 **正式 G1 未通过验收门禁。** 下列 PASS 仅描述 Windows 10 开发机构建/隔离诊断，不能替代 Windows 11 x64 干净机、真实浏览器及离线证明。
 
 ## 环境与隔离

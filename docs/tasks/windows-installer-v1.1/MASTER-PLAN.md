@@ -1,6 +1,6 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
-状态：Batch 0/1A/1B已获批准；Batch 1C已实施但FAIL，原生许可及干净Windows 11离线G1未完成，没有Runtime ZIP，不允许进入Batch 2。当前仅固定交接卡规则，不开展新Batch。
+状态：Batch 0/1A/1B已获批准；Batch 1C-R1已建立并推送检查点468d623，收集54份原生来源证据，但仍有3个未关闭分发工作项，结论FAIL。许可门禁保持，未fresh构建/生成Runtime ZIP；干净Windows 11离线G1环境也未具备。不允许进入Batch 2。本轮续行报告与收集工具尚未提交，详见batch-1c/RESULT.md。
 记录日期：2026-09-16。范围仅为公开仓库 [KG718718/spxt-public](https://github.com/KG718718/spxt-public)。
 
 ## 已确认基线与入口
