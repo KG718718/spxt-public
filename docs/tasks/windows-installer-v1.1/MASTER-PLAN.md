@@ -1,6 +1,6 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
-状态：Batch 0/1A/1B已获批准；R1结果已提交/推送检查点2aeaa40。Batch1C-R2完成135文件审计及原lock fresh安装23包，确认pdfjs-dist独立引入并加载Canvas/Skia，删除条件D失败（B亦未满足），结论BLOCKED。未删依赖、未改业务、未重建Runtime或生成ZIP，原3个许可缺项及干净Win11G1阻塞保留，不允许进入Batch2。R2八份报告/索引文档尚未额外提交，详见batch-1c/RESULT.md和DEPENDENCY-USAGE-AUDIT.md。
+状态：Batch0/1A/1B已批准；R2八份文档已提交/推送检查点8b177a0。Batch1C-R3架构Spike PASS：官方PDF.js4.8.69 generic无需canvas/Skia/native，8类合成PDF三轮通过；仅证明存在可行替代，不批准正式降级/迁移。需上级选择历史版本维护成本、最新6.3.289纯文本边界或返回R1许可路线。正式依赖/业务/构建门禁未改，Runtime原许可/G1阻塞保留，不进入Batch2。R3报告及索引未提交/推送；首轮隔离失效已披露并作废复测，详见batch-1c/PDF-ARCHITECTURE-SPIKE.md、SECURITY-COMPARISON.md及CHATGPT-HANDOFF.md。
 记录日期：2026-09-16。范围仅为公开仓库 [KG718718/spxt-public](https://github.com/KG718718/spxt-public)。
 
 ## 已确认基线与入口

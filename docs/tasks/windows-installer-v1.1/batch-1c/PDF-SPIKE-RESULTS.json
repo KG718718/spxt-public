@@ -1,0 +1,1968 @@
+{
+  "schemaVersion": 1,
+  "batch": "1C-R3",
+  "status": "PASS",
+  "classification": "viable text-only PDF alternative found",
+  "scope": "architecture spike only; no production migration",
+  "checkedOn": "2026-09-16",
+  "sourceCommit": "8b177a0026f34067fb66a9ad5fa715a577ff56bc",
+  "checkpointPushVerified": true,
+  "platform": "Windows 10 Pro 10.0.19045 x64 development host; NOT clean Win11 G1",
+  "node": "v24.21.0",
+  "npm": "11.19.0",
+  "runtimeArtifact": null,
+  "productionDependencyChanges": false,
+  "fixtureVersion": "fixtures-v2",
+  "fixtures": [
+    {
+      "file": "01-english.pdf",
+      "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+      "bytes": 1445,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "SYNTHETIC TEST ONLY",
+          "Ordinary PDF text extraction."
+        ]
+      ],
+      "expectedEmpty": false,
+      "font": "Helvetica",
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "02-chinese.pdf",
+      "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+      "bytes": 8859,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "合成测试发票",
+          "购买方示例公司",
+          "销售方演示公司",
+          "金额12345.67"
+        ]
+      ],
+      "expectedEmpty": false,
+      "font": "NotoSubset",
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "03-multipage.pdf",
+      "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+      "bytes": 22693,
+      "expectedPages": 3,
+      "expectedText": [
+        [
+          "SYNTHETIC PAGE 1",
+          "12345.67"
+        ],
+        [
+          "SYNTHETIC PAGE 2",
+          "987.65"
+        ],
+        [
+          "SYNTHETIC PAGE 3",
+          "END"
+        ]
+      ],
+      "expectedEmpty": false,
+      "font": "Vera",
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "04-embedded-font.pdf",
+      "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+      "bytes": 21789,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "EMBEDDED VERA FONT",
+          "Invoice TESTINV20260001",
+          "Total 12345.67"
+        ]
+      ],
+      "expectedEmpty": false,
+      "font": "Vera",
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "05-cmap-nonembedded.pdf",
+      "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+      "bytes": 2440,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "非嵌入字体样本",
+          "中文测试",
+          "金额987.65"
+        ]
+      ],
+      "expectedEmpty": false,
+      "font": "STSong-Light",
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "06-numbers.pdf",
+      "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+      "bytes": 1543,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "SYNTHETIC INVOICE - NOT A REAL DOCUMENT",
+          "INVOICE TESTINV20260001",
+          "TAX ID SYNTHETIC-TAX-001",
+          "NET 12345.67",
+          "TAX 740.74",
+          "TOTAL 13086.41",
+          "LEADING ZERO 00001234567890"
+        ]
+      ],
+      "expectedEmpty": false,
+      "font": "Helvetica",
+      "rotation": 0,
+      "synthetic": true
+    },
+    {
+      "file": "07-rotation.pdf",
+      "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+      "bytes": 21753,
+      "expectedPages": 1,
+      "expectedText": [
+        [
+          "ROTATED PAGE 90",
+          "AMOUNT 12345.67"
+        ]
+      ],
+      "expectedEmpty": false,
+      "font": "Vera",
+      "rotation": 90,
+      "synthetic": true
+    },
+    {
+      "file": "08-scanned.pdf",
+      "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+      "bytes": 4211,
+      "expectedPages": 1,
+      "expectedText": [
+        []
+      ],
+      "expectedEmpty": true,
+      "font": "Helvetica",
+      "rotation": 0,
+      "synthetic": true
+    }
+  ],
+  "fixtureQA": "8 PDFs / 10 rendered pages inspected; independent pypdf expected text checks passed",
+  "procedure": {
+    "install": "npm install --ignore-scripts --omit=dev --omit=optional, except A keeps canvas0.1.80 through experimental overrides; never delete installed optional packages by hand",
+    "repetitions": 3,
+    "parsing": "in-memory Uint8Array; getDocument/getPage/getTextContent; isEvalSupported:false; local CMap and standard fonts with forward-slash paths",
+    "cleanup": "loadingTask.destroy(); formal source uses doc.destroy()",
+    "network": "install/research online; extraction fetch/http/https/net blocked in JS guard, no observed attempt; not system-wide offline evidence",
+    "performance": "fresh processes, not OS cold cache; host scheduling noise; not a production benchmark"
+  },
+  "candidates": [
+    {
+      "id": "a_exact-legacy",
+      "executed": true,
+      "package": {
+        "name": "pdfjs-dist",
+        "version": "5.4.296",
+        "license": "Apache-2.0",
+        "engines": {
+          "node": ">=20.16.0 || >=22.3.0"
+        },
+        "dependencies": {},
+        "optionalDependencies": {
+          "@napi-rs/canvas": "^0.1.80"
+        },
+        "file": "pdfjs-dist/package.json"
+      },
+      "embeddedEngine": "5.4.296",
+      "installedDependencies": [
+        {
+          "name": "@napi-rs/canvas-win32-x64-msvc",
+          "version": "0.1.80",
+          "license": "MIT",
+          "engines": {
+            "node": ">= 10"
+          },
+          "dependencies": {},
+          "optionalDependencies": {}
+        },
+        {
+          "name": "@napi-rs/canvas",
+          "version": "0.1.80",
+          "license": "MIT",
+          "engines": {
+            "node": ">= 10"
+          },
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas-linux-x64-gnu": "0.1.80",
+            "@napi-rs/canvas-darwin-x64": "0.1.80",
+            "@napi-rs/canvas-win32-x64-msvc": "0.1.80",
+            "@napi-rs/canvas-linux-arm-gnueabihf": "0.1.80",
+            "@napi-rs/canvas-linux-x64-musl": "0.1.80",
+            "@napi-rs/canvas-linux-arm64-gnu": "0.1.80",
+            "@napi-rs/canvas-linux-arm64-musl": "0.1.80",
+            "@napi-rs/canvas-darwin-arm64": "0.1.80",
+            "@napi-rs/canvas-android-arm64": "0.1.80",
+            "@napi-rs/canvas-linux-riscv64-gnu": "0.1.80"
+          }
+        },
+        {
+          "name": "pdfjs-dist",
+          "version": "5.4.296",
+          "license": "Apache-2.0",
+          "engines": {
+            "node": ">=20.16.0 || >=22.3.0"
+          },
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas": "^0.1.80"
+          }
+        }
+      ],
+      "productionPackageCount": 3,
+      "nativeBinaryCount": 1,
+      "nativeBinaryFiles": [
+        {
+          "path": "@napi-rs/canvas-win32-x64-msvc/skia.win32-x64-msvc.node",
+          "bytes": 26272256,
+          "sha256": "30646342fc284109aa9542155287d37147c97132d5168cf621f851a9c69e0c99"
+        }
+      ],
+      "nodeModulesBytes": 73454401,
+      "nodeModulesFiles": 400,
+      "nodeModulesInventorySHA256": "845df1ba741d34050ec66b32feb033fbaa88ed55286145414006d7032421bfe2",
+      "nodeModulesUnchanged": true,
+      "nativeLoadObserved": [
+        "node_modules/@napi-rs/canvas-win32-x64-msvc/skia.win32-x64-msvc.node"
+      ],
+      "canvasLoaded": true,
+      "skiaLoaded": true,
+      "canvasRequires": [
+        "@napi-rs/canvas",
+        "./skia.win32-x64-msvc.node",
+        "@napi-rs/canvas-win32-x64-msvc"
+      ],
+      "globalTypes": {
+        "DOMMatrix": "function",
+        "ImageData": "function",
+        "Path2D": "function"
+      },
+      "coldProcessMs": [
+        467.7314,
+        468.85680000000013,
+        462.2283
+      ],
+      "coldProcessMedianMs": 467.7314,
+      "importMs": [
+        124.03399999999999,
+        139.4581,
+        135.4674
+      ],
+      "processStatus": [
+        0,
+        0,
+        0
+      ],
+      "noNativeAddonsEnforced": false,
+      "fsReadAllowlistEnforced": true,
+      "networkGuard": true,
+      "networkAttempts": [
+        [],
+        [],
+        []
+      ],
+      "osOfflineTest": false,
+      "warnings": [],
+      "stderr": [
+        "(node:<PID>) [PERM0001] SecurityWarning: The flag --allow-addons must be used with extreme caution. It could invalidate the permission model."
+      ],
+      "loadedPerIteration": [
+        8,
+        8,
+        8
+      ],
+      "passedPerIteration": [
+        8,
+        8,
+        8
+      ],
+      "sampleCount": 8,
+      "importError": null,
+      "results": [
+        {
+          "file": "01-english.pdf",
+          "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "02-chinese.pdf",
+          "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "03-multipage.pdf",
+          "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 3,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "04-embedded-font.pdf",
+          "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "05-cmap-nonembedded.pdf",
+          "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "06-numbers.pdf",
+          "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "07-rotation.pdf",
+          "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "08-scanned.pdf",
+          "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        }
+      ],
+      "decision": "BASELINE_NATIVE",
+      "reason": "Current engine passes; native license closure remains unresolved."
+    },
+    {
+      "id": "b54296-legacy",
+      "executed": true,
+      "package": {
+        "name": "pdfjs-dist",
+        "version": "5.4.296",
+        "license": "Apache-2.0",
+        "engines": {
+          "node": ">=20.16.0 || >=22.3.0"
+        },
+        "dependencies": {},
+        "optionalDependencies": {
+          "@napi-rs/canvas": "^0.1.80"
+        },
+        "file": "pdfjs-dist/package.json"
+      },
+      "embeddedEngine": null,
+      "installedDependencies": [
+        {
+          "name": "pdfjs-dist",
+          "version": "5.4.296",
+          "license": "Apache-2.0",
+          "engines": {
+            "node": ">=20.16.0 || >=22.3.0"
+          },
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas": "^0.1.80"
+          }
+        }
+      ],
+      "productionPackageCount": 1,
+      "nativeBinaryCount": 0,
+      "nativeBinaryFiles": [],
+      "nodeModulesBytes": 36625349,
+      "nodeModulesFiles": 388,
+      "nodeModulesInventorySHA256": "71c5c6408f0e6ee255ce47338fdb39b5d3714e0db1a998fbd1943143d89e3298",
+      "nodeModulesUnchanged": true,
+      "nativeLoadObserved": [],
+      "canvasLoaded": false,
+      "skiaLoaded": false,
+      "canvasRequires": [
+        "@napi-rs/canvas"
+      ],
+      "globalTypes": {
+        "DOMMatrix": "undefined",
+        "ImageData": "undefined",
+        "Path2D": "undefined"
+      },
+      "coldProcessMs": [
+        327.54240000000027,
+        383.38369999999986,
+        487.26760000000013
+      ],
+      "coldProcessMedianMs": 383.38369999999986,
+      "importMs": [
+        null,
+        null,
+        null
+      ],
+      "processStatus": [
+        0,
+        0,
+        0
+      ],
+      "noNativeAddonsEnforced": true,
+      "fsReadAllowlistEnforced": true,
+      "networkGuard": true,
+      "networkAttempts": [
+        [],
+        [],
+        []
+      ],
+      "osOfflineTest": false,
+      "warnings": [
+        "Warning: Cannot load \"@napi-rs/canvas\" package: \"Error: Access to this API has been restricted. Use --allow-fs-read to manage permissions.\".",
+        "Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.",
+        "Warning: Cannot polyfill `ImageData`, rendering may be broken.",
+        "Warning: Cannot polyfill `Path2D`, rendering may be broken."
+      ],
+      "stderr": [],
+      "loadedPerIteration": [
+        0,
+        0,
+        0
+      ],
+      "passedPerIteration": [
+        0,
+        0,
+        0
+      ],
+      "sampleCount": 8,
+      "importError": "DOMMatrix is not defined",
+      "results": [],
+      "decision": "FAIL",
+      "reason": "Import requires DOMMatrix after missing canvas polyfills."
+    },
+    {
+      "id": "b54296-generic",
+      "executed": true,
+      "package": {
+        "name": "pdfjs-dist",
+        "version": "5.4.296",
+        "license": "Apache-2.0",
+        "engines": {
+          "node": ">=20.16.0 || >=22.3.0"
+        },
+        "dependencies": {},
+        "optionalDependencies": {
+          "@napi-rs/canvas": "^0.1.80"
+        },
+        "file": "pdfjs-dist/package.json"
+      },
+      "embeddedEngine": null,
+      "installedDependencies": [
+        {
+          "name": "pdfjs-dist",
+          "version": "5.4.296",
+          "license": "Apache-2.0",
+          "engines": {
+            "node": ">=20.16.0 || >=22.3.0"
+          },
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas": "^0.1.80"
+          }
+        }
+      ],
+      "productionPackageCount": 1,
+      "nativeBinaryCount": 0,
+      "nativeBinaryFiles": [],
+      "nodeModulesBytes": 36625349,
+      "nodeModulesFiles": 388,
+      "nodeModulesInventorySHA256": "71c5c6408f0e6ee255ce47338fdb39b5d3714e0db1a998fbd1943143d89e3298",
+      "nodeModulesUnchanged": true,
+      "nativeLoadObserved": [],
+      "canvasLoaded": false,
+      "skiaLoaded": false,
+      "canvasRequires": [],
+      "globalTypes": {
+        "DOMMatrix": "undefined",
+        "ImageData": "undefined",
+        "Path2D": "undefined"
+      },
+      "coldProcessMs": [
+        6498.9329,
+        6353.7752,
+        1367.3333999999995
+      ],
+      "coldProcessMedianMs": 6353.7752,
+      "importMs": [
+        null,
+        null,
+        null
+      ],
+      "processStatus": [
+        0,
+        0,
+        0
+      ],
+      "noNativeAddonsEnforced": true,
+      "fsReadAllowlistEnforced": true,
+      "networkGuard": true,
+      "networkAttempts": [
+        [],
+        [],
+        []
+      ],
+      "osOfflineTest": false,
+      "warnings": [
+        "Warning: Please use the `legacy` build in Node.js environments."
+      ],
+      "stderr": [],
+      "loadedPerIteration": [
+        0,
+        0,
+        0
+      ],
+      "passedPerIteration": [
+        0,
+        0,
+        0
+      ],
+      "sampleCount": 8,
+      "importError": "DOMMatrix is not defined",
+      "results": [],
+      "decision": "FAIL",
+      "reason": "Import requires DOMMatrix; getDocument options cannot fix import."
+    },
+    {
+      "id": "c4869-legacy",
+      "executed": true,
+      "package": {
+        "name": "pdfjs-dist",
+        "version": "4.8.69",
+        "license": "Apache-2.0",
+        "engines": {
+          "node": ">=18"
+        },
+        "dependencies": {},
+        "optionalDependencies": {
+          "canvas": "^3.0.0-rc2",
+          "path2d": "^0.2.1"
+        },
+        "file": "pdfjs-dist/package.json"
+      },
+      "embeddedEngine": "4.8.69",
+      "installedDependencies": [
+        {
+          "name": "pdfjs-dist",
+          "version": "4.8.69",
+          "license": "Apache-2.0",
+          "engines": {
+            "node": ">=18"
+          },
+          "dependencies": {},
+          "optionalDependencies": {
+            "canvas": "^3.0.0-rc2",
+            "path2d": "^0.2.1"
+          }
+        }
+      ],
+      "productionPackageCount": 1,
+      "nativeBinaryCount": 0,
+      "nativeBinaryFiles": [],
+      "nodeModulesBytes": 36909255,
+      "nodeModulesFiles": 351,
+      "nodeModulesInventorySHA256": "e43633180f122798ace9ced5aa5ce16f1ad91280a96a7ab18203354c39d86b4a",
+      "nodeModulesUnchanged": true,
+      "nativeLoadObserved": [],
+      "canvasLoaded": false,
+      "skiaLoaded": false,
+      "canvasRequires": [],
+      "globalTypes": {
+        "DOMMatrix": "undefined",
+        "ImageData": "undefined",
+        "Path2D": "undefined"
+      },
+      "coldProcessMs": [
+        8025.401999999998,
+        7930.950700000001,
+        3024.483100000005
+      ],
+      "coldProcessMedianMs": 7930.950700000001,
+      "importMs": [
+        223.84840000000008,
+        302.0973,
+        245.09230000000002
+      ],
+      "processStatus": [
+        0,
+        0,
+        0
+      ],
+      "noNativeAddonsEnforced": true,
+      "fsReadAllowlistEnforced": true,
+      "networkGuard": true,
+      "networkAttempts": [
+        [],
+        [],
+        []
+      ],
+      "osOfflineTest": false,
+      "warnings": [
+        "Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.",
+        "Warning: Cannot polyfill `Path2D`, rendering may be broken."
+      ],
+      "stderr": [],
+      "loadedPerIteration": [
+        8,
+        8,
+        8
+      ],
+      "passedPerIteration": [
+        8,
+        8,
+        8
+      ],
+      "sampleCount": 8,
+      "importError": null,
+      "results": [
+        {
+          "file": "01-english.pdf",
+          "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "02-chinese.pdf",
+          "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "03-multipage.pdf",
+          "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 3,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "04-embedded-font.pdf",
+          "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "05-cmap-nonembedded.pdf",
+          "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "06-numbers.pdf",
+          "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "07-rotation.pdf",
+          "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "08-scanned.pdf",
+          "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        }
+      ],
+      "decision": "NOT_SELECTED",
+      "reason": "Text passes but DOMMatrix/Path2D warnings remain; not silently suppressed."
+    },
+    {
+      "id": "c4869-generic",
+      "executed": true,
+      "package": {
+        "name": "pdfjs-dist",
+        "version": "4.8.69",
+        "license": "Apache-2.0",
+        "engines": {
+          "node": ">=18"
+        },
+        "dependencies": {},
+        "optionalDependencies": {
+          "canvas": "^3.0.0-rc2",
+          "path2d": "^0.2.1"
+        },
+        "file": "pdfjs-dist/package.json"
+      },
+      "embeddedEngine": "4.8.69",
+      "installedDependencies": [
+        {
+          "name": "pdfjs-dist",
+          "version": "4.8.69",
+          "license": "Apache-2.0",
+          "engines": {
+            "node": ">=18"
+          },
+          "dependencies": {},
+          "optionalDependencies": {
+            "canvas": "^3.0.0-rc2",
+            "path2d": "^0.2.1"
+          }
+        }
+      ],
+      "productionPackageCount": 1,
+      "nativeBinaryCount": 0,
+      "nativeBinaryFiles": [],
+      "nodeModulesBytes": 36909255,
+      "nodeModulesFiles": 351,
+      "nodeModulesInventorySHA256": "e43633180f122798ace9ced5aa5ce16f1ad91280a96a7ab18203354c39d86b4a",
+      "nodeModulesUnchanged": true,
+      "nativeLoadObserved": [],
+      "canvasLoaded": false,
+      "skiaLoaded": false,
+      "canvasRequires": [],
+      "globalTypes": {
+        "DOMMatrix": "undefined",
+        "ImageData": "undefined",
+        "Path2D": "undefined"
+      },
+      "coldProcessMs": [
+        6573.410900000003,
+        1507.1748000000007,
+        1799.902599999994
+      ],
+      "coldProcessMedianMs": 1799.902599999994,
+      "importMs": [
+        74.0804,
+        75.77280000000002,
+        94.80509999999998
+      ],
+      "processStatus": [
+        0,
+        0,
+        0
+      ],
+      "noNativeAddonsEnforced": true,
+      "fsReadAllowlistEnforced": true,
+      "networkGuard": true,
+      "networkAttempts": [
+        [],
+        [],
+        []
+      ],
+      "osOfflineTest": false,
+      "warnings": [],
+      "stderr": [],
+      "loadedPerIteration": [
+        8,
+        8,
+        8
+      ],
+      "passedPerIteration": [
+        8,
+        8,
+        8
+      ],
+      "sampleCount": 8,
+      "importError": null,
+      "results": [
+        {
+          "file": "01-english.pdf",
+          "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "02-chinese.pdf",
+          "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "03-multipage.pdf",
+          "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 3,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "04-embedded-font.pdf",
+          "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "05-cmap-nonembedded.pdf",
+          "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "06-numbers.pdf",
+          "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "07-rotation.pdf",
+          "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "08-scanned.pdf",
+          "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        }
+      ],
+      "decision": "VIABLE_SPIKE_ONLY",
+      "reason": "Official unchanged generic build; historical version with maintenance risk; not approval to downgrade."
+    },
+    {
+      "id": "c63289-legacy",
+      "executed": true,
+      "package": {
+        "name": "pdfjs-dist",
+        "version": "6.3.289",
+        "license": "Apache-2.0",
+        "engines": {
+          "node": ">=22.13.0 || >=24"
+        },
+        "dependencies": {},
+        "optionalDependencies": {
+          "@napi-rs/canvas": "^1.0.0"
+        },
+        "file": "pdfjs-dist/package.json"
+      },
+      "embeddedEngine": "6.3.289",
+      "installedDependencies": [
+        {
+          "name": "pdfjs-dist",
+          "version": "6.3.289",
+          "license": "Apache-2.0",
+          "engines": {
+            "node": ">=22.13.0 || >=24"
+          },
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas": "^1.0.0"
+          }
+        }
+      ],
+      "productionPackageCount": 1,
+      "nativeBinaryCount": 0,
+      "nativeBinaryFiles": [],
+      "nodeModulesBytes": 34781645,
+      "nodeModulesFiles": 555,
+      "nodeModulesInventorySHA256": "6db2492ecc128ef4cbdd41d0b5c69a7895b869a630fbbb09ba321a26a81d3dac",
+      "nodeModulesUnchanged": true,
+      "nativeLoadObserved": [],
+      "canvasLoaded": false,
+      "skiaLoaded": false,
+      "canvasRequires": [
+        "@napi-rs/canvas"
+      ],
+      "globalTypes": {
+        "DOMMatrix": "undefined",
+        "ImageData": "undefined",
+        "Path2D": "undefined"
+      },
+      "coldProcessMs": [
+        7392.129000000001,
+        2265.304999999993,
+        2364.122000000003
+      ],
+      "coldProcessMedianMs": 2364.122000000003,
+      "importMs": [
+        268.83639999999997,
+        247.21730000000002,
+        313.5375
+      ],
+      "processStatus": [
+        0,
+        0,
+        0
+      ],
+      "noNativeAddonsEnforced": true,
+      "fsReadAllowlistEnforced": true,
+      "networkGuard": true,
+      "networkAttempts": [
+        [],
+        [],
+        []
+      ],
+      "osOfflineTest": false,
+      "warnings": [
+        "Warning: Cannot load \"@napi-rs/canvas\" package: \"Error: Access to this API has been restricted. Use --allow-fs-read to manage permissions.\".",
+        "Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.",
+        "Warning: Cannot polyfill `Path2D`, rendering may be broken."
+      ],
+      "stderr": [],
+      "loadedPerIteration": [
+        8,
+        8,
+        8
+      ],
+      "passedPerIteration": [
+        8,
+        8,
+        8
+      ],
+      "sampleCount": 8,
+      "importError": null,
+      "results": [
+        {
+          "file": "01-english.pdf",
+          "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "02-chinese.pdf",
+          "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "03-multipage.pdf",
+          "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 3,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "04-embedded-font.pdf",
+          "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "05-cmap-nonembedded.pdf",
+          "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "06-numbers.pdf",
+          "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "07-rotation.pdf",
+          "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "08-scanned.pdf",
+          "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        }
+      ],
+      "decision": "CONDITIONAL_RESEARCH",
+      "reason": "Text passes; missing canvas and DOM warnings require explicit scope acceptance, not ignored."
+    },
+    {
+      "id": "c63289-generic",
+      "executed": true,
+      "package": {
+        "name": "pdfjs-dist",
+        "version": "6.3.289",
+        "license": "Apache-2.0",
+        "engines": {
+          "node": ">=22.13.0 || >=24"
+        },
+        "dependencies": {},
+        "optionalDependencies": {
+          "@napi-rs/canvas": "^1.0.0"
+        },
+        "file": "pdfjs-dist/package.json"
+      },
+      "embeddedEngine": "6.3.289",
+      "installedDependencies": [
+        {
+          "name": "pdfjs-dist",
+          "version": "6.3.289",
+          "license": "Apache-2.0",
+          "engines": {
+            "node": ">=22.13.0 || >=24"
+          },
+          "dependencies": {},
+          "optionalDependencies": {
+            "@napi-rs/canvas": "^1.0.0"
+          }
+        }
+      ],
+      "productionPackageCount": 1,
+      "nativeBinaryCount": 0,
+      "nativeBinaryFiles": [],
+      "nodeModulesBytes": 34781645,
+      "nodeModulesFiles": 555,
+      "nodeModulesInventorySHA256": "6db2492ecc128ef4cbdd41d0b5c69a7895b869a630fbbb09ba321a26a81d3dac",
+      "nodeModulesUnchanged": true,
+      "nativeLoadObserved": [],
+      "canvasLoaded": false,
+      "skiaLoaded": false,
+      "canvasRequires": [],
+      "globalTypes": {
+        "DOMMatrix": "undefined",
+        "ImageData": "undefined",
+        "Path2D": "undefined"
+      },
+      "coldProcessMs": [
+        7964.618000000002,
+        2612.453699999998,
+        6859.102400000003
+      ],
+      "coldProcessMedianMs": 6859.102400000003,
+      "importMs": [
+        321.44229999999993,
+        307.5071999999999,
+        224.48160000000007
+      ],
+      "processStatus": [
+        0,
+        0,
+        0
+      ],
+      "noNativeAddonsEnforced": true,
+      "fsReadAllowlistEnforced": true,
+      "networkGuard": true,
+      "networkAttempts": [
+        [],
+        [],
+        []
+      ],
+      "osOfflineTest": false,
+      "warnings": [
+        "Warning: Please use the `legacy` build in Node.js environments."
+      ],
+      "stderr": [],
+      "loadedPerIteration": [
+        0,
+        0,
+        0
+      ],
+      "passedPerIteration": [
+        0,
+        0,
+        0
+      ],
+      "sampleCount": 8,
+      "importError": null,
+      "results": [
+        {
+          "file": "01-english.pdf",
+          "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+          "pass": false,
+          "loaded": false,
+          "error": "hashOriginal.toHex is not a function",
+          "missing": [],
+          "pages": null,
+          "coordinatesOK": false,
+          "emptyOK": false,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "02-chinese.pdf",
+          "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+          "pass": false,
+          "loaded": false,
+          "error": "hashOriginal.toHex is not a function",
+          "missing": [],
+          "pages": null,
+          "coordinatesOK": false,
+          "emptyOK": false,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "03-multipage.pdf",
+          "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+          "pass": false,
+          "loaded": false,
+          "error": "hashOriginal.toHex is not a function",
+          "missing": [],
+          "pages": null,
+          "coordinatesOK": false,
+          "emptyOK": false,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "04-embedded-font.pdf",
+          "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+          "pass": false,
+          "loaded": false,
+          "error": "hashOriginal.toHex is not a function",
+          "missing": [],
+          "pages": null,
+          "coordinatesOK": false,
+          "emptyOK": false,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "05-cmap-nonembedded.pdf",
+          "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+          "pass": false,
+          "loaded": false,
+          "error": "hashOriginal.toHex is not a function",
+          "missing": [],
+          "pages": null,
+          "coordinatesOK": false,
+          "emptyOK": false,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "06-numbers.pdf",
+          "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+          "pass": false,
+          "loaded": false,
+          "error": "hashOriginal.toHex is not a function",
+          "missing": [],
+          "pages": null,
+          "coordinatesOK": false,
+          "emptyOK": false,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "07-rotation.pdf",
+          "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+          "pass": false,
+          "loaded": false,
+          "error": "hashOriginal.toHex is not a function",
+          "missing": [],
+          "pages": null,
+          "coordinatesOK": false,
+          "emptyOK": false,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "08-scanned.pdf",
+          "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+          "pass": false,
+          "loaded": false,
+          "error": "hashOriginal.toHex is not a function",
+          "missing": [],
+          "pages": null,
+          "coordinatesOK": false,
+          "emptyOK": false,
+          "textCoordinatesEqualToBaseline": false
+        }
+      ],
+      "decision": "FAIL",
+      "reason": "Node24 lacks Uint8Array.toHex required by this generic build."
+    },
+    {
+      "id": "d_pdf2json-pdf2json",
+      "executed": true,
+      "package": {
+        "name": "pdf2json",
+        "version": "4.1.0",
+        "license": "Apache-2.0",
+        "engines": {
+          "node": ">=22.23.2"
+        },
+        "dependencies": {},
+        "optionalDependencies": {},
+        "file": "pdf2json/package.json"
+      },
+      "embeddedEngine": null,
+      "installedDependencies": [
+        {
+          "name": "pdf2json",
+          "version": "4.1.0",
+          "license": "Apache-2.0",
+          "engines": {
+            "node": ">=22.23.2"
+          },
+          "dependencies": {},
+          "optionalDependencies": {}
+        }
+      ],
+      "productionPackageCount": 1,
+      "nativeBinaryCount": 0,
+      "nativeBinaryFiles": [],
+      "nodeModulesBytes": 11929963,
+      "nodeModulesFiles": 16,
+      "nodeModulesInventorySHA256": "7c23093125b7d73f9efff23731f6e574e77ab872ed06dbd517385a6a692fe2a0",
+      "nodeModulesUnchanged": true,
+      "nativeLoadObserved": [],
+      "canvasLoaded": false,
+      "skiaLoaded": false,
+      "canvasRequires": [],
+      "globalTypes": {
+        "DOMMatrix": "undefined",
+        "ImageData": "undefined",
+        "Path2D": "undefined"
+      },
+      "coldProcessMs": [
+        2611.950199999992,
+        2933.680999999997,
+        7252.266499999998
+      ],
+      "coldProcessMedianMs": 2933.680999999997,
+      "importMs": [
+        470.16380000000004,
+        566.3321000000001,
+        446.20489999999995
+      ],
+      "processStatus": [
+        0,
+        0,
+        0
+      ],
+      "noNativeAddonsEnforced": true,
+      "fsReadAllowlistEnforced": true,
+      "networkGuard": true,
+      "networkAttempts": [
+        [],
+        [],
+        []
+      ],
+      "osOfflineTest": false,
+      "warnings": [
+        "Warning: Setting up fake worker.",
+        "Warning: Setting up fake worker.",
+        "Warning: Setting up fake worker.",
+        "Warning: Setting up fake worker.",
+        "Warning: Setting up fake worker.",
+        "Warning: Setting up fake worker.",
+        "Warning: Setting up fake worker.",
+        "Warning: Setting up fake worker."
+      ],
+      "stderr": [],
+      "loadedPerIteration": [
+        8,
+        8,
+        8
+      ],
+      "passedPerIteration": [
+        8,
+        8,
+        8
+      ],
+      "sampleCount": 8,
+      "importError": null,
+      "results": [
+        {
+          "file": "01-english.pdf",
+          "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "02-chinese.pdf",
+          "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "03-multipage.pdf",
+          "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 3,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "04-embedded-font.pdf",
+          "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "05-cmap-nonembedded.pdf",
+          "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "06-numbers.pdf",
+          "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "07-rotation.pdf",
+          "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "08-scanned.pdf",
+          "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        }
+      ],
+      "decision": "NOT_APPROVED",
+      "reason": "Exact standalone Buffer needed; embedded legacy PDF.js security lineage not established."
+    },
+    {
+      "id": "d_unpdf-unpdf",
+      "executed": true,
+      "package": {
+        "name": "unpdf",
+        "version": "1.8.1",
+        "license": "MIT",
+        "engines": {
+          "node": ">=22"
+        },
+        "dependencies": {},
+        "optionalDependencies": {},
+        "file": "unpdf/package.json"
+      },
+      "embeddedEngine": "6.1.200",
+      "installedDependencies": [
+        {
+          "name": "unpdf",
+          "version": "1.8.1",
+          "license": "MIT",
+          "engines": {
+            "node": ">=22"
+          },
+          "dependencies": {},
+          "optionalDependencies": {}
+        }
+      ],
+      "productionPackageCount": 1,
+      "nativeBinaryCount": 0,
+      "nativeBinaryFiles": [],
+      "nodeModulesBytes": 2142037,
+      "nodeModulesFiles": 158,
+      "nodeModulesInventorySHA256": "aa5d716b8e12bcc2b1a05ae051d331bd4ffeb04667f83afa9a2570c93b9f9332",
+      "nodeModulesUnchanged": true,
+      "nativeLoadObserved": [],
+      "canvasLoaded": false,
+      "skiaLoaded": false,
+      "canvasRequires": [],
+      "globalTypes": {
+        "DOMMatrix": "function",
+        "ImageData": "undefined",
+        "Path2D": "undefined"
+      },
+      "coldProcessMs": [
+        7871.098199999993,
+        5439.5143999999855,
+        1435.1882000000041
+      ],
+      "coldProcessMedianMs": 5439.5143999999855,
+      "importMs": [
+        14.67629999999997,
+        6.349499999999978,
+        9.350400000000036
+      ],
+      "processStatus": [
+        0,
+        0,
+        0
+      ],
+      "noNativeAddonsEnforced": true,
+      "fsReadAllowlistEnforced": true,
+      "networkGuard": true,
+      "networkAttempts": [
+        [],
+        [],
+        []
+      ],
+      "osOfflineTest": false,
+      "warnings": [
+        "Warning: loadFont - translateFont failed: \"UnknownErrorException: Ensure that the `cMapUrl` API parameter is provided.\"."
+      ],
+      "stderr": [],
+      "loadedPerIteration": [
+        8,
+        8,
+        8
+      ],
+      "passedPerIteration": [
+        7,
+        7,
+        7
+      ],
+      "sampleCount": 8,
+      "importError": null,
+      "results": [
+        {
+          "file": "01-english.pdf",
+          "sha256": "84010de6dc2647995a246d0bc8fca00dd3e1f97555d46e635cc3b7ee8d0e3cf8",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "02-chinese.pdf",
+          "sha256": "8647351b638f0eba011a235363bcef0c2f6c42a4a6fd8811fc2d9c5063889004",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "03-multipage.pdf",
+          "sha256": "adcd79981d7e620420f58132e60eccd37b3fc8fb6ac361769941e33594177c6b",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 3,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "04-embedded-font.pdf",
+          "sha256": "305d3ba3c9db341553dd6cbe500e81b3e3ddb445df6ef8f89f6ab05697115889",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "05-cmap-nonembedded.pdf",
+          "sha256": "dfb8d1abd7476b768812317e47f3136b3c64662e60ffbca664c562c273369ef8",
+          "pass": false,
+          "loaded": true,
+          "error": null,
+          "missing": [
+            {
+              "page": 1,
+              "token": "非嵌入字体样本"
+            },
+            {
+              "page": 1,
+              "token": "中文测试"
+            },
+            {
+              "page": 1,
+              "token": "金额987.65"
+            }
+          ],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": false
+        },
+        {
+          "file": "06-numbers.pdf",
+          "sha256": "763f7024a73800221f55721e731fda0aad33be290a353e94b146827042352ecb",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "07-rotation.pdf",
+          "sha256": "45ff9576326f472b369de6a7f9e56fb3ae4152196b4f7e8ed6bdaa0bb70ff9c0",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        },
+        {
+          "file": "08-scanned.pdf",
+          "sha256": "ab3939921feaa9923efed5ea9a5ae0cbdd5f640d91ef37ee4701b7b8dd7fd499",
+          "pass": true,
+          "loaded": true,
+          "error": null,
+          "missing": [],
+          "pages": 1,
+          "coordinatesOK": true,
+          "emptyOK": true,
+          "textCoordinatesEqualToBaseline": true
+        }
+      ],
+      "decision": "REJECT",
+      "reason": "CMap sample fails; embeds affected PDF.js6.1.200 and partial DOMMatrix implementation."
+    }
+  ],
+  "security": {
+    "officialRepoAdvisories": 2,
+    "reviewed": [
+      {
+        "id": "GHSA-wgrm-67xf-hhpq",
+        "cve": "CVE-2024-4367",
+        "affected": "<=4.1.392",
+        "fixed": "4.2.67",
+        "url": "https://github.com/mozilla/pdf.js/security/advisories/GHSA-wgrm-67xf-hhpq"
+      },
+      {
+        "id": "GHSA-hq66-cqwq-w95j",
+        "cve": "CVE-2026-16633",
+        "affected": ">=5.6.83 <6.2.108",
+        "fixed": "6.2.108",
+        "url": "https://github.com/mozilla/pdf.js/security/advisories/GHSA-hq66-cqwq-w95j"
+      }
+    ],
+    "apiAffectedResults": {
+      "pdfjs-dist@4.8.69": [],
+      "pdfjs-dist@5.4.296": [],
+      "pdfjs-dist@6.3.289": []
+    },
+    "noZeroVulnerabilityGuarantee": true,
+    "isEvalSupportedIsNotEnableScripting": true
+  },
+  "licenseFilesForViableCandidate": [
+    {
+      "file": "LICENSE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+    },
+    {
+      "file": "cmaps/LICENSE",
+      "sha256": "aa92ab5a472974865a96fd4a4e9c13bb41bf6fe1b309cb6b8da48bc9e19839a2"
+    },
+    {
+      "file": "standard_fonts/LICENSE_FOXIT",
+      "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7"
+    },
+    {
+      "file": "standard_fonts/LICENSE_LIBERATION",
+      "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b"
+    }
+  ],
+  "sourceFiles": [
+    {
+      "file": "package.json",
+      "gitBlobContentSHA256": "ed2b5d3bf20450c301ae531395fe5bb95c8de07df7f181f254d47843fe928bde",
+      "workingCopyByteSHA256": "232324b9e425f27bbc5df66b4ae5ce594bf7671e4a2dd6fe62246cf29bd2a89b",
+      "note": "Git blob LF and working copy CRLF hashes may differ; git diff must be empty."
+    },
+    {
+      "file": "package-lock.json",
+      "gitBlobContentSHA256": "c4050d95db6d40702a222ee9da9e43d74c5d36a8e5be73583e1dc2f08d9a5bf5",
+      "workingCopyByteSHA256": "525a74cd4e17e0bf1dbb6bd0253c57c1a26ab74fc7a93ce0962e19a3b5fa3257",
+      "note": "Git blob LF and working copy CRLF hashes may differ; git diff must be empty."
+    },
+    {
+      "file": "server.js",
+      "gitBlobContentSHA256": "11938893209c4d4b701cc0a7fc9893db8e5b342945b41b1650a9def6528568d3",
+      "workingCopyByteSHA256": "ede35bf26ca02578006a0282e39fb61aa1200014258254f4c78e52dac4fa1375",
+      "note": "Git blob LF and working copy CRLF hashes may differ; git diff must be empty."
+    }
+  ],
+  "evidence": {
+    "matrix": "runs-v3/matrix.json",
+    "sha256": "d41a87e0f289ecd4d7ac73c851d78bca09253f2ed22fc5305cc44370f813219f",
+    "sources": [
+      {
+        "file": "font-css-v2.txt",
+        "bytes": 382,
+        "sha256": "a8d83ec0dff6c095d6b4f434f4227bac951c0ebac649f18fdd978b5644f5ade2"
+      },
+      {
+        "file": "font-css.txt",
+        "bytes": 368,
+        "sha256": "d40948e4d27426c15de86687ffd3735517fe7ccd9b6db3d1f562040aa1ab4cdc"
+      },
+      {
+        "file": "global-4869.json",
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "global-54296.json",
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "global-63289.json",
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "mozilla-security.html",
+        "bytes": 49403,
+        "sha256": "8cee65e90a9660e409eb104f03518452a25c09b633549addeff551ca45e33aae"
+      },
+      {
+        "file": "noto-OFL.txt",
+        "bytes": 4388,
+        "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+      },
+      {
+        "file": "noto-subset-v2.ttf",
+        "bytes": 12468,
+        "sha256": "28835770c74e89ee2b9ac5cdd1a1e2acb21f0ab87847e2c52e743806320a1997"
+      },
+      {
+        "file": "noto-subset.woff2",
+        "bytes": 9928,
+        "sha256": "0862c9d0ae18762515834d32327ab95a761fc7f227c7e44e08502fe4e1600402"
+      },
+      {
+        "file": "pdf2json-base.js",
+        "bytes": 11743,
+        "sha256": "9e594add08d4b1e2e3d15f21853246ecbf2b98ea5bad1cedb7537f8228597ec7"
+      },
+      {
+        "file": "pdf2json-security.json",
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "file": "pdfjs-4869-node-utils.js",
+        "bytes": 4287,
+        "sha256": "0c519d7ee060d5297a0e4c8f47397ca89dcea8bf54ce8610869a2b0f63cbc68b"
+      },
+      {
+        "file": "pdfjs-4869-release.json",
+        "bytes": 12863,
+        "sha256": "7482b6ff33f1cafcd2a67a7a11b2aeb5d908e92aab2cbea60de929c444fa9d26"
+      },
+      {
+        "file": "pdfjs-63289-node-utils.js",
+        "bytes": 2910,
+        "sha256": "1b39e8adc959cdf7399eb027f9e19ed6184d8726d17b5c6ab7e8cf86caff1477"
+      },
+      {
+        "file": "pdfjs-63289-release.json",
+        "bytes": 24123,
+        "sha256": "b53f40c2e46c9b5d2497728f31c0597b570b6bcc1dcc6abd494fd59c537f3d44"
+      },
+      {
+        "file": "pdfjs-node-example.mjs",
+        "bytes": 2499,
+        "sha256": "a483865deba86775d6c858981875d57ebcdd1939585c70136a656bc1303857c8"
+      },
+      {
+        "file": "pdfjs-security.json",
+        "bytes": 7119,
+        "sha256": "6dcf8cc8dc63012abbecefed72a2cf7646ea0a2569befb7b81d8abca5ccfcfda"
+      },
+      {
+        "file": "security-2024.json",
+        "bytes": 3865,
+        "sha256": "ca584b8bcc6b0058ad5936b9a106530f1374177aafdf6b98bb92a124f99bba44"
+      },
+      {
+        "file": "security-2026.json",
+        "bytes": 2782,
+        "sha256": "4e4b1705a839b048bc375c1305771b1a966b48c52a8e60a66c4309a3d7e33ac8"
+      },
+      {
+        "file": "sources-index.json",
+        "bytes": 2617,
+        "sha256": "795f9de1f4830cf3306a75afce8cef0a91f87cd9581aef17c72763b7c39909d1"
+      },
+      {
+        "file": "unpdf-build.ts",
+        "bytes": 1191,
+        "sha256": "24213d6a091b071c6a8616ae8771ef15a16f365b9e3fde3ffef70741192d3c20"
+      },
+      {
+        "file": "unpdf-dom.ts",
+        "bytes": 1004,
+        "sha256": "661a9af4f214a2e02b3b9044b52fa8440e0b9aab1527abce710a5ea1889f9a51"
+      },
+      {
+        "file": "unpdf-mocks.mjs",
+        "bytes": 581,
+        "sha256": "017b98f60f49adb14ebe30b10228b29265c529561e4ba08c80ba51694531ce23"
+      },
+      {
+        "file": "unpdf-package.json",
+        "bytes": 2306,
+        "sha256": "33722f64b37a88a7a7eb12c631dd7f823d34a5d5aae96fd88e973016080e137e"
+      },
+      {
+        "file": "unpdf-polyfills.mjs",
+        "bytes": 4103,
+        "sha256": "988f7f116a947d369955a82a6c11c496803599b51a60baf4584fa9d8c7f49e8a"
+      },
+      {
+        "file": "unpdf-security.json",
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    ]
+  },
+  "excludedRuns": [
+    {
+      "path": "fixtures",
+      "reason": "initial subset font lacked ASCII digits; failed independent fixture assertion; not used in final matrix"
+    },
+    {
+      "path": "runs",
+      "reason": "ancestor module resolution plus harness path/cleanup mistakes; invalidated, cannot prove isolation"
+    },
+    {
+      "path": "runs-v2",
+      "reason": "isolation corrected; pdf2json pooled Buffer offset handling exposed; superseded by standalone-buffer repeat"
+    }
+  ],
+  "boundaryIncident": "Initial optional dependency resolution automatically read ancestor third-party canvas JS and attempted addon load (disabled). No internal business code/config/data read; invalid run retained and excluded. Corrected matrix enforces read allowlists and no-addons for all pure-JS candidates.",
+  "openItems": [
+    "architecture approval before any migration",
+    "historical4.8.69 maintenance risk acceptance",
+    "review removal of unused pdf-parse plus nested PDF.js/native dependency and host-smoke adaptation as a separate approved change",
+    "production-path regression and license/resource closure after migration",
+    "Runtime rebuild and clean Win11 G1 still required"
+  ],
+  "nextBatchAllowed": false
+}

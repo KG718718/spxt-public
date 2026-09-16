@@ -1,5 +1,15 @@
 # Batch 1C — Runtime Build Prototype 结果
 
+## Batch 1C-R3 当前结论｜2026-09-16
+
+**PASS — viable text-only PDF alternative found。** 仅PDF文本架构Spike通过，不等于Batch1C Runtime整体通过。R2文档检查点`8b177a0026f34067fb66a9ad5fa715a577ff56bc`已仅推送开发分支并回查；R3报告尚未提交/推送。
+
+官方4.8.69 generic入口在Node24.21.0中，不装optional canvas/path2d、禁addon并限制读取目录，8种合成PDF连续3轮24/24通过，无canvas/Skia/原生二进制/DOM补丁警告，文本与坐标同基线。历史版本维护风险及官方安全查询边界明确保留。9配置矩阵包含故意失败候选，并非全矩阵通过。
+
+首轮父级第三方依赖自动解析越界、探针路径/cleanup错误与失效字体样本均披露并作废；有效证据使用fixtures-v2及runs-v3。未读取内部业务源码/数据/配置，未修改正式依赖、业务、构建门禁、Runtime/发行物。最新6.3.289 legacy警告、pdf2json内嵌安全谱系、unpdf高危版本/CMap/部分polyfill均不掩盖。
+
+完整结果：[PDF-ARCHITECTURE-SPIKE.md](PDF-ARCHITECTURE-SPIKE.md)、[PDF-SPIKE-RESULTS.json](PDF-SPIKE-RESULTS.json)、[SECURITY-COMPARISON.md](SECURITY-COMPARISON.md)、[CHATGPT-HANDOFF.md](CHATGPT-HANDOFF.md)。正式迁移需另批，pdf-parse传递原生链/host-smoke及完整锁图仍须联合审查。R1许可、Runtime ZIP及Win11 G1不自动解除，不进入Batch2/3。以下历史报告原样保留。
+
 ## Batch 1C-R2 当前结论｜2026-09-16
 
 **BLOCKED — 删除条件D不满足；独立pdfjs-dist → canvas依赖仍存在。** 本批审计完成，不执行依赖清理、不进入Batch2/3。详细分类、引用行、动态调用链和fresh依赖图见[DEPENDENCY-USAGE-AUDIT.md](DEPENDENCY-USAGE-AUDIT.md)。

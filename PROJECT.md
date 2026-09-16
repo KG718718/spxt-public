@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## Windows installer v1.1 / Batch 1C-R3 PDF架构Spike｜2026-09-16
+
+R2八份文档已提交并仅推送开发分支检查点`8b177a0026f34067fb66a9ad5fa715a577ff56bc`，远端回查一致；main/v1.0.0未变。R3结论为 **PASS — viable text-only PDF alternative found**：官方pdfjs-dist4.8.69 generic在Node24、禁addon/文件白名单下，8类合成PDF三轮全过，canvas/Skia/native均无；这是历史版本的技术可行性，不是批准降级或无漏洞保证。5.4.296无canvas导入失败；6.3.289 legacy仍有DOM警告；其他纯JS候选问题详见报告。
+
+正式业务、package/lock、构建门禁未改，原Runtime许可/G1阻塞保留；不进入Batch2。首轮父级第三方依赖解析越界已披露、作废并隔离重跑，未读内部业务代码/配置/数据。R3仅4份tracked MD修改、3新增报告/JSON，未提交/推送；实验与原始证据在E盘源码外。见[架构报告](docs/tasks/windows-installer-v1.1/batch-1c/PDF-ARCHITECTURE-SPIKE.md)、[安全比较](docs/tasks/windows-installer-v1.1/batch-1c/SECURITY-COMPARISON.md)、[交接卡](docs/tasks/windows-installer-v1.1/batch-1c/CHATGPT-HANDOFF.md)。等待上级选择迁移专项、最新PDF.js纯文本研究或返回R1，不自动实施。下文为历史时点。
+
 ## Windows installer v1.1 / Batch 1C-R2 依赖审计｜2026-09-16
 
 R1的10份文档/工具已提交并推送检查点`2aeaa4089520a99829f1b9981b7b5ea2bfa9e295`到codex/windows-installer-v1.1。仅公开版135文件审计及原lock fresh安装完成：23生产包，pdfjs-dist有独立optional canvas路径，只导入其业务入口即可加载Skia，未加载pdf-parse。应用业务未发现pdf-parse调用，但原host-smoke确实调用PDFParse.getText，不能说整个源码树未用。
