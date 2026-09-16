@@ -42,4 +42,3 @@ D类库的上游源码：[pdf2json v4.1.0](https://github.com/modesty/pdf2json/t
 可行候选包自带Apache-2.0正文，cmaps/LICENSE（Adobe BSD式条款）、standard_fonts/LICENSE_FOXIT（PDFium BSD式条款）、LICENSE_LIBERATION（SIL OFL1.1）均已查验存在并记录SHA256。后续分发必须保留这些原文和归属，不能只带顶层LICENSE。此处确认许可来源明确，不代表已生成最终发行包SBOM。
 
 4.8.69于2024-11-02发布；6.3.289于2026-08-29发布。本次没有取得4.8.x持续安全回补承诺。上级须选择是否接受旧版维护成本，或继续当前官方版本的text-only支持调查。当前正式应用/依赖完全未改，R1原生许可问题不能因为本Spike PASS而自动关闭。
-
