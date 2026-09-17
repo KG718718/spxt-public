@@ -193,7 +193,7 @@ func TestPortable(t *testing.T) {
 		t.Fatal("instance overlap")
 	}
 	pass("P23 automatic external Beta instance")
-	if _, e := os.Stat(filepath.Join(instance, "logs", "launcher.log")); e != nil {
+	if _, e := os.Stat(filepath.Join(instance, "launcher-logs", "launcher.log")); e != nil {
 		t.Fatal(e)
 	}
 	pass("P24 external logs")
@@ -241,6 +241,22 @@ func TestPortable(t *testing.T) {
 	report["movedCore"] = json.RawMessage(again)
 	pass("P16 restart retains Admin and existing data")
 	pass("P22 complete copy B reuses data and its own Node")
+	// Recover only our known dead child when the user launches again.
+	h, err := syscall.OpenProcess(1, false, movedPID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	syscall.TerminateProcess(h, 87)
+	syscall.CloseHandle(h)
+	until(t, func() bool { return eventCount(instance, "NODE_EXITED") == 1 })
+	recovery := start(movedExe)
+	until(t, func() bool { return eventCount(instance, "READY") == 3 })
+	until(t, func() bool { return !alivePID(uint32(recovery.Process.Pid)) })
+	movedPID = uint32(lastEvent(instance, "READY")["pid"].(float64))
+	if !sameFile(procPath(movedPID), filepath.Join(moved, "runtime/node.exe")) {
+		t.Fatal("wrong recovered Node")
+	}
+	report["deadChildRecovery"] = "PASS: next launch safely recreates only its owned backend"
 	stop(movedExe, movedPID)
 	until(t, func() bool { return !alivePID(uint32(movedCmd.Process.Pid)) })
 	pass("S01 idle stop")

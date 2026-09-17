@@ -29,7 +29,7 @@ func until(t *testing.T, fn func() bool) {
 	t.Fatal("timeout waiting for condition")
 }
 func events(instance string) []map[string]any {
-	b, _ := os.ReadFile(filepath.Join(instance, "logs", "launcher.log"))
+	b, _ := os.ReadFile(filepath.Join(instance, "launcher-logs", "launcher.log"))
 	rows := []map[string]any{}
 	for _, line := range strings.Split(string(b), "\n") {
 		var r map[string]any
@@ -315,7 +315,7 @@ func TestLauncherIntegration(t *testing.T) {
 	t.Cleanup(func() { exec.Command(icacls, aclDir, "/remove:d", "*"+sid).Run() })
 	aclCmd := launchTest(t, exe, aclDir)
 	time.Sleep(time.Second)
-	if _, err := os.Stat(filepath.Join(aclDir, "logs", "launcher.log")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(aclDir, "launcher-logs", "launcher.log")); !os.IsNotExist(err) {
 		t.Fatal("unwritable instance created log")
 	}
 	if _, err := os.Stat(filepath.Join(aclDir, ".launcher.lock")); !os.IsNotExist(err) {

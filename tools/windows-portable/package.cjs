@@ -55,7 +55,7 @@ function finish(root,launcherDir,git,repo,commit) {
  runtimeManifestSha256:li.runtimeManifestSha256,packageLockSha256:m.packageLockHash,nodeVersion:m.nodeVersion,goVersion:'1.27.1',GOOS:'windows',GOARCH:'amd64',CGO_ENABLED:'0',
  buildTimestamp:cp.execFileSync(git,['-C',repo,'show','-s','--format=%cI',commit],{windowsHide:true}).toString().trim(),timestampPolicy:'source commit time; Runtime OS metadata may differ between builds',
  artifactFormat:'portable-zip',platform:'win32-x64',launcherSha256:li.sha256,sha256:li.sha256,bytes:li.bytes,
- instanceContract:'Beta only: LOCALAPPDATA/K-SESSION/Beta/instance; external logs subdirectory; Batch4 decides final path'};
+ instanceContract:'Beta only: LOCALAPPDATA/K-SESSION/Beta/instance; launcher-logs isolated from business logs; Batch4 decides final path'};
  writeJSON(path.join(root,'build-info.json'),info);return verify(root);
 }
 function archive(root,out,reportFile) {

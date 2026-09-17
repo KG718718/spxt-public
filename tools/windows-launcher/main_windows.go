@@ -433,10 +433,10 @@ func run() error {
 	if e = os.MkdirAll(filepath.Join(instance, "temp"), 0700); e != nil {
 		return fail("INSTANCE_UNWRITABLE", "无法创建实例临时目录。")
 	}
-	if e = os.MkdirAll(filepath.Join(instance, "logs"), 0700); e != nil {
+	if e = os.MkdirAll(filepath.Join(instance, "launcher-logs"), 0700); e != nil {
 		return fail("INSTANCE_UNWRITABLE", "无法创建外置日志目录。")
 	}
-	c.log, e = os.OpenFile(filepath.Join(instance, "logs", "launcher.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	c.log, e = os.OpenFile(filepath.Join(instance, "launcher-logs", "launcher.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if e != nil {
 		return fail("INSTANCE_UNWRITABLE", "无法写入 launcher.log。")
 	}

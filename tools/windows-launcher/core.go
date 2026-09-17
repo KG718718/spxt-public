@@ -204,7 +204,7 @@ func instancePath(root, requested string) (string, error) {
 	if e != nil || !strings.EqualFold(real, abs) {
 		return "", fail("INSTANCE_INVALID", "实例路径含链接或重解析点，请使用真实目录。")
 	}
-	for _, child := range []string{".launcher.lock", "logs", "logs/launcher.log", "temp"} {
+	for _, child := range []string{".launcher.lock", "launcher-logs", "launcher-logs/launcher.log", "temp"} {
 		p := filepath.Join(real, child)
 		if _, err := os.Lstat(p); err == nil {
 			resolved, err := canonical(p)
