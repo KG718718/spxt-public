@@ -223,6 +223,19 @@ func windowProc(hwnd uintptr, m uint32, w, l uintptr) uintptr {
 	switch m {
 	case openMsg:
 		if c != nil {
+			// A second launch may recover a dead child, never replace a live untrusted service.
+			if c.child != nil && !c.child.alive() {
+				c.child.stop()
+				c.child = nil
+				c.ready = false
+			}
+			if c.child == nil && !c.closing {
+				if e := c.start(); e != nil {
+					c.event("FAILED", map[string]any{"code": e.Error()})
+					c.text("后台重新启动失败，请保存诊断信息后重试。")
+					return 0
+				}
+			}
 			c.openBrowser()
 			call(user32, "ShowWindow", hwnd, 5)
 			call(user32, "SetForegroundWindow", hwnd)
@@ -382,7 +395,7 @@ func run() error {
 	if e != nil {
 		return e
 	}
-	root := filepath.Dir(filepath.Dir(exe))
+	root := filepath.Dir(exe)
 	request := ""
 	stop := false
 	for i := 1; i < len(os.Args); i++ {
@@ -420,7 +433,10 @@ func run() error {
 	if e = os.MkdirAll(filepath.Join(instance, "temp"), 0700); e != nil {
 		return fail("INSTANCE_UNWRITABLE", "无法创建实例临时目录。")
 	}
-	c.log, e = os.OpenFile(filepath.Join(instance, "launcher.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	if e = os.MkdirAll(filepath.Join(instance, "logs"), 0700); e != nil {
+		return fail("INSTANCE_UNWRITABLE", "无法创建外置日志目录。")
+	}
+	c.log, e = os.OpenFile(filepath.Join(instance, "logs", "launcher.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if e != nil {
 		return fail("INSTANCE_UNWRITABLE", "无法写入 launcher.log。")
 	}

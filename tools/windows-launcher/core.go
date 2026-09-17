@@ -18,7 +18,7 @@ var buildCommit = "unbuilt"
 var runtimeHash = "unbuilt"
 
 const product = "K⁺-SESSION"
-const buildVersion = "launcher development build / Batch 2A"
+const buildVersion = "launcher development build / Batch 2B"
 
 type fileEntry struct {
 	Path   string
@@ -30,6 +30,8 @@ type manifest struct {
 	ManifestSchema       int
 	Platform             string
 	SourceCommit         string
+	NodeVersion          string
+	NodeHash             string
 	Version              string
 	Files                []fileEntry
 	BusinessDataIncluded bool
@@ -99,7 +101,11 @@ func verifyRuntime(root string) (manifest, error) {
 	bad := func() (manifest, error) {
 		return m, fail("RUNTIME_INVALID", "Runtime 校验失败，文件缺失、变更或路径异常；未启动后台。")
 	}
-	if digest(b) != runtimeHash || json.Unmarshal(b, &m) != nil || m.Format != "k-session-runtime" || m.ManifestSchema != 1 || m.Platform != "win32-x64" || m.BusinessDataIncluded {
+	if digest(b) != runtimeHash || json.Unmarshal(b, &m) != nil || m.Format != "k-session-runtime" || m.ManifestSchema != 1 || m.Platform != "win32-x64" || m.BusinessDataIncluded || m.SourceCommit != buildCommit || m.NodeVersion != "24.21.0" {
+		return bad()
+	}
+	nodeHash, err := hashFile(node)
+	if err != nil || nodeHash != m.NodeHash || m.NodeHash != "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32" {
 		return bad()
 	}
 	expected := map[string]fileEntry{}
@@ -160,11 +166,29 @@ func verifyRuntime(root string) (manifest, error) {
 	if len(expected) != 0 {
 		return bad()
 	}
+	entries, e := os.ReadDir(root)
+	if e != nil {
+		return bad()
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() {
+			if name != "app" && name != "runtime" && name != "licenses" && name != "manifest" && name != "hashes" {
+				return bad()
+			}
+		} else if name != "K-SESSION.exe" && name != "build-info.json" {
+			return bad()
+		}
+	}
 	return m, nil
 }
 func instancePath(root, requested string) (string, error) {
 	if requested == "" {
-		requested = root + "-instance"
+		local := os.Getenv("LOCALAPPDATA")
+		if local == "" || !filepath.IsAbs(local) {
+			return "", fail("INSTANCE_INVALID", "无法定位当前用户的数据目录，请检查用户配置。")
+		}
+		requested = filepath.Join(local, "K-SESSION", "Beta", "instance")
 	}
 	abs, e := filepath.Abs(requested)
 	if e != nil {
@@ -180,7 +204,7 @@ func instancePath(root, requested string) (string, error) {
 	if e != nil || !strings.EqualFold(real, abs) {
 		return "", fail("INSTANCE_INVALID", "实例路径含链接或重解析点，请使用真实目录。")
 	}
-	for _, child := range []string{".launcher.lock", "launcher.log", "temp"} {
+	for _, child := range []string{".launcher.lock", "logs", "logs/launcher.log", "temp"} {
 		p := filepath.Join(real, child)
 		if _, err := os.Lstat(p); err == nil {
 			resolved, err := canonical(p)

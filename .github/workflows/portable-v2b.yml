@@ -1,0 +1,67 @@
+name: Portable Batch 2B candidate
+on:
+  push:
+    branches: [codex/windows-installer-v1.1]
+    paths:
+      - 'tools/windows-launcher/**'
+      - 'tools/windows-portable/**'
+      - 'tools/tests/windows-portable/**'
+      - '.github/workflows/portable-v2b.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: portable-2b-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  portable:
+    if: github.ref == 'refs/heads/codex/windows-installer-v1.1'
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - name: Exact public Git bytes
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: E isolated source and same-commit Portable build
+        shell: pwsh
+        run: |
+          if (!(Test-Path E:/)) {
+            $taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-portable-e'
+            New-Item -ItemType Directory -Path $taskDrive | Out-Null
+            subst E: $taskDrive
+            if ($LASTEXITCODE -ne 0) { throw 'E isolation unavailable' }
+          }
+          git clone --no-hardlinks --no-checkout . E:/portable-source
+          if ($LASTEXITCODE -ne 0) { throw 'Isolated source clone failed' }
+          git -C E:/portable-source -c core.autocrlf=false checkout --detach ${{ github.sha }}
+          if ($LASTEXITCODE -ne 0) { throw 'Exact checkout failed' }
+          & E:/portable-source/tools/windows-portable/ci.ps1 -Work E:/portable-build -Commit ${{ github.sha }}
+      - name: Same-commit full public 26 suites (no skips)
+        shell: pwsh
+        run: |
+          $taskNode='E:/portable-build/node-tool/node-v24.21.0-win-x64/node.exe'
+          $taskNpm='E:/portable-build/node-tool/node-v24.21.0-win-x64/node_modules/npm/bin/npm-cli.js'
+          $env:TEMP='E:/portable-build/regression-temp'; $env:TMP=$env:TEMP
+          New-Item -ItemType Directory -Force -Path $env:TEMP | Out-Null
+          Set-Location E:/portable-source
+          & $taskNode tools/tests/windows-runtime/hosted-gate.cjs preflight
+          if ($LASTEXITCODE -ne 0) { throw 'Symlink gate failed' }
+          & $taskNode $taskNpm ci --omit=optional --ignore-scripts --no-audit --no-fund --cache E:/portable-build/regression-cache
+          if ($LASTEXITCODE -ne 0) { throw 'Regression dependency setup failed' }
+          & $taskNode tools/tests/windows-runtime/hosted-gate.cjs regression
+          if ($LASTEXITCODE -ne 0) { throw 'Full regression failed' }
+          $taskResult=Get-Content -Raw .test-work/r5a-gate/regression.json|ConvertFrom-Json
+          if($taskResult.testTotal -ne 742 -or $taskResult.suitePass -ne 26 -or $taskResult.fail -ne 0 -or $taskResult.skipped -ne 0){throw 'Exact regression gate failed'}
+          Copy-Item .test-work/r5a-gate/regression.json E:/portable-build/artifact/public-regression.json
+      - name: Upload matched unsigned candidate and non-sensitive evidence
+        if: success()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: K-SESSION-portable-win-x64-${{ github.sha }}
+          path: E:/portable-build/artifact/
+          if-no-files-found: error
+          retention-days: 30

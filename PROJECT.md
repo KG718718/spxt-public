@@ -1,5 +1,10 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 2B 实施中｜2026-09-17
+
+用户已验收2A并授权 Portable Candidate：基线 f4da811，已fetch/fast-forward且干净。仅当前公开分支增量开发；同一新commit fresh Runtime→配对根Launcher→外置Beta instance/log→只读程序目录/移动/ZIP解包测试。默认LOCALAPPDATA/K-SESSION/Beta/instance，日志在其logs子目录；测试定向E盘隔离路径，不是Batch4最终数据策略。
+本轮L2设计/实施入口 docs/tasks/windows-installer-v1.1/batch-2b。首版处于构建测试阶段，尚无2B PASS或正式Artifact结论；完整26套742项及最终Actions ZIP人工验收仍是门禁。不改业务，不做Setup/OCR/main/Release；测试只用合成身份/数据，不创建Agent/任务/工作树。以下为历史记录。
+
 ## Batch 2A 收口｜2026-09-17
 
 **PASS — Windows 10 x64 Beta Track；等待上级验收，不自动进入 2B。** 最终代码 `1dc0efc0209aebb40916ccd94d0fd2b423ed9705` 已仅推开发分支。Go 1.27.1 GUI Launcher、固定包内 Node、实例/端口/Job 安全与 GitHub-first 交付完成；Win10 19045 实际 EXE L01—L17 + 6 项反例通过。用户人工确认打开页面、无 CMD、停止后不可访问；隔离日志 STOPPED，未发现 Launcher 残留。

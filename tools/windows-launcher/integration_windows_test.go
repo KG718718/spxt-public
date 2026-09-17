@@ -29,7 +29,7 @@ func until(t *testing.T, fn func() bool) {
 	t.Fatal("timeout waiting for condition")
 }
 func events(instance string) []map[string]any {
-	b, _ := os.ReadFile(filepath.Join(instance, "launcher.log"))
+	b, _ := os.ReadFile(filepath.Join(instance, "logs", "launcher.log"))
 	rows := []map[string]any{}
 	for _, line := range strings.Split(string(b), "\n") {
 		var r map[string]any
@@ -112,7 +112,7 @@ func TestLauncherIntegration(t *testing.T) {
 		t.Skip("actual-EXE integration requires explicit package/evidence")
 	}
 	exe, _ = canonical(exe)
-	root := filepath.Dir(filepath.Dir(exe))
+	root := filepath.Dir(exe)
 	if within(root, base) {
 		t.Fatal("evidence must be external")
 	}
@@ -126,6 +126,7 @@ func TestLauncherIntegration(t *testing.T) {
 	var build map[string]any
 	json.Unmarshal(info, &build)
 	runtimeHash = build["runtimeManifestSha256"].(string)
+	buildCommit = build["sourceCommit"].(string)
 	if _, e = verifyRuntime(root); e != nil {
 		t.Fatal(e)
 	}
@@ -249,8 +250,8 @@ func TestLauncherIntegration(t *testing.T) {
 	blocker.Close()
 	// Missing runtime and read-only directory are tested using distinct disposable layouts.
 	badRoot := filepath.Join(base, "bad package")
-	os.MkdirAll(filepath.Join(badRoot, "launcher"), 0700)
-	badExe := filepath.Join(badRoot, "launcher", "K-SESSION.exe")
+	os.MkdirAll(badRoot, 0700)
+	badExe := filepath.Join(badRoot, "K-SESSION.exe")
 	os.WriteFile(badExe, bytes, 0700)
 	badInst := filepath.Join(base, "missing-runtime")
 	bad := launchTest(t, badExe, badInst)
@@ -314,7 +315,7 @@ func TestLauncherIntegration(t *testing.T) {
 	t.Cleanup(func() { exec.Command(icacls, aclDir, "/remove:d", "*"+sid).Run() })
 	aclCmd := launchTest(t, exe, aclDir)
 	time.Sleep(time.Second)
-	if _, err := os.Stat(filepath.Join(aclDir, "launcher.log")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(aclDir, "logs", "launcher.log")); !os.IsNotExist(err) {
 		t.Fatal("unwritable instance created log")
 	}
 	if _, err := os.Stat(filepath.Join(aclDir, ".launcher.lock")); !os.IsNotExist(err) {
