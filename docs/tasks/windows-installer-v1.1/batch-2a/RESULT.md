@@ -43,4 +43,3 @@ tools/tests/windows-launcher/ci.ps1；.github/workflows/launcher-v2a.yml。
 未做实际注销关机、破坏浏览器关联反例、干净机/Win11/ARM认证、签名、Setup、OCR、正式数据路径和升级卸载。Windows10是当前开发机 Beta 验证，不承诺所有Windows支持。
 停止采用 Job 终止，无业务请求优雅排空保证；原型邮件和 OCR 禁用，不是正式业务运行入口。
 建议上级审查 GitHub 证据后决定是否进入 2B；本任务停止。
-
