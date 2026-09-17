@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 2A 收口｜2026-09-17
+
+**PASS — Windows 10 x64 Beta Track；等待上级验收，不自动进入 2B。** 最终代码 `1dc0efc0209aebb40916ccd94d0fd2b423ed9705` 已仅推开发分支。Go 1.27.1 GUI Launcher、固定包内 Node、实例/端口/Job 安全与 GitHub-first 交付完成；Win10 19045 实际 EXE L01—L17 + 6 项反例通过。用户人工确认打开页面、无 CMD、停止后不可访问；隔离日志 STOPPED，未发现 Launcher 残留。
+
+Launcher Actions [35127971944](https://github.com/KG718718/spxt-public/actions/runs/35127971944) 与公开版完整回归 [35127971754](https://github.com/KG718718/spxt-public/actions/runs/35127971754) 均通过，后者 26/26 套、742 项、0失败/跳过。EXE 为 unsigned Artifact，非 Setup/Release；本机与 CI 的配对 manifest/EXE hash 不同，详见 [Batch 2A RESULT](docs/tasks/windows-installer-v1.1/batch-2a/RESULT.md)。没有修改业务、main、v1.0.0、Release，没有进入 2B/Setup/OCR。下面旧记录仅代表当时时点。
+
 ## R5A 验收状态｜2026-09-16
 
 **PASS FOR WINDOWS 10 BETA TRACK，等待上级验收，不自动进入Batch2。** R5检查点a3fa006、精确Git锁字节修复/最终源码37586d2已仅推开发分支。Hosted 35112295648完整26/26套742项、0失败/跳过，文件/目录symlink通过；fresh20生产包无Canvas/Skia/addon，许可0未解决项。Win10 19045开发机staging及新解包各12项Smoke通过。Runtime ZIP 48,284,049字节，SHA256 bfb9581ef089ca7bd8a8d695d776a7c91a2407c871e1affbbe3b479e001c36e2，未发布；结果详见batch-1c/RESULT.md（PROJECT入口为docs/tasks/windows-installer-v1.1/batch-1c/RESULT.md）。

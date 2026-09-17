@@ -1,5 +1,11 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## Batch 2A 收口｜2026-09-17
+
+**PASS — Windows 10 x64 Beta Track；等待上级验收，不自动进入 2B。** 最终代码 `1dc0efc0209aebb40916ccd94d0fd2b423ed9705` 已仅推开发分支。Go 1.27.1 GUI Launcher、固定包内 Node、实例/端口/Job 安全与 GitHub-first 交付完成；Win10 19045 实际 EXE L01—L17 + 6 项反例通过。用户人工确认打开页面、无 CMD、停止后不可访问；隔离日志 STOPPED，未发现 Launcher 残留。
+
+Launcher Actions [35127971944](https://github.com/KG718718/spxt-public/actions/runs/35127971944) 与公开版完整回归 [35127971754](https://github.com/KG718718/spxt-public/actions/runs/35127971754) 均通过，后者 26/26 套、742 项、0失败/跳过。EXE 为 unsigned Artifact，非 Setup/Release；本机与 CI 的配对 manifest/EXE hash 不同，详见 [Batch 2A RESULT](batch-2a/RESULT.md)。没有修改业务、main、v1.0.0、Release，没有进入 2B/Setup/OCR。下面旧记录仅代表当时时点。
+
 ## Batch 2A已获实施授权 / GitHub-first｜2026-09-17
 
 R5A已获上级验收PASS FOR WINDOWS 10 BETA TRACK；当前只进入Desktop Launcher Prototype，不做Setup/OCR/Release。L2入口batch-2a/intent.md、LAUNCHER-TECH-DECISION.md（Spec）、LAUNCHER-LIFECYCLE.md（Plan）、acceptance.md；原任务书已批准这些目标和实现范围。
