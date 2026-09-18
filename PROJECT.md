@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 2B 自动化收口 / 人工验收待完成｜2026-09-18
+
+状态 **PASS WITH CONDITIONS**。受测公开源码 cfc329fb405b1c5e4881e96eb8f2b4f78e8af552；Portable Actions 35294691905 attempt2全链通过，staging及全新ZIP解包各27项、公开26套742项0失败0跳过。Artifact 10527372359为成对整包，根Launcher绑定本次Runtime manifest；不得用本地包替代。Win10必须对本次Actions ZIP人工确认，2A反馈不复用；没有干净机/Win11认证。
+
+保留attempt1既有archive.updatedAt跨秒断言失败；重跑未修改断言，未宣称该时间敏感测试已修复。停止不是事务排空保证。只改公开Launcher/打包/测试/文档，不改业务/main/v1.0.0，不做Setup/Release/OCR，不自动进入Batch3。完整身份、下载校验和剩余验收见batch-2b/RESULT.md与CHATGPT-HANDOFF.md；后续仅报告提交不代表重编译。以下为历史时点。
+
 ## Batch 2B 实施中｜2026-09-17
 
 用户已验收2A并授权 Portable Candidate：基线 f4da811，已fetch/fast-forward且干净。仅当前公开分支增量开发；同一新commit fresh Runtime→配对根Launcher→外置Beta instance/log→只读程序目录/移动/ZIP解包测试。默认LOCALAPPDATA/K-SESSION/Beta/instance，日志在其launcher-logs子目录（不与业务logs混用）；测试定向E盘隔离路径，不是Batch4最终数据策略。

@@ -1,5 +1,13 @@
 # Windows installer v1.1 决策登记
 
+## Batch 2B 边界与证据登记｜2026-09-18
+
+- 仅同commit fresh成对构建；正式审查身份cfc329f的Actions 35294691905 attempt2整包，不能拿本地EXE替换。
+- 外置instance/launcher-logs用于避开既有业务孤立安装保护，保持server.js原保护不变；属Beta临时目录契约，非Batch4最终设计。
+- 精确只读ACL夹具修正与合成PDF字体描述修正不修改业务/既有公共断言。公开回归原样重跑，保留attempt1的archive.updatedAt时间边界失败，不宣称已修复。
+- Git网络失败时允许范围未扩大：用已授权的GitHub认证原样上传相同Git对象，核对SHA后force:false仅快进开发分支；没有修改代理/凭据/main/tag/Release。
+- 自动化全通过后仍等待本次Actions ZIP的Win10人工反馈与上级验收；不自动进入Batch3。
+
 ## Batch 2B 实施中｜2026-09-17
 
 用户已验收2A并授权 Portable Candidate：基线 f4da811，已fetch/fast-forward且干净。仅当前公开分支增量开发；同一新commit fresh Runtime→配对根Launcher→外置Beta instance/log→只读程序目录/移动/ZIP解包测试。默认LOCALAPPDATA/K-SESSION/Beta/instance，日志在其launcher-logs子目录（不与业务logs混用）；测试定向E盘隔离路径，不是Batch4最终数据策略。
