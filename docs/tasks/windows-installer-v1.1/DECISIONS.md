@@ -1,5 +1,15 @@
 # Windows installer v1.1 决策登记
 
+## 当前批准状态：Batch 2B PASS / Batch 3 方案待审｜2026-09-18
+
+用户已重新完成本次 Actions 整包的 1–8 步人工验收：启动、自动开页、原账号登录、仅关闭浏览器、退出/停止、页面不可访问、重新启动、账号和数据保留均正常，未发现影响使用的异常。结合既有同 commit 自动化，Batch 2B 正式批准 PASS。受测源码仍为 `cfc329fb405b1c5e4881e96eb8f2b4f78e8af552`；Portable 35294691905 attempt2 / Artifact 10527372359 / 26套742项 fail0 skip0。当前仅归档结论，不重新构建或测试，不修改原 Artifact 的历史 PENDING 字段。
+
+Batch 3 先提交六项范围方案（`docs/tasks/windows-installer-v1.1/batch-3/PROPOSAL.md`，仓库根相对路径），等待再次审批后实施；不是 Batch 3 实现通过。仅开发分支 codex/windows-installer-v1.1；main、v1.0.0 和现有 Release 不变，不自动进入后续 Batch。
+
+`TEST-FLAKE — archive.updatedAt second-boundary stability` 单独登记于 `docs/tasks/windows-installer-v1.1/test-flake-archive-updated-at/TASK.md`，状态 OPEN / BACKLOG，不阻塞 Batch 3。保留断言和失败证据，不用简单 sleep 掩盖；未来单独定位修复。Win11/干净机、签名、事务排空并未因此获得验证。
+
+以下均为历史时点记录；以本节及 Batch 2B 最新 RESULT 为当前状态。
+
 ## Batch 2B 边界与证据登记｜2026-09-18
 
 - 仅同commit fresh成对构建；正式审查身份cfc329f的Actions 35294691905 attempt2整包，不能拿本地EXE替换。

@@ -40,8 +40,10 @@ S01 空闲停止、S02 取得页面且无在途提交时停止。没有模拟“
 | 本机下载Actions外层Artifact | SHA256与GitHub digest一致 |
 | 本机内层ZIP | 51,285,232 bytes，SHA256与CI一致 |
 | 本机解包完整性 | 1042文件，manifest/EXE配对校验PASS |
-| 本次整包Win10人工 | 待用户确认；不得沿用2A反馈 |
+| 本次整包Win10人工 | 2026-09-18 用户重新执行 1–8 步全部正常，正式批准 PASS；不是沿用2A反馈 |
 
-2026-09-18用户已回复：“正常，账号保留”，确认本次Actions整包停止后再次启动、用同一测试Admin登录且不重复创建。自动打开页面/无CMD的第一项单独人工确认仍待补齐。
+2026-09-18 用户补充完整验收：K-SESSION.exe 启动、自动浏览器开页、原账号登录、仅关闭浏览器后的后台行为、退出/停止后页面不可访问、再双击恢复、账号和数据保留、启动无影响使用异常，1–8 步全部正常。证据类型为用户人工验收声明；本次未重新执行自动化，不改原始 Artifact 内生成时的 PENDING 字段。
+
+已批准独立待办 TEST-FLAKE — archive.updatedAt second-boundary stability（../test-flake-archive-updated-at/TASK.md）。不作为 Batch 3 阻塞，但不豁免后续 CI 门禁；不能删除原断言、静默忽略失败或用简单 sleep 掩盖。此前失败与重跑结果继续保留。
 
 原始证据见该Actions Artifact内portable-test-report.json、integration.json、public-regression.json、build-info.json、runtime-manifest.json、zip-identity.json、SHA256SUMS.txt、license-summary.json；自动化是Hosted Windows Server，不等于Win11或干净机验收。

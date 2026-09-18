@@ -2,7 +2,9 @@
 
 ## 当前结论
 
-**PASS WITH CONDITIONS — 自动化门禁通过，最终 Actions 整包的 Win10 人工验收待完成。不得自动进入 Batch3。**
+**PASS — 2026-09-18 用户已补齐最终 Actions 整包的 1–8 步人工验收并正式批准。Batch 3 先提交范围方案，待再次审批后实施。**
+
+本次仅更新验收文档：没有重编译、重打包、重跑自动化或改变原 Artifact。以下自动化结果来自原受测 commit，不属于文档归档 commit 的新测试。
 
 受测源码 `cfc329fb405b1c5e4881e96eb8f2b4f78e8af552`；分支 `codex/windows-installer-v1.1`。正式对象是 GitHub Actions 整包，不是本地构建包。
 
@@ -34,10 +36,9 @@
 
 ## 必须保留的风险与未完成项
 
-1. Win10当前开发机人工验收须使用该Actions整包，不沿用2A反馈，不等于干净机器认证；Win11未实测。
-   用户2026-09-18已确认停止再启动后“正常，账号保留”；首次自动开页和无CMD的单独人工反馈待补齐。
+1. Win10 当前开发机、本次 Actions 整包的人工验收已由用户完整确认：启动/浏览器/原账号、只关浏览器、退出停止、停止后不可访问、重新启动、原账号与数据保留及无影响使用异常均正常。不是沿用 2A 反馈；不等于干净机器认证，Win11 未实测。
 2. 停止使用Job进程级终止，仅验证空闲及无提交的页面打开场景；先保存再停止，不承诺在途业务无损。Batch4负责正式数据/升级/退出策略。
-3. Portable attempt1 的既有公共测试因 archive.updatedAt 跨秒失败，attempt2原样通过；没有修改业务或公共测试，也没有声称该时间敏感断言已修复。另cb661bf历史浏览器超时见测试报告。保留全部失败记录。
+3. Portable attempt1 的既有公共测试因 archive.updatedAt 跨秒失败，attempt2原样通过；没有修改业务或公共测试，也没有声称该时间敏感断言已修复。用户批准单独立项 TEST-FLAKE — archive.updatedAt second-boundary stability，不作为 Batch 3 阻塞，不删除断言、不使用简单 sleep。见 ../test-flake-archive-updated-at/TASK.md。另 cb661bf 历史浏览器超时见测试报告。保留全部失败记录。
 4. unsigned开发Artifact可能触发Windows安全提示；本轮不签名、不发布正式版。
 5. 默认外置目录是LOCALAPPDATA/K-SESSION/Beta/instance，不是Batch4最终目录契约；邮件/OCR关闭。PDF文本、上传、Excel、备份核心路径不需要外部开发工具。
 
@@ -49,4 +50,4 @@ main和v1.0.0重新读取均为 `84cbb324a4f63bef094d2c21d70eba841205a7a7`。后
 
 ## 后续
 
-核对原始Actions ZIP及本机人工反馈，完成报告归档；等待上级决定Batch3。不自动实施新阶段。
+Batch 2B 已正式批准。Batch 3 目标、范围、排除项、验收、风险、回滚见 ../batch-3/PROPOSAL.md；只提交方案，不自动开始安装器实现，也不进入 Batch 4。安装技术、目录和最小卸载范围须随方案再次审批。
