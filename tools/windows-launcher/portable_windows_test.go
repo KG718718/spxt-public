@@ -145,7 +145,9 @@ func TestPortable(t *testing.T) {
 		t.Fatal(e)
 	}
 	icacls := filepath.Join(os.Getenv("SystemRoot"), "System32", "icacls.exe")
-	if b, e := exec.Command(icacls, root, "/deny", "*"+sid+":(OI)(CI)(W)").CombinedOutput(); e != nil {
+	// Generic WRITE also covers SYNCHRONIZE and can deny CreateProcess/read access.
+	// Deny only mutations; preserve read/execute for the real read-only-program test.
+	if b, e := exec.Command(icacls, root, "/deny", "*"+sid+":(OI)(CI)(WD,AD,WEA,WA,DE,DC)").CombinedOutput(); e != nil {
 		t.Fatalf("ACL deny: %s", b)
 	}
 	t.Cleanup(func() { exec.Command(icacls, root, "/remove:d", "*"+sid).Run() })
@@ -153,6 +155,13 @@ func TestPortable(t *testing.T) {
 	if f, e := os.OpenFile(probePath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600); e == nil {
 		f.Close()
 		t.Fatal("program directory is writable")
+	}
+	if f, e := os.OpenFile(filepath.Join(root, "app", "server.js"), os.O_WRONLY, 0); e == nil {
+		f.Close()
+		t.Fatal("existing program file is writable")
+	}
+	if _, e := os.ReadFile(filepath.Join(root, "app", "server.js")); e != nil {
+		t.Fatal("write-denied program must remain readable:", e)
 	}
 	cmd := start(exe)
 	until(t, func() bool { return lastEvent(instance, "READY") != nil })
