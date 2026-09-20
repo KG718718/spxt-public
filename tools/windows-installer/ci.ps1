@@ -8,6 +8,8 @@ $taskPortable=Join-Path $taskWork 'portable'
 & (Join-Path $taskRepo 'tools/windows-portable/ci.ps1') -Work $taskPortable -Commit $Commit
 $taskNode=Join-Path $taskPortable 'node-tool/node-v24.21.0-win-x64/node.exe'
 $taskGo=Join-Path $taskPortable 'go-tool/go/bin/go.exe'
+& $taskNode (Join-Path $taskRepo 'tools/tests/windows-installer/contract.cjs')
+if($LASTEXITCODE -ne 0){throw 'Installer contract failed'}
 & (Join-Path $PSScriptRoot 'toolchain.ps1') -Work (Join-Path $taskWork 'toolchain')
 $taskCompiler=Join-Path $taskWork 'toolchain/compiler'
 foreach($taskMode in @('candidate','fault-space','fault-cancel')){

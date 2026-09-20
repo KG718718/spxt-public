@@ -111,13 +111,20 @@ func TestSetup(t *testing.T) {
 			}
 			logText = string(utf16.Decode(units))
 		}
+		diagnosticTail := 0
 		for _, line := range strings.Split(logText, "\n") {
 			lower := strings.ToLower(line)
+			if strings.Contains(lower, "exception message") || strings.Contains(lower, "runtime error") {
+				diagnosticTail = 3
+			}
 			// Fixed installer messages and OS errors only; never export whole logs/instances.
-			if strings.Contains(line, "KSESSION_") || strings.Contains(lower, "error") ||
+			if diagnosticTail > 0 || strings.Contains(line, "KSESSION_") || strings.Contains(lower, "error") ||
 				strings.Contains(lower, "exception") || strings.Contains(lower, "denied") ||
 				strings.Contains(lower, "message box") || strings.Contains(lower, "cannot") {
 				t.Log(strings.TrimSpace(line))
+			}
+			if diagnosticTail > 0 {
+				diagnosticTail--
 			}
 		}
 		if (e == nil) != success {

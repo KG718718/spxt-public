@@ -195,7 +195,8 @@ begin
   while not DirExists(Ancestor) do Ancestor := ExtractFileDir(Ancestor);
   if not GetSpaceOnDisk64(Ancestor, Free, Total) then begin Log('KSESSION_REJECT_SPACE_QUERY'); Result := '无法确认可用磁盘空间。'; exit; end;
   if Free < {#RequiredBytes} then begin Log('KSESSION_REJECT_SPACE'); Result := '磁盘可用空间不足，未安装程序。'; exit; end;
-  Probe := AddBackslash(Ancestor) + 'ksession-write-probe-' + GetDateTimeString('yyyymmddhhnnsszzz', '', '') + '.tmp';
+  { DateSeparator and TimeSeparator are Char, never empty string variants. }
+  Probe := AddBackslash(Ancestor) + 'ksession-write-probe-' + GetDateTimeString('yyyymmddhhnnss', '-', ':') + '.tmp';
   H := CreateFileW(Probe, $40000000, 0, 0, 1, $04000100, 0); { CREATE_NEW, delete-on-close }
   if H = $FFFFFFFF then begin Log('KSESSION_REJECT_WRITE'); Result := '当前用户没有目录写入权限。不会请求管理员权限。'; exit; end;
   CloseHandle(H);

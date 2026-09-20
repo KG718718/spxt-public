@@ -4,6 +4,8 @@ const root=path.resolve(__dirname,'../../..'),p=path.join(root,'tools/windows-in
 const iss=fs.readFileSync(path.join(p,'setup.iss'),'utf8'),pin=JSON.parse(fs.readFileSync(path.join(p,'toolchain.json')));
 for(const line of ['PrivilegesRequired=lowest','ArchitecturesAllowed=x64os','CloseApplications=no','RestartApplications=no','UninstallFilesDir={app}\\uninstall','DisableDirPage=yes','UsePreviousAppDir=no']) assert.ok(iss.includes(line),line);
 assert.equal(pin.version,'6.7.3');assert.match(pin.sha256,/^[a-f0-9]{64}$/);
+assert.ok(iss.includes("GetDateTimeString('yyyymmddhhnnss', '-', ':')"));
+assert.ok(!/GetDateTimeString\([^\n]*, '', ''\)/.test(iss),'Char arguments cannot be empty strings');
 assert.ok(!iss.includes('[UninstallDelete]'));assert.ok(!iss.includes('[InstallDelete]'));
 for(const forbidden of ['taskkill','RestartManager','runascurrentuser','uninsdeletekeyifempty'])assert.ok(!iss.includes(forbidden));
 for(const name of ['PrepareToInstall','InitializeUninstall','VerifyInstalled','RunningProduct','AcquireExistingInstanceLock'])assert.ok(iss.includes(name));
