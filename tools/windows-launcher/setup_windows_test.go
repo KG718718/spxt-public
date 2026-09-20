@@ -251,10 +251,8 @@ func TestSetup(t *testing.T) {
 			}
 			t.Fatalf("Shortcut missing: expected=%q productNames=%q directoryError=%v", file, names, readErr)
 		}
-		s := strings.ReplaceAll(file, "'", "''")
-		// Windows PowerShell redirected console encoding can lose Chinese path characters.
-		// Transport COM's Unicode target as ASCII base64, then compare actual filesystem identity.
-		encoded := strings.TrimSpace(string(command(ps, "-NoProfile", "-NonInteractive", "-Command", "[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes((New-Object -ComObject WScript.Shell).CreateShortcut('"+s+"').TargetPath))")))
+		// Read IShellLinkW/IPersistFile, not WScript.Shell's lossy U+207A filename conversion.
+		encoded := strings.TrimSpace(string(command(ps, "-NoProfile", "-NonInteractive", "-File", filepath.Join(repo, "tools/tests/windows-installer/read-shortcut.ps1"), "-PathBase64", base64.StdEncoding.EncodeToString([]byte(file)))))
 		decoded, err := base64.StdEncoding.DecodeString(encoded)
 		if err != nil {
 			t.Fatal("invalid shortcut target transport")
