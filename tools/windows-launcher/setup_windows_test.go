@@ -3,6 +3,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -229,10 +230,18 @@ func TestSetup(t *testing.T) {
 	shortcutTarget := func(file string) string {
 		t.Helper()
 		s := strings.ReplaceAll(file, "'", "''")
-		return strings.TrimSpace(string(command(ps, "-NoProfile", "-NonInteractive", "-Command", "(New-Object -ComObject WScript.Shell).CreateShortcut('"+s+"').TargetPath")))
+		// Windows PowerShell redirected console encoding can lose Chinese path characters.
+		// Transport COM's Unicode target as ASCII base64, then compare actual filesystem identity.
+		encoded := strings.TrimSpace(string(command(ps, "-NoProfile", "-NonInteractive", "-Command", "[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes((New-Object -ComObject WScript.Shell).CreateShortcut('"+s+"').TargetPath))")))
+		decoded, err := base64.StdEncoding.DecodeString(encoded)
+		if err != nil {
+			t.Fatal("invalid shortcut target transport")
+		}
+		return string(decoded)
 	}
-	if !sameFile(shortcutTarget(desktop), exe) || !sameFile(shortcutTarget(start), exe) {
-		t.Fatal("shortcuts not direct Launcher")
+	desktopTarget, startTarget := shortcutTarget(desktop), shortcutTarget(start)
+	if !sameFile(desktopTarget, exe) || !sameFile(startTarget, exe) {
+		t.Fatalf("shortcuts not direct Launcher: desktop=%q start=%q expected=%q", desktopTarget, startTarget, exe)
 	}
 	record("I05", "PASS", "actual desktop shortcut target")
 	record("I06", "PASS", "actual start menu shortcut target")
