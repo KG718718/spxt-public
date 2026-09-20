@@ -11,7 +11,7 @@ const regression=json('public-regression.json');assert.equal(regression.sourceCo
 const tests=json('INSTALLER-TEST-REPORT.json');assert.equal(tests.sourceCommit,commit);assert.equal(tests.status,'AUTOMATED_PASS_HUMAN_PENDING');assert.equal(Object.keys(tests.checks).length,32);
 assert.equal(tests.setupSha256,i.setupSha256);assert.equal(tests.unrelatedNodePreserved,true);assert.equal(tests.instanceDataPreserved,true);
 const offline=json('offline-network.json');assert.equal(offline.sourceCommit,commit);assert.equal(offline.status,'PASS');assert.equal(offline.externalBefore,true);assert.equal(offline.externalDuring,false);assert.equal(offline.restored,true);assert.equal(offline.firewallChanged,false);
-const pending=new Set(['I01','I02','I03','I09']);
+const pending=new Set(['I01','I02','I09']);
 for(let n=1;n<=32;n++){const id='I'+String(n).padStart(2,'0');assert.equal(tests.checks[id]?.status,pending.has(id)?'PENDING':'PASS',id);assert.ok(tests.checks[id].method);}
 for(const f of inventory(root)){if(f.path.endsWith('.exe'))continue;const s=read(f.path).toString();assert.ok(!/"(?:password|token|smtpPass|cookie)"\s*:/i.test(s));}
 console.log('SETUP ARTIFACT VERIFIED; NOT FINAL HUMAN ACCEPTANCE');

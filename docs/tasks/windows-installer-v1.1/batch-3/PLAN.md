@@ -1,5 +1,15 @@
 # Batch 3 执行计划
 
+## R1 Setup UX Finalization（用户已批准）
+
+沿用本L2任务，基线297e282；旧ff75923原始Artifact十步已由用户确认，不能替代R1新包人工复验。
+现有DisableDirPage/DisableProgramGroupPage均yes，DisableReadyPage为no；本轮仅改Ready为yes，并把保留的重要提示页下一步按钮改为安装。
+不隐藏InfoBefore风险/数据提示，不改错误页、安全提示或安装生命周期逻辑。官方依据：https://jrsoftware.org/ishelp/topic_setup_disablereadypage.htm 。
+先新增契约断言复现DisableReadyPage失败，再修改；增加真实不传/DIR的默认目录安装/卸载核验，原中文空格/DIR整链保留。
+默认目录专项只在一次性GitHub runner的真实LocalAppData安装批准的产品路径，不做注册表重定向；合成instance/证据/自定义路径继续E盘。本机不执行安装卸载。
+完整Setup workflow、I01—I32、公开26/742和Portable复验；新版仅Artifact，记录新SHA/hash/run/id，保留旧hash历史。
+人工改为六步；新包人工完成前不标最终PASS，不进入Batch4/OCR/Release/main/tag。
+
 等级 L2；依据用户已批准正式任务书、intent.md、SPEC.md。本任务串行，无新任务/Agent/worktree。
 1. 只读复核公开HEAD3733d99、branch、干净状态和2B契约；固定Inno来源/hash/许可。
 2. 建立失败优先静态测试（缺安装器应失败），实现 tools/windows-installer 下脚本和Inno入口，生成精确文件/校验include，不改受校验程序。

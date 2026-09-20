@@ -61,7 +61,7 @@ func TestSetup(t *testing.T) {
 		}
 		return b
 	}
-	folders := command(ps, "-NoProfile", "-NonInteractive", "-Command", "$j=@{desktop=[Environment]::GetFolderPath('Desktop','DoNotVerify');programs=[Environment]::GetFolderPath('Programs','DoNotVerify')}|ConvertTo-Json -Compress;[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($j))")
+	folders := command(ps, "-NoProfile", "-NonInteractive", "-Command", "$j=@{desktop=[Environment]::GetFolderPath('Desktop','DoNotVerify');programs=[Environment]::GetFolderPath('Programs','DoNotVerify');local=[Environment]::GetFolderPath('LocalApplicationData','DoNotVerify')}|ConvertTo-Json -Compress;[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($j))")
 	var dirs map[string]string
 	folderBytes, folderErr := base64.StdEncoding.DecodeString(strings.TrimSpace(string(folders)))
 	if folderErr != nil {
@@ -70,7 +70,7 @@ func TestSetup(t *testing.T) {
 	if e := json.Unmarshal(folderBytes, &dirs); e != nil {
 		t.Fatal(e)
 	}
-	if !filepath.IsAbs(dirs["desktop"]) || !filepath.IsAbs(dirs["programs"]) {
+	if !filepath.IsAbs(dirs["desktop"]) || !filepath.IsAbs(dirs["programs"]) || !filepath.IsAbs(dirs["local"]) {
 		t.Fatalf("Known folder lookup failed: %q", dirs)
 	}
 	desktop, start := filepath.Join(dirs["desktop"], "K⁺-SESSION.lnk"), filepath.Join(dirs["programs"], "K⁺-SESSION.lnk")
@@ -114,7 +114,11 @@ func TestSetup(t *testing.T) {
 		if cancelFixture {
 			silentMode = "/SILENT"
 		} // Inno only accepts cancel while its progress form is visible.
-		cmd := exec.Command(binary, silentMode, "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/DIR="+dest, "/LOG="+filepath.Join(base, fmt.Sprintf("setup-%02d.log", n)))
+		args := []string{silentMode, "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/LOG=" + filepath.Join(base, fmt.Sprintf("setup-%02d.log", n))}
+		if dest != "" {
+			args = append(args, "/DIR="+dest)
+		}
+		cmd := exec.Command(binary, args...)
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: !cancelFixture}
 		e := cmd.Run()
 		logBytes := mustRead(t, filepath.Join(base, fmt.Sprintf("setup-%02d.log", n)))
@@ -438,7 +442,26 @@ func TestSetup(t *testing.T) {
 	record("I13", "PASS", "actual Chinese installation path and simulated Chinese LOCALAPPDATA; real Chinese account name not certified")
 	record("I14", "PASS", "actual spaces installation/start/core/uninstall")
 	record("I15", "PASS", "static ArchitecturesAllowed=x64os compiler gate; non-x64 hardware not available")
-	record("I03", "PENDING", "default path static contract verified; automation used /DIR; human default-path install remains")
+	// R1: exercise the real default shell folder, without /DIR or registry redirection.
+	// Only the disposable runner's approved installation location is used; instances/evidence stay on E.
+	defaultTarget := filepath.Join(dirs["local"], "Programs", "K-SESSION-Beta")
+	if exists(defaultTarget) || registered() || exists(desktop) || exists(start) {
+		t.Fatal("Refusing to touch an existing default installation")
+	}
+	defaultData := digest(mustRead(t, filepath.Join(instance, "data.json")))
+	runSetup(setup, "", true)
+	defaultRoot := filepath.Join(defaultTarget, "program")
+	defaultExe := filepath.Join(defaultRoot, "K-SESSION.exe")
+	if !registered() || !sameFile(shortcutTarget(desktop), defaultExe) || !sameFile(shortcutTarget(start), defaultExe) {
+		t.Fatal("Default installation location/registration/shortcuts differ")
+	}
+	command(filepath.Join(defaultRoot, "runtime", "node.exe"), filepath.Join(repo, "tools/windows-portable/package.cjs"), "verify", defaultRoot)
+	uninstaller = filepath.Join(defaultTarget, "uninstall", "unins000.exe")
+	uninstall(true)
+	if exists(defaultExe) || registered() || exists(desktop) || exists(start) || digest(mustRead(t, filepath.Join(instance, "data.json"))) != defaultData {
+		t.Fatal("Default install/uninstall cleanup or data preservation failed")
+	}
+	record("I03", "PASS", "actual silent install without /DIR uses current-user LocalApplicationData/Programs/K-SESSION-Beta; payload and both shortcut targets verified; uninstall retains data")
 	record("I02", "PENDING", "lowest/asInvoker contract; hosted token not a standard-user human UAC test")
 	record("I01", "PENDING", "silent installer actually executed; double-click visible wizard remains human")
 	report["instanceDataPreserved"] = exists(instance)

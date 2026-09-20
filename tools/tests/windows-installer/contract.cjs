@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../../..'),p=path.join(root,'tools/windows-installer');
 const iss=fs.readFileSync(path.join(p,'setup.iss'),'utf8'),pin=JSON.parse(fs.readFileSync(path.join(p,'toolchain.json')));
-for(const line of ['PrivilegesRequired=lowest','ArchitecturesAllowed=x64os','CloseApplications=no','RestartApplications=no','UninstallFilesDir={app}\\uninstall','DisableDirPage=yes','UsePreviousAppDir=no']) assert.ok(iss.includes(line),line);
+for(const line of ['PrivilegesRequired=lowest','ArchitecturesAllowed=x64os','CloseApplications=no','RestartApplications=no','UninstallFilesDir={app}\\uninstall','DisableDirPage=yes','DisableProgramGroupPage=yes','DisableReadyPage=yes','DefaultDirName={localappdata}\\Programs\\K-SESSION-Beta','InfoBeforeFile={#Generated}\\install-info.txt','UsePreviousAppDir=no']) assert.ok(iss.split(/\r?\n/).includes(line),line);
 assert.equal(pin.version,'6.7.3');assert.match(pin.sha256,/^[a-f0-9]{64}$/);
 assert.ok(iss.includes("GetDateTimeString('yyyymmddhhnnss', '-', ':')"));
 assert.ok(!/GetDateTimeString\([^\n]*, '', ''\)/.test(iss),'Char arguments cannot be empty strings');

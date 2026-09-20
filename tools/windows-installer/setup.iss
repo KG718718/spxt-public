@@ -27,7 +27,7 @@ MinVersion=10.0.10240
 DisableDirPage=yes
 DisableProgramGroupPage=yes
 DisableWelcomePage=yes
-DisableReadyPage=no
+DisableReadyPage=yes
 UsePreviousAppDir=no
 UsePreviousGroup=no
 UsePreviousTasks=no
@@ -254,6 +254,13 @@ procedure DeinitializeSetup;
 begin ReleaseLocks; end;
 procedure DeinitializeUninstall;
 begin ReleaseLocks; end;
+
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  { Keep the important Beta/data-retention notice; its action now starts installation. }
+  if CurPageID = wpInfoBefore then
+    WizardForm.NextButton.Caption := SetupMessage(msgButtonInstall);
+end;
 
 #ifdef FaultCancel
 procedure CurInstallProgressChanged(CurProgress, MaxProgress: Integer);
