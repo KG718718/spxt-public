@@ -21,12 +21,9 @@ $env:KSESSION_SETUP_BUILD=$taskWork
 $env:KSESSION_SETUP_ARTIFACT=$taskArtifact
 $env:KSESSION_SETUP_EVIDENCE=Join-Path $taskWork 'installer-tests'
 $env:KSESSION_PORTABLE_REPO=$taskRepo
-Push-Location (Join-Path $taskRepo 'tools/windows-launcher')
-try {
- & $taskGo test -count=1 -timeout=15m -v -run '^TestSetup$' .
- if($LASTEXITCODE -ne 0){throw 'Installer automated test failed'}
-} finally {Pop-Location}
+& (Join-Path $PSScriptRoot 'offline-ci.ps1') -Work (Join-Path $taskWork 'offline-gate') -Go $taskGo -LauncherSource (Join-Path $taskRepo 'tools/windows-launcher')
+Copy-Item -LiteralPath (Join-Path $taskWork 'offline-gate/offline-network.json') -Destination $taskArtifact
 Copy-Item -LiteralPath (Join-Path $env:KSESSION_SETUP_EVIDENCE 'INSTALLER-TEST-REPORT.json') -Destination $taskArtifact
 Copy-Item -LiteralPath (Join-Path $taskWork 'toolchain/toolchain-verification.json') -Destination $taskArtifact
 Copy-Item -LiteralPath (Join-Path $taskPortable 'artifact/portable-test-report.json') -Destination $taskArtifact
-Write-Output 'SETUP AUTOMATION COMPLETE; manual default wizard and external-network-disabled tests still required'
+Write-Output 'SETUP OFFLINE AUTOMATION COMPLETE; actual Win10 default visible wizard remains required'

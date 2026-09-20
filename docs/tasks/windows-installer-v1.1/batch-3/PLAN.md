@@ -15,4 +15,17 @@ tools/windows-installer/**、tools/tests/windows-installer/**、新增 tools/win
 
 ## 回滚
 
+## 整机离线验证实现
+
+仅在本公开仓库的 GitHub-hosted 一次性 Windows runner 内运行 offline-ci.ps1；
+固定 Runtime/Go/Inno 和三个 Setup 文件均在断网前完成构建。按原始 InterfaceGuid 精确记录所有已启用网卡，
+先启动隐藏的180秒恢复监护进程，再临时禁用这些网卡。测试前/后要求没有Up网卡且已固定的外网TCP探针失败，
+实际安装/核心API/卸载/重装均在此窗口内完成；finally 恢复原网卡并复核外网恢复。
+超时监护恢复会令本次证据无效，不能算通过。证据仅保留计数、时间、状态和commit，不导出网卡地址、账号或实例。
+不修改防火墙、不在本机执行、不触碰其他主机；不把CI管理员token下的测试当成标准用户免提权人工验收。
+依据微软 Disable-NetAdapter / Enable-NetAdapter 官方文档；其远程连接风险由一次性runner范围及独立恢复监护约束，
+不得把该脚本用于长期或生产主机。
+
+## 回滚实施边界
+
 仅撤销本轮安装器拥有且记录的文件/快捷方式/登记；不清空外置数据或未知文件。源码正常revert不forcepush；保存原2B证据。测试前明确安装目标，新安装器先在隔离runner测试，不先对本机真实默认目录试卸载。

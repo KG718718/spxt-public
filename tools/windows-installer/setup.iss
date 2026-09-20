@@ -66,6 +66,9 @@ const
   ExistingMessage = '已检测到 K⁺-SESSION Beta，请先停止并卸载当前版本后再安装。业务数据会保留。';
 var
   InstanceLock, LauncherLock, NodeLock: LongWord;
+#ifdef FaultCancel
+  FaultCancelIssued: Boolean;
+#endif
 function CreateFileW(Name: String; Access, Share: LongWord; SA: LongWord; Creation, Flags, Template: LongWord): LongWord;
 external 'CreateFileW@kernel32.dll stdcall';
 function CloseHandle(H: LongWord): Boolean;
@@ -252,7 +255,8 @@ begin ReleaseLocks; end;
 #ifdef FaultCancel
 procedure CurInstallProgressChanged(CurProgress, MaxProgress: Integer);
 begin
-  if (CurProgress > 0) and (CurProgress < MaxProgress) then begin
+  if not FaultCancelIssued and (CurProgress > 0) and (CurProgress < MaxProgress) then begin
+    FaultCancelIssued := True;
     Log('KSESSION_FIXTURE_CANCEL_DURING_COPY');
     WizardForm.CancelButton.OnClick(WizardForm.CancelButton);
   end;

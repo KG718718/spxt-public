@@ -76,6 +76,7 @@ jobs:
           name: setup-failure-evidence-${{ github.sha }}-${{ github.run_attempt }}
           path: |
             E:/setup-build/installer-tests/INSTALLER-TEST-REPORT.json
+            E:/setup-build/offline-gate/offline-network.json
             E:/setup-build/candidate/compiler.stdout.log
             E:/setup-build/candidate/compiler.stderr.log
             E:/setup-build/fault-space/compiler.stderr.log

@@ -99,8 +99,13 @@ func TestSetup(t *testing.T) {
 	runSetup := func(binary, dest string, success bool) string {
 		t.Helper()
 		n++
-		cmd := exec.Command(binary, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/DIR="+dest, "/LOG="+filepath.Join(base, fmt.Sprintf("setup-%02d.log", n)))
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		cancelFixture := strings.Contains(binary, string(os.PathSeparator)+"fault-cancel"+string(os.PathSeparator))
+		silentMode := "/VERYSILENT"
+		if cancelFixture {
+			silentMode = "/SILENT"
+		} // Inno only accepts cancel while its progress form is visible.
+		cmd := exec.Command(binary, silentMode, "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/DIR="+dest, "/LOG="+filepath.Join(base, fmt.Sprintf("setup-%02d.log", n)))
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: !cancelFixture}
 		e := cmd.Run()
 		logBytes := mustRead(t, filepath.Join(base, fmt.Sprintf("setup-%02d.log", n)))
 		logText := string(logBytes)
@@ -296,7 +301,10 @@ func TestSetup(t *testing.T) {
 	json.Unmarshal(initial, &core)
 	report["initialCore"] = core
 	record("I10", "PASS", "actual zero-data setup and synthetic Admin login")
-	record("I12", "PENDING", "core APIs and PDF no-network probe passed; host external network not physically blocked, human offline test still required")
+	if os.Getenv("KSESSION_EXTERNAL_NETWORK_DISABLED") != "1" {
+		t.Fatal("Whole hosted runner external-network isolation required")
+	}
+	record("I12", "PASS", "actual install, initial Admin, login, PDF/Chinese PDF, Excel, upload, backup, uninstall/reinstall with all hosted-runner external adapters disabled; offline-network.json separately gates restoration and duration")
 	runSetup(setup, filepath.Join(base, "running-reject"), false)
 	uninstall(false)
 	if !alivePID(pid) || !alivePID(uint32(app.Process.Pid)) || !exists(exe) {
@@ -371,7 +379,19 @@ func TestSetup(t *testing.T) {
 	}
 	os.WriteFile(p, original, 0600)
 	checkPackage()
-	record("I25", "PASS", "installed tamper refused by unchanged Launcher verifier")
+	missing := filepath.Join(base, "owned-missing-login.html")
+	if e := os.Rename(p, missing); e != nil {
+		t.Fatal(e)
+	}
+	_, missingErr := verifyRuntime(root)
+	if e := os.Rename(missing, p); e != nil {
+		t.Fatal(e)
+	}
+	if missingErr == nil {
+		t.Fatal("missing installed file accepted")
+	}
+	checkPackage()
+	record("I25", "PASS", "installed tampered and missing files refused by unchanged Launcher verifier; exact original bytes restored")
 	uninstall(true)
 	record("I13", "PASS", "actual Chinese installation path and simulated Chinese LOCALAPPDATA; real Chinese account name not certified")
 	record("I14", "PASS", "actual spaces installation/start/core/uninstall")
