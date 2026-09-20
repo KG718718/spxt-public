@@ -1,5 +1,7 @@
 # Batch 3-R2 人工十步（尚未验收）
 
+本轮新包：[Actions 原始 Artifact 10606870944](https://github.com/KG718718/spxt-public/actions/runs/35514357007/artifacts/10606870944)。登录GitHub后下载并解压，使用其中 K-SESSION-Setup-1.1.0-beta.1.exe。受测源码 e9417f036d0cdf736ff84682556a994040f0de0b；Setup SHA256 49d28d4dbd131b0dd0890e44aea358d75a8406803ff10df808f073d5c2a72af8。仅Beta测试包，不是Release。
+
 只使用本轮最终自动化通过的原始Actions Artifact；身份、run、SHA256以RESULT.md为准。新旧EXE可能同名，不使用旧下载包。
 已有Beta安装先停止服务并通过Windows设置卸载程序（保留数据），不支持直接覆盖。只用合成测试账号、附件，不引入真实业务数据。
 如果安全策略拦截，记录提示，禁止关闭防护或绕过公司策略。

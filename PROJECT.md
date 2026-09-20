@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 3-R2 数据与附件位置｜2026-09-20
+
+当前 BLOCKED / 自动化通过、等待新包Win10人工十步。程序目录保持固定且隐藏，新增必要数据位置选择；外置安装绑定确保快捷方式/完成页/直接EXE一致。未知非空、系统/重解析点/交叠/不可写路径拒绝；卸载保留、重装恢复，不做数据迁移。
+
+受测代码 e9417f036d0cdf736ff84682556a994040f0de0b：Setup35514357007、Runtime35514356958、Launcher35514356976、Portable35514356966全部成功。D13/13 PASS，I32中29 PASS+3人工待验；26套742项fail0 skip0。Artifact10606870944，Setup SHA256 49d28d4dbd131b0dd0890e44aea358d75a8406803ff10df808f073d5c2a72af8。文档归档不代表新构建；只推开发分支，未改main/v1.0.0/Release、业务代码或其他用途版本。入口 docs/tasks/windows-installer-v1.1/batch-3-r2/RESULT.md 和 CHATGPT-HANDOFF.md。R1六步已被本轮十步新需求取代，不继续旧包验收，不进入Batch4。以下为历史记录。
+
 ## Batch 3-R1 Setup UX收口｜2026-09-20
 
 用户已补齐旧ff75923原始Setup的Win10人工十步，唯一续修为隐藏安装前路径确认页。R1仅调整Inno Ready页面及保留风险提示页的安装按钮，补默认目录实装检查和失败事件诊断；业务/Launcher生产/Runtime/数据策略不变。

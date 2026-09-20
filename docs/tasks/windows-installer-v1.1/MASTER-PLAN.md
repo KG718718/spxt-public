@@ -1,5 +1,11 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## Batch 3-R2 Business Data / Attachment Location Selection｜2026-09-20
+
+用户修正：隐藏程序目录页不等于隐藏业务数据选择。程序仍默认LOCALAPPDATA/Programs/K-SESSION-Beta；必要数据页展示既有/记忆instance位置并允许安全选择。整个instance不拆分；program之外保存安装绑定，直接EXE不得退回空实例；不自动迁移，卸载保留数据。
+
+e9417f0 同提交四条Actions通过，Setup35514357007 / Artifact10606870944，D01—D13全部PASS、I01—I32中29 PASS+3人工PENDING、26套742项0失败0跳过。当前BLOCKED/等待新原始Setup的Win10十步人工验收，R1六步不再是当前门禁。详细见batch-3-r2/RESULT.md及CHATGPT-HANDOFF.md；测试失败历史不覆盖，文档归档不冒充新构建。不得进入Batch4/Release/main/tag/OCR/签名/Win11认证。以下R1及更早内容为历史时点。
+
 ## Batch 3-R1 Setup UX Finalization｜2026-09-20
 
 旧原始Setup Win10人工十步用户已确认正常。R1仅隐藏Ready安装位置确认页，目录/程序组页继续隐藏，保留重要Beta/数据保留提示与安装动作；/DIR自动化能力不变。受测c570544，Setup35509078762、Portable35509078684、Launcher35509078698、Runtime35509078708全通过；26套742项0失败0跳过；安装29 PASS+3人工待验，新Artifact10604748884。实际默认目录及中文空格/DIR检查通过。
