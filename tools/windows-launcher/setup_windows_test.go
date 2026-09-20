@@ -112,7 +112,11 @@ func TestSetup(t *testing.T) {
 			logText = string(utf16.Decode(units))
 		}
 		for _, line := range strings.Split(logText, "\n") {
-			if strings.Contains(line, "KSESSION_") {
+			lower := strings.ToLower(line)
+			// Fixed installer messages and OS errors only; never export whole logs/instances.
+			if strings.Contains(line, "KSESSION_") || strings.Contains(lower, "error") ||
+				strings.Contains(lower, "exception") || strings.Contains(lower, "denied") ||
+				strings.Contains(lower, "message box") || strings.Contains(lower, "cannot") {
 				t.Log(strings.TrimSpace(line))
 			}
 		}
