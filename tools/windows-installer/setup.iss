@@ -222,6 +222,8 @@ begin
     VerifyInstalled;
     ReleaseLocks; { allow first start only after completed checks }
     Log('KSESSION_INSTALLED_PAYLOAD_VERIFIED');
+    Log('KSESSION_DESKTOP_LINK=' + ExpandConstant('{userdesktop}\K⁺-SESSION.lnk'));
+    Log('KSESSION_START_LINK=' + ExpandConstant('{userprograms}\K⁺-SESSION.lnk'));
   end;
 end;
 

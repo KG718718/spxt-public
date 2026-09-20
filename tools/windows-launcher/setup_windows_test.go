@@ -241,6 +241,16 @@ func TestSetup(t *testing.T) {
 	}
 	shortcutTarget := func(file string) string {
 		t.Helper()
+		if !exists(file) {
+			entries, readErr := os.ReadDir(filepath.Dir(file))
+			var names []string
+			for _, entry := range entries {
+				if strings.HasPrefix(entry.Name(), "K") {
+					names = append(names, entry.Name())
+				}
+			}
+			t.Fatalf("Shortcut missing: expected=%q productNames=%q directoryError=%v", file, names, readErr)
+		}
 		s := strings.ReplaceAll(file, "'", "''")
 		// Windows PowerShell redirected console encoding can lose Chinese path characters.
 		// Transport COM's Unicode target as ASCII base64, then compare actual filesystem identity.
