@@ -21,4 +21,10 @@ I01—I32保留。I17因本轮明确产品需求改为“不创建data.json/预�
 
 第二轮ae867533 / Setup35512364618失败：D01实际默认数据位置安装/卸载通过，D06未知非空目录反例卡在runSetup直到3分钟超时。NextButtonClick的自定义MsgBox不随/SUPPRESSMSGBOXES抑制；修正为静默模式在PrepareToInstall统一返回拒绝错误，交互模式保留可见错误提示。不延长超时、不削弱未知目录拒绝。
 
+第二轮非敏感失败Artifact 10605988375；Go全局超时不会执行报告defer，因此不能把缺少D06报告误读成无失败。相同commit的独立Runtime35512364619、Launcher35512593702、Portable35512596984通过，只代表该commit各自门禁，不替代最终Setup复验。
+
+83484e58的独立公开回归35512785421已通过：26/26套、742项、fail0、skip0，Windows Server runner实际文件/目录symlink preflight通过。仍不代替Win10人工验收。
+
 最终CI及Artifact身份待核验补入；人工十步待验。旧R1人工/自动化不能替代本批。R1首轮启动超时未确定根因，不能写成已修复。
+
+第三轮83484e58 / Setup35512785478：D01—D09、D11—D13实际通过，包括直接EXE、卸载/重装账号附件；I03实际默认程序目录通过。D10等待可见Setup完成超时，无第四次Launcher START。不能据此判定产品完成页已通过。续修为测试层改用标准WM_COMMAND/BN_CLICKED通知可见且启用的Next/Install/Finish按钮，并增加仅公开窗口类名、固定按钮名、页面编号诊断；不点击风险/错误弹窗，不加生产绕过参数，不延长25秒等待。微软文档指出非活动对话框BM_CLICK可能失败，但本次根因仍待诊断证据确认：https://learn.microsoft.com/en-us/windows/win32/controls/bm-click 、https://learn.microsoft.com/en-us/windows/win32/controls/bn-clicked 。

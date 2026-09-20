@@ -358,6 +358,7 @@ begin ReleaseLocks; end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
+  Log('KSESSION_WIZARD_PAGE_' + IntToStr(CurPageID));
   if CurPageID = DataPage.ID then
     WizardForm.NextButton.Caption := SetupMessage(msgButtonInstall);
 end;

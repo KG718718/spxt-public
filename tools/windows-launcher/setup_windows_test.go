@@ -585,15 +585,32 @@ func TestSetup(t *testing.T) {
 	record("I03", "PASS", "actual silent install without /DIR uses current-user LocalApplicationData/Programs/K-SESSION-Beta; payload and both shortcut targets verified; uninstall retains data")
 	// Actual non-silent completion page executes the unchanged [Run] entry, not a test-only launch switch.
 	finishTarget := filepath.Join(base, "finish-page-install")
-	finishCmd := exec.Command(setup, "/SP-", "/NORESTART", "/DIR="+finishTarget, "/INSTANCE="+instance, "/CONFIRMDATACHANGE=1")
+	finishLog := filepath.Join(base, "finish-page.log")
+	defer func() {
+		if !t.Failed() {
+			return
+		}
+		b, _ := os.ReadFile(finishLog)
+		for _, line := range strings.Split(decodeInstallerLog(b), "\n") {
+			if at := strings.Index(line, "KSESSION_"); at >= 0 && !strings.Contains(line, "LINK=") {
+				t.Log(line[at:])
+			}
+		}
+	}()
+	finishCmd := exec.Command(setup, "/SP-", "/NORESTART", "/LOG="+finishLog, "/DIR="+finishTarget, "/INSTANCE="+instance, "/CONFIRMDATACHANGE=1")
 	if e := finishCmd.Start(); e != nil {
 		t.Fatal(e)
 	}
 	t.Cleanup(func() { finishCmd.Process.Kill() })
 	finished := make(chan error, 1)
 	go func() { finished <- finishCmd.Wait() }()
+	lastWizardState := ""
 	until(t, func() bool {
-		advanceSetupWizard()
+		state := strings.Join(advanceSetupWizard(), "; ")
+		if state != lastWizardState {
+			t.Log("Setup wizard:", state)
+			lastWizardState = state
+		}
 		select {
 		case e := <-finished:
 			if e != nil {
