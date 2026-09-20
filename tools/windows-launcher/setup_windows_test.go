@@ -61,9 +61,18 @@ func TestSetup(t *testing.T) {
 		}
 		return b
 	}
-	folders := command(ps, "-NoProfile", "-NonInteractive", "-Command", "@{desktop=[Environment]::GetFolderPath('Desktop');programs=[Environment]::GetFolderPath('Programs')}|ConvertTo-Json -Compress")
+	folders := command(ps, "-NoProfile", "-NonInteractive", "-Command", "$j=@{desktop=[Environment]::GetFolderPath('Desktop','DoNotVerify');programs=[Environment]::GetFolderPath('Programs','DoNotVerify')}|ConvertTo-Json -Compress;[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($j))")
 	var dirs map[string]string
-	json.Unmarshal(folders, &dirs)
+	folderBytes, folderErr := base64.StdEncoding.DecodeString(strings.TrimSpace(string(folders)))
+	if folderErr != nil {
+		t.Fatal(folderErr)
+	}
+	if e := json.Unmarshal(folderBytes, &dirs); e != nil {
+		t.Fatal(e)
+	}
+	if !filepath.IsAbs(dirs["desktop"]) || !filepath.IsAbs(dirs["programs"]) {
+		t.Fatalf("Known folder lookup failed: %q", dirs)
+	}
 	desktop, start := filepath.Join(dirs["desktop"], "K⁺-SESSION.lnk"), filepath.Join(dirs["programs"], "K⁺-SESSION.lnk")
 	reg := filepath.Join(os.Getenv("SystemRoot"), "System32", "reg.exe")
 	key := `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1`
@@ -109,14 +118,7 @@ func TestSetup(t *testing.T) {
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: !cancelFixture}
 		e := cmd.Run()
 		logBytes := mustRead(t, filepath.Join(base, fmt.Sprintf("setup-%02d.log", n)))
-		logText := string(logBytes)
-		if len(logBytes) >= 2 && logBytes[0] == 0xff && logBytes[1] == 0xfe {
-			units := make([]uint16, (len(logBytes)-2)/2)
-			for i := range units {
-				units[i] = binaryLE(logBytes[2+i*2:])
-			}
-			logText = string(utf16.Decode(units))
-		}
+		logText := decodeInstallerLog(logBytes)
 		diagnosticTail := 0
 		for _, line := range strings.Split(logText, "\n") {
 			lower := strings.ToLower(line)
@@ -151,18 +153,25 @@ func TestSetup(t *testing.T) {
 		}
 	}
 	uninstaller := filepath.Join(target, "uninstall", "unins000.exe")
-	uninstall := func(success bool) {
+	uninstall := func(success bool) string {
 		t.Helper()
 		n++
 		cmd := exec.Command(uninstaller, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/LOG="+filepath.Join(base, fmt.Sprintf("uninstall-%02d.log", n)))
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		e := cmd.Run()
+		logText := decodeInstallerLog(mustRead(t, filepath.Join(base, fmt.Sprintf("uninstall-%02d.log", n))))
+		for _, line := range strings.Split(logText, "\n") {
+			if strings.Contains(line, "KSESSION_") {
+				t.Log(strings.TrimSpace(line))
+			}
+		}
 		if (e == nil) != success {
 			t.Fatalf("Uninstall success=%v expected=%v: %v", e == nil, success, e)
 		}
 		if success {
 			until(t, func() bool { return !exists(uninstaller) })
 		}
+		return logText
 	}
 	// All negative inputs below are test-owned E paths; never fill a disk.
 	unknown := filepath.Join(base, "unknown")
@@ -178,6 +187,9 @@ func TestSetup(t *testing.T) {
 	fileTarget := filepath.Join(base, "file-target")
 	os.WriteFile(fileTarget, []byte("synthetic file"), 0600)
 	runSetup(setup, fileTarget, false)
+	if string(mustRead(t, fileTarget)) != "synthetic file" {
+		t.Fatal("Existing file target changed")
+	}
 	token, e := syscall.OpenCurrentProcessToken()
 	if e != nil {
 		t.Fatal(e)
@@ -270,9 +282,9 @@ func TestSetup(t *testing.T) {
 		t.Fatal("registration failed to block")
 	}
 	record("I19", "PASS", "actual second installer refused even at another path")
-	startApp := func() *exec.Cmd {
+	startApp := func(launcher string) *exec.Cmd {
 		t.Helper()
-		cmd := exec.Command(exe)
+		cmd := exec.Command(launcher)
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
 		cmd.Env = append(os.Environ(), "PATH="+filepath.Join(os.Getenv("SystemRoot"), "System32"))
 		if e := cmd.Start(); e != nil {
@@ -281,15 +293,15 @@ func TestSetup(t *testing.T) {
 		t.Cleanup(func() { cmd.Process.Kill(); cmd.Wait() })
 		return cmd
 	}
-	stopApp := func(cmd *exec.Cmd, pid uint32) {
+	stopApp := func(cmd *exec.Cmd, pid uint32, launcher string) {
 		t.Helper()
 		cls := "KSESSION_" + digest([]byte(strings.ToLower(instance)))
-		if !dispatchExisting(cls, exe, true) {
+		if !dispatchExisting(cls, launcher, true) {
 			t.Fatal("stop failed")
 		}
 		until(t, func() bool { return !alivePID(pid) && !alivePID(uint32(cmd.Process.Pid)) })
 	}
-	app := startApp()
+	app := startApp(exe)
 	until(t, func() bool { return lastEvent(instance, "READY") != nil })
 	ready := lastEvent(instance, "READY")
 	pid := uint32(ready["pid"].(float64))
@@ -315,12 +327,11 @@ func TestSetup(t *testing.T) {
 	}
 	record("I12", "PASS", "actual install, initial Admin, login, PDF/Chinese PDF, Excel, upload, backup, uninstall/reinstall with all hosted-runner external adapters disabled; offline-network.json separately gates restoration and duration")
 	runSetup(setup, filepath.Join(base, "running-reject"), false)
-	uninstall(false)
+	assertReason(uninstall(false), "KSESSION_UNINSTALL_REJECT_RUNNING")
 	if !alivePID(pid) || !alivePID(uint32(app.Process.Pid)) || !exists(exe) {
 		t.Fatal("guard killed process or removed program")
 	}
-	stopApp(app, pid)
-	record("I20", "PASS", "actual running Launcher/Node refused install/uninstall; processes intact")
+	stopApp(app, pid, exe)
 	dataBefore := mustRead(t, filepath.Join(instance, "data.json"))
 	// Preserve synthetic user-owned data and unknown install-root content during uninstall.
 	userMarker := filepath.Join(instance, "user-retained.txt")
@@ -368,7 +379,7 @@ func TestSetup(t *testing.T) {
 	}
 	record("I18", "PASS", "reinstallation leaves existing instance bytes unchanged")
 	checkPackage()
-	app = startApp()
+	app = startApp(exe)
 	until(t, func() bool { return eventCount(instance, "READY") == 2 })
 	ready = lastEvent(instance, "READY")
 	pid = uint32(ready["pid"].(float64))
@@ -378,7 +389,7 @@ func TestSetup(t *testing.T) {
 	report["existingCore"] = core
 	record("I30", "PASS", "original synthetic Admin login after uninstall/reinstall")
 	record("I31", "PASS", "synthetic employee/config/attachment data retained")
-	stopApp(app, pid)
+	stopApp(app, pid, exe)
 	// Installed tamper uses fresh synthetic program only; original bytes restored afterwards.
 	p := filepath.Join(root, "app", "login.html")
 	original := mustRead(t, p)
@@ -402,6 +413,20 @@ func TestSetup(t *testing.T) {
 	checkPackage()
 	record("I25", "PASS", "installed tampered and missing files refused by unchanged Launcher verifier; exact original bytes restored")
 	uninstall(true)
+	// Prove install's running-process gate independently of its existing-registration gate.
+	portableExe := filepath.Join(filepath.Dir(filepath.Dir(nodeSource)), "K-SESSION.exe")
+	app = startApp(portableExe)
+	until(t, func() bool { return eventCount(instance, "READY") == 3 })
+	pid = uint32(lastEvent(instance, "READY")["pid"].(float64))
+	if registered() {
+		t.Fatal("Expected no registration for Portable-running test")
+	}
+	assertReason(runSetup(setup, filepath.Join(base, "portable-running-reject"), false), "KSESSION_REJECT_RUNNING")
+	if !alivePID(pid) || !alivePID(uint32(app.Process.Pid)) || !alivePID(uint32(unrelated.Process.Pid)) {
+		t.Fatal("Running guard terminated a process")
+	}
+	stopApp(app, pid, portableExe)
+	record("I20", "PASS", "unregistered running Portable blocks new install; running installed instance blocks uninstall; no process killed, unrelated Node preserved")
 	record("I13", "PASS", "actual Chinese installation path and simulated Chinese LOCALAPPDATA; real Chinese account name not certified")
 	record("I14", "PASS", "actual spaces installation/start/core/uninstall")
 	record("I15", "PASS", "static ArchitecturesAllowed=x64os compiler gate; non-x64 hardware not available")
@@ -417,3 +442,14 @@ func TestSetup(t *testing.T) {
 }
 
 func binaryLE(b []byte) uint16 { return binary.LittleEndian.Uint16(b) }
+
+func decodeInstallerLog(b []byte) string {
+	if len(b) >= 2 && b[0] == 0xff && b[1] == 0xfe {
+		u := make([]uint16, (len(b)-2)/2)
+		for i := range u {
+			u[i] = binaryLE(b[2+i*2:])
+		}
+		return string(utf16.Decode(u))
+	}
+	return string(b)
+}

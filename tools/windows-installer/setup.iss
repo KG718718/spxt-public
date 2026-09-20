@@ -238,6 +238,7 @@ function InitializeUninstall: Boolean;
 begin
   Result := False;
   if RunningProduct or not AcquireExistingInstanceLock then begin
+    Log('KSESSION_UNINSTALL_REJECT_RUNNING');
     ReleaseLocks; SuppressibleMsgBox(RunningMessage, mbError, MB_OK, IDOK); exit;
   end;
   if not LockExecutable(ExpandConstant('{app}\program\K-SESSION.exe'), LauncherLock) or
