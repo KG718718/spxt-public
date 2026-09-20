@@ -5,7 +5,7 @@ on:
     paths:
       - 'tools/windows-installer/**'
       - 'tools/tests/windows-installer/**'
-      - 'tools/windows-launcher/setup_windows_test.go'
+      - 'tools/windows-launcher/**'
       - '.github/workflows/setup-v3.yml'
   workflow_dispatch:
 permissions:

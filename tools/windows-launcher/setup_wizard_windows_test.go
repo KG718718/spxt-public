@@ -15,7 +15,10 @@ func advanceSetupWizard() []string {
 	var observed []string
 	text := func(h uintptr) string {
 		b := make([]uint16, 1024)
-		call(user32, "GetWindowTextW", h, uintptr(unsafe.Pointer(&b[0])), uintptr(len(b)))
+		// Styled VCL controls expose their caption through WM_GETTEXT, not necessarily
+		// the cross-process window-manager caption cache used by GetWindowText.
+		var response uintptr
+		call(user32, "SendMessageTimeoutW", h, 0x000D, uintptr(len(b)), uintptr(unsafe.Pointer(&b[0])), 0x0002, 200, uintptr(unsafe.Pointer(&response)))
 		return syscall.UTF16ToString(b)
 	}
 	callback := syscall.NewCallback(func(h uintptr, _ uintptr) uintptr {
@@ -30,9 +33,15 @@ func advanceSetupWizard() []string {
 			return 1
 		}
 		child := syscall.NewCallback(func(c uintptr, _ uintptr) uintptr {
+			cb := make([]uint16, 128)
+			call(user32, "GetClassNameW", c, uintptr(unsafe.Pointer(&cb[0])), uintptr(len(cb)))
+			if cls := syscall.UTF16ToString(cb); cls != "TNewButton" && cls != "Button" {
+				return 1
+			}
 			visible, _ := call(user32, "IsWindowVisible", c)
 			enabled, _ := call(user32, "IsWindowEnabled", c)
-			label := strings.ReplaceAll(text(c), "&", "")
+			label := strings.TrimSpace(strings.ReplaceAll(text(c), "&", ""))
+			observed = append(observed, fmt.Sprintf("control=%q visible=%t enabled=%t", label, visible != 0, enabled != 0))
 			if visible != 0 && enabled != 0 && (label == "Next >" || label == "Install" || label == "Finish") {
 				// Send the standard button notification to its actual parent. BM_CLICK can fail
 				// on an inactive dialog in a hosted runner; no unexpected modal is accepted.

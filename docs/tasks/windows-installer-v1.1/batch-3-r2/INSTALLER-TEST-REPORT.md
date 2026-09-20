@@ -27,4 +27,6 @@ I01—I32保留。I17因本轮明确产品需求改为“不创建data.json/预�
 
 最终CI及Artifact身份待核验补入；人工十步待验。旧R1人工/自动化不能替代本批。R1首轮启动超时未确定根因，不能写成已修复。
 
+第四轮2cca1bf / Setup35513429695仍卡D10：诊断确认TWizardForm存在，但未找到匹配按钮，页面仅到wpInfoBefore(4)，尚未进入数据页；因此前述BM_CLICK非活动推测没有得到确认。测试改用有界WM_GETTEXT读取跨进程VCL按钮文案（不读取输入框），增加可见/启用状态，保持仅允许Next/Install/Finish。Setup workflow扩大路径触发到Launcher目录，避免仅UI测试辅助文件变化时未重建Setup。生产逻辑未再改动。
+
 第三轮83484e58 / Setup35512785478：D01—D09、D11—D13实际通过，包括直接EXE、卸载/重装账号附件；I03实际默认程序目录通过。D10等待可见Setup完成超时，无第四次Launcher START。不能据此判定产品完成页已通过。续修为测试层改用标准WM_COMMAND/BN_CLICKED通知可见且启用的Next/Install/Finish按钮，并增加仅公开窗口类名、固定按钮名、页面编号诊断；不点击风险/错误弹窗，不加生产绕过参数，不延长25秒等待。微软文档指出非活动对话框BM_CLICK可能失败，但本次根因仍待诊断证据确认：https://learn.microsoft.com/en-us/windows/win32/controls/bm-click 、https://learn.microsoft.com/en-us/windows/win32/controls/bn-clicked 。
