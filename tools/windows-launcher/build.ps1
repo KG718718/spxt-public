@@ -18,7 +18,7 @@ $env:TEMP=$env:GOTMPDIR;$env:TMP=$env:GOTMPDIR
 $env:GOPROXY='off';$env:GOSUMDB='off';$env:GOENV='off';$env:GOFLAGS='';$env:GOEXPERIMENT=''
 Push-Location $PSScriptRoot
 try {
- & $GoExe test -count=1 -run 'Test(RelativePathSafety|EnvironmentAllowlist|InstanceOutsidePackage|RuntimeMissing|JobOwnsOnlyChild)$' ./...
+ & $GoExe test -count=1 -run 'Test(RelativePathSafety|EnvironmentAllowlist|InstanceOutsidePackage|RuntimeMissing|JobOwnsOnlyChild|InstallDataSafety)$' ./...
  if($LASTEXITCODE -ne 0){throw 'Go tests failed'}
  $taskFlags="-H windowsgui -s -w -buildid= -X main.buildCommit=$SourceCommit -X main.runtimeHash=$taskHash"
  & $GoExe build -trimpath -buildvcs=false -ldflags $taskFlags -o (Join-Path $taskOutput 'K-SESSION.exe') .

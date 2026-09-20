@@ -37,6 +37,12 @@ func TestSetup(t *testing.T) {
 	report := map[string]any{"status": "RUNNING", "sourceCommit": buildCommit, "setupSha256": info["setupSha256"], "checks": map[string]any{},
 		"qualification": "Hosted Windows Server; automated installation, NOT Win10 human wizard acceptance"}
 	checks := report["checks"].(map[string]any)
+	dataChecks := map[string]any{}
+	report["dataChecks"] = dataChecks
+	recordData := func(id, method string) {
+		dataChecks[id] = map[string]string{"status": "PASS", "method": method}
+		t.Log(id, "PASS", method)
+	}
 	record := func(id, status, method string) {
 		checks[id] = map[string]string{"status": status, "method": method}
 		t.Log(id, status, method)
@@ -87,7 +93,13 @@ func TestSetup(t *testing.T) {
 	t.Setenv("TEMP", filepath.Join(base, "temp"))
 	t.Setenv("TMP", os.Getenv("TEMP"))
 	os.Mkdir(os.Getenv("TEMP"), 0700)
-	instance := filepath.Join(local, "K-SESSION", "Beta", "instance")
+	legacyInstance := filepath.Join(local, "K-SESSION", "Beta", "instance")
+	// Only this disposable CI runner's new, test-owned D directory; never a developer's D drive.
+	instance := filepath.Join(`D:\`, "KSESSION-R2-"+buildCommit[:12], "测试 数据", "K-SESSION")
+	if _, err := os.Stat(filepath.Dir(filepath.Dir(instance))); !os.IsNotExist(err) {
+		t.Fatal("D fixture already exists")
+	}
+	selectedInstance := instance
 	defer func() {
 		if !t.Failed() {
 			return
@@ -144,6 +156,9 @@ func TestSetup(t *testing.T) {
 		args := []string{silentMode, "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/LOG=" + filepath.Join(base, fmt.Sprintf("setup-%02d.log", n))}
 		if dest != "" {
 			args = append(args, "/DIR="+dest)
+		}
+		if selectedInstance != "" {
+			args = append(args, "/INSTANCE="+selectedInstance, "/CONFIRMDATACHANGE=1")
 		}
 		cmd := exec.Command(binary, args...)
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: !cancelFixture}
@@ -204,7 +219,33 @@ func TestSetup(t *testing.T) {
 		}
 		return logText
 	}
-	// All negative inputs below are test-owned E paths; never fill a disk.
+	// Default data location without /INSTANCE on a fresh runner, then remove only program.
+	defaultDataProgram := filepath.Join(base, "default-data-install")
+	selectedInstance = ""
+	runSetup(setup, defaultDataProgram, true)
+	if string(mustRead(t, filepath.Join(legacyInstance, instanceMarker))) != instanceMarkerText || exists(filepath.Join(legacyInstance, "data.json")) {
+		t.Fatal("Default empty instance contract")
+	}
+	uninstaller = filepath.Join(defaultDataProgram, "uninstall", "unins000.exe")
+	uninstall(true)
+	uninstaller = filepath.Join(target, "uninstall", "unins000.exe")
+	selectedInstance = instance
+	recordData("D01", "fresh install without INSTANCE selects legacy LOCALAPPDATA default, no business data seeded")
+	// Path safety and unknown contents are rejected before program writes.
+	dataInvalid := filepath.Join(base, "unknown-data")
+	os.Mkdir(dataInvalid, 0700)
+	os.WriteFile(filepath.Join(dataInvalid, "keep.txt"), []byte("synthetic retained"), 0600)
+	selectedInstance = dataInvalid
+	assertReason(runSetup(setup, target, false), "KSESSION_DATA_REJECT_14")
+	if exists(filepath.Join(target, "program")) || string(mustRead(t, filepath.Join(dataInvalid, "keep.txt"))) != "synthetic retained" {
+		t.Fatal("unknown data changed")
+	}
+	recordData("D06", "actual installer rejects unknown nonempty directory; original file unchanged")
+	selectedInstance = filepath.Join(target, "inside")
+	assertReason(runSetup(setup, target, false), "KSESSION_DATA_REJECT_11")
+	selectedInstance = instance
+	recordData("D04", "actual installer rejects data beneath program installation root")
+	// All remaining program targets are test-owned E paths; never fill a disk.
 	unknown := filepath.Join(base, "unknown")
 	os.Mkdir(unknown, 0700)
 	marker := filepath.Join(unknown, "keep.txt")
@@ -236,6 +277,13 @@ func TestSetup(t *testing.T) {
 	icacls := filepath.Join(os.Getenv("SystemRoot"), "System32", "icacls.exe")
 	command(icacls, denied, "/deny", "*"+sid+":(OI)(CI)(WD,AD,WEA,WA,DE,DC)")
 	t.Cleanup(func() { exec.Command(icacls, denied, "/remove:d", "*"+sid).Run() })
+	selectedInstance = filepath.Join(denied, "data")
+	assertReason(runSetup(setup, target, false), "KSESSION_DATA_REJECT_")
+	if exists(selectedInstance) {
+		t.Fatal("unwritable data created")
+	}
+	selectedInstance = instance
+	recordData("D05", "actual installer refuses denied-write data ACL without elevation")
 	assertReason(runSetup(setup, filepath.Join(denied, "new"), false), "KSESSION_REJECT_WRITE")
 	noInstalled(filepath.Join(denied, "new"))
 	command(icacls, denied, "/remove:d", "*"+sid)
@@ -259,10 +307,15 @@ func TestSetup(t *testing.T) {
 		t.Fatal("Setup killed unrelated Node")
 	}
 	report["unrelatedNodePreserved"] = true
-	if exists(instance) {
-		t.Fatal("Setup created business instance")
+	if exists(filepath.Join(instance, "data.json")) {
+		t.Fatal("Setup created business data")
 	}
-	record("I17", "PASS", "actual install: instance absent before/after")
+	if !exists(filepath.Join(instance, instanceMarker)) {
+		t.Fatal("selected empty instance marker missing")
+	}
+	record("I17", "PASS", "R2 selected empty directory/identity marker only, no data.json or seeded accounts")
+	recordData("D02", "actual custom D-drive data directory selected independently of E program")
+	recordData("D03", "actual Chinese and spaces data directory")
 	if !exists(exe) || !exists(uninstaller) || exists(filepath.Join(target, "program", "unins000.exe")) {
 		t.Fatal("layout")
 	}
@@ -296,8 +349,38 @@ func TestSetup(t *testing.T) {
 	}
 	record("I05", "PASS", "actual desktop shortcut target")
 	record("I06", "PASS", "actual start menu shortcut target")
+	shortcutArgs := func(file string) string {
+		encoded := strings.TrimSpace(string(command(ps, "-NoProfile", "-NonInteractive", "-File", filepath.Join(repo, "tools/tests/windows-installer/read-shortcut.ps1"), "-PathBase64", base64.StdEncoding.EncodeToString([]byte(file)), "-IncludeArguments")))
+		b, e := base64.StdEncoding.DecodeString(encoded)
+		if e != nil {
+			t.Fatal(e)
+		}
+		return string(b)
+	}
+	for _, link := range []string{desktop, start} {
+		if shortcutArgs(link) != `--instance "`+instance+`"` {
+			t.Fatal("shortcut instance arguments differ")
+		}
+	}
+	recordData("D08", "actual Unicode desktop shortcut arguments select custom instance")
+	recordData("D09", "actual Unicode start-menu shortcut arguments select custom instance")
 	root := filepath.Join(target, "program")
 	node := filepath.Join(root, "runtime", "node.exe")
+	if _, e := installedInstance(root, filepath.Join(base, "different-data")); e == nil {
+		t.Fatal("installed parameter conflict accepted")
+	}
+	binding := filepath.Join(target, "uninstall", "instance-binding.ini")
+	hiddenBinding := filepath.Join(base, "owned-binding.ini")
+	if e := os.Rename(binding, hiddenBinding); e != nil {
+		t.Fatal(e)
+	}
+	_, bindingError := installedInstance(root, "")
+	if e := os.Rename(hiddenBinding, binding); e != nil {
+		t.Fatal(e)
+	}
+	if bindingError == nil {
+		t.Fatal("missing binding silently fell back")
+	}
 	checkPackage := func() {
 		t.Helper()
 		command(node, filepath.Join(repo, "tools/windows-portable/package.cjs"), "verify", root)
@@ -323,7 +406,11 @@ func TestSetup(t *testing.T) {
 	record("I19", "PASS", "actual second installer refused even at another path")
 	startApp := func(launcher string) *exec.Cmd {
 		t.Helper()
-		cmd := exec.Command(launcher)
+		args := []string{}
+		if sameFile(launcher, filepath.Join(filepath.Dir(filepath.Dir(nodeSource)), "K-SESSION.exe")) {
+			args = []string{"--instance", instance}
+		}
+		cmd := exec.Command(launcher, args...)
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
 		cmd.Env = append(os.Environ(), "PATH="+filepath.Join(os.Getenv("SystemRoot"), "System32"))
 		if e := cmd.Start(); e != nil {
@@ -361,6 +448,7 @@ func TestSetup(t *testing.T) {
 	json.Unmarshal(initial, &core)
 	report["initialCore"] = core
 	record("I10", "PASS", "actual zero-data setup and synthetic Admin login")
+	recordData("D11", "direct installed EXE without parameters uses bound custom instance, not default")
 	if os.Getenv("KSESSION_EXTERNAL_NETWORK_DISABLED") != "1" {
 		t.Fatal("Whole hosted runner external-network isolation required")
 	}
@@ -408,11 +496,13 @@ func TestSetup(t *testing.T) {
 	record("I27", "PASS", "data.json byte-identical and marker/attachments/backups preserved")
 	record("I28", "PASS", "both shortcuts gone")
 	record("I29", "PASS", "HKCU uninstall registration gone")
+	recordData("D12", "actual uninstall preserves all selected D instance files byte-for-byte")
 	// Remove only this exact synthetic marker, after verifying it; no recursive cleanup.
 	if e = os.Remove(foreign); e != nil {
 		t.Fatal(e)
 	}
 	runSetup(setup, target, true)
+	recordData("D07", "actual reinstall accepts existing instance without reinitializing")
 	if string(mustRead(t, filepath.Join(instance, "data.json"))) != string(dataBefore) {
 		t.Fatal("reinstall changed data")
 	}
@@ -428,6 +518,7 @@ func TestSetup(t *testing.T) {
 	report["existingCore"] = core
 	record("I30", "PASS", "original synthetic Admin login after uninstall/reinstall")
 	record("I31", "PASS", "synthetic employee/config/attachment data retained")
+	recordData("D13", "actual reinstall original synthetic Admin login and data/attachment preservation")
 	stopApp(app, pid, exe)
 	// Installed tamper uses fresh synthetic program only; original bytes restored afterwards.
 	p := filepath.Join(root, "app", "login.html")
@@ -492,6 +583,45 @@ func TestSetup(t *testing.T) {
 		t.Fatal("Default install/uninstall cleanup or data preservation failed")
 	}
 	record("I03", "PASS", "actual silent install without /DIR uses current-user LocalApplicationData/Programs/K-SESSION-Beta; payload and both shortcut targets verified; uninstall retains data")
+	// Actual non-silent completion page executes the unchanged [Run] entry, not a test-only launch switch.
+	finishTarget := filepath.Join(base, "finish-page-install")
+	finishCmd := exec.Command(setup, "/SP-", "/NORESTART", "/DIR="+finishTarget, "/INSTANCE="+instance, "/CONFIRMDATACHANGE=1")
+	if e := finishCmd.Start(); e != nil {
+		t.Fatal(e)
+	}
+	t.Cleanup(func() { finishCmd.Process.Kill() })
+	finished := make(chan error, 1)
+	go func() { finished <- finishCmd.Wait() }()
+	until(t, func() bool {
+		advanceSetupWizard()
+		select {
+		case e := <-finished:
+			if e != nil {
+				t.Fatal("visible Setup failed")
+			}
+			return true
+		default:
+			return false
+		}
+	})
+	until(t, func() bool { return eventCount(instance, "READY") == 4 })
+	finishReady := lastEvent(instance, "READY")
+	finishPID := uint32(finishReady["pid"].(float64))
+	finishExe := filepath.Join(finishTarget, "program", "K-SESSION.exe")
+	if !sameFile(procPath(finishPID), filepath.Join(finishTarget, "program", "runtime", "node.exe")) {
+		t.Fatal("finish started wrong backend")
+	}
+	if _, e := os.Stat(filepath.Join(legacyInstance, "data.json")); !os.IsNotExist(e) {
+		t.Fatal("finish/direct launch initialized wrong default")
+	}
+	recordData("D10", "actual visible Setup Finish Run starts bound custom instance; no default data initialized")
+	cls := "KSESSION_" + digest([]byte(strings.ToLower(instance)))
+	if !dispatchExisting(cls, finishExe, true) {
+		t.Fatal("finish launch stop failed")
+	}
+	until(t, func() bool { return !alivePID(finishPID) })
+	uninstaller = filepath.Join(finishTarget, "uninstall", "unins000.exe")
+	uninstall(true)
 	record("I02", "PENDING", "lowest/asInvoker contract; hosted token not a standard-user human UAC test")
 	record("I01", "PENDING", "silent installer actually executed; double-click visible wizard remains human")
 	report["instanceDataPreserved"] = exists(instance)

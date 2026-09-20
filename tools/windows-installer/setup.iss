@@ -51,21 +51,26 @@ InfoBeforeFile={#Generated}\install-info.txt
 Source: "{#Generated}\build-info.json"; DestDir: "{app}\uninstall"; Flags: ignoreversion
 Source: "{#Generated}\installer-manifest.json"; DestDir: "{app}\uninstall"; Flags: ignoreversion
 Source: "{#Generated}\LICENSE-Inno-Setup.txt"; DestDir: "{app}\uninstall"; Flags: ignoreversion
+Source: "{#Generated}\instance-binding.ini"; DestDir: "{app}\uninstall"; Flags: ignoreversion; AfterInstall: WriteInstanceBinding
+Source: "{#Payload}\K-SESSION.exe"; DestName: "ksession-location-check.exe"; Flags: dontcopy
 
 [Icons]
-Name: "{userdesktop}\K⁺-SESSION"; Filename: "{app}\program\K-SESSION.exe"; WorkingDir: "{app}\program"
-Name: "{userprograms}\K⁺-SESSION"; Filename: "{app}\program\K-SESSION.exe"; WorkingDir: "{app}\program"
+Name: "{userdesktop}\K⁺-SESSION"; Filename: "{app}\program\K-SESSION.exe"; Parameters: "--instance ""{code:SelectedInstance}"""; WorkingDir: "{app}\program"
+Name: "{userprograms}\K⁺-SESSION"; Filename: "{app}\program\K-SESSION.exe"; Parameters: "--instance ""{code:SelectedInstance}"""; WorkingDir: "{app}\program"
 
 [Run]
-Filename: "{app}\program\K-SESSION.exe"; Description: "启动 K⁺-SESSION"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\program\K-SESSION.exe"; Parameters: "--instance ""{code:SelectedInstance}"""; Description: "启动 K⁺-SESSION"; Flags: nowait postinstall skipifsilent
 
 [Code]
 const
   ProductKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1';
+  BindingKey = 'Software\KSESSION\Beta\InstallerBinding';
   RunningMessage = 'K⁺-SESSION 正在运行或实例被占用。请保存当前操作，使用 K⁺-SESSION 窗口“停止服务”，再继续安装/卸载。不会强制关闭程序。';
   ExistingMessage = '已检测到 K⁺-SESSION Beta，请先停止并卸载当前版本后再安装。业务数据会保留。';
 var
   InstanceLock, LauncherLock, NodeLock: LongWord;
+  DataPage: TInputDirWizardPage;
+  PriorInstance, ConfirmedInstance, LocationChecker: String;
 #ifdef FaultCancel
   FaultCancelIssued: Boolean;
 #endif
@@ -90,12 +95,98 @@ begin
   Result := (Pos(A, B) = 1) or (Pos(B, A) = 1);
 end;
 
-function BetaInstance: String;
+function LegacyInstance: String;
 begin
   { Same LOCALAPPDATA contract as the unchanged Launcher; tests use a fresh E profile. }
   Result := AddBackslash(GetEnv('LOCALAPPDATA')) + 'K-SESSION\Beta\instance';
   if (Length(GetEnv('LOCALAPPDATA')) < 3) or (Copy(GetEnv('LOCALAPPDATA'), 2, 2) <> ':\') then
     RaiseException('无法定位当前用户数据目录。');
+end;
+
+function SelectedInstance(Param: String): String;
+begin
+  if IsUninstaller then
+    Result := GetIniString('Installation', 'Instance', '', ExpandConstant('{app}\uninstall\instance-binding.ini'))
+  else Result := DataPage.Values[0];
+end;
+
+function BetaInstance: String;
+begin
+  Result := SelectedInstance('');
+  if Result = '' then RaiseException('数据位置绑定缺失；不会使用其他默认目录。');
+end;
+
+procedure InitializeWizard;
+var Saved: String;
+begin
+  PriorInstance := '';
+  Saved := LegacyInstance;
+  if RegQueryStringValue(HKCU64, BindingKey, 'Instance', PriorInstance) and (PriorInstance <> '') then Saved := PriorInstance
+  else if DirExists(Saved) then PriorInstance := Saved;
+  DataPage := CreateInputDirPage(wpInfoBefore, '业务数据与附件保存位置', '请选择长期稳定的数据目录（不是程序安装目录）',
+    '项目附件、发票附件、备份及业务数据会保存在这里。'#13#10 +
+    '卸载K⁺-SESSION不会删除这里的数据，请选择长期稳定的位置。'#13#10 +
+    '选择其他位置不会自动移动原有数据；原账号和附件仍留在原位置。', False, '');
+  DataPage.Add('业务数据与附件目录：');
+  DataPage.Values[0] := Saved;
+  Saved := ExpandConstant('{param:INSTANCE|}');
+  if Saved <> '' then DataPage.Values[0] := Saved;
+end;
+
+function CheckDataLocation(Prepare: Boolean): String;
+var Code: Integer; Mode: String;
+begin
+  Result := '';
+  if (PriorInstance <> '') and (CompareText(BetaInstance, PriorInstance) = 0) and not DirExists(PriorInstance) then begin
+    Log('KSESSION_DATA_PRIOR_MISSING'); Result := '上次数据目录不可用。请先恢复磁盘或重新选择；不会静默创建空目录。'; exit;
+  end;
+  if LocationChecker = '' then begin
+    ExtractTemporaryFile('ksession-location-check.exe'); LocationChecker := ExpandConstant('{tmp}\ksession-location-check.exe');
+  end;
+  Mode := '--check-install-instance'; if Prepare then Mode := '--prepare-install-instance';
+  if not Exec(LocationChecker, Mode + ' "' + ExpandConstant('{app}') + '" "' + BetaInstance + '"', '', SW_HIDE, ewWaitUntilTerminated, Code) then Code := 99;
+  if Code <> 0 then begin
+    Log('KSESSION_DATA_REJECT_' + IntToStr(Code));
+    case Code of
+      10: Result := '请选择绝对本地固定盘路径，不使用网络、盘根或特殊字符路径。';
+      11: Result := '业务数据不能放在程序安装目录内，也不能与程序目录交叠。';
+      12: Result := '不能使用Windows系统或Program Files目录保存业务数据。';
+      13: Result := '数据路径包含链接、重解析点或不可安全访问的内容，已拒绝。';
+      14: Result := '所选目录非空且不是可识别的K⁺-SESSION实例，或数据结构损坏。不会删除或初始化其内容。';
+      15: Result := '所选数据位置不可写或不可访问。不会请求管理员权限。';
+      else Result := '无法验证数据目录；安装已停止。';
+    end;
+  end;
+end;
+
+function ConfirmDataChoice: Boolean;
+begin
+  Result := True;
+  if (PriorInstance <> '') and (CompareText(BetaInstance, PriorInstance) <> 0) and (CompareText(ConfirmedInstance, BetaInstance) <> 0) then begin
+    if WizardSilent then Result := ExpandConstant('{param:CONFIRMDATACHANGE|0}') = '1'
+    else Result := MsgBox('这是另一个数据位置，不会自动移动原账号、附件或业务数据。确认使用新位置？', mbConfirmation, MB_YESNO) = IDYES;
+    if Result then ConfirmedInstance := BetaInstance;
+  end;
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+var Error: String;
+begin
+  Result := True;
+  if CurPageID = DataPage.ID then begin
+    Error := CheckDataLocation(False);
+    if Error <> '' then begin MsgBox(Error, mbError, MB_OK); Result := False; exit; end;
+    Result := ConfirmDataChoice;
+  end;
+end;
+
+procedure WriteInstanceBinding;
+var P: String;
+begin
+  P := ExpandConstant('{app}\uninstall\instance-binding.ini');
+  if not SetIniString('Installation', 'Schema', '1', P) or
+     not SetIniString('Installation', 'InstallRoot', ExpandConstant('{app}'), P) or
+     not SetIniString('Installation', 'Instance', BetaInstance, P) then RaiseException('无法保存安装数据目录绑定。');
 end;
 
 function SafePath(P: String): Boolean;
@@ -189,6 +280,8 @@ begin
   Result := '';
   ReleaseLocks;
   P := ExpandConstant('{app}');
+  Result := CheckDataLocation(False); if Result <> '' then exit;
+  if not ConfirmDataChoice then begin Log('KSESSION_DATA_SWITCH_UNCONFIRMED'); Result := '未确认使用另一数据位置（不会自动迁移）。'; exit; end;
   if not SafePath(P) then begin Log('KSESSION_REJECT_PATH'); Result := '安装路径无效、包含重解析点或与数据/系统目录重叠。'; exit; end;
   if HasRegistration then begin Result := ExistingMessage; exit; end;
   if FileExists(P) or (DirExists(P) and NonEmpty(P)) then begin Log('KSESSION_REJECT_NONEMPTY'); Result := '目标目录不是空目录，拒绝覆盖未知文件。'; exit; end;
@@ -220,6 +313,9 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then begin
     VerifyInstalled;
+    if CheckDataLocation(True) <> '' then RaiseException('无法准备所选数据位置；不会改写已有数据。');
+    if not RegWriteStringValue(HKCU64, BindingKey, 'InstallRoot', ExpandConstant('{app}')) or
+       not RegWriteStringValue(HKCU64, BindingKey, 'Instance', BetaInstance) then RaiseException('无法记录上次数据位置。');
     ReleaseLocks; { allow first start only after completed checks }
     Log('KSESSION_INSTALLED_PAYLOAD_VERIFIED');
     Log('KSESSION_DESKTOP_LINK=' + ExpandConstant('{userdesktop}\K⁺-SESSION.lnk'));
@@ -239,6 +335,9 @@ end;
 function InitializeUninstall: Boolean;
 begin
   Result := False;
+  if SelectedInstance('') = '' then begin SuppressibleMsgBox('数据绑定缺失，请先修复安装记录；不会猜测其他数据位置。', mbError, MB_OK, IDOK); exit; end;
+  if not UninstallSilent then
+    if MsgBox('K⁺-SESSION业务数据与附件不会被删除。请先保存并停止服务。继续卸载程序？', mbConfirmation, MB_YESNO) <> IDYES then exit;
   if RunningProduct or not AcquireExistingInstanceLock then begin
     Log('KSESSION_UNINSTALL_REJECT_RUNNING');
     ReleaseLocks; SuppressibleMsgBox(RunningMessage, mbError, MB_OK, IDOK); exit;
@@ -257,8 +356,7 @@ begin ReleaseLocks; end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
-  { Keep the important Beta/data-retention notice; its action now starts installation. }
-  if CurPageID = wpInfoBefore then
+  if CurPageID = DataPage.ID then
     WizardForm.NextButton.Caption := SetupMessage(msgButtonInstall);
 end;
 

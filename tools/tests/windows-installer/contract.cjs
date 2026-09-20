@@ -10,3 +10,8 @@ assert.ok(!iss.includes('[UninstallDelete]'));assert.ok(!iss.includes('[InstallD
 for(const forbidden of ['taskkill','RestartManager','runascurrentuser','uninsdeletekeyifempty'])assert.ok(!iss.includes(forbidden));
 for(const name of ['PrepareToInstall','InitializeUninstall','VerifyInstalled','RunningProduct','AcquireExistingInstanceLock'])assert.ok(iss.includes(name));
 console.log('INSTALLER CONTRACT PASS');
+assert.ok(iss.includes("CreateInputDirPage(wpInfoBefore, '业务数据与附件保存位置'"));
+assert.equal((iss.match(/Parameters: "--instance/g)||[]).length,3,'desktop, menu and finish must bind instance');
+assert.ok(iss.includes('instance-binding.ini'));
+assert.ok(iss.includes('KSESSION_DATA_SWITCH_UNCONFIRMED'));
+console.log('R2 DATA LOCATION CONTRACT PASS');

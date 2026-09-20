@@ -412,6 +412,10 @@ func run() error {
 			return fail("ARGUMENT", "不支持的启动参数。")
 		}
 	}
+	request, e = installedInstance(root, request)
+	if e != nil {
+		return e
+	}
 	instance, e := instancePath(root, request)
 	if e != nil {
 		return e
@@ -471,6 +475,13 @@ func run() error {
 	return nil
 }
 func main() {
+	// Installer-only hidden validation: no UI, server, instance initialization or credential output.
+	if len(os.Args) > 1 && (os.Args[1] == "--check-install-instance" || os.Args[1] == "--prepare-install-instance") {
+		if len(os.Args) != 4 {
+			os.Exit(10)
+		}
+		os.Exit(checkInstallInstance(os.Args[2], os.Args[3], os.Args[1] == "--prepare-install-instance"))
+	}
 	if e := run(); e != nil {
 		if f, ok := e.(*fault); ok {
 			message(f.Message + "\r\n错误编号：" + f.Code)

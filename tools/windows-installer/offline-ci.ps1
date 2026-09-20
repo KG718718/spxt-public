@@ -22,7 +22,7 @@ function Restore-ExactAdapters($ids){
 if($RestoreWatchdog){
  $taskState=Get-Content -Raw -LiteralPath $taskStateFile | ConvertFrom-Json
  [IO.File]::WriteAllText($taskReady,'ready')
- for($taskTick=0;$taskTick -lt 180;$taskTick++){
+ for($taskTick=0;$taskTick -lt 240;$taskTick++){
   if(Test-Path -LiteralPath $taskDone){exit 0}
   Start-Sleep -Seconds 1
  }
@@ -62,7 +62,7 @@ try {
  $env:KSESSION_EXTERNAL_NETWORK_DISABLED='1'
  Push-Location $LauncherSource
  try {
-  & $Go test -count=1 -timeout=2m -v -run '^TestSetup$' .
+  & $Go test -count=1 -timeout=3m -v -run '^TestSetup$' .
   if($LASTEXITCODE -ne 0){throw 'Offline actual Setup/core/uninstall/reinstall test failed'}
  } finally {Pop-Location}
  if((Test-Path -LiteralPath $taskFired) -or @(Get-NetAdapter -IncludeHidden | Where-Object Status -eq 'Up').Count -ne 0 -or (Test-ExternalSocket)){

@@ -27,6 +27,7 @@ const info={product:'K⁺-SESSION Beta',qualification:mode==='candidate'?'UNSIGN
 writeJSON(path.join(gen,'build-info.json'),info);
 const manifest={schema:1,sourceCommit:commit,sourceTree:info.sourceTree,payload:files,payloadInventorySha256:sha(JSON.stringify(files)),version:pin.installerVersion};
 writeJSON(path.join(gen,'installer-manifest.json'),manifest);
+writeNew(path.join(gen,'instance-binding.ini'),Buffer.concat([Buffer.from([0xff,0xfe]),Buffer.from('[Installation]\r\nSchema=1\r\n','utf16le')]));
 writeNew(path.join(gen,'identity.iss'),'#define RequiredBytes '+(mode==='fault-space'?'9000000000000000':String(info.installedProgramBytes+512*1024*1024))+'\n');
 const q=s=>s.replaceAll('"','""'),pas=s=>s.replaceAll("'","''");
 writeNew(path.join(gen,'files.iss'),'\ufeff'+files.map(f=>{
