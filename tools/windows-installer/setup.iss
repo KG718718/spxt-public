@@ -151,7 +151,7 @@ begin
       end else if CompareText(String(Item.Name), 'K-SESSION.exe') = 0 then exit;
     end;
     Result := False;
-  except Log('KSESSION_PROCESS_INSPECTION_UNAVAILABLE'); end;
+  except Log('KSESSION_PROCESS_INSPECTION_UNAVAILABLE: ' + GetExceptionMessage); end;
 end;
 
 function AcquireExistingInstanceLock: Boolean;
@@ -175,8 +175,8 @@ end;
 function InitializeSetup: Boolean;
 begin
   Result := False;
-  if HasRegistration then begin SuppressibleMsgBox(ExistingMessage, mbError, MB_OK, IDOK); exit; end;
-  if RunningProduct then begin SuppressibleMsgBox(RunningMessage, mbError, MB_OK, IDOK); exit; end;
+  if HasRegistration then begin Log('KSESSION_REJECT_REGISTERED'); SuppressibleMsgBox(ExistingMessage, mbError, MB_OK, IDOK); exit; end;
+  if RunningProduct then begin Log('KSESSION_REJECT_RUNNING'); SuppressibleMsgBox(RunningMessage, mbError, MB_OK, IDOK); exit; end;
   Result := True;
 end;
 
@@ -188,16 +188,16 @@ begin
   P := ExpandConstant('{app}');
   if not SafePath(P) then begin Result := '安装路径无效、包含重解析点或与数据/系统目录重叠。'; exit; end;
   if HasRegistration then begin Result := ExistingMessage; exit; end;
-  if FileExists(P) or (DirExists(P) and NonEmpty(P)) then begin Result := '目标目录不是空目录，拒绝覆盖未知文件。'; exit; end;
+  if FileExists(P) or (DirExists(P) and NonEmpty(P)) then begin Log('KSESSION_REJECT_NONEMPTY'); Result := '目标目录不是空目录，拒绝覆盖未知文件。'; exit; end;
   if FileExists(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) or FileExists(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) then begin Result := '已有同名快捷方式，拒绝覆盖。请确认其来源后再安装。'; exit; end;
   if RunningProduct or not AcquireExistingInstanceLock then begin Result := RunningMessage; exit; end;
   Ancestor := P;
   while not DirExists(Ancestor) do Ancestor := ExtractFileDir(Ancestor);
   if not GetSpaceOnDisk64(Ancestor, Free, Total) then begin Result := '无法确认可用磁盘空间。'; exit; end;
-  if Free < {#RequiredBytes} then begin Result := '磁盘可用空间不足，未安装程序。'; exit; end;
+  if Free < {#RequiredBytes} then begin Log('KSESSION_REJECT_SPACE'); Result := '磁盘可用空间不足，未安装程序。'; exit; end;
   Probe := AddBackslash(Ancestor) + 'ksession-write-probe-' + GetDateTimeString('yyyymmddhhnnsszzz', '', '') + '.tmp';
   H := CreateFileW(Probe, $40000000, 0, 0, 1, $04000100, 0); { CREATE_NEW, delete-on-close }
-  if H = $FFFFFFFF then begin Result := '当前用户没有目录写入权限。不会请求管理员权限。'; exit; end;
+  if H = $FFFFFFFF then begin Log('KSESSION_REJECT_WRITE'); Result := '当前用户没有目录写入权限。不会请求管理员权限。'; exit; end;
   CloseHandle(H);
 end;
 
@@ -250,7 +250,10 @@ begin ReleaseLocks; end;
 #ifdef FaultCancel
 procedure CurInstallProgressChanged(CurProgress, MaxProgress: Integer);
 begin
-  if (CurProgress > 0) and (CurProgress < MaxProgress) then WizardForm.CancelButton.OnClick(WizardForm.CancelButton);
+  if (CurProgress > 0) and (CurProgress < MaxProgress) then begin
+    Log('KSESSION_FIXTURE_CANCEL_DURING_COPY');
+    WizardForm.CancelButton.OnClick(WizardForm.CancelButton);
+  end;
 end;
 procedure CancelButtonClick(CurPageID: Integer; var Cancel, Confirm: Boolean);
 begin Cancel := True; Confirm := False; end;

@@ -3,6 +3,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,7 +12,7 @@ import (
 	"strings"
 	"syscall"
 	"testing"
-	"time"
+	"unicode/utf16"
 )
 
 func TestSetup(t *testing.T) {
@@ -81,14 +82,35 @@ func TestSetup(t *testing.T) {
 	exe := filepath.Join(target, "program", "K-SESSION.exe")
 	setup := filepath.Join(artifact, "K-SESSION-Setup-1.1.0-beta.1.exe")
 	n := 0
-	runSetup := func(binary, dest string, success bool) {
+	runSetup := func(binary, dest string, success bool) string {
 		t.Helper()
 		n++
 		cmd := exec.Command(binary, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/DIR="+dest, "/LOG="+filepath.Join(base, fmt.Sprintf("setup-%02d.log", n)))
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		e := cmd.Run()
+		logBytes := mustRead(t, filepath.Join(base, fmt.Sprintf("setup-%02d.log", n)))
+		logText := string(logBytes)
+		if len(logBytes) >= 2 && logBytes[0] == 0xff && logBytes[1] == 0xfe {
+			units := make([]uint16, (len(logBytes)-2)/2)
+			for i := range units {
+				units[i] = binaryLE(logBytes[2+i*2:])
+			}
+			logText = string(utf16.Decode(units))
+		}
+		for _, line := range strings.Split(logText, "\n") {
+			if strings.Contains(line, "KSESSION_") {
+				t.Log(strings.TrimSpace(line))
+			}
+		}
 		if (e == nil) != success {
 			t.Fatalf("Setup success=%v expected=%v (%v), log %d", e == nil, success, e, n)
+		}
+		return logText
+	}
+	assertReason := func(logText, code string) {
+		t.Helper()
+		if !strings.Contains(logText, code) {
+			t.Fatalf("Failure did not exercise expected gate: %s", code)
 		}
 	}
 	noInstalled := func(dest string) {
@@ -116,7 +138,7 @@ func TestSetup(t *testing.T) {
 	os.Mkdir(unknown, 0700)
 	marker := filepath.Join(unknown, "keep.txt")
 	os.WriteFile(marker, []byte("synthetic owner"), 0600)
-	runSetup(setup, unknown, false)
+	assertReason(runSetup(setup, unknown, false), "KSESSION_REJECT_NONEMPTY")
 	if string(mustRead(t, marker)) != "synthetic owner" {
 		t.Fatal("unknown content changed")
 	}
@@ -140,14 +162,18 @@ func TestSetup(t *testing.T) {
 	icacls := filepath.Join(os.Getenv("SystemRoot"), "System32", "icacls.exe")
 	command(icacls, denied, "/deny", "*"+sid+":(OI)(CI)(WD,AD,WEA,WA,DE,DC)")
 	t.Cleanup(func() { exec.Command(icacls, denied, "/remove:d", "*"+sid).Run() })
-	runSetup(setup, filepath.Join(denied, "new"), false)
+	assertReason(runSetup(setup, filepath.Join(denied, "new"), false), "KSESSION_REJECT_WRITE")
 	noInstalled(filepath.Join(denied, "new"))
 	command(icacls, denied, "/remove:d", "*"+sid)
 	record("I22", "PASS", "actual Setup under denied-write ACL fails before payload")
 	for _, f := range []struct{ name, id string }{{"fault-space", "I23"}, {"fault-cancel", "I24"}} {
 		dest := filepath.Join(base, f.name)
 		bin := filepath.Join(os.Getenv("KSESSION_SETUP_BUILD"), f.name, "artifact", filepath.Base(setup))
-		runSetup(bin, dest, false)
+		code := "KSESSION_REJECT_SPACE"
+		if f.name == "fault-cancel" {
+			code = "KSESSION_FIXTURE_CANCEL_DURING_COPY"
+		}
+		assertReason(runSetup(bin, dest, false), code)
 		noInstalled(dest)
 		if exists(instance) {
 			t.Fatal("failure created instance")
@@ -195,7 +221,7 @@ func TestSetup(t *testing.T) {
 		t.Fatal(e)
 	}
 	record("I16", "PASS", "every installed file equals frozen payload and Launcher manifest verification")
-	runSetup(setup, filepath.Join(base, "second"), false)
+	assertReason(runSetup(setup, filepath.Join(base, "second"), false), "KSESSION_REJECT_REGISTERED")
 	noSecond := filepath.Join(base, "second", "program")
 	if exists(noSecond) {
 		t.Fatal("registration failed to block")
@@ -313,5 +339,6 @@ func TestSetup(t *testing.T) {
 	if len(checks) != 32 {
 		t.Fatalf("expected 32 records got %d", len(checks))
 	}
-	_ = time.Second
 }
+
+func binaryLE(b []byte) uint16 { return binary.LittleEndian.Uint16(b) }
