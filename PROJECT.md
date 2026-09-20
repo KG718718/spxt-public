@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 3 已批准实施｜2026-09-20
+
+用户正式任务书批准 Windows Setup Beta 实现，沿用 codex/windows-installer-v1.1，起点3733d99。L2入口 batch-3/intent.md、SPEC.md、PLAN.md、ACCEPTANCE.md；历史PROPOSAL保留。固定官方Inno6.7.3，当前用户免提权、program/uninstall分离、外置Beta数据、拒绝覆盖/运行中卸载；不改业务或Launcher契约。
+
+当前首轮实施/编译阶段，尚未生成通过验收的Setup。必须同commit fresh Runtime/Launcher/Portable、安装专项、完整26/742、原始Actions Artifact及Win10人工验收；纯静态/CI静默/网络探针不冒充人工或整机断网。本批不进入Batch4/OCR/签名/main/Release。只操作公开版，未创建Agent/任务/worktree。
+
 ## 当前批准状态：Batch 2B PASS / Batch 3 方案待审｜2026-09-18
 
 用户已重新完成本次 Actions 整包的 1–8 步人工验收：启动、自动开页、原账号登录、仅关闭浏览器、退出/停止、页面不可访问、重新启动、账号和数据保留均正常，未发现影响使用的异常。结合既有同 commit 自动化，Batch 2B 正式批准 PASS。受测源码仍为 `cfc329fb405b1c5e4881e96eb8f2b4f78e8af552`；Portable 35294691905 attempt2 / Artifact 10527372359 / 26套742项 fail0 skip0。当前仅归档结论，不重新构建或测试，不修改原 Artifact 的历史 PENDING 字段。

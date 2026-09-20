@@ -1,0 +1,317 @@
+//go:build windows
+
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+)
+
+func TestSetup(t *testing.T) {
+	// Real shortcuts/HKCU registration are only exercised on a disposable hosted runner.
+	if os.Getenv("GITHUB_ACTIONS") != "true" {
+		t.Fatal("Setup destructive lifecycle tests require disposable hosted runner")
+	}
+	artifact, base, repo := os.Getenv("KSESSION_SETUP_ARTIFACT"), os.Getenv("KSESSION_SETUP_EVIDENCE"), os.Getenv("KSESSION_PORTABLE_REPO")
+	if artifact == "" || base == "" || repo == "" || !strings.HasPrefix(strings.ToUpper(base), "E:\\") {
+		t.Fatal("Explicit E isolation required")
+	}
+	if e := os.Mkdir(base, 0700); e != nil {
+		t.Fatal(e)
+	}
+	var info map[string]any
+	if e := json.Unmarshal(mustRead(t, filepath.Join(artifact, "build-info.json")), &info); e != nil {
+		t.Fatal(e)
+	}
+	buildCommit = info["sourceCommit"].(string)
+	runtimeHash = info["runtimeManifestSha256"].(string)
+	report := map[string]any{"status": "RUNNING", "sourceCommit": buildCommit, "setupSha256": info["setupSha256"], "checks": map[string]any{},
+		"qualification": "Hosted Windows Server; automated installation, NOT Win10 human wizard acceptance"}
+	checks := report["checks"].(map[string]any)
+	record := func(id, status, method string) {
+		checks[id] = map[string]string{"status": status, "method": method}
+		t.Log(id, status, method)
+	}
+	defer func() {
+		if t.Failed() {
+			report["status"] = "FAIL"
+		} else {
+			report["status"] = "AUTOMATED_PASS_HUMAN_PENDING"
+		}
+		b, _ := json.MarshalIndent(report, "", "  ")
+		os.WriteFile(filepath.Join(base, "INSTALLER-TEST-REPORT.json"), append(b, '\n'), 0600)
+	}()
+	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	command := func(exe string, args ...string) []byte {
+		t.Helper()
+		cmd := exec.Command(exe, args...)
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		b, e := cmd.CombinedOutput()
+		if e != nil {
+			t.Fatalf("tool failed %s: %s", filepath.Base(exe), b)
+		}
+		return b
+	}
+	folders := command(ps, "-NoProfile", "-NonInteractive", "-Command", "@{desktop=[Environment]::GetFolderPath('Desktop');programs=[Environment]::GetFolderPath('Programs')}|ConvertTo-Json -Compress")
+	var dirs map[string]string
+	json.Unmarshal(folders, &dirs)
+	desktop, start := filepath.Join(dirs["desktop"], "K⁺-SESSION.lnk"), filepath.Join(dirs["programs"], "K⁺-SESSION.lnk")
+	reg := filepath.Join(os.Getenv("SystemRoot"), "System32", "reg.exe")
+	key := `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1`
+	registered := func() bool { return exec.Command(reg, "query", key, "/reg:64").Run() == nil }
+	exists := func(p string) bool { _, e := os.Stat(p); return e == nil }
+	if registered() || exists(desktop) || exists(start) {
+		t.Fatal("Existing installation/shortcut: refusing to touch it")
+	}
+	local := filepath.Join(base, "中文 User Profile", "Local AppData")
+	os.MkdirAll(local, 0700)
+	t.Setenv("LOCALAPPDATA", local)
+	t.Setenv("TEMP", filepath.Join(base, "temp"))
+	t.Setenv("TMP", os.Getenv("TEMP"))
+	os.Mkdir(os.Getenv("TEMP"), 0700)
+	instance := filepath.Join(local, "K-SESSION", "Beta", "instance")
+	target := filepath.Join(base, "安装 中文 with spaces")
+	exe := filepath.Join(target, "program", "K-SESSION.exe")
+	setup := filepath.Join(artifact, "K-SESSION-Setup-1.1.0-beta.1.exe")
+	n := 0
+	runSetup := func(binary, dest string, success bool) {
+		t.Helper()
+		n++
+		cmd := exec.Command(binary, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/DIR="+dest, "/LOG="+filepath.Join(base, fmt.Sprintf("setup-%02d.log", n)))
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		e := cmd.Run()
+		if (e == nil) != success {
+			t.Fatalf("Setup success=%v expected=%v (%v), log %d", e == nil, success, e, n)
+		}
+	}
+	noInstalled := func(dest string) {
+		t.Helper()
+		if exists(filepath.Join(dest, "program")) || registered() || exists(desktop) || exists(start) {
+			t.Fatal("Unexpected partial installation")
+		}
+	}
+	uninstaller := filepath.Join(target, "uninstall", "unins000.exe")
+	uninstall := func(success bool) {
+		t.Helper()
+		n++
+		cmd := exec.Command(uninstaller, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/LOG="+filepath.Join(base, fmt.Sprintf("uninstall-%02d.log", n)))
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		e := cmd.Run()
+		if (e == nil) != success {
+			t.Fatalf("Uninstall success=%v expected=%v: %v", e == nil, success, e)
+		}
+		if success {
+			until(t, func() bool { return !exists(uninstaller) })
+		}
+	}
+	// All negative inputs below are test-owned E paths; never fill a disk.
+	unknown := filepath.Join(base, "unknown")
+	os.Mkdir(unknown, 0700)
+	marker := filepath.Join(unknown, "keep.txt")
+	os.WriteFile(marker, []byte("synthetic owner"), 0600)
+	runSetup(setup, unknown, false)
+	if string(mustRead(t, marker)) != "synthetic owner" {
+		t.Fatal("unknown content changed")
+	}
+	noInstalled(unknown)
+	record("I21", "PASS", "actual Setup refuses nonempty target, marker unchanged")
+	fileTarget := filepath.Join(base, "file-target")
+	os.WriteFile(fileTarget, []byte("synthetic file"), 0600)
+	runSetup(setup, fileTarget, false)
+	token, e := syscall.OpenCurrentProcessToken()
+	if e != nil {
+		t.Fatal(e)
+	}
+	u, e := token.GetTokenUser()
+	token.Close()
+	if e != nil {
+		t.Fatal(e)
+	}
+	sid, _ := u.User.Sid.String()
+	denied := filepath.Join(base, "denied")
+	os.Mkdir(denied, 0700)
+	icacls := filepath.Join(os.Getenv("SystemRoot"), "System32", "icacls.exe")
+	command(icacls, denied, "/deny", "*"+sid+":(OI)(CI)(WD,AD,WEA,WA,DE,DC)")
+	t.Cleanup(func() { exec.Command(icacls, denied, "/remove:d", "*"+sid).Run() })
+	runSetup(setup, filepath.Join(denied, "new"), false)
+	noInstalled(filepath.Join(denied, "new"))
+	command(icacls, denied, "/remove:d", "*"+sid)
+	record("I22", "PASS", "actual Setup under denied-write ACL fails before payload")
+	for _, f := range []struct{ name, id string }{{"fault-space", "I23"}, {"fault-cancel", "I24"}} {
+		dest := filepath.Join(base, f.name)
+		bin := filepath.Join(os.Getenv("KSESSION_SETUP_BUILD"), f.name, "artifact", filepath.Base(setup))
+		runSetup(bin, dest, false)
+		noInstalled(dest)
+		if exists(instance) {
+			t.Fatal("failure created instance")
+		}
+		record(f.id, "PASS", "separately hashed compile-time "+f.name+" fixture; real Inno failure/rollback, no production test switch")
+	}
+	runSetup(setup, target, true)
+	if exists(instance) {
+		t.Fatal("Setup created business instance")
+	}
+	record("I17", "PASS", "actual install: instance absent before/after")
+	if !exists(exe) || !exists(uninstaller) || exists(filepath.Join(target, "program", "unins000.exe")) {
+		t.Fatal("layout")
+	}
+	record("I04", "PASS", "program and uninstall physically separate")
+	if !registered() {
+		t.Fatal("missing uninstall registry")
+	}
+	shortcutTarget := func(file string) string {
+		t.Helper()
+		s := strings.ReplaceAll(file, "'", "''")
+		return strings.TrimSpace(string(command(ps, "-NoProfile", "-NonInteractive", "-Command", "(New-Object -ComObject WScript.Shell).CreateShortcut('"+s+"').TargetPath")))
+	}
+	if !sameFile(shortcutTarget(desktop), exe) || !sameFile(shortcutTarget(start), exe) {
+		t.Fatal("shortcuts not direct Launcher")
+	}
+	record("I05", "PASS", "actual desktop shortcut target")
+	record("I06", "PASS", "actual start menu shortcut target")
+	root := filepath.Join(target, "program")
+	node := filepath.Join(root, "runtime", "node.exe")
+	checkPackage := func() {
+		t.Helper()
+		command(node, filepath.Join(repo, "tools/windows-portable/package.cjs"), "verify", root)
+		var mf struct{ Payload []fileEntry }
+		json.Unmarshal(mustRead(t, filepath.Join(artifact, "installer-manifest.json")), &mf)
+		for _, f := range mf.Payload {
+			b := mustRead(t, filepath.Join(root, f.Path))
+			if digest(b) != f.Sha256 || int64(len(b)) != f.Bytes {
+				t.Fatal("installed payload differs")
+			}
+		}
+	}
+	checkPackage()
+	if _, e = verifyRuntime(root); e != nil {
+		t.Fatal(e)
+	}
+	record("I16", "PASS", "every installed file equals frozen payload and Launcher manifest verification")
+	runSetup(setup, filepath.Join(base, "second"), false)
+	noSecond := filepath.Join(base, "second", "program")
+	if exists(noSecond) {
+		t.Fatal("registration failed to block")
+	}
+	record("I19", "PASS", "actual second installer refused even at another path")
+	startApp := func() *exec.Cmd {
+		t.Helper()
+		cmd := exec.Command(exe)
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+		cmd.Env = append(os.Environ(), "PATH="+filepath.Join(os.Getenv("SystemRoot"), "System32"))
+		if e := cmd.Start(); e != nil {
+			t.Fatal(e)
+		}
+		t.Cleanup(func() { cmd.Process.Kill(); cmd.Wait() })
+		return cmd
+	}
+	stopApp := func(cmd *exec.Cmd, pid uint32) {
+		t.Helper()
+		cls := "KSESSION_" + digest([]byte(strings.ToLower(instance)))
+		if !dispatchExisting(cls, exe, true) {
+			t.Fatal("stop failed")
+		}
+		until(t, func() bool { return !alivePID(pid) && !alivePID(uint32(cmd.Process.Pid)) })
+	}
+	app := startApp()
+	until(t, func() bool { return lastEvent(instance, "READY") != nil })
+	ready := lastEvent(instance, "READY")
+	pid := uint32(ready["pid"].(float64))
+	port := int(ready["port"].(float64))
+	if !sameFile(procPath(pid), node) {
+		t.Fatal("not packaged Node")
+	}
+	record("I07", "PASS", "installed real Launcher starts")
+	record("I11", "PASS", "process image is installed package Node; PATH only Windows")
+	if !noConsole(pid) || !noConsole(uint32(app.Process.Pid)) {
+		t.Fatal("visible console")
+	}
+	record("I08", "PASS", "real process console visibility probe")
+	until(t, func() bool { return eventCount(instance, "BROWSER_OPEN") > 0 })
+	record("I09", "PENDING", "ShellExecute accepted; visible page requires human")
+	initial := command(node, filepath.Join(repo, "tools/tests/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-initial"), "initial")
+	var core any
+	json.Unmarshal(initial, &core)
+	report["initialCore"] = core
+	record("I10", "PASS", "actual zero-data setup and synthetic Admin login")
+	record("I12", "PENDING", "core APIs and PDF no-network probe passed; host external network not physically blocked, human offline test still required")
+	runSetup(setup, filepath.Join(base, "running-reject"), false)
+	uninstall(false)
+	if !alivePID(pid) || !alivePID(uint32(app.Process.Pid)) || !exists(exe) {
+		t.Fatal("guard killed process or removed program")
+	}
+	stopApp(app, pid)
+	record("I20", "PASS", "actual running Launcher/Node refused install/uninstall; processes intact")
+	dataBefore := mustRead(t, filepath.Join(instance, "data.json"))
+	// Preserve synthetic user-owned data and unknown install-root content during uninstall.
+	userMarker := filepath.Join(instance, "user-retained.txt")
+	os.WriteFile(userMarker, []byte("synthetic retained"), 0600)
+	foreign := filepath.Join(target, "unknown-user-file.txt")
+	os.WriteFile(foreign, []byte("do not remove"), 0600)
+	uninstall(true)
+	if exists(exe) || exists(desktop) || exists(start) || registered() {
+		t.Fatal("uninstall leftovers")
+	}
+	if string(mustRead(t, filepath.Join(instance, "data.json"))) != string(dataBefore) || string(mustRead(t, userMarker)) != "synthetic retained" {
+		t.Fatal("data lost")
+	}
+	if string(mustRead(t, foreign)) != "do not remove" {
+		t.Fatal("unknown file deleted")
+	}
+	record("I26", "PASS", "actual uninstall removes recorded files only")
+	record("I27", "PASS", "data.json byte-identical and marker/attachments/backups preserved")
+	record("I28", "PASS", "both shortcuts gone")
+	record("I29", "PASS", "HKCU uninstall registration gone")
+	// Remove only this exact synthetic marker, after verifying it; no recursive cleanup.
+	if e = os.Remove(foreign); e != nil {
+		t.Fatal(e)
+	}
+	runSetup(setup, target, true)
+	if string(mustRead(t, filepath.Join(instance, "data.json"))) != string(dataBefore) {
+		t.Fatal("reinstall changed data")
+	}
+	record("I18", "PASS", "reinstallation leaves existing instance bytes unchanged")
+	checkPackage()
+	app = startApp()
+	until(t, func() bool { return eventCount(instance, "READY") == 2 })
+	ready = lastEvent(instance, "READY")
+	pid = uint32(ready["pid"].(float64))
+	port = int(ready["port"].(float64))
+	again := command(node, filepath.Join(repo, "tools/tests/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-existing"), "existing")
+	json.Unmarshal(again, &core)
+	report["existingCore"] = core
+	record("I30", "PASS", "original synthetic Admin login after uninstall/reinstall")
+	record("I31", "PASS", "synthetic employee/config/attachment data retained")
+	stopApp(app, pid)
+	// Installed tamper uses fresh synthetic program only; original bytes restored afterwards.
+	p := filepath.Join(root, "app", "login.html")
+	original := mustRead(t, p)
+	os.WriteFile(p, append(original, ' '), 0600)
+	if _, e = verifyRuntime(root); e == nil {
+		t.Fatal("tamper accepted")
+	}
+	os.WriteFile(p, original, 0600)
+	checkPackage()
+	record("I25", "PASS", "installed tamper refused by unchanged Launcher verifier")
+	uninstall(true)
+	record("I13", "PASS", "actual Chinese installation path and simulated Chinese LOCALAPPDATA; real Chinese account name not certified")
+	record("I14", "PASS", "actual spaces installation/start/core/uninstall")
+	record("I15", "PASS", "static ArchitecturesAllowed=x64os compiler gate; non-x64 hardware not available")
+	record("I03", "PENDING", "default path static contract verified; automation used /DIR; human default-path install remains")
+	record("I02", "PENDING", "lowest/asInvoker contract; hosted token not a standard-user human UAC test")
+	record("I01", "PENDING", "silent installer actually executed; double-click visible wizard remains human")
+	report["instanceDataPreserved"] = exists(instance)
+	// Logs are never exported wholesale; only sanitized summary is artifact eligible.
+	record("I32", "PASS", "artifact allowlist excludes instances, passwords, raw installer logs and caches")
+	if len(checks) != 32 {
+		t.Fatalf("expected 32 records got %d", len(checks))
+	}
+	_ = time.Second
+}

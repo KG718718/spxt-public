@@ -1,0 +1,85 @@
+name: Setup Batch 3 candidate
+on:
+  push:
+    branches: [codex/windows-installer-v1.1]
+    paths:
+      - 'tools/windows-installer/**'
+      - 'tools/tests/windows-installer/**'
+      - 'tools/windows-launcher/setup_windows_test.go'
+      - '.github/workflows/setup-v3.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: setup-3-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  setup:
+    if: github.ref == 'refs/heads/codex/windows-installer-v1.1'
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - name: Exact public Git bytes
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Same-commit fresh Runtime, Launcher, Portable and Setup
+        shell: pwsh
+        run: |
+          if (!(Test-Path E:/)) {
+            $taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-setup-e'
+            New-Item -ItemType Directory -Path $taskDrive | Out-Null
+            subst E: $taskDrive
+            if ($LASTEXITCODE -ne 0) { throw 'E isolation unavailable' }
+          }
+          git clone --no-hardlinks --no-checkout . E:/setup-source
+          if ($LASTEXITCODE -ne 0) { throw 'Isolated source clone failed' }
+          git -C E:/setup-source -c core.autocrlf=false checkout --detach ${{ github.sha }}
+          if ($LASTEXITCODE -ne 0) { throw 'Exact checkout failed' }
+          & E:/setup-source/tools/windows-installer/ci.ps1 -Work E:/setup-build -Commit ${{ github.sha }}
+      - name: Same-commit full public regression
+        shell: pwsh
+        run: |
+          $taskNode='E:/setup-build/portable/node-tool/node-v24.21.0-win-x64/node.exe'
+          $taskNpm='E:/setup-build/portable/node-tool/node-v24.21.0-win-x64/node_modules/npm/bin/npm-cli.js'
+          $env:TEMP='E:/setup-build/regression-temp';$env:TMP=$env:TEMP
+          New-Item -ItemType Directory -Force -Path $env:TEMP|Out-Null
+          Set-Location E:/setup-source
+          & $taskNode tools/tests/windows-runtime/hosted-gate.cjs preflight
+          if ($LASTEXITCODE -ne 0){throw 'Symlink gate failed'}
+          & $taskNode $taskNpm ci --omit=optional --ignore-scripts --no-audit --no-fund --cache E:/setup-build/regression-cache
+          if ($LASTEXITCODE -ne 0){throw 'Regression dependency setup failed'}
+          & $taskNode tools/tests/windows-runtime/hosted-gate.cjs regression
+          if ($LASTEXITCODE -ne 0){throw 'Regression failed; retain evidence, do not automatically retry'}
+          $taskR=Get-Content -Raw .test-work/r5a-gate/regression.json|ConvertFrom-Json
+          if($taskR.testTotal -ne 742 -or $taskR.suitePass -ne 26 -or $taskR.fail -ne 0 -or $taskR.skipped -ne 0){throw 'Exact regression count failed'}
+          Copy-Item .test-work/r5a-gate/regression.json E:/setup-build/candidate/artifact/public-regression.json
+      - name: Artifact privacy and identity allowlist
+        shell: pwsh
+        run: |
+          & E:/setup-build/portable/node-tool/node-v24.21.0-win-x64/node.exe E:/setup-source/tools/windows-installer/verify-artifact.cjs E:/setup-build/candidate/artifact ${{ github.sha }}
+          if ($LASTEXITCODE -ne 0){throw 'Artifact preflight failed'}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: success()
+        with:
+          name: K-SESSION-setup-win-x64-${{ github.sha }}
+          path: E:/setup-build/candidate/artifact/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve non-sensitive failure summaries
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: setup-failure-evidence-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            E:/setup-build/installer-tests/INSTALLER-TEST-REPORT.json
+            E:/setup-build/candidate/compiler.stdout.log
+            E:/setup-build/candidate/compiler.stderr.log
+            E:/setup-build/fault-space/compiler.stderr.log
+            E:/setup-build/fault-cancel/compiler.stderr.log
+            E:/setup-source/.test-work/r5a-gate/regression.json
+          if-no-files-found: warn
+          retention-days: 30
