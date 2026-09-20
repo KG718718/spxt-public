@@ -1,5 +1,37 @@
 # Batch 3 — Windows Setup Beta Implementation
 
+## Batch 3-R1 最新状态（2026-09-20）
+
+**BLOCKED：新包自动化全部通过，六步人工复验尚待完成，不是Batch3最终PASS。**
+
+用户本轮确认旧受测ff75923原始Artifact的Win10人工1—10步全部正常，无UAC/CMD、卸载保留数据、重装原账号可登录。下文原始报告中下载/人工待验是历史时点，不再代表旧包当前状态；旧Artifact JSON及hash保持不变。唯一续修范围为安装向导简化。
+
+R1起点297e282865823b3a84cccc9eed66af6a07363c6b；最终受测代码c5705447b93ee64a6be56cbc67779ba844c2bfe8，tree4576c3b1ab52ff092e67d0286d83a35da9f3b1ab。原目录/程序组页面已隐藏，本次关闭Ready确认页，保留InfoBefore重要提示、错误、安全机制；提示页按钮使用官方安装标题。/DIR覆盖能力保留，不改业务、Launcher生产代码、Runtime布局、Node/PDF、instance与卸载/拒绝覆盖策略。
+
+失败优先contract已复现并修复；本地E盘Go TestRelativePathSafety及diff-check通过。最终同commit Setup35509078762、Portable35509078684、Launcher35509078698、Runtime35509078708均SUCCESS。Setup重新构建Runtime→Launcher→Portable→Setup、整机离线安装测试、完整回归及Artifact白名单通过；26/26套742项fail0 skip0。I01—I32有29 PASS，I01/I02/I09三项人工PENDING。真实默认LocalAppData安装（不传/DIR）、中文/空格自定义路径、完整性、快捷方式、无CMD进程检查、卸载及重装均通过。报告归档提交与受测源码分开，不冒充新构建。
+
+首轮b5b912e / Setup35508680286在原有Portable第三次启动等待READY超时，尚未运行新增默认目录检查，失败Artifact10604443806保留。c570544仅补测试诊断及启动前完整性检查后全链通过，未改生产Launcher、未延长超时或放宽断言。首轮根因仍未确定，不能说已修复或认定仅环境flake；若人工复现启动问题，应暂停放行并据错误码继续定位。
+
+### R1最终原始Artifact身份（非Release）
+
+- source commit：c5705447b93ee64a6be56cbc67779ba844c2bfe8。
+- Setup run：35509078762 attempt1；Artifact10604748884，K-SESSION-setup-win-x64-c5705447b93ee64a6be56cbc67779ba844c2bfe8。
+- 下载：https://github.com/KG718718/spxt-public/actions/runs/35509078762/artifacts/10604748884 。保留30天。
+- Artifact ZIP：32,501,235 bytes；SHA256 1569e8846d72914186ae925ef9d57e9a91e606a29478daaf7359e5db08cc548a。
+- EXE：K-SESSION-Setup-1.1.0-beta.1.exe；32,983,565 bytes。
+- **Setup SHA256：25b52591ecb0783869ef08d5f599d0d3fffd94cebd98a38d94e4657732ae4c40**。
+- Portable payload ZIP SHA256：584e132dbb274ee7fd32018b90b892ed38b85a4c319cb5aa5f5c9023f6fd8569。
+- Runtime manifest SHA256：f54833abf5ad40140862ac2f400e402f3be1a79676191e00d480477fefe01e76。
+- Launcher SHA256：759e037f9190cf4cc1ac6418412c2e97f1032db0f0e8627e8b70cea9367915d1。
+- Node24.21.0、Go1.27.1、Inno6.7.3保持；程序1042文件、143,766,301 bytes、20生产依赖。
+- hash来自最终成功CI与GitHub元数据；本轮未在本机下载/重编译/安装EXE，不冒充本机独立复算或可见安装验收。仅GitHub Actions Artifact发放，无Release资产变更。
+
+本轮变更：setup.iss、contract.cjs、verify-artifact.cjs、setup_windows_test.go及规划/结果/人工/状态文档。没有变更workflow。首轮及旧包hash保持历史记录，不以同名EXE覆盖事实。
+
+新包仍须HUMAN-ACCEPTANCE.md六步人工复验；新旧同名beta.1须以新Artifact ID与EXE hash区分。保持未签名Beta，不要求用户绕过系统安全策略。只操作公开版本；没有访问其他用途版本/真实业务资料；没有创建Agent/工作树、PR/Release/tag或main合并，不进入Batch4。
+
+## 历史：R1之前的Batch3实现与原包记录
+
 ## 当前结论
 
 **BLOCKED / 自动化通过，等待原始Artifact人工验收；不是 PASS。**

@@ -1,5 +1,11 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## Batch 3-R1 Setup UX Finalization｜2026-09-20
+
+旧原始Setup Win10人工十步用户已确认正常。R1仅隐藏Ready安装位置确认页，目录/程序组页继续隐藏，保留重要Beta/数据保留提示与安装动作；/DIR自动化能力不变。受测c570544，Setup35509078762、Portable35509078684、Launcher35509078698、Runtime35509078708全通过；26套742项0失败0跳过；安装29 PASS+3人工待验，新Artifact10604748884。实际默认目录及中文空格/DIR检查通过。
+
+首轮b5b912e的Portable第三次启动超时保留，诊断增强后未复现，根因未确定。新包须按batch-3/HUMAN-ACCEPTANCE.md六步人工复验后再决定最终PASS；当前BLOCKED/等待人工。不改变任何生产业务或Launcher契约，不进入Batch4，不合并main、不改v1.0.0/tag/Release。下文为历史记录。
+
 ## Batch 3 自动化通过 / Windows 10 人工待验｜2026-09-20
 
 用户正式任务书已批准 Inno Setup 当前用户安装、离线核心整包、program/uninstall 分离及外置 Beta 实例保留。

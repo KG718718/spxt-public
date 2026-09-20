@@ -1,5 +1,25 @@
 # Batch 3 安装专项测试记录
 
+## Batch 3-R1 续行：Setup UX Finalization（2026-09-20）
+
+用户已确认旧 Actions 原始 Setup 的 Win10 人工1—10步正常、无UAC/CMD、卸载保留数据及重装原账号可登录。这是旧受测ff75923 / Artifact10604780606的补充人工证据，覆盖下文旧时点“人工未验”的当前状态；不改写旧Artifact JSON，更不替代R1新包的六步验收。
+
+代码事实：原脚本已有DisableDirPage=yes及DisableProgramGroupPage=yes，DisableReadyPage=no保留了安装前路径确认页。本次仅改为yes，保留InfoBefore重要Beta/数据保留提示，并按Inno官方CurPageChanged机制将该页动作标题改为安装。不隐藏错误、安全或未来许可证提示。
+
+失败优先：先收紧contract，旧实现准确失败于DisableReadyPage=yes；修改后INSTALLER CONTRACT PASS。git diff --check通过；显式E盘缓存/临时目录下Go TestRelativePathSafety通过，仅编译/静态测试，不冒充本机安装。
+
+受测代码b5b912eb63e299e8e382648f7425011877f04b79。保留所有自定义中文/空格路径及原生命周期门禁；新增不传/DIR的实际默认目录安装、payload完整性、两个快捷方式目标及卸载保留数据检查。I03由静态/人工待验强化为自动化实测，I01/I02/I09仍待新包人工。默认目录检查仅在一次性runner当前用户真实LocalAppData执行；自定义路径、实例、日志和构建仍在E盘，不对本机进行安装，不做系统目录或注册表重定向。
+
+R1首轮b5b912e / Setup35508680286失败：I21—I24、安装完整性、离线核心、卸载保留、重装原Admin、篡改/缺文件拒绝均已通过；在已有安装卸载后重新启动Portable、等待第三次READY（原有I20测试）25秒超时。新增默认路径用例尚未执行，不能报告通过。失败Artifact10604443806保留。相同commit独立Runtime35508680355、Launcher35508680302、Portable35508680227成功，26/742 fail0 skip0，但不代替失败Setup。
+
+追加仅测试诊断：启动Portable前再次验证完整性；失败时记录白名单大写事件/错误码，不输出实例、路径、账号或整份日志。未加sleep、延长超时、删断言或修改Launcher生产契约。根因尚未确定，不称为已知flake，不把一次新运行通过说成修复已证实。
+
+诊断提交c5705447b93ee64a6be56cbc67779ba844c2bfe8仅修改setup_windows_test.go。Git HTTPS发生connection reset，转官方Git数据API逐个验证原始blob/tree/commit，以force=false快进同一开发分支；远端回读SHA一致。随后本地origin跟踪ref因仍落后在297e282更新失败，已用已核验的旧ref值显式修正；不是远端提交失败，没有force push。诊断提交本地E盘Go静态测试再次通过。
+
+最终c570544 / Setup35509078762 attempt1 SUCCESS，安装专项49.92秒完成；29 PASS，I01/I02/I09人工PENDING。I20实际Portable运行门禁通过；I03不传/DIR的真实默认目录安装、快捷方式及卸载保留通过；I13/I14中文/空格自定义路径通过。完整26套742项fail0 skip0，网络恢复及Artifact白名单门禁通过。相同commit独立Portable35509078684、Launcher35509078698、Runtime35509078708均SUCCESS。首轮启动超时本轮未复现，根因仍未确定；诊断改进不是生产故障修复证明。
+
+最终Artifact10604748884；EXE SHA256 25b52591ecb0783869ef08d5f599d0d3fffd94cebd98a38d94e4657732ae4c40，32,983,565 bytes。旧hash与首次失败均保留，不把旧人工反馈套用到新包。以下原始失败及旧包身份作为历史保留。
+
 ## 证据口径
 
 只针对 KG718718/spxt-public 的 codex/windows-installer-v1.1。当前不是 Batch 3 PASS。

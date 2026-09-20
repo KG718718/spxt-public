@@ -1,5 +1,13 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 3-R1 Setup UX收口｜2026-09-20
+
+用户已补齐旧ff75923原始Setup的Win10人工十步，唯一续修为隐藏安装前路径确认页。R1仅调整Inno Ready页面及保留风险提示页的安装按钮，补默认目录实装检查和失败事件诊断；业务/Launcher生产/Runtime/数据策略不变。
+
+最终受测c5705447b93ee64a6be56cbc67779ba844c2bfe8：Setup35509078762、Portable35509078684、Launcher35509078698、Runtime35509078708均SUCCESS；Setup26/742 fail0 skip0，32项中29 PASS、I01/I02/I09人工待验。新Artifact10604748884，EXE hash25b52591ecb0783869ef08d5f599d0d3fffd94cebd98a38d94e4657732ae4c40。默认目录实装和/DIR中文空格通过。首轮Portable第三次启动超时保留证据，诊断续行未复现，未宣称根因修复。
+
+当前BLOCKED/等待新包六步人工复验，不能报告Batch3最终PASS。报告归档独立于受测源码；仅开发分支，不改main/v1.0.0/Release，不进入Batch4。最新入口batch-3/RESULT.md及CHATGPT-HANDOFF.md。以下为历史时点记录。
+
 ## Batch 3 已批准实施｜2026-09-20
 
 用户正式任务书批准 Windows Setup Beta 实现，沿用 codex/windows-installer-v1.1，起点3733d99。L2入口 batch-3/intent.md、SPEC.md、PLAN.md、ACCEPTANCE.md；历史PROPOSAL保留。固定官方Inno6.7.3，当前用户免提权、program/uninstall分离、外置Beta数据、拒绝覆盖/运行中卸载；不改业务或Launcher契约。
