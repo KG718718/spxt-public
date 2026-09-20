@@ -42,7 +42,7 @@ func advanceSetupWizard() []string {
 			enabled, _ := call(user32, "IsWindowEnabled", c)
 			label := strings.TrimSpace(strings.ReplaceAll(text(c), "&", ""))
 			observed = append(observed, fmt.Sprintf("control=%q visible=%t enabled=%t", label, visible != 0, enabled != 0))
-			if visible != 0 && enabled != 0 && (label == "Next >" || label == "Install" || label == "Finish") {
+			if visible != 0 && enabled != 0 && (label == "Next" || label == "Next >" || label == "Install" || label == "Finish") {
 				// Send the standard button notification to its actual parent. BM_CLICK can fail
 				// on an inactive dialog in a hosted runner; no unexpected modal is accepted.
 				parent, _ := call(user32, "GetParent", c)
