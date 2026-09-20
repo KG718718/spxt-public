@@ -88,6 +88,33 @@ func TestSetup(t *testing.T) {
 	t.Setenv("TMP", os.Getenv("TEMP"))
 	os.Mkdir(os.Getenv("TEMP"), 0700)
 	instance := filepath.Join(local, "K-SESSION", "Beta", "instance")
+	defer func() {
+		if !t.Failed() {
+			return
+		}
+		// Fixed event identifiers/codes only: no raw logs, paths, credentials or instance data.
+		var diagnostic []map[string]string
+		for _, row := range events(instance) {
+			event, _ := row["event"].(string)
+			code, _ := row["code"].(string)
+			valid := func(s string) bool {
+				if len(s) > 80 {
+					return false
+				}
+				for _, c := range s {
+					if (c < 'A' || c > 'Z') && c != '_' {
+						return false
+					}
+				}
+				return true
+			}
+			if valid(event) && valid(code) {
+				diagnostic = append(diagnostic, map[string]string{"event": event, "code": code})
+			}
+		}
+		report["failureLauncherEvents"] = diagnostic
+		t.Logf("Setup failure Launcher event identifiers: %v", diagnostic)
+	}()
 	target := filepath.Join(base, "安装 中文 with spaces")
 	exe := filepath.Join(target, "program", "K-SESSION.exe")
 	setup := filepath.Join(artifact, "K-SESSION-Setup-1.1.0-beta.1.exe")
@@ -427,6 +454,9 @@ func TestSetup(t *testing.T) {
 	uninstall(true)
 	// Prove install's running-process gate independently of its existing-registration gate.
 	portableExe := filepath.Join(filepath.Dir(filepath.Dir(nodeSource)), "K-SESSION.exe")
+	if _, err := verifyRuntime(filepath.Dir(portableExe)); err != nil {
+		t.Fatalf("Portable prelaunch integrity check: %v", err)
+	}
 	app = startApp(portableExe)
 	until(t, func() bool { return eventCount(instance, "READY") == 3 })
 	pid = uint32(lastEvent(instance, "READY")["pid"].(float64))
