@@ -19,4 +19,6 @@ I01—I32保留。I17因本轮明确产品需求改为“不创建data.json/预�
 
 首轮f940f68 / Setup35511898512失败：编译与Portable通过，首次安装向导阶段报“app constant before it was initialized”，程序复制尚未开始。数据页插在目录页之前（目录页继续隐藏），原校验使用ExpandConstant('{app}')过早。官方WizardDirValue明确支持此阶段，改用其当前默认或/DIR值，加入固定契约断言。参考 https://jrsoftware.org/ishelp/topic_isxfunc_wizarddirvalue.htm 。首次失败保留，不能算D/I通过。
 
+第二轮ae867533 / Setup35512364618失败：D01实际默认数据位置安装/卸载通过，D06未知非空目录反例卡在runSetup直到3分钟超时。NextButtonClick的自定义MsgBox不随/SUPPRESSMSGBOXES抑制；修正为静默模式在PrepareToInstall统一返回拒绝错误，交互模式保留可见错误提示。不延长超时、不削弱未知目录拒绝。
+
 最终CI及Artifact身份待核验补入；人工十步待验。旧R1人工/自动化不能替代本批。R1首轮启动超时未确定根因，不能写成已修复。

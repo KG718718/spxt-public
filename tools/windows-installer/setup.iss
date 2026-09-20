@@ -173,6 +173,8 @@ function NextButtonClick(CurPageID: Integer): Boolean;
 var Error: String;
 begin
   Result := True;
+  { Silent installs use PrepareToInstall's error return, never a blocking custom MsgBox. }
+  if WizardSilent then exit;
   if CurPageID = DataPage.ID then begin
     Error := CheckDataLocation(False);
     if Error <> '' then begin MsgBox(Error, mbError, MB_OK); Result := False; exit; end;

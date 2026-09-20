@@ -15,4 +15,5 @@ assert.equal((iss.match(/Parameters: "--instance/g)||[]).length,3,'desktop, menu
 assert.ok(iss.includes('instance-binding.ini'));
 assert.ok(iss.includes('KSESSION_DATA_SWITCH_UNCONFIRMED'));
 assert.ok(/Exec\(LocationChecker, Mode \+ .*WizardDirValue/.test(iss),'data page validates before app constant initialization');
+assert.match(iss, /function NextButtonClick[\s\S]*?if WizardSilent then exit;[\s\S]*?if CurPageID = DataPage.ID/, 'silent validation returns PrepareToInstall error without custom modal');
 console.log('R2 DATA LOCATION CONTRACT PASS');
