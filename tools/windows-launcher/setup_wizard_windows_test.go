@@ -48,7 +48,7 @@ func advanceSetupWizard() []string {
 				parent, _ := call(user32, "GetParent", c)
 				id, _ := call(user32, "GetDlgCtrlID", c)
 				var response uintptr
-				ok, _ := call(user32, "SendMessageTimeoutW", parent, 0x0111, id, c, 0x0002, 2000, uintptr(unsafe.Pointer(&response)))
+				ok, _ := call(user32, "SendMessageTimeoutW", parent, 0x0111, id&0xffff, c, 0x0002, 2000, uintptr(unsafe.Pointer(&response)))
 				observed = append(observed, fmt.Sprintf("button=%s notified=%t", label, ok != 0))
 				return 0
 			}
