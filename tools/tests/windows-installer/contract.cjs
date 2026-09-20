@@ -14,4 +14,5 @@ assert.ok(iss.includes("CreateInputDirPage(wpInfoBefore, '业务数据与附件�
 assert.equal((iss.match(/Parameters: "--instance/g)||[]).length,3,'desktop, menu and finish must bind instance');
 assert.ok(iss.includes('instance-binding.ini'));
 assert.ok(iss.includes('KSESSION_DATA_SWITCH_UNCONFIRMED'));
+assert.ok(/Exec\(LocationChecker, Mode \+ .*WizardDirValue/.test(iss),'data page validates before app constant initialization');
 console.log('R2 DATA LOCATION CONTRACT PASS');

@@ -144,7 +144,7 @@ begin
     ExtractTemporaryFile('ksession-location-check.exe'); LocationChecker := ExpandConstant('{tmp}\ksession-location-check.exe');
   end;
   Mode := '--check-install-instance'; if Prepare then Mode := '--prepare-install-instance';
-  if not Exec(LocationChecker, Mode + ' "' + ExpandConstant('{app}') + '" "' + BetaInstance + '"', '', SW_HIDE, ewWaitUntilTerminated, Code) then Code := 99;
+  if not Exec(LocationChecker, Mode + ' "' + WizardDirValue + '" "' + BetaInstance + '"', '', SW_HIDE, ewWaitUntilTerminated, Code) then Code := 99;
   if Code <> 0 then begin
     Log('KSESSION_DATA_REJECT_' + IntToStr(Code));
     case Code of
