@@ -81,6 +81,20 @@ func TestSetup(t *testing.T) {
 	target := filepath.Join(base, "安装 中文 with spaces")
 	exe := filepath.Join(target, "program", "K-SESSION.exe")
 	setup := filepath.Join(artifact, "K-SESSION-Setup-1.1.0-beta.1.exe")
+	// An unrelated Node must not block installation and must never be terminated by Setup.
+	unrelatedDir := filepath.Join(base, "unrelated-node")
+	os.Mkdir(unrelatedDir, 0700)
+	unrelatedExe := filepath.Join(unrelatedDir, "node.exe")
+	nodeSource := filepath.Join(os.Getenv("KSESSION_SETUP_BUILD"), "portable", "解包程序 中文 with spaces", "K-SESSION", "runtime", "node.exe")
+	if e := os.WriteFile(unrelatedExe, mustRead(t, nodeSource), 0700); e != nil {
+		t.Fatal(e)
+	}
+	unrelated := exec.Command(unrelatedExe, "-e", "setInterval(()=>{},1000)")
+	unrelated.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	if e := unrelated.Start(); e != nil {
+		t.Fatal(e)
+	}
+	t.Cleanup(func() { unrelated.Process.Kill(); unrelated.Wait() })
 	n := 0
 	runSetup := func(binary, dest string, success bool) string {
 		t.Helper()
@@ -181,6 +195,10 @@ func TestSetup(t *testing.T) {
 		record(f.id, "PASS", "separately hashed compile-time "+f.name+" fixture; real Inno failure/rollback, no production test switch")
 	}
 	runSetup(setup, target, true)
+	if !alivePID(uint32(unrelated.Process.Pid)) {
+		t.Fatal("Setup killed unrelated Node")
+	}
+	report["unrelatedNodePreserved"] = true
 	if exists(instance) {
 		t.Fatal("Setup created business instance")
 	}
@@ -279,6 +297,18 @@ func TestSetup(t *testing.T) {
 	// Preserve synthetic user-owned data and unknown install-root content during uninstall.
 	userMarker := filepath.Join(instance, "user-retained.txt")
 	os.WriteFile(userMarker, []byte("synthetic retained"), 0600)
+	dataFiles := map[string]string{}
+	if e := filepath.Walk(instance, func(p string, s os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if s.Mode().IsRegular() {
+			dataFiles[p] = digest(mustRead(t, p))
+		}
+		return nil
+	}); e != nil {
+		t.Fatal(e)
+	}
 	foreign := filepath.Join(target, "unknown-user-file.txt")
 	os.WriteFile(foreign, []byte("do not remove"), 0600)
 	uninstall(true)
@@ -290,6 +320,11 @@ func TestSetup(t *testing.T) {
 	}
 	if string(mustRead(t, foreign)) != "do not remove" {
 		t.Fatal("unknown file deleted")
+	}
+	for p, hash := range dataFiles {
+		if digest(mustRead(t, p)) != hash {
+			t.Fatal("Uninstall changed external instance file")
+		}
 	}
 	record("I26", "PASS", "actual uninstall removes recorded files only")
 	record("I27", "PASS", "data.json byte-identical and marker/attachments/backups preserved")

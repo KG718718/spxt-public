@@ -9,5 +9,8 @@ const i=json('build-info.json');assert.equal(i.sourceCommit,commit);assert.equal
 assert.equal(i.setupSha256,sha(read(names.find(n=>n.endsWith('.exe')))));
 const regression=json('public-regression.json');assert.equal(regression.sourceCommit,commit);assert.equal(regression.testTotal,742);assert.equal(regression.fail,0);assert.equal(regression.skipped,0);assert.equal(regression.suitePass,26);
 const tests=json('INSTALLER-TEST-REPORT.json');assert.equal(tests.sourceCommit,commit);assert.equal(tests.status,'AUTOMATED_PASS_HUMAN_PENDING');assert.equal(Object.keys(tests.checks).length,32);
+assert.equal(tests.setupSha256,i.setupSha256);assert.equal(tests.unrelatedNodePreserved,true);assert.equal(tests.instanceDataPreserved,true);
+const pending=new Set(['I01','I02','I03','I09','I12']);
+for(let n=1;n<=32;n++){const id='I'+String(n).padStart(2,'0');assert.equal(tests.checks[id]?.status,pending.has(id)?'PENDING':'PASS',id);assert.ok(tests.checks[id].method);}
 for(const f of inventory(root)){if(f.path.endsWith('.exe'))continue;const s=read(f.path).toString();assert.ok(!/"(?:password|token|smtpPass|cookie)"\s*:/i.test(s));}
 console.log('SETUP ARTIFACT VERIFIED; NOT FINAL HUMAN ACCEPTANCE');
