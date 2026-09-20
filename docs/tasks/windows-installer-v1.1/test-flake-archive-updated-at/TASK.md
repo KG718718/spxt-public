@@ -26,6 +26,16 @@
 - 保留原失败和成功证据、代码 SHA、Actions attempt。
 - 若根因要求业务归档语义变化，先单独报告范围和批准，不搭载 Batch 3 安装实现。
 
-## 将来关闭标准
+## Batch 3 复现记录（2026-09-20，仍未修复）
+
+- ba0fa921629aeecaac599d52291510ea806f5b52，Runtime run35504220442 attempt1，public-workflow-http.test.js:91。
+- 本次触发点是发票确认后的批准项目快照不变断言，不冒称与上次服务费配置触发点完全相同。
+- 首次Artifact10603651574（runtime-r5a-gate）已原样下载到项目E盘Batch3 evidence/runtime-35504220442-attempt1。
+- 实际比较stderr中的完整actual/expected JSON，替换archive.updatedAt后逐字符相等；
+  唯一差异18:09:29→18:09:30，匹配已登记的跨秒字段模式。未发现本次其他业务字段差异。
+- 依用户Task23仅正常重跑一次，attempt2成功；未改测试、未删断言、未加sleep，仍保持OPEN。
+- 后续最终源码须独立全回归，不能用此重跑结果代替。首次失败不能因重跑成功被隐藏。
+
+## 将来关闭标准（继续生效）
 
 根因明确；原失败确定性复现；修改前失败/修改后跨秒及同秒稳定通过；原业务快照保护不降级；记录元数据语义与验证；相关测试及全回归通过。任务完成生成独立 RESULT/CHATGPT-HANDOFF，等待验收。本轮以上均未执行。

@@ -13,3 +13,12 @@
 - Inno编译器自身为32位并不意味着应用支持x86：Setup显式ArchitecturesAllowed=x64os、64位安装模式；最终程序是x64。Win11 ARM不纳入目标。
 
 CI精确下载hash + Authenticode有效/签署主体校验后，当前用户工具目录静默安装，不用winget latest。不把编译器/缓存放入最终Artifact。
+
+编译器输出含“Non-commercial use only”提示，已另行核对官方购买FAQ
+https://jrsoftware.org/isorder.php（2026-09-20）：官方说明购买目前不是严格强制，试验/测试阶段可后续再考虑采购。
+本轮仅未签名测试Artifact，不宣称持有付费许可；后续正式发布仍需重新审查当时条款。
+文件版本资源为0.0.0.0，不能据此判定编译器版本：用固定下载hash、有效官方签名和
+脚本编译时 VER == EncodeVer(6,7,3) 三项固定；不是跳过版本检查。
+
+安装器使用 Windows 内置 WMI/COM 只读查询自身 Launcher/Node 进程；不可用时安全拒绝，不提权或关闭服务。
+这是系统能力依赖，不向用户额外安装WMI组件，也不创建Windows后台服务。

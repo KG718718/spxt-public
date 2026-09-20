@@ -1,73 +1,80 @@
 ===== CHATGPT HANDOFF BEGIN =====
 
-项目：K⁺-SESSION 公开版 Windows 一键安装重构
-当前 Batch：2B 验收归档 + Batch 3 实施范围提案
-结论：PASS WITH CONDITIONS（方案已整理，待审批；不是 Batch 3 实现通过）
-一句话结论：Batch 2B 已按用户完整人工验收正式记录为 PASS。本轮仅整理文档和独立测试待办，没有实现或构建 Setup。
+项目：
+K⁺-SESSION 公开版 Windows 一键安装重构
+
+当前 Batch：
+Batch 3 — Windows Setup Beta Implementation
+
+结论：
+BLOCKED（自动化通过；本机原始包下载及 Win10 人工验收未完成）
+
+一句话结论：
+已生成单 EXE 安装器并通过同提交的安装、离线核心、卸载保留数据、重装及全部回归。尚不能报告 Batch 3 PASS：本机下载连续卡住/超时，用户还未验收本次可见安装向导。
 
 【本轮实际完成】
-- 更新 2B 验收和项目执行入口；保留原失败、重跑及 Artifact 历史。
-- 独立登记 TEST-FLAKE — archive.updatedAt second-boundary stability，不阻塞 Batch 3，不删断言、不加简单 sleep。
-
-【Batch 3 目标】
-- 单个离线核心 Setup Beta：双击安装→桌面快捷方式→启动后台和浏览器→首次创建 Admin；无需用户安装 Node/npm/Git/Python、执行命令或保留 CMD。
-
-【修改范围（待批准）】
-- 建议 Inno Setup、当前用户免提权安装；新增安装脚本、构建/验证、Actions 及文档。
-- 安装根目录下 program 放完整受校验程序，卸载文件放其外；快捷方式指向 program/K-SESSION.exe。
-- 沿用外置 Beta instance。基本卸载只移除本次安装的程序/快捷方式/登记，保留数据；已有安装或运行中实例写前拒绝，不做覆盖升级。
-
-【明确不修改】
-- 业务源码、页面、依赖锁、审批/财务/权限/数据模型；Launcher 校验和实例路径。
-- 不做数据迁移、自动更新、OCR、签名、Release、main/v1.0.0；不进入 Batch 4。
-
-【验收标准】
-- 同 commit 配对构建；Setup/payload/manifest/hash/许可可追溯，零预置业务数据。
-- Win10 x64 Beta 标准用户实际安装、快捷方式、无 CMD、离线核心通过；包内 Node，不依赖开发工具。
-- 中文/空格路径、取消/权限不足/磁盘不足/已占用目录安全失败；安装后完整性、停止重启、卸载保留数据与重装登录通过。
-- 新安装专项、既有完整回归及最终原始 Actions Setup 人工验收；未测 Win11/干净机不得宣称认证。
-
-【风险与回滚】
-- 代码确认 Launcher 拒绝根目录额外文件：卸载文件须隔离，不能放宽校验。
-- 当前用户安装避免提权后数据归属错位；不强杀运行程序。Job 停止不是事务排空，先保存。
-- unsigned 可能触发安全提示，不关闭安全软件；Artifact 有保留期限。
-- 保留原 2B 整包；失败仅撤销本安装拥有的文件/快捷方式，保留外置实例。验证能回到 2B；源码正常 revert，不改 main/tag。
+- 固定官方 Inno Setup 6.7.3，校验下载 SHA256、签名和许可证。
+- 当前用户 lowest 安装，无开发工具要求；program/uninstall 分离，桌面/开始菜单直达 Launcher。
+- 不覆盖已有安装/未知非空目录，不强杀；卸载保留外置 Beta instance。
+- 同 commit fresh Runtime→配对 Launcher→Portable→Setup→实际安装验证；只上传 Actions Artifact。
+- 修复安装脚本 Char 参数错误；取消测试必须真正进入复制阶段；快捷方式测试改用 Unicode IShellLinkW，保留“⁺”名称，不放宽业务校验。
 
 【关键数字 / 技术事实】
-- source commit（2B受测）：cfc329fb405b1c5e4881e96eb8f2b4f78e8af552
-- HEAD（归档前基线）：31fb819f87f2052dbbd756526bb50b5d86ae9689；归档后 SHA 见本文件 Git 提交及交付回执，不自引用。
-- Node 24.21.0；npm 11.19.0（构建）；程序143,766,301 bytes / 1042文件 / 20生产依赖。
-- Artifact：K-SESSION-portable-win-x64-cfc329fb405b1c5e4881e96eb8f2b4f78e8af552，ID10527372359。
-- 内层 ZIP SHA256：35bda7ac54150622be6673570f065f753d2a6b3665ecd8619678abd771c6db44。
-- Batch 3 Setup/大小/hash：N/A，未生成。
+- source commit: ff759238b59f3a6076524f82b81d56690ae4e3d3
+- HEAD: 归档前为上述 SHA；最终报告归档 SHA 见本卡所属 Git 提交，不冒充新构建。
+- Node: 24.21.0；npm: 本次 Setup 日志未单列，N/A；Go: 1.27.1。
+- Runtime/程序 payload: 143,766,301 bytes；1042 文件；20 生产依赖。
+- Installer 1.1.0-beta.1 / Application 1.0.0，unsigned。
+- EXE: K-SESSION-Setup-1.1.0-beta.1.exe；32,983,233 bytes。
+- EXE SHA256: 22df28cbf69821dc004728f4c7f8d0e4dccc2996eff81e0ec449a02a1cd925ff
+- Artifact: 10604780606，32,500,875 bytes，30天保留。
+- Artifact GitHub digest: 44332d2e57281d511f4383f26118ae7ef9df999d738cbf75f810e33e40a5f49a
+- 下载入口：https://github.com/KG718718/spxt-public/actions/runs/35506827438/artifacts/10604780606
+- 上述 hash 来自已通过 CI 与 GitHub 元数据；本机下载尚未成功，不能声称本机复算通过。
 
 【实际测试结果】
-- 引用既有 Portable 35294691905 attempt2、Launcher 35294691939 PASS；同 commit 26/26套742项，fail0 skip0。
-- 用户重新完成1–8步全部正常，账号和数据保留。
-- 本轮仅文档检查，没有重编译或复测；不修改原 Artifact 的历史 PENDING。
+- 同 source commit：Setup35506827438、Portable35506827492、Launcher35506827463、Runtime35506827449 全部 SUCCESS。
+- Setup 内独立重跑公开26/26套、742项、fail0、skip0。
+- I01—I32：28 PASS，I01/I02/I03/I09四项人工 PENDING。
+- 实际CI断外网安装/运行、包内Node、中文/多页PDF、Excel、上传、备份、卸载保留全部实例文件、重装原账号/数据通过；网卡恢复通过，未改防火墙。
+- 已有登记及未登记的运行中Portable分别拒绝安装，运行中拒绝卸载，不终止其他Node。
+- archive.updatedAt 在较早ba0fa92回归中复现：保留第一次证据，证明只有一秒差异后仅重跑一次通过；最终ff75923通过。没有删除断言或加sleep，该独立问题仍未修复。
 
-【未完成 / 当前阻塞】
-- Batch 3 尚无实现、测试或安装包；等待方案审批。跨秒测试未修复，但非本批准入阻塞。
+【未完成 / 未验证】
+- 本机原始安装包下载/独立hash复核；Win10可见向导、无UAC、默认路径、浏览器以及人工卸载重装。
+- Win11、干净机、真实中文Windows登录用户名、非x64实机、代码签名未认证。
+
+【当前阻塞】
+1. GitHub Artifact 下载卡住/150秒超时；不是CI构建失败。
+2. 本次Setup仍需用户按 HUMAN-ACCEPTANCE.md 十步验收，2B反馈不能替代。
 
 【本轮修改范围】
-- 新增：Batch 3 PROPOSAL/本卡、独立 TEST-FLAKE 任务文档。
-- 修改：2B结果/测试报告/交接卡及 PROJECT、Master Plan、验收、决策入口。
-- 明确未修改：全部业务、构建、测试源码。
+- 新增：installer脚本/工具链/build/离线CI/Artifact门禁、安装专项、Unicode快捷方式测试读取器、Setup workflow、Batch3文档。
+- 修改：PROJECT、Master Plan、独立flake记录。
+- 明确未修改：业务server/页面/依赖锁、Launcher生产契约、Portable生产逻辑、旧在线安装脚本。
 
 【Git状态】
-- branch：codex/windows-installer-v1.1
-- HEAD/commit：归档文档提交单列回执，与2B受测SHA分开。
-- working tree/push：以交付回执实际核验为准；只允许开发分支文档提交。
-- PR/Release：未创建；main/v1.0.0：未修改，核验均为84cbb324a4f63bef094d2c21d70eba841205a7a7。
+- branch: codex/windows-installer-v1.1
+- HEAD/commit: 受测SHA如上；报告归档独立提交。
+- working tree: 交付回执以最终核验为准。
+- push: 实施已同步；网络故障后使用官方Git API逐个校验原blob/tree/commit SHA，以force=false快进同一分支；没有重写历史。
+- PR/Release: 未创建；main/v1.0.0均仍为84cbb324a4f63bef094d2c21d70eba841205a7a7。
 
 【安全与边界】
-- 未访问其他用途版本或真实业务数据；未引入账号/Token/密码；未修改业务逻辑。
+- 未访问其他用途版本，未引入真实业务数据、内部账号/Token/密码，未改业务逻辑。
+- CI仅合成临时账号；敏感实例和故障EXE不进入Artifact。
+- 路径偏差如实登记：一次本地Go静态检查使用默认缓存/temp；随后E盘显式环境重跑通过。安装及实例测试均在隔离CI，不改本机Beta实例。
 
 【下一阶段判断】
-- 允许提交 Batch 3 方案；不自动开始实现或后续 Batch。
+- 不允许进入下一 Batch；不合并、不创建Release。等待下载与本次Win10人工验收。
+
 【需要 ChatGPT 网页版决定】
-- 审批安装器方向、当前用户目录、最小卸载保留数据、拒绝覆盖升级及仅 Artifact 范围。
+1. 审阅自动化与失败修复证据；待用户完成十步后再判 Batch 3 PASS。
+2. 不把未签名、未测Win11写成已认证，也不豁免当前人工门禁。
+
 【详细报告文件】
-- batch-3/PROPOSAL.md；batch-2b/RESULT.md、PORTABLE-TEST-REPORT.md；test-flake-archive-updated-at/TASK.md（均在 docs/tasks/windows-installer-v1.1/）。
+- docs/tasks/windows-installer-v1.1/batch-3/RESULT.md
+- 同目录 SPEC.md、PLAN.md、ACCEPTANCE.md、INSTALLER-TOOLCHAIN.md、INSTALLER-TEST-REPORT.md、HUMAN-ACCEPTANCE.md。
+- 原始Artifact内保留JSON、manifest、hash和许可证；本卡不替代证据。
 
 ===== CHATGPT HANDOFF END =====

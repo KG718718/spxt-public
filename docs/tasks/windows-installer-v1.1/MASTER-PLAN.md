@@ -1,5 +1,14 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## Batch 3 自动化通过 / Windows 10 人工待验｜2026-09-20
+
+用户正式任务书已批准 Inno Setup 当前用户安装、离线核心整包、program/uninstall 分离及外置 Beta 实例保留。
+仅开发分支实现。受测ff759238b59f3a6076524f82b81d56690ae4e3d3，Setup35506827438、Portable35506827492、Launcher35506827463、Runtime35506827449均通过。
+同commit fresh配对构建、实际CI整机断外网安装/核心/卸载/重装、完整26套742项与Artifact白名单通过。
+Artifact10604780606。尚无 Batch 3 PASS：I01/I02/I03/I09及本次原始EXE的Win10人工十步待完成。
+失败、测试误判撤回与独立flake复现均保留在专项报告；后续文档归档不冒充重新编译或测试。
+不修改业务、main、v1.0.0 或 Release，不自动进入 Batch 4。以下状态保留为历史事实。
+
 ## 当前批准状态：Batch 2B PASS / Batch 3 方案待审｜2026-09-18
 
 用户已重新完成本次 Actions 整包的 1–8 步人工验收：启动、自动开页、原账号登录、仅关闭浏览器、退出/停止、页面不可访问、重新启动、账号和数据保留均正常，未发现影响使用的异常。结合既有同 commit 自动化，Batch 2B 正式批准 PASS。受测源码仍为 `cfc329fb405b1c5e4881e96eb8f2b4f78e8af552`；Portable 35294691905 attempt2 / Artifact 10527372359 / 26套742项 fail0 skip0。当前仅归档结论，不重新构建或测试，不修改原 Artifact 的历史 PENDING 字段。

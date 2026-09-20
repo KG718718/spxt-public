@@ -4,7 +4,7 @@
 
 用户正式任务书批准 Windows Setup Beta 实现，沿用 codex/windows-installer-v1.1，起点3733d99。L2入口 batch-3/intent.md、SPEC.md、PLAN.md、ACCEPTANCE.md；历史PROPOSAL保留。固定官方Inno6.7.3，当前用户免提权、program/uninstall分离、外置Beta数据、拒绝覆盖/运行中卸载；不改业务或Launcher契约。
 
-当前首轮实施/编译阶段，尚未生成通过验收的Setup。必须同commit fresh Runtime/Launcher/Portable、安装专项、完整26/742、原始Actions Artifact及Win10人工验收；纯静态/CI静默/网络探针不冒充人工或整机断网。本批不进入Batch4/OCR/签名/main/Release。只操作公开版，未创建Agent/任务/worktree。
+受测ff759238b59f3a6076524f82b81d56690ae4e3d3：Setup35506827438、Portable35506827492、Launcher35506827463、Runtime35506827449全部通过；同commit fresh配对、实际CI断外网安装/核心/卸载/重装、26套742项0失败0跳过通过。原始Artifact10604780606。当前仍为BLOCKED/等待Win10本次安装器人工十步，I01/I02/I03/I09不能用CI代替；不是Batch3 PASS。报告归档不冒充重新构建。本批不进入Batch4/OCR/签名/main/Release。只操作公开版，未创建Agent/任务/worktree。
 
 ## 当前批准状态：Batch 2B PASS / Batch 3 方案待审｜2026-09-18
 

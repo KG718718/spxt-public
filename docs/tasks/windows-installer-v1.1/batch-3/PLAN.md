@@ -13,8 +13,6 @@
 
 tools/windows-installer/**、tools/tests/windows-installer/**、新增 tools/windows-launcher/setup_windows_test.go（复用既有Win32测试辅助；不进入生产EXE）、.github/workflows/setup-v3.yml、batch-3文档及PROJECT/MASTER-PLAN/ACCEPTANCE/DECISIONS状态。既有生产业务、package/lock、Launcher完整性/实例逻辑、公共测试断言不改。现有Portable原始workflow/契约不改。
 
-## 回滚
-
 ## 整机离线验证实现
 
 仅在本公开仓库的 GitHub-hosted 一次性 Windows runner 内运行 offline-ci.ps1；
