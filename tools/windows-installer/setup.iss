@@ -130,11 +130,12 @@ begin
 end;
 
 function RunningProduct: Boolean;
-var Service, Items, Item: Variant; I: Integer; P, R: String;
+var Locator, Service, Items, Item: Variant; I: Integer; P, R: String;
 begin
   Result := True; { fail closed when process inspection is unavailable }
   try
-    Service := GetObject('winmgmts:{impersonationLevel=impersonate}!\\.\root\cimv2');
+    Locator := CreateOleObject('WbemScripting.SWbemLocator');
+    Service := Locator.ConnectServer('', 'root\CIMV2');
     Items := Service.ExecQuery('SELECT Name,ExecutablePath FROM Win32_Process WHERE Name="K-SESSION.exe" OR Name="node.exe"');
     for I := 0 to Items.Count - 1 do begin
       Item := Items.ItemIndex(I);
