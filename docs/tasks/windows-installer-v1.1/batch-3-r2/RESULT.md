@@ -1,6 +1,6 @@
 # Batch 3-R2 — Business Data / Attachment Location Selection
 
-状态：BLOCKED / 自动化通过，等待新包 Windows 10 人工十步验收；尚非 Batch 3 PASS。仅公开仓库 KG718718/spxt-public；分支 codex/windows-installer-v1.1；R2 起点 a9104f8b233d56846b2eee8cf31cd078dea5d4d7。
+状态：**Batch 3 PASS — Windows 10 x64 Beta Track**。2026-09-21用户本次任务书确认新包人工1—10全部正常；结合下列既有自动化正式归档。仅公开仓库 KG718718/spxt-public；分支 codex/windows-installer-v1.1；R2 起点 a9104f8b233d56846b2eee8cf31cd078dea5d4d7。本次不重新测试/构建，不修改原Artifact历史字段。
 
 ## 已实现范围
 
@@ -33,6 +33,6 @@
 
 业务 server.js、HTML/CSS、package.json/package-lock、Node/PDF、Runtime 布局及业务模型未改；Launcher 仅增加获批的安装数据路径契约。无其他用途版本读取，无真实数据、凭据导出，无 main/tag/Release、OCR、签名、Win11认证、Batch4。
 
-本次新原始 Artifact 的 Windows 10 人工十步尚未执行；旧包验收不复用。先停止旧 Beta 并卸载程序后再安装；卸载保留数据。新目录不是迁移。unsigned 可能触发系统安全提示，不要求绕过防护。
+本次新原始Artifact的Windows10人工十步已由用户确认全部正常，I01/I02/I09人工门禁因此补齐；上文自动化报告的PENDING保持生成时事实，不改成自动化32/32。无新增独立截图或日志，不把用户反馈写成Agent亲自操作证据。Win11、干净机、签名仍未认证；本机二次下载哈希复算未完成的事实不变。新目录不是迁移；unsigned安全提示不要求绕过。
 
-只有完整自动化和本轮 HUMAN-ACCEPTANCE.md 十步均通过，才可报告 Batch 3 PASS — Windows 10 x64 Beta Track。后续文档归档 SHA 与受测构建 SHA 必须分开，不冒充重建/重新验收。
+完整自动化与HUMAN-ACCEPTANCE.md十步现已共同满足本批Beta门禁，用户批准PASS。本次文档归档SHA与受测构建SHA分开，不冒充重建。停止，不进入Batch4/main/tag/Release。

@@ -1,3 +1,5 @@
+历史交接卡（2026-09-20）：以下BLOCKED为当时事实。2026-09-21用户确认人工十步全部正常，Batch3已PASS — Windows10 x64 Beta Track；当前结论见RESULT.md和../governance-20260921/CHATGPT-HANDOFF.md。保留原交接正文，不覆盖原测试证据。
+
 ===== CHATGPT HANDOFF BEGIN =====
 
 项目：

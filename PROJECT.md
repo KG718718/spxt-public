@@ -1,5 +1,13 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 3 PASS / 协作治理已更新｜2026-09-21
+
+用户本次任务书明确确认Batch3-R2人工1—10全部正常。结合受测e9417f036d0cdf736ff84682556a994040f0de0b / Setup35514357007 / Artifact10606870944既有D13/13、I29自动通过及26套742项0失败0跳过，正式记录 **Batch 3 PASS — Windows 10 x64 Beta Track**。I01/I02/I09由此次用户人工验收补齐；原Artifact的PENDING历史字段不重写。本轮仅归档，不重新测试或构建，不扩大为Win11、干净机或代码签名认证。
+
+从下一获批Batch采用THREAD ORCHESTRATOR：主控拆分、独立Execution/风险对应QA、Review、整合、最终门禁和GitHub交付；实质代码/测试实现交执行对话，返工退回原任务。禁止默认sub-agent；一层对话树；获批Batch内允许一任务一临时worktree/local branch，执行只local commit且不push，主控统一整合/推送。详见AGENTS.md及docs/tasks/windows-installer-v1.1/governance-20260921/DECISION.md。内部执行不生成网页版交接卡，主控才生成；较大Batch用ORCHESTRATION.md恢复索引。
+
+本轮只改公开文档，未创建Execution/QA/Agent/worktree，未进入Batch4。main/v1.0.0/Release冻结。本次文档提交不替代受测代码SHA；旧BLOCKED与旧规则段落均为历史时点，以下不覆盖本节。
+
 ## Batch 3-R2 数据与附件位置｜2026-09-20
 
 当前 BLOCKED / 自动化通过、等待新包Win10人工十步。程序目录保持固定且隐藏，新增必要数据位置选择；外置安装绑定确保快捷方式/完成页/直接EXE一致。未知非空、系统/重解析点/交叠/不可写路径拒绝；卸载保留、重装恢复，不做数据迁移。

@@ -1,4 +1,6 @@
-# Batch 3-R2 人工十步（尚未验收）
+# Batch 3-R2 人工十步（用户确认通过）
+
+2026-09-21用户在“项目协作治理调整”任务书中明确反馈“1—10全部正常”，批准Batch 3 PASS — Windows 10 x64 Beta Track。以下十项均按用户人工反馈记录PASS，包含目录选择、无UAC/无CMD、原账号/附件保留；不是Agent本轮复测。对应下列同一受测commit/原始Artifact。没有新增机器认证，原自动化I01/I02/I09的PENDING由此补齐，原JSON不改。以下保留验收步骤。
 
 本轮新包：[Actions 原始 Artifact 10606870944](https://github.com/KG718718/spxt-public/actions/runs/35514357007/artifacts/10606870944)。登录GitHub后下载并解压，使用其中 K-SESSION-Setup-1.1.0-beta.1.exe。受测源码 e9417f036d0cdf736ff84682556a994040f0de0b；Setup SHA256 49d28d4dbd131b0dd0890e44aea358d75a8406803ff10df808f073d5c2a72af8。仅Beta测试包，不是Release。
 

@@ -1,5 +1,13 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## 当前：Batch 3 PASS / THREAD ORCHESTRATOR｜2026-09-21
+
+用户确认R2新包人工1—10全部正常，正式记录 **Batch 3 PASS — Windows 10 x64 Beta Track**。受测e9417f036d0cdf736ff84682556a994040f0de0b、Setup35514357007、Artifact10606870944不变；既有D13/13、I29自动通过、26套742项0失败0跳过与本次人工反馈共同构成结论。I01/I02/I09人工门禁已补齐，原Artifact历史PENDING不改。本轮不复测/重建，不代表Win11、干净机或签名认证。
+
+下一获批Batch按AGENTS.md的THREAD ORCHESTRATOR规则：主控负责拆分/Review/整合/GitHub交付，实质实现交独立Execution Thread；一层对话树，禁止默认sub-agent。授权Batch内主控可建临时worktree/local task branch；执行只local commit不push，主控统一推送；共享资源冲突须串行。QA独立且默认不修生产代码，返工回原执行对话。较大Batch登记ORCHESTRATION.md，内部Thread不生成网页版交接卡。决策见[治理记录](governance-20260921/DECISION.md)。
+
+本轮仅规则及验收归档，不创建实际对话/worktree，不进入Batch4，不改main/tag/Release。新规则替代下方历史“不得新增工作树/任务”和“每个子任务均交接卡”要求；历史产物及测试事实保留。
+
 ## Batch 3-R2 Business Data / Attachment Location Selection｜2026-09-20
 
 用户修正：隐藏程序目录页不等于隐藏业务数据选择。程序仍默认LOCALAPPDATA/Programs/K-SESSION-Beta；必要数据页展示既有/记忆instance位置并允许安全选择。整个instance不拆分；program之外保存安装绑定，直接EXE不得退回空实例；不自动迁移，卸载保留数据。
@@ -151,11 +159,11 @@ Runtime不是普通用户安装软件，本轮不发Release/Pre-release，不改
 
 每个 Batch 先确认范围、方案和验收标准，再实施。只提交审查过的公开资料；不纳入审计临时文件、本机配置或非公开资产。风险、失败与未测试项如实记录，不能以候选完成代替发布通过。
 
-Batch 0/1A/1B已经获准，Batch 1C Runtime实施已执行但门禁未通过。当前停止于Batch 1C；不得以交接文档完成自动进入Batch 2、生成Launcher/Setup或开展新Batch。
+当前Batch3已由2026-09-21用户人工验收结合既有自动化确认PASS（Windows10 x64 Beta Track）。本轮停止，等待下一Batch任务书与审批，不自动进入Batch4；早期Batch1C阻塞段落仅代表当时历史。
 
 ### ChatGPT 网页版交接卡固定规则
 
-从现在开始，每个Batch/子任务结束，自动在其对应任务目录额外生成CHATGPT-HANDOFF.md（本规则落地时先补当前1C），无须重复询问。该文件须独立、自包含，网页版不读取其他本地文件也能了解实际结果、技术事实、测试、未完成项、阻塞、Git状态、下一阶段准入和待上级决定事项。
+2026-09-21修订：只有主控交付整个Batch，或用户明确要求独立网页版验收的任务，才生成对应CHATGPT-HANDOFF.md；内部Execution/QA Thread只向主控提交AGENTS.md规定的精简回单，不生成网页版交接卡。该卡仍须独立、自包含，网页版仅凭该卡即可了解结果、事实、测试、未完成项、阻塞、Git状态、下一阶段准入和待决定事项。
 
 默认800–1800中文字，保持下列固定格式；不放完整日志，没有的值写N/A，不编造。成功/失败/阻塞/有条件通过必须区分；文档子任务通过不能掩盖所在Batch失败，历史测试必须注明非本轮复测。
 
@@ -171,7 +179,7 @@ Get-Content -Raw "<CHATGPT-HANDOFF.md实际路径>" | Set-Clipboard
 
 失败或环境不支持时，首行写：“网页版交接卡已生成，请复制下方代码块全部内容到 ChatGPT 网页版。”
 
-剪贴板失败不导致Batch失败；不得虚报成功。本规则立即作为本项目后续所有Batch/子任务的固定执行标准，不等于允许继续实施或发布。
+剪贴板失败不导致Batch失败；不得虚报成功。本规则适用于上述主控/明确独立验收交付，不对内部Execution/QA重复生成交接卡，不等于允许继续实施或发布。
 
 ### ChatGPT 网页版交接卡固定模板
 
