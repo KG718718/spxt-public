@@ -59,6 +59,8 @@ $taskSnapshot=Join-Path $taskWork 'snapshot.json'
 $taskDraft=Join-Path $taskWork 'draft.json'
 $taskCleanup=Join-Path $taskWork 'cleanup.json'
 $taskLog=Join-Path $taskWork 'setup.log'
+$taskSetupStdout=Join-Path $taskWork 'setup.stdout'
+$taskSetupStderr=Join-Path $taskWork 'setup.stderr'
 $taskNode=$null
 $taskCli=Join-Path $RepositoryRoot 'tools\windows-installer\historical-identity\cli.cjs'
 $taskToken=$env:GITHUB_TOKEN
@@ -143,25 +145,26 @@ function Invoke-Node([string[]]$Arguments) {
   & $taskNode $taskCli @Arguments
   if($LASTEXITCODE -ne 0){throw 'NODE_GATE'}
 }
-function Invoke-SetupAndWait([string]$FileName,[string[]]$Arguments) {
-  $startInfo=[Diagnostics.ProcessStartInfo]::new()
-  $startInfo.FileName=$FileName
-  $startInfo.UseShellExecute=$false
-  $startInfo.CreateNoWindow=$true
-  $startInfo.RedirectStandardOutput=$true
-  $startInfo.RedirectStandardError=$true
-  foreach($argument in $Arguments){[void]$startInfo.ArgumentList.Add($argument)}
-  $process=[Diagnostics.Process]::new()
-  $process.StartInfo=$startInfo
-  try{
-    if(!$process.Start()){throw 'SETUP_START_FAILED'}
-    $stdoutTask=$process.StandardOutput.ReadToEndAsync()
-    $stderrTask=$process.StandardError.ReadToEndAsync()
-    $process.WaitForExit()
-    $stdoutTask.GetAwaiter().GetResult()|Out-Null
-    $stderrTask.GetAwaiter().GetResult()|Out-Null
-    $process.ExitCode
-  }finally{$process.Dispose()}
+function Assert-SetupLaunchPath([string]$Path) {
+  $full=[IO.Path]::GetFullPath($Path)
+  if(!$full.Equals($Path,[StringComparison]::Ordinal) -or $full -cnotmatch '^[A-Za-z]:\\[A-Za-z0-9._\\-]+$'){
+    throw 'SETUP_PATH_UNSAFE'
+  }
+  $full
+}
+function Invoke-SetupTreeAndWait([string]$FileName,[string]$InstallRoot,[string]$Instance,[string]$Log,
+    [string]$StandardOutput,[string]$StandardError) {
+  $trustedFile=Assert-SetupLaunchPath $FileName
+  $trustedRoot=Assert-SetupLaunchPath $InstallRoot
+  $trustedInstance=Assert-SetupLaunchPath $Instance
+  $trustedLog=Assert-SetupLaunchPath $Log
+  $trustedStdout=Assert-SetupLaunchPath $StandardOutput
+  $trustedStderr=Assert-SetupLaunchPath $StandardError
+  $arguments=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/DIR='+$trustedRoot),
+    ('/INSTANCE='+$trustedInstance),'/CONFIRMDATACHANGE=1',('/LOG='+$trustedLog))
+  $process=Start-Process -FilePath $trustedFile -ArgumentList $arguments -Wait -PassThru -WindowStyle Hidden `
+    -RedirectStandardOutput $trustedStdout -RedirectStandardError $trustedStderr
+  try{$process.ExitCode}finally{$process.Dispose()}
 }
 function Invoke-Normalize {
   & $taskNode $taskCli 'normalize-snapshot' '--input' $taskRawSnapshot '--output' $taskSnapshot
@@ -247,9 +250,8 @@ try{
   $setup=$setups[0].FullName
 
   Set-TaskPhase 'INSTALL'
-  $setupArguments=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/DIR='+$taskInstall),
-    ('/INSTANCE='+$taskInstance),'/CONFIRMDATACHANGE=1',('/LOG='+$taskLog))
-  $setupExit=Invoke-SetupAndWait -FileName $setup -Arguments $setupArguments
+  $setupExit=Invoke-SetupTreeAndWait -FileName $setup -InstallRoot $taskInstall -Instance $taskInstance `
+    -Log $taskLog -StandardOutput $taskSetupStdout -StandardError $taskSetupStderr
   if($setupExit -ne 0){throw 'SETUP_FAILED'}
   $taskInstalled=$true
 
@@ -292,10 +294,10 @@ try{
   Remove-OwnedBinding
   Assert-TaskPath $taskInstance
   Remove-Item -LiteralPath $taskInstance -Recurse -Force
-  foreach($payloadPath in @($taskExtract,$taskZip,$taskInstall,$taskLog,$taskRawSnapshot,$taskSnapshot)){
+  foreach($payloadPath in @($taskExtract,$taskZip,$taskInstall,$taskLog,$taskSetupStdout,$taskSetupStderr,$taskRawSnapshot,$taskSnapshot)){
     if(Test-Path -LiteralPath $payloadPath){Assert-TaskPath $payloadPath;Remove-Item -LiteralPath $payloadPath -Recurse -Force}
   }
-  $payloadRemoved=(@($taskExtract,$taskZip,$taskInstall,$taskLog,$taskRawSnapshot,$taskSnapshot)|Where-Object{Test-Path -LiteralPath $_}).Count -eq 0
+  $payloadRemoved=(@($taskExtract,$taskZip,$taskInstall,$taskLog,$taskSetupStdout,$taskSetupStderr,$taskRawSnapshot,$taskSnapshot)|Where-Object{Test-Path -LiteralPath $_}).Count -eq 0
   $cleanup=@{uninstallerExitCode=$taskUninstallExit;programRootExistsAfterUninstall=$programAfter;uninstallRegistrationCountAfterUninstall=$uninstallCount;desktopShortcutExistsAfterUninstall=$desktopAfter;startMenuShortcutExistsAfterUninstall=$programsAfter;bindingRetainedAfterUninstall=($bindingAfter -eq 1);instanceRetainedAfterUninstall=$instanceAfter;bindingRegistrationCountAfterHarnessCleanup=(Count-Subkey $taskBindingSubkey);instanceExistsAfterHarnessCleanup=(Test-Path -LiteralPath $taskInstance);temporaryPayloadRemoved=$true}
   $cleanup.temporaryPayloadRemoved=$payloadRemoved
   Write-PrivateJson $taskCleanup $cleanup

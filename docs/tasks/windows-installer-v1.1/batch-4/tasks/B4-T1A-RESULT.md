@@ -47,13 +47,17 @@
 
 安装调用改用 `System.Diagnostics.ProcessStartInfo`：`UseShellExecute=false`、`CreateNoWindow=true`，每个批准参数通过 `ArgumentList.Add()` 独立传递，stdout/stderr 在内存中排空后丢弃；调用无超时的 `WaitForExit()` 后才读取真实 `ExitCode`。[Microsoft ArgumentList 文档](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.argumentlist)说明列表项无需预先转义，[WaitForExit 文档](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.waitforexit)明确无参重载会等待关联进程退出。未增加超时或强杀逻辑，由 workflow 既有30分钟 job timeout 处理平台级卡死，避免在未知安装状态下中止进程。合成测试用延迟写入且返回非0的 Windows GUI helper 验证显式等待、逐项参数保真和真实退出码传递；静态测试禁止恢复 `& $setup`，并确认非0退出码仍 fail closed。
 
+主控整合该修复为公开提交 `b1a4d751c88b3320632f805498b3d0012b27eb48` 后，manual run 35755307372 / `historical-identity` job 106840157246 的唯一固定结果前进到 `HISTORICAL_IDENTITY_BLOCKED_INSTALL_FOOTPRINT_ANCHORS`：单文件门禁全部越过，但实际 program inventory 与 manifest payload 或固定 hash 关系尚不一致。约32秒的总步骤耗时说明只等待 bootstrapper 仍不足，结果与其派生安装进程继续写入高度一致。
+
+[Microsoft Start-Process 文档](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/start-process)明确 `-Wait` 会等待指定进程及其全部 descendants，并明确 `-ArgumentList` 数组会先拼成单个命令行字符串。最终调用因此改为 `Start-Process -Wait -PassThru -WindowStyle Hidden`；函数只接受 Setup 文件、安装根、instance、log 和私有 stdout/stderr 六条绝对路径，逐条要求规范化值不变且完全匹配无空格、引号或命令元字符的 ASCII allowlist，再内部构造固定8个 Setup 参数。没有通用命令字符串入口；stdout/stderr 只重定向到任务私有目录并随 payload 清理。无脚本级 timeout、Kill 或 `Stop-Process`，仍由 Actions job timeout 兜底。合成 Windows GUI 父进程立即启动延迟写 marker 的子进程并以7退出；测试证明函数只在子进程完成后返回、返回父 bootstrapper 的真实7、固定参数逐项保真，并拒绝含空格的路径。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：48 PASS，0 FAIL，0 SKIP；在既有 footprint/log 覆盖外，新增 Windows GUI helper 合成验证显式等待、参数逐项传递和非0退出码，并静态拒绝旧 `& $setup` 调用路径。
+- historical-identity 专项：48 PASS，0 FAIL，0 SKIP；Windows GUI 父子进程合成验证等待整个进程树、固定参数保真、非0 bootstrapper 退出码和不安全路径拒绝，并静态禁止旧 `& $setup`、单进程 `WaitForExit`、有限等待及强杀路径。
 - 既有 T1 upgrade-detection：43 PASS，0 FAIL，0 SKIP。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。

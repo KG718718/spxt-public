@@ -303,17 +303,16 @@ test('post-install footprint and private log checks map only fixed silent catego
   assert.match(cli, /installLogCommand\(\); \} catch \{ process\.exitCode = INSTALL_LOG_EXIT\.OTHER; \}/);
 });
 
-test('Setup launcher passes discrete arguments, waits explicitly, and rejects a nonzero exit', () => {
+test('Setup launcher waits for descendants with constrained arguments and rejects a nonzero exit', () => {
   const root = path.resolve(__dirname, '../../../..');
   const script = fs.readFileSync(path.join(root, 'tools/windows-installer/historical-identity/invoke.ps1'), 'utf8');
   assert.doesNotMatch(script, /&\s+\$setup(?:\s|$)/, 'direct GUI invocation can return before Setup completes');
-  assert.match(script, /\[Diagnostics\.ProcessStartInfo\]::new\(\)/);
-  assert.match(script, /\.UseShellExecute=\$false/);
-  assert.match(script, /\.CreateNoWindow=\$true/);
-  assert.match(script, /foreach\(\$argument in \$Arguments\)\{\[void\]\$startInfo\.ArgumentList\.Add\(\$argument\)\}/);
-  assert.match(script, /\$process\.WaitForExit\(\)/);
-  assert.doesNotMatch(script, /\$process\.(?:Kill|WaitForExit\([^)]*[0-9])/);
-  assert.match(script, /\$setupExit=Invoke-SetupAndWait[\s\S]*if\(\$setupExit -ne 0\)\{throw 'SETUP_FAILED'\}/);
+  assert.match(script, /function Assert-SetupLaunchPath[\s\S]*\^\[A-Za-z\]:\\\\\[A-Za-z0-9\._\\\\-\]\+\$/);
+  assert.match(script, /\$arguments=@\('\/VERYSILENT','\/SUPPRESSMSGBOXES','\/NORESTART','\/SP-'/);
+  assert.match(script, /Start-Process -FilePath \$trustedFile -ArgumentList \$arguments -Wait -PassThru -WindowStyle Hidden/);
+  assert.match(script, /-RedirectStandardOutput \$trustedStdout -RedirectStandardError \$trustedStderr/);
+  assert.doesNotMatch(script, /(?:Kill|Stop-Process|WaitForExit)/);
+  assert.match(script, /\$setupExit=Invoke-SetupTreeAndWait[\s\S]*if\(\$setupExit -ne 0\)\{throw 'SETUP_FAILED'\}/);
   const processTest = path.join(root, 'tools/tests/windows-installer/historical-identity/setup-process.test.ps1');
   const result = childProcess.spawnSync('pwsh', ['-NoProfile', '-File', processTest, '-RepositoryRoot', root], {encoding: 'utf8'});
   assert.equal(result.status, 0, result.stderr);
