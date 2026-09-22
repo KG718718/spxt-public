@@ -3,7 +3,7 @@
 ## Batch 4 正式启动 / 编排阶段
 
 用户批准 Safe Upgrade / Rollback / Data Lifecycle，限 beta.1→beta.2；公开仓库已设为当前项目主要目录，Preflight 起点 2839ba62220e53d126e9fb00757cd89ff89a1b83 与 GitHub 开发分支一致且干净。首次 Git 连接重置后经 GitHub API 核实。
-采用一层独立 Execution / QA tasks，Codex managed worktree 限 E:/CodexWorkspace/CodexWorktrees，执行只 local commit，主控统一 Review/整合/开发分支 push。主控不写实质实现。T2只读实例预检经一次主控对抗返工后已整合：专项19 PASS/1项因本机file symlink权限SKIP，startup 80 checks及installer contract通过；完整CI需补该链接实测。
+采用一层独立 Execution / QA tasks，worktree 只使用当前项目已配置的 Codex managed worktree 根目录，执行只 local commit，主控统一 Review/整合/开发分支 push。主控不写实质实现。T2只读实例预检经一次主控对抗返工后已整合：专项19 PASS/1项因本机file symlink权限SKIP，startup 80 checks及installer contract通过；完整CI需补该链接实测。
 
 T1旧安装身份校验经主控返工后已整合：43/43，采用beta.2固定hash的封闭historical+fresh identity bundle，不因相同commit/tree放宽。下一前置为T1A在受控GitHub Windows runner实际安装尚未过期的历史Artifact10606870944并提取仅非敏感anchors；未取得前不进入T3事务实现。
 入口 docs/tasks/windows-installer-v1.1/batch-4/ORCHESTRATION.md；L2 Intent/Spec/Plan/Acceptance 已按本次批准任务书建立。文档检查点 b96543d 已推开发分支；T1/T2 独立执行任务已提交创建，均指定该基线与 E 盘 managed worktree，等待身份回报；实质实现由执行任务承担。未生成 beta.2、未执行本批完整门禁或人工验收，不能报告 Batch4 PASS。main/v1.0.0/Release 及其他用途版本禁止操作。后续任务按依赖派发，不自动进入下一 Batch。

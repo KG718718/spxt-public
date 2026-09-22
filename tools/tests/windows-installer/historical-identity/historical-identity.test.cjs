@@ -169,12 +169,20 @@ test('output redaction rejects local paths, usernames, tokens, credentials and b
   ]) assert.throws(() => assertNoSensitiveOutput(value), HistoricalIdentityError);
 });
 
-test('workflow is dispatch-only, minimal-permission, success-only JSON upload and no package upload', () => {
+test('default-registered Setup workflow isolates historical capture to manual development-branch dispatch', () => {
   const root = path.resolve(__dirname, '../../../..');
-  const workflow = fs.readFileSync(path.join(root, '.github/workflows/setup-b4-historical-identity.yml'), 'utf8');
+  const standalone = path.join(root, '.github/workflows/setup-b4-historical-identity.yml');
+  assert.equal(fs.existsSync(standalone), false, 'unregistered standalone workflow must not remain');
+  const workflow = fs.readFileSync(path.join(root, '.github/workflows/setup-v3.yml'), 'utf8');
   assert.match(workflow, /workflow_dispatch:/);
-  assert.doesNotMatch(workflow, /\n\s+push:/);
-  assert.match(workflow, /permissions:\s*\n\s+contents: read\s*\n\s+actions: read/);
-  assert.match(workflow, /if: success\(\)[\s\S]*path: \$\{\{ env\.KSESSION_HISTORICAL_EVIDENCE \}\}/);
-  assert.doesNotMatch(workflow, /upload-artifact[\s\S]*(?:\.exe|artifact\.zip|installed|taskWork)/i);
+  assert.match(workflow, /\n\s+push:/);
+  const start = workflow.indexOf('\n  historical-identity:');
+  assert.ok(start > 0, 'historical job missing');
+  const historical = workflow.slice(start);
+  assert.match(historical, /if: github\.event_name == 'workflow_dispatch' && github\.repository == 'KG718718\/spxt-public' && github\.ref == 'refs\/heads\/codex\/windows-installer-v1\.1'/);
+  assert.match(historical, /permissions:\s*\n\s+contents: read\s*\n\s+actions: read/);
+  assert.match(historical, /invoke\.ps1/);
+  assert.match(historical, /if: success\(\)[\s\S]*path: \$\{\{ env\.KSESSION_HISTORICAL_EVIDENCE \}\}/);
+  assert.doesNotMatch(historical, /(?:\.exe|artifact\.zip|installed|taskWork)\s*$/im);
+  assert.equal((historical.match(/actions\/upload-artifact@/g) || []).length, 1, 'historical job uploads exactly one artifact');
 });

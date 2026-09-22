@@ -84,3 +84,64 @@ jobs:
             E:/setup-source/.test-work/r5a-gate/regression.json
           if-no-files-found: warn
           retention-days: 30
+  historical-identity:
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1'
+    permissions:
+      contents: read
+      actions: read
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Exact public Git bytes
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Static and synthetic historical identity gates
+        shell: pwsh
+        run: |
+          node --check tools/windows-installer/historical-identity/index.cjs
+          node --check tools/windows-installer/historical-identity/cli.cjs
+          node --test tools/tests/windows-installer/historical-identity/historical-identity.test.cjs
+          node --test tools/tests/windows-installer/upgrade-detection/upgrade-detection.test.cjs
+          node --test tools/tests/windows-installer/upgrade-preflight/preflight.test.cjs
+          node tools/tests/windows-installer/contract.cjs
+      - name: Install historical beta.1 and capture exact post-install identity
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if (!(Test-Path E:/)) {
+            $taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-b4-t1a-e'
+            New-Item -ItemType Directory -Path $taskDrive | Out-Null
+            subst E: $taskDrive
+            if ($LASTEXITCODE -ne 0) { throw 'E isolation unavailable' }
+          }
+          $taskOutput='E:/KSESSION-B4-T1A-EVIDENCE/historical-identity-evidence.json'
+          & tools/windows-installer/historical-identity/invoke.ps1 -RepositoryRoot $env:GITHUB_WORKSPACE -OutputFile $taskOutput
+          if ($LASTEXITCODE -ne 0) { throw 'Historical identity capture blocked' }
+          "KSESSION_HISTORICAL_EVIDENCE=$taskOutput" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Non-sensitive historical identity summary
+        if: success()
+        shell: pwsh
+        run: |
+          $e=Get-Content -LiteralPath $env:KSESSION_HISTORICAL_EVIDENCE -Raw|ConvertFrom-Json
+          @(
+            '## Historical beta.1 identity evidence',
+            '',
+            ('- Status: '+$e.status),
+            ('- Profile: '+$e.profile.id),
+            ('- Run / Artifact: '+$e.source.runId+' / '+$e.source.artifactId),
+            ('- Setup SHA-256: `'+$e.source.setupSha256+'`'),
+            ('- T1 single-policy validation: '+$e.verification.t1SinglePolicy),
+            ('- Registry view: '+$e.verification.registryView),
+            ('- Cleanup: PASS')
+          ) | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Encoding utf8
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: success()
+        with:
+          name: b4-historical-identity-evidence-${{ github.sha }}
+          path: ${{ env.KSESSION_HISTORICAL_EVIDENCE }}
+          if-no-files-found: error
+          retention-days: 30

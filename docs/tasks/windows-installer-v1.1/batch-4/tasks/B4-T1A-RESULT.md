@@ -4,7 +4,7 @@
 
 ## 已完成
 
-- 新增独立 `workflow_dispatch`：固定公开仓库、开发分支、Run 35514357007、Artifact 10606870944、artifact 名称/大小/digest、attempt 1、成功状态、head SHA、未过期状态及固定 API 下载 URL；权限仅 `contents: read`、`actions: read`。
+- 复用默认分支已登记的 `setup-v3.yml` 作为 `workflow_dispatch` 入口，并新增独立 `historical-identity` job。该 job 仅允许 `workflow_dispatch`、公开仓库和开发分支 ref 同时成立时运行；push 事件绝不会进入历史 Artifact 下载/安装路径。job 权限仅 `contents: read`、`actions: read`。
 - 下载、解包和安装只在 GitHub 托管 Windows runner 的合成 E 盘工作目录；严格定位唯一 `K-SESSION-Setup-1.1.0-beta.1.exe`，固定 32,988,254 bytes 和 SHA256 `49d28d4dbd131b0dd0890e44aea358d75a8406803ff10df808f073d5c2a72af8`。
 - 使用 beta.1 已有静默参数安装到隔离 program/instance 路径；不启动业务服务、不创建账号/业务/附件、不发邮件。安装前拒绝既有登记、binding 或同名快捷方式。
 - 从真实安装根的 `uninstall/installer-manifest.json`、`uninstall/build-info.json`、`program/manifest/runtime-manifest.json` 和 `program/K-SESSION.exe` 提取五个精确锚；不会读取 Artifact 外层 `build-info.json` 代替安装内身份。
@@ -12,6 +12,12 @@
 - 输出 profile 直接兼容后续 beta.2 identity bundle 的 `{id,sources,policy}` 输入。最终 evidence 为封闭 schema，仅含公开 ID、版本、固定键名、hash、计数和 PASS 结论；不含本地路径、用户名、环境变量、token、密码、registry 值或业务/附件正文。
 - 卸载后验证 program、卸载登记和两个快捷方式清除，同时验证 beta.1 按产品契约保留 binding/instance；随后测试夹具仅删除自身精确 binding/instance 和下载/Setup/安装临时内容。预检发现的既有目录、输出或快捷方式不归任务所有，finally 不删除。
 - workflow 只在成功时上传小型 `historical-identity-evidence.json`，保留 30 天；不上传 Artifact ZIP、Setup、安装目录、日志或 snapshot。Job Summary 仅写非敏感 ID/hash/结论。
+
+## 调度入口返工
+
+主控首次整合后实际调用 `gh workflow run setup-b4-historical-identity.yml --ref codex/windows-installer-v1.1` 返回 HTTP 404。原因是该独立 workflow 仅存在开发分支，尚未在默认分支登记，GitHub `workflow_dispatch` API 无法按文件名发现它；这不是取证脚本执行失败，历史 Artifact 未被下载或安装。
+
+返工删除不可调度的独立 workflow，将同一 historical job 接入默认分支已有的 `setup-v3.yml`。静态测试固定以下门禁：push 触发存在但 historical job 条件必为 false；只有开发分支 manual dispatch 可以运行；historical job 仅有一次 upload-artifact，路径只能是 evidence JSON。现有 Setup job 的 push/manual 行为不改。
 
 ## 本地验证
 
@@ -34,4 +40,4 @@
 
 ## 主控后续
 
-Review 本任务 local commit 后再整合到开发分支并手动触发 `Setup B4 historical identity evidence`。必须审查实际 Actions JSON、Run ID、Artifact ID、五个安装后 anchors、T1 PASS 和 cleanup PASS；云端失败则按稳定 BLOCKED 结论处理。本任务不接续 T3/T4。
+Review 本任务追加 local commit 后重新整合到开发分支，通过默认分支已登记的 `setup-v3.yml` 对开发分支 ref 发起 manual dispatch。必须审查实际 Actions JSON、Run ID、Artifact ID、五个安装后 anchors、T1 PASS 和 cleanup PASS；云端失败则按稳定 BLOCKED 结论处理。本任务不接续 T3/T4。
