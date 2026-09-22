@@ -280,7 +280,11 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
     'T1_PATH_REPARSE_UNINSTALL_ANCESTOR', 'T1_PATH_REPARSE_PLATFORM_VOLUME',
     'T1_PATH_REPARSE_INSTALL_ROOT_REALPATH', 'T1_PATH_REPARSE_INSTANCE_REALPATH',
     'T1_PATH_REPARSE_UNINSTALL_REALPATH', 'T1_PATH_REPARSE_INSPECTION', 'T1_PATH_REPARSE_USAGE',
-    'T1_PATH_REPARSE_OTHER', 'COLLECT', 'UNINSTALL', 'CLEANUP', 'FINALIZE']);
+    'T1_PATH_REPARSE_OTHER', 'COLLECT', 'CLEANUP_UNINSTALLER_EXIT', 'CLEANUP_PROGRAM_ROOT',
+    'CLEANUP_UNINSTALL_REGISTRATION', 'CLEANUP_DESKTOP_SHORTCUT', 'CLEANUP_START_MENU_SHORTCUT',
+    'CLEANUP_BINDING_RETAINED', 'CLEANUP_INSTANCE_RETAINED', 'CLEANUP_BINDING_REMOVE',
+    'CLEANUP_INSTANCE_REMOVE', 'CLEANUP_PAYLOAD_REMOVE', 'CLEANUP_FINAL_STATE', 'CLEANUP_EVIDENCE_WRITE',
+    'CLEANUP_INSPECTION', 'CLEANUP_OTHER', 'FINALIZE']);
   assert.equal(new Set(allowed).size, allowed.length, 'phase allowlist contains duplicates');
   const assigned = [...script.matchAll(/Set-TaskPhase '([A-Z0-9_]+)'/g)].map(match => match[1]);
   assert.deepEqual([...new Set(assigned)].sort(), [...allowed].sort(), 'every and only allowlisted phases must be assigned');
@@ -294,6 +298,29 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
     assert.match(output, /^HISTORICAL_IDENTITY_BLOCKED_[A-Z0-9_]+$/);
     assert.doesNotMatch(output, /[A-Za-z]:[\\/]|Users|token|password|cookie|authorization|https?:|\\Software\\/i);
   }
+});
+
+test('cleanup diagnostics map every residual and owned removal boundary to a fixed silent phase', () => {
+  const root = path.resolve(__dirname, '../../../..');
+  const script = fs.readFileSync(path.join(root, 'tools/windows-installer/historical-identity/invoke.ps1'), 'utf8');
+  const block = script.match(/Set-TaskPhase 'CLEANUP_OTHER'([\s\S]*?)Set-TaskPhase 'FINALIZE'/);
+  assert.ok(block, 'cleanup diagnostic block missing');
+  const cleanup = block[0];
+  assert.match(cleanup, /Set-TaskPhase 'CLEANUP_UNINSTALLER_EXIT'[\s\S]*\$taskUninstallExit=\$LASTEXITCODE[\s\S]*if\(\$taskUninstallExit -ne 0\)/);
+  assert.match(cleanup, /Set-TaskPhase 'CLEANUP_INSPECTION'[\s\S]*\$programAfter=Test-Path[\s\S]*\$instanceAfter=Test-Path/);
+  const residualMap = [
+    ['\\$programAfter', 'CLEANUP_PROGRAM_ROOT'], ['\\$uninstallCount -ne 0', 'CLEANUP_UNINSTALL_REGISTRATION'],
+    ['\\$desktopAfter', 'CLEANUP_DESKTOP_SHORTCUT'], ['\\$programsAfter', 'CLEANUP_START_MENU_SHORTCUT'],
+    ['\\$bindingAfter -ne 1', 'CLEANUP_BINDING_RETAINED'], ['!\\$instanceAfter', 'CLEANUP_INSTANCE_RETAINED']
+  ];
+  for (const [condition, phase] of residualMap) {
+    assert.match(cleanup, new RegExp(`if\\(${condition}\\)\\{Set-TaskPhase '${phase}'`));
+  }
+  assert.match(cleanup, /Set-TaskPhase 'CLEANUP_BINDING_REMOVE'[\s\S]*Remove-OwnedBinding[\s\S]*\$bindingAfterHarness=Count-Subkey[\s\S]*Set-TaskPhase 'CLEANUP_BINDING_REMOVE'/);
+  assert.match(cleanup, /Set-TaskPhase 'CLEANUP_INSTANCE_REMOVE'[\s\S]*Assert-TaskPath \$taskInstance[\s\S]*Remove-Item -LiteralPath \$taskInstance[\s\S]*\$instanceAfterHarness=Test-Path[\s\S]*Set-TaskPhase 'CLEANUP_INSTANCE_REMOVE'/);
+  assert.match(cleanup, /Set-TaskPhase 'CLEANUP_PAYLOAD_REMOVE'[\s\S]*foreach\(\$payloadPath in @\([\s\S]*Remove-Item -LiteralPath \$payloadPath[\s\S]*if\(!\$payloadRemoved\)\{Set-TaskPhase 'CLEANUP_PAYLOAD_REMOVE'/);
+  assert.match(cleanup, /Set-TaskPhase 'CLEANUP_FINAL_STATE'[\s\S]*CLEANUP_FINAL_STATE_INVALID[\s\S]*Set-TaskPhase 'CLEANUP_EVIDENCE_WRITE'[\s\S]*Write-PrivateJson \$taskCleanup \$cleanup/);
+  assert.doesNotMatch(cleanup, /Remove-Item\s+-Path|Remove-Item[^\r\n]*[*?]/, 'cleanup must use only exact literal paths');
 });
 
 test('post-install footprint and private log checks map only fixed silent categories', () => {

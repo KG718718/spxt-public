@@ -76,8 +76,20 @@ $taskAllowedPhases=@(
   'T1_PATH_REPARSE_USAGE',
   'T1_PATH_REPARSE_OTHER',
   'COLLECT',
-  'UNINSTALL',
-  'CLEANUP',
+  'CLEANUP_UNINSTALLER_EXIT',
+  'CLEANUP_PROGRAM_ROOT',
+  'CLEANUP_UNINSTALL_REGISTRATION',
+  'CLEANUP_DESKTOP_SHORTCUT',
+  'CLEANUP_START_MENU_SHORTCUT',
+  'CLEANUP_BINDING_RETAINED',
+  'CLEANUP_INSTANCE_RETAINED',
+  'CLEANUP_BINDING_REMOVE',
+  'CLEANUP_INSTANCE_REMOVE',
+  'CLEANUP_PAYLOAD_REMOVE',
+  'CLEANUP_FINAL_STATE',
+  'CLEANUP_EVIDENCE_WRITE',
+  'CLEANUP_INSPECTION',
+  'CLEANUP_OTHER',
   'FINALIZE'
 )
 $taskPhase='HOSTED_PREFLIGHT'
@@ -365,30 +377,53 @@ try{
   Set-TaskPhase 'COLLECT'
   Invoke-Node @('collect','--metadata',$taskMetadata,'--snapshot',$taskSnapshot,'--install-root',$taskInstall,'--output',$taskDraft)
 
-  Set-TaskPhase 'UNINSTALL'
+  Set-TaskPhase 'CLEANUP_OTHER'
   $uninstaller=Join-Path $taskInstall 'uninstall\unins000.exe'
+  Set-TaskPhase 'CLEANUP_UNINSTALLER_EXIT'
   & $uninstaller '/VERYSILENT' '/SUPPRESSMSGBOXES' '/NORESTART'
   $taskUninstallExit=$LASTEXITCODE
   if($taskUninstallExit -ne 0){throw 'UNINSTALL_FAILED'}
   $taskInstalled=$false
 
-  Set-TaskPhase 'CLEANUP'
+  Set-TaskPhase 'CLEANUP_INSPECTION'
   $programAfter=Test-Path -LiteralPath $taskInstall
   $uninstallCount=Count-Subkey $taskProductSubkey
   $desktopAfter=Test-Path -LiteralPath $taskDesktopLink
   $programsAfter=Test-Path -LiteralPath $taskProgramsLink
   $bindingAfter=Count-Subkey $taskBindingSubkey
   $instanceAfter=Test-Path -LiteralPath $taskInstance
-  if($programAfter -or $uninstallCount -ne 0 -or $desktopAfter -or $programsAfter -or $bindingAfter -ne 1 -or !$instanceAfter){throw 'UNINSTALL_CONTRACT'}
+  if($programAfter){Set-TaskPhase 'CLEANUP_PROGRAM_ROOT';throw 'UNINSTALL_CONTRACT'}
+  if($uninstallCount -ne 0){Set-TaskPhase 'CLEANUP_UNINSTALL_REGISTRATION';throw 'UNINSTALL_CONTRACT'}
+  if($desktopAfter){Set-TaskPhase 'CLEANUP_DESKTOP_SHORTCUT';throw 'UNINSTALL_CONTRACT'}
+  if($programsAfter){Set-TaskPhase 'CLEANUP_START_MENU_SHORTCUT';throw 'UNINSTALL_CONTRACT'}
+  if($bindingAfter -ne 1){Set-TaskPhase 'CLEANUP_BINDING_RETAINED';throw 'UNINSTALL_CONTRACT'}
+  if(!$instanceAfter){Set-TaskPhase 'CLEANUP_INSTANCE_RETAINED';throw 'UNINSTALL_CONTRACT'}
+  Set-TaskPhase 'CLEANUP_BINDING_REMOVE'
   Remove-OwnedBinding
+  Set-TaskPhase 'CLEANUP_INSPECTION'
+  $bindingAfterHarness=Count-Subkey $taskBindingSubkey
+  if($bindingAfterHarness -ne 0){Set-TaskPhase 'CLEANUP_BINDING_REMOVE';throw 'BINDING_REMOVE_FAILED'}
+  Set-TaskPhase 'CLEANUP_INSTANCE_REMOVE'
   Assert-TaskPath $taskInstance
   Remove-Item -LiteralPath $taskInstance -Recurse -Force
+  Set-TaskPhase 'CLEANUP_INSPECTION'
+  $instanceAfterHarness=Test-Path -LiteralPath $taskInstance
+  if($instanceAfterHarness){Set-TaskPhase 'CLEANUP_INSTANCE_REMOVE';throw 'INSTANCE_REMOVE_FAILED'}
+  Set-TaskPhase 'CLEANUP_PAYLOAD_REMOVE'
   foreach($payloadPath in @($taskExtract,$taskZip,$taskInstall,$taskLog,$taskSetupStdout,$taskSetupStderr,$taskRawSnapshot,$taskSnapshot)){
     if(Test-Path -LiteralPath $payloadPath){Assert-TaskPath $payloadPath;Remove-Item -LiteralPath $payloadPath -Recurse -Force}
   }
+  Set-TaskPhase 'CLEANUP_INSPECTION'
   $payloadRemoved=(@($taskExtract,$taskZip,$taskInstall,$taskLog,$taskSetupStdout,$taskSetupStderr,$taskRawSnapshot,$taskSnapshot)|Where-Object{Test-Path -LiteralPath $_}).Count -eq 0
-  $cleanup=@{uninstallerExitCode=$taskUninstallExit;programRootExistsAfterUninstall=$programAfter;uninstallRegistrationCountAfterUninstall=$uninstallCount;desktopShortcutExistsAfterUninstall=$desktopAfter;startMenuShortcutExistsAfterUninstall=$programsAfter;bindingRetainedAfterUninstall=($bindingAfter -eq 1);instanceRetainedAfterUninstall=$instanceAfter;bindingRegistrationCountAfterHarnessCleanup=(Count-Subkey $taskBindingSubkey);instanceExistsAfterHarnessCleanup=(Test-Path -LiteralPath $taskInstance);temporaryPayloadRemoved=$true}
-  $cleanup.temporaryPayloadRemoved=$payloadRemoved
+  if(!$payloadRemoved){Set-TaskPhase 'CLEANUP_PAYLOAD_REMOVE';throw 'PAYLOAD_REMOVE_FAILED'}
+  Set-TaskPhase 'CLEANUP_FINAL_STATE'
+  $cleanup=@{uninstallerExitCode=$taskUninstallExit;programRootExistsAfterUninstall=$programAfter;uninstallRegistrationCountAfterUninstall=$uninstallCount;desktopShortcutExistsAfterUninstall=$desktopAfter;startMenuShortcutExistsAfterUninstall=$programsAfter;bindingRetainedAfterUninstall=($bindingAfter -eq 1);instanceRetainedAfterUninstall=$instanceAfter;bindingRegistrationCountAfterHarnessCleanup=$bindingAfterHarness;instanceExistsAfterHarnessCleanup=$instanceAfterHarness;temporaryPayloadRemoved=$payloadRemoved}
+  if($cleanup.uninstallerExitCode -ne 0 -or $cleanup.programRootExistsAfterUninstall -or
+     $cleanup.uninstallRegistrationCountAfterUninstall -ne 0 -or $cleanup.desktopShortcutExistsAfterUninstall -or
+     $cleanup.startMenuShortcutExistsAfterUninstall -or !$cleanup.bindingRetainedAfterUninstall -or
+     !$cleanup.instanceRetainedAfterUninstall -or $cleanup.bindingRegistrationCountAfterHarnessCleanup -ne 0 -or
+     $cleanup.instanceExistsAfterHarnessCleanup -or !$cleanup.temporaryPayloadRemoved){throw 'CLEANUP_FINAL_STATE_INVALID'}
+  Set-TaskPhase 'CLEANUP_EVIDENCE_WRITE'
   Write-PrivateJson $taskCleanup $cleanup
 
   Set-TaskPhase 'FINALIZE'

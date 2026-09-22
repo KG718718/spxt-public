@@ -1,6 +1,6 @@
 # B4-T1A Result — Historical beta.1 identity evidence capability
 
-状态：**BLOCKED — 云端真实 anchors 仍未取得，平台映射卷根因的最小修复已在本地完成**。主控尚未整合、push 或重跑本轮修复；不能据此放行 T3 或报告 Batch 4 PASS。
+状态：**BLOCKED — 云端真实 anchors 仍未取得，cleanup 最小细分诊断已在本地完成**。主控尚未整合、push 或重跑本轮诊断；不能据此放行 T3 或报告 Batch 4 PASS。
 
 ## 已完成
 
@@ -73,13 +73,17 @@
 
 最小修复只调整 historical hosted harness：移除 historical job 的 `subst E:`，将任务工作根与唯一 evidence 输出移到 runner 的本地 `C:` 固定卷。执行任何下载、安装或清理前，新增静默 `host-root` 预检，要求候选为未存在的受限 ASCII 绝对路径、盘符类型为 `Fixed`、从父目录到卷根不存在重解析点且 native realpath 完全一致；已存在、非固定、平台映射、祖先重解析、realpath 差异、检查异常和未知退出码分别映射到封闭 `HOSTED_ROOT_*` 阶段并一律停止。该变化不修改 T1、Setup、安装/升级、业务、数据生命周期或清理契约，也不把映射卷当作安全路径接受。
 
+主控整合固定卷修复及不依赖仓库字符集的测试夹具后，manual run 35773904968 / `historical-identity` job 106902667022 在精确 HEAD `9e9a525957e888904c31c7f79a5050965a5e952f` 已越过 hosted root、Artifact、安装、footprint、registry 与 T1 collect，唯一固定结果为 `HISTORICAL_IDENTITY_BLOCKED_CLEANUP`。该 token 只能证明卸载或夹具清理总阶段未完成，不能区分卸载程序退出、产品残留、产品应保留数据缺失、夹具精确删除或 cleanup evidence 写入中的哪一项；没有证据支持把任何残留视为成功或改变卸载/数据保留契约。
+
+本轮只细分清理诊断。卸载程序非零退出、program root、卸载登记、桌面/开始菜单快捷方式残留、binding/instance 未按产品契约保留、owned binding 精确移除、instance 精确移除、固定临时 payload 精确移除、最终 cleanup 状态及 cleanup evidence 写入分别使用封闭 `CLEANUP_*` 阶段；状态读取异常统一进入 `CLEANUP_INSPECTION`，其他未知清理边界保留 `CLEANUP_OTHER`。所有检查仍 fail closed，删除仍只用既有 `-LiteralPath`、`Assert-TaskPath` 和 owned binding 比对，没有新增通配删除、跳过清理或产品卸载行为修改。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：68 PASS，0 FAIL，0 SKIP；除既有安装、registry、payload 静默分类外，覆盖 T1 路径角色/祖先/卷映射只读诊断，并新增 hosted 根目录测试：普通本地固定卷通过，合成映射卷与含空格/中文的不合规执行路径均拒绝且无输出。
+- historical-identity 专项：69 PASS，0 FAIL，0 SKIP；除既有安装、registry、payload、路径静默分类外，新增 cleanup 每项残留、精确删除边界、最终状态和 evidence 写入的封闭阶段静态回归；hosted 根目录测试继续覆盖普通固定卷、合成映射卷及不合规路径。
 - T1 upgrade-detection：45 PASS，0 FAIL，0 SKIP；新增构建期全局路径排序契约及“同集合重排 manifest 仍拒绝”回归。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。
