@@ -1,6 +1,6 @@
 # B4-T1A Result — Historical beta.1 identity evidence capability
 
-状态：**BLOCKED — 云端真实取证失败，封闭阶段诊断返工候选已完成**。主控已整合并触发一次 GitHub Actions，但尚未取得历史 identity anchors；本地返工尚未 push 或重跑，不能据此放行 T3 或报告 Batch 4 PASS。
+状态：**BLOCKED — 云端真实取证失败，REGISTRY 根因修复已在本地完成**。主控尚未整合、push 或重跑该修复，也尚未取得历史 identity anchors；不能据此放行 T3 或报告 Batch 4 PASS。
 
 ## 已完成
 
@@ -8,7 +8,7 @@
 - 下载、解包和安装只在 GitHub 托管 Windows runner 的合成 E 盘工作目录；严格定位唯一 `K-SESSION-Setup-1.1.0-beta.1.exe`，固定 32,988,254 bytes 和 SHA256 `49d28d4dbd131b0dd0890e44aea358d75a8406803ff10df808f073d5c2a72af8`。
 - 使用 beta.1 已有静默参数安装到隔离 program/instance 路径；不启动业务服务、不创建账号/业务/附件、不发邮件。安装前拒绝既有登记、binding 或同名快捷方式。
 - 从真实安装根的 `uninstall/installer-manifest.json`、`uninstall/build-info.json`、`program/manifest/runtime-manifest.json` 和 `program/K-SESSION.exe` 提取五个精确锚；不会读取 Artifact 外层 `build-info.json` 代替安装内身份。
-- PowerShell 显式查询 HKCU 64/32 两视图，生成仅供私有临时调用的最小 snapshot；要求唯一登记和唯一 binding 且同 view，再调用现有 T1 `validate(snapshot, historical policy)`。缺失、冲突或多 view 均停止。
+- PowerShell 显式查询 HKCU 64/32 两视图，生成仅供私有临时调用的最小 snapshot；仅当两视图观测逐字段完全相同时折叠共享 HKCU 别名，再要求唯一登记和唯一 binding 且同 view，并调用现有 T1 `validate(snapshot, historical policy)`。缺失、差异、额外记录或 HKLM 污染均停止。
 - 输出 profile 直接兼容后续 beta.2 identity bundle 的 `{id,sources,policy}` 输入。最终 evidence 为封闭 schema，仅含公开 ID、版本、固定键名、hash、计数和 PASS 结论；不含本地路径、用户名、环境变量、token、密码、registry 值或业务/附件正文。
 - 卸载后验证 program、卸载登记和两个快捷方式清除，同时验证 beta.1 按产品契约保留 binding/instance；随后测试夹具仅删除自身精确 binding/instance 和下载/Setup/安装临时内容。预检发现的既有目录、输出或快捷方式不归任务所有，finally 不删除。
 - workflow 只在成功时上传小型 `historical-identity-evidence.json`，保留 30 天；不上传 Artifact ZIP、Setup、安装目录、日志或 snapshot。Job Summary 仅写非敏感 ID/hash/结论。
@@ -25,13 +25,19 @@
 
 诊断返工把所有可能失败的执行边界划分为封闭 allowlist：`HOSTED_PREFLIGHT`、`API_METADATA`、`ARTIFACT_DOWNLOAD`、`ARCHIVE_HASH`、`EXTRACT`、`SETUP_IDENTITY`、`INSTALL`、`REGISTRY`、`COLLECT`、`UNINSTALL`、`CLEANUP`、`FINALIZE`。catch 只允许输出 `HISTORICAL_IDENTITY_BLOCKED_<PHASE>`，不读取或输出异常消息、URL、路径、用户名、registry 值、token 或业务内容；所有原有 fail-closed 门禁保持不变。需由主控整合后诊断重跑才能定位阶段。
 
+诊断版随后由主控整合并运行：manual run 35741131048 / `historical-identity` job 106792140018 在越过安装后返回 `HISTORICAL_IDENTITY_BLOCKED_REGISTRY`。GitHub run API记录该次受测 head SHA 为 `7a87e13442ea797d172f9ca31e16b1619fbcd2c3`，必须与其他 run 或 commit 区分。
+
+根因是 HKCU 共享视图与原脚本计数假设冲突。beta.1 使用 `PrivilegesRequired=lowest`，[Inno 非管理员安装规则](https://jrsoftware.org/ishelp/topic_admininstallmode.htm)将卸载信息放在 HKCU；`ArchitecturesInstallIn64BitMode=x64os` 及 binding 的显式 `HKCU64` 表示名义 64 位视图。但 Microsoft WOW64 规则明确 `HKEY_CURRENT_USER\SOFTWARE` 在新系统为共享键，[Inno Same Application 文档](https://jrsoftware.org/ishelp/topic_sameappnotes.htm)也明确非管理员安装的 HKCU 在32/64位间共享。原脚本分别打开 Registry64/Registry32 后把同一物理登记追加两次，再因数量为2拒绝。
+
+最小修复只将 32/64 两份字段逐项完全相同的 HKCU observation 识别为一个共享别名，并固定选择安装器名义上的64位 view；任一字段不同、缺失、额外记录、registration/binding view不一致，或 HKLM 32/64 任一视图出现同名登记，仍 fail closed。原始与规范化 snapshot 都只在 runner 私有临时目录存在并于清理阶段删除，不输出或上传路径及 registry 值。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：13 PASS，0 FAIL，0 SKIP；新增项证明阶段值完整覆盖封闭 allowlist、无重复或动态阶段、catch 不读取异常正文，且每个可能输出均不含路径、用户名、URL、registry、token、密码或业务标记。
+- historical-identity 专项：17 PASS，0 FAIL，0 SKIP；新增共享 HKCU 完全同值折叠、差异 view 拒绝、缺失拒绝，并保留原始多 view snapshot 的严格拒绝测试。
 - 既有 T1 upgrade-detection：43 PASS，0 FAIL，0 SKIP。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。
@@ -40,7 +46,7 @@
 ## 未验证与风险
 
 - 本任务未在开发机下载 Artifact 或保存发行包。云端首次真实 workflow 已失败且没有 evidence，历史 profile 中五个 hash 仍未知；只有诊断返工整合、重跑并得到成功 JSON 后才能固化这些锚。
-- [Microsoft WOW64 registry 文档](https://learn.microsoft.com/en-us/windows/win32/winprog64/shared-registry-keys)说明共享键可把同一物理副本映射到两个逻辑视图；已批准 T1 契约要求 snapshot 中唯一 view，本实现不擅自把两个结果去重。若 hosted runner 实测同时返回两份，workflow 将 `BLOCKED`，需主控依据原始非敏感计数判断是否退回 T1/上报决策，不能放宽为 commit/tree。
+- [Microsoft WOW64 registry 文档](https://learn.microsoft.com/en-us/windows/win32/winprog64/shared-registry-keys)说明共享键可把同一物理副本映射到两个逻辑视图；本修复在进入已批准 T1 契约前，仅折叠字段完全相同的 HKCU 共享别名，仍向 T1 提供唯一 view。若 hosted runner 返回任何差异或额外记录，workflow 仍将 `BLOCKED`，不能放宽为 commit/tree。
 - GitHub Artifact API 若 digest/大小/attempt/expiry 等任一固定元数据变化、Artifact 已过期、下载 ZIP digest 或 Setup hash 不符、真实安装参数失败、安装内锚冲突、T1 单 policy 不通过或清理不完整，均 fail closed；不产出成功 evidence。
 - 两代 Setup 仍为 unsigned development artifact。本任务只证明相对固定公开 Artifact 和 beta.2 未来内置锚的一致性，不提供发布者签名保证。
 

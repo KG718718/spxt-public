@@ -19,6 +19,7 @@ const {
   createDraft,
   finalizeEvidence,
   locateUniqueSetup,
+  normalizeSharedHkcuSnapshot,
   validateApiMetadata,
   validateEvidence
 } = require('../../../windows-installer/historical-identity/index.cjs');
@@ -143,6 +144,34 @@ test('real snapshot shape must have one registration and binding in the same vie
     const f = fixture(); try { f.snapshot.registrations.push({...f.snapshot.registrations[0], view: '32'});
       expectHistorical('T1_REGISTRATION_COUNT', () => createDraft(metadata(), f.snapshot, f.installRoot)); }
     finally { cleanup(f); }
+  });
+});
+
+test('shared HKCU aliases collapse only when 32/64 observations are byte-for-byte equivalent', async t => {
+  await t.test('identical shared aliases select the nominal 64-bit install view', () => {
+    const f = fixture();
+    try {
+      const raw = {registrations: [structuredClone(f.snapshot.registrations[0]),
+        {...structuredClone(f.snapshot.registrations[0]), view: '32'}],
+      bindings: [structuredClone(f.snapshot.bindings[0]), {...structuredClone(f.snapshot.bindings[0]), view: '32'}]};
+      const normalized = normalizeSharedHkcuSnapshot(raw);
+      assert.equal(normalized.registrations.length, 1);
+      assert.equal(normalized.bindings.length, 1);
+      assert.equal(normalized.registrations[0].view, '64');
+      assert.equal(createDraft(metadata(), normalized, f.installRoot).verification.t1SinglePolicy, 'PASS');
+    } finally { cleanup(f); }
+  });
+  await t.test('divergent view values remain a hard rejection', () => {
+    const f = fixture();
+    try {
+      const raw = {registrations: [structuredClone(f.snapshot.registrations[0]),
+        {...structuredClone(f.snapshot.registrations[0]), view: '32', displayVersion: '1.1.0-beta.0'}],
+      bindings: [structuredClone(f.snapshot.bindings[0]), {...structuredClone(f.snapshot.bindings[0]), view: '32'}]};
+      expectHistorical('REGISTRY_VIEW_CONFLICT', () => normalizeSharedHkcuSnapshot(raw));
+    } finally { cleanup(f); }
+  });
+  await t.test('missing observations remain a hard rejection', () => {
+    expectHistorical('REGISTRY_MISSING', () => normalizeSharedHkcuSnapshot({registrations: [], bindings: []}));
   });
 });
 

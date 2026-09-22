@@ -28,6 +28,7 @@ $taskInstall=Join-Path $taskWork 'installed'
 $taskInstance=Join-Path $taskWork 'instance'
 $taskZip=Join-Path $taskWork 'artifact.zip'
 $taskMetadata=Join-Path $taskWork 'metadata.json'
+$taskRawSnapshot=Join-Path $taskWork 'registry-observations.json'
 $taskSnapshot=Join-Path $taskWork 'snapshot.json'
 $taskDraft=Join-Path $taskWork 'draft.json'
 $taskCleanup=Join-Path $taskWork 'cleanup.json'
@@ -42,7 +43,6 @@ $taskProgramsLink=Join-Path $taskPrograms 'K⁺-SESSION.lnk'
 $taskProductSubkey='Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1'
 $taskBindingSubkey='Software\KSESSION\Beta\InstallerBinding'
 $taskInstalled=$false
-$taskCapturedView=$null
 $taskUninstallExit=-1
 $taskFinalized=$false
 $taskWorkCreated=$false
@@ -67,6 +67,10 @@ function Open-Hkcu([string]$View) {
   $registryView=if($View -eq '64'){[Microsoft.Win32.RegistryView]::Registry64}else{[Microsoft.Win32.RegistryView]::Registry32}
   [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser,$registryView)
 }
+function Open-Hklm([string]$View) {
+  $registryView=if($View -eq '64'){[Microsoft.Win32.RegistryView]::Registry64}else{[Microsoft.Win32.RegistryView]::Registry32}
+  [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine,$registryView)
+}
 function Read-StringValue($Key,[string]$Name) {
   if($Key.GetValueKind($Name) -ne [Microsoft.Win32.RegistryValueKind]::String){throw 'REGISTRY_TYPE'}
   $value=$Key.GetValue($Name,$null,[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
@@ -87,8 +91,13 @@ function Read-Snapshot {
   @{registrations=$registrations;bindings=$bindings}
 }
 function Count-Subkey([string]$Subkey) {
+  $present=$false
+  foreach($view in @('64','32')){$base=Open-Hkcu $view;try{$key=$base.OpenSubKey($Subkey,$false);if($null-ne$key){$present=$true;$key.Dispose()}}finally{$base.Dispose()}}
+  if($present){1}else{0}
+}
+function Count-MachineSubkey([string]$Subkey) {
   $count=0
-  foreach($view in @('64','32')){$base=Open-Hkcu $view;try{$key=$base.OpenSubKey($Subkey,$false);if($null-ne$key){$count++;$key.Dispose()}}finally{$base.Dispose()}}
+  foreach($view in @('64','32')){$base=Open-Hklm $view;try{$key=$base.OpenSubKey($Subkey,$false);if($null-ne$key){$count++;$key.Dispose()}}finally{$base.Dispose()}}
   $count
 }
 function Remove-OwnedBinding {
@@ -116,6 +125,7 @@ try{
   if(Test-Path -LiteralPath $taskWork){throw 'WORK_ALREADY_EXISTS'}
   if(Test-Path -LiteralPath $OutputFile){throw 'OUTPUT_ALREADY_EXISTS'}
   if((Count-Subkey $taskProductSubkey) -ne 0 -or (Count-Subkey $taskBindingSubkey) -ne 0 -or
+     (Count-MachineSubkey $taskProductSubkey) -ne 0 -or (Count-MachineSubkey $taskBindingSubkey) -ne 0 -or
      $taskDesktopWasPresent -or $taskProgramsWasPresent){throw 'PREEXISTING_INSTALLATION'}
   [IO.Directory]::CreateDirectory($taskWork)|Out-Null
   $taskWorkCreated=$true
@@ -150,10 +160,12 @@ try{
   $taskInstalled=$true
 
   Set-TaskPhase 'REGISTRY'
+  if((Count-MachineSubkey $taskProductSubkey) -ne 0 -or (Count-MachineSubkey $taskBindingSubkey) -ne 0){throw 'REGISTRY_SCOPE_CONFLICT'}
   $snapshot=Read-Snapshot
-  Write-PrivateJson $taskSnapshot $snapshot
+  Write-PrivateJson $taskRawSnapshot $snapshot
+  Invoke-Node @('normalize-snapshot','--input',$taskRawSnapshot,'--output',$taskSnapshot)
+  $snapshot=Get-Content -LiteralPath $taskSnapshot -Raw|ConvertFrom-Json
   if($snapshot.registrations.Count -ne 1 -or $snapshot.bindings.Count -ne 1 -or $snapshot.registrations[0].view -ne $snapshot.bindings[0].view){throw 'REGISTRY_NOT_UNIQUE'}
-  $taskCapturedView=$snapshot.registrations[0].view
 
   Set-TaskPhase 'COLLECT'
   Invoke-Node @('collect','--metadata',$taskMetadata,'--snapshot',$taskSnapshot,'--install-root',$taskInstall,'--output',$taskDraft)
@@ -176,10 +188,10 @@ try{
   Remove-OwnedBinding
   Assert-TaskPath $taskInstance
   Remove-Item -LiteralPath $taskInstance -Recurse -Force
-  foreach($payloadPath in @($taskExtract,$taskZip,$taskInstall,$taskLog,$taskSnapshot)){
+  foreach($payloadPath in @($taskExtract,$taskZip,$taskInstall,$taskLog,$taskRawSnapshot,$taskSnapshot)){
     if(Test-Path -LiteralPath $payloadPath){Assert-TaskPath $payloadPath;Remove-Item -LiteralPath $payloadPath -Recurse -Force}
   }
-  $payloadRemoved=(@($taskExtract,$taskZip,$taskInstall,$taskLog,$taskSnapshot)|Where-Object{Test-Path -LiteralPath $_}).Count -eq 0
+  $payloadRemoved=(@($taskExtract,$taskZip,$taskInstall,$taskLog,$taskRawSnapshot,$taskSnapshot)|Where-Object{Test-Path -LiteralPath $_}).Count -eq 0
   $cleanup=@{uninstallerExitCode=$taskUninstallExit;programRootExistsAfterUninstall=$programAfter;uninstallRegistrationCountAfterUninstall=$uninstallCount;desktopShortcutExistsAfterUninstall=$desktopAfter;startMenuShortcutExistsAfterUninstall=$programsAfter;bindingRetainedAfterUninstall=($bindingAfter -eq 1);instanceRetainedAfterUninstall=$instanceAfter;bindingRegistrationCountAfterHarnessCleanup=(Count-Subkey $taskBindingSubkey);instanceExistsAfterHarnessCleanup=(Test-Path -LiteralPath $taskInstance);temporaryPayloadRemoved=$true}
   $cleanup.temporaryPayloadRemoved=$payloadRemoved
   Write-PrivateJson $taskCleanup $cleanup

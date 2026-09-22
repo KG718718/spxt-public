@@ -7,6 +7,7 @@ const {
   createDraft,
   finalizeEvidence,
   locateUniqueSetup,
+  normalizeSharedHkcuSnapshot,
   validateApiMetadata,
   validateEvidence
 } = require('./index.cjs');
@@ -36,6 +37,10 @@ try {
     const args = exactArgs(['--metadata', '--snapshot', '--install-root', '--output']);
     if (!args) throw new HistoricalIdentityError('USAGE');
     writeJson(args['--output'], createDraft(readJson(args['--metadata']), readJson(args['--snapshot']), args['--install-root']));
+  } else if (command === 'normalize-snapshot') {
+    const args = exactArgs(['--input', '--output']);
+    if (!args) throw new HistoricalIdentityError('USAGE');
+    writeJson(args['--output'], normalizeSharedHkcuSnapshot(readJson(args['--input'])));
   } else if (command === 'finalize') {
     const args = exactArgs(['--draft', '--cleanup', '--output']);
     if (!args) throw new HistoricalIdentityError('USAGE');

@@ -96,6 +96,33 @@ function locateUniqueSetup(extractedRoot) {
   return matches[0];
 }
 
+function normalizeSharedHkcuSnapshot(snapshot) {
+  if (!exactKeys(snapshot, ['registrations', 'bindings']) || !Array.isArray(snapshot.registrations) ||
+      !Array.isArray(snapshot.bindings)) fail('REGISTRY_SNAPSHOT_SCHEMA');
+  function normalize(records, fields) {
+    if (records.length < 1) fail('REGISTRY_MISSING');
+    if (records.some(record => !exactKeys(record, fields) || !['64', '32'].includes(record.view))) {
+      fail('REGISTRY_VIEW_CONFLICT');
+    }
+    if (records.length === 1) return [structuredClone(records[0])];
+    if (records.length !== 2 || new Set(records.map(record => record.view)).size !== 2 ||
+        !records.some(record => record.view === '64') || !records.some(record => record.view === '32')) {
+      fail('REGISTRY_VIEW_CONFLICT');
+    }
+    const canonical = records.find(record => record.view === '64');
+    const alternate = records.find(record => record.view === '32');
+    for (const field of fields.filter(field => field !== 'view')) {
+      if (canonical[field] !== alternate[field]) fail('REGISTRY_VIEW_CONFLICT');
+    }
+    return [structuredClone(canonical)];
+  }
+  const registrations = normalize(snapshot.registrations,
+    ['view', 'key', 'displayName', 'displayVersion', 'installLocation', 'uninstallString']);
+  const bindings = normalize(snapshot.bindings, ['view', 'key', 'installRoot', 'instance']);
+  if (registrations[0].view !== bindings[0].view) fail('REGISTRY_VIEW_CONFLICT');
+  return {registrations, bindings};
+}
+
 function collectInstalledPolicy(installRoot) {
   const uninstall = path.join(installRoot, 'uninstall');
   const program = path.join(installRoot, 'program');
@@ -247,5 +274,6 @@ function assertNoSensitiveOutput(value) {
 module.exports = {
   ARTIFACT_DIGEST, ARTIFACT_ID, ARTIFACT_NAME, ARTIFACT_URL, PROFILE_ID, REPOSITORY, RUN_ID,
   SETUP_NAME, SETUP_SHA256, SOURCE_COMMIT, HistoricalIdentityError, assertNoSensitiveOutput,
-  collectInstalledPolicy, createDraft, finalizeEvidence, locateUniqueSetup, validateApiMetadata, validateEvidence
+  collectInstalledPolicy, createDraft, finalizeEvidence, locateUniqueSetup, normalizeSharedHkcuSnapshot,
+  validateApiMetadata, validateEvidence
 };
