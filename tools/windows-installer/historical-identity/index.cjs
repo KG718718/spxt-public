@@ -161,11 +161,19 @@ function collectInstalledPolicy(installRoot) {
   const runtimeManifestSha256 = sha(runtimeRecord.bytes);
   const launcherSha256 = sha(launcherBytes);
   let actualPayload;
-  try { actualPayload = inventory(program); } catch { fail('INSTALLED_ANCHOR_CONFLICT'); }
-  if (build.runtimeManifestSha256 !== runtimeManifestSha256 || build.launcherSha256 !== launcherSha256) {
-    fail('INSTALLED_ANCHOR_CONFLICT');
+  try { actualPayload = inventory(program); } catch { fail('INSTALLED_INVENTORY_INVALID'); }
+  if (build.runtimeManifestSha256 !== runtimeManifestSha256) fail('INSTALLED_RUNTIME_HASH_CONFLICT');
+  if (build.launcherSha256 !== launcherSha256) fail('INSTALLED_LAUNCHER_HASH_CONFLICT');
+  if (!Array.isArray(manifest.payload)) fail('INSTALLED_PAYLOAD_SCHEMA_CONFLICT');
+  if (actualPayload.length !== manifest.payload.length) fail('INSTALLED_PAYLOAD_COUNT_CONFLICT');
+  for (let index = 0; index < actualPayload.length; index += 1) {
+    const actual = actualPayload[index];
+    const expected = manifest.payload[index];
+    if (!exactKeys(expected, ['path', 'bytes', 'sha256'])) fail('INSTALLED_PAYLOAD_SCHEMA_CONFLICT');
+    if (actual.path !== expected.path) fail('INSTALLED_PAYLOAD_PATH_CONFLICT');
+    if (actual.bytes !== expected.bytes) fail('INSTALLED_PAYLOAD_BYTES_CONFLICT');
+    if (actual.sha256 !== expected.sha256) fail('INSTALLED_PAYLOAD_HASH_CONFLICT');
   }
-  if (JSON.stringify(actualPayload) !== JSON.stringify(manifest.payload)) fail('INSTALLED_ANCHOR_CONFLICT');
   const policy = {
     schema: 1,
     appId: 'KSESSION-Beta-Installer-v1',

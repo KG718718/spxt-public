@@ -259,7 +259,10 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
   assert.deepEqual(allowed, ['HOSTED_PREFLIGHT', 'API_METADATA', 'ARTIFACT_DOWNLOAD', 'ARCHIVE_HASH', 'EXTRACT',
     'SETUP_IDENTITY', 'INSTALL', 'INSTALL_FOOTPRINT_MANIFEST', 'INSTALL_FOOTPRINT_BUILD_INFO',
     'INSTALL_FOOTPRINT_BINDING', 'INSTALL_FOOTPRINT_RUNTIME', 'INSTALL_FOOTPRINT_LAUNCHER',
-    'INSTALL_FOOTPRINT_ANCHORS', 'INSTALL_FOOTPRINT_USAGE', 'INSTALL_FOOTPRINT_OTHER', 'INSTALL_LOG_INPUT',
+    'INSTALL_FOOTPRINT_INVENTORY', 'INSTALL_FOOTPRINT_RUNTIME_HASH', 'INSTALL_FOOTPRINT_LAUNCHER_HASH',
+    'INSTALL_FOOTPRINT_PAYLOAD_COUNT', 'INSTALL_FOOTPRINT_PAYLOAD_PATH', 'INSTALL_FOOTPRINT_PAYLOAD_BYTES',
+    'INSTALL_FOOTPRINT_PAYLOAD_HASH', 'INSTALL_FOOTPRINT_PAYLOAD_SCHEMA', 'INSTALL_FOOTPRINT_USAGE',
+    'INSTALL_FOOTPRINT_OTHER', 'INSTALL_LOG_INPUT',
     'INSTALL_LOG_FAILURE', 'INSTALL_LOG_NO_PREINSTALL', 'INSTALL_LOG_NO_POSTINSTALL', 'INSTALL_LOG_USAGE',
     'INSTALL_LOG_OTHER', 'REGISTRY_HKLM', 'REGISTRY_HKCU_READ', 'REGISTRY_SNAPSHOT_WRITE',
     'REGISTRY_NORMALIZE_INPUT', 'REGISTRY_NORMALIZE_MISSING_REGISTRATION',
@@ -289,11 +292,15 @@ test('post-install footprint and private log checks map only fixed silent catego
   assert.ok(block, 'post-install diagnostic block missing');
   assert.match(block[0], /Invoke-InstalledFootprint/);
   assert.match(block[0], /Set-TaskPhase 'INSTALL_LOG_OTHER'[\s\S]*Invoke-InstallLogCheck/);
-  const footprintMap = [...script.matchAll(/(30|31|32|33|34|35|36) \{Set-TaskPhase '(INSTALL_FOOTPRINT_[A-Z_]+)'\}/g)]
+  const footprintMap = [...script.matchAll(/(3[0-9]|4[0-3]) \{Set-TaskPhase '(INSTALL_FOOTPRINT_[A-Z_]+)'\}/g)]
     .map(match => [Number(match[1]), match[2]]);
   assert.deepEqual(footprintMap, [[30, 'INSTALL_FOOTPRINT_MANIFEST'], [31, 'INSTALL_FOOTPRINT_BUILD_INFO'],
     [32, 'INSTALL_FOOTPRINT_BINDING'], [33, 'INSTALL_FOOTPRINT_RUNTIME'], [34, 'INSTALL_FOOTPRINT_LAUNCHER'],
-    [35, 'INSTALL_FOOTPRINT_ANCHORS'], [36, 'INSTALL_FOOTPRINT_USAGE']]);
+    [35, 'INSTALL_FOOTPRINT_INVENTORY'], [36, 'INSTALL_FOOTPRINT_RUNTIME_HASH'],
+    [37, 'INSTALL_FOOTPRINT_LAUNCHER_HASH'], [38, 'INSTALL_FOOTPRINT_PAYLOAD_COUNT'],
+    [39, 'INSTALL_FOOTPRINT_PAYLOAD_PATH'], [40, 'INSTALL_FOOTPRINT_PAYLOAD_BYTES'],
+    [41, 'INSTALL_FOOTPRINT_PAYLOAD_HASH'], [42, 'INSTALL_FOOTPRINT_PAYLOAD_SCHEMA'],
+    [43, 'INSTALL_FOOTPRINT_USAGE']]);
   const logMap = [...script.matchAll(/(40|41|42|43|44) \{Set-TaskPhase '(INSTALL_LOG_[A-Z_]+)'\}/g)]
     .map(match => [Number(match[1]), match[2]]);
   assert.deepEqual(logMap, [[40, 'INSTALL_LOG_INPUT'], [41, 'INSTALL_LOG_FAILURE'],
@@ -451,6 +458,18 @@ test('installed-footprint CLI validates fixed files and hashes without output', 
       } finally { cleanup(f); }
     });
   }
+  function mutateJson(file, mutate) {
+    const value = JSON.parse(fs.readFileSync(file, 'utf8'));
+    mutate(value);
+    writeJson(file, value);
+  }
+  function mutateManifest(f, mutate) {
+    const file = path.join(f.uninstall, 'installer-manifest.json');
+    mutateJson(file, value => {
+      mutate(value.payload);
+      value.payloadInventorySha256 = sha(Buffer.from(JSON.stringify(value.payload)));
+    });
+  }
   await scenario('success', 0);
   await scenario('installer manifest missing', 30, f => fs.rmSync(path.join(f.uninstall, 'installer-manifest.json')));
   await scenario('build info missing', 31, f => fs.rmSync(path.join(f.uninstall, 'build-info.json')));
@@ -458,9 +477,23 @@ test('installed-footprint CLI validates fixed files and hashes without output', 
   await scenario('runtime manifest missing', 33,
     f => fs.rmSync(path.join(f.installRoot, 'program', 'manifest', 'runtime-manifest.json')));
   await scenario('launcher missing', 34, f => fs.rmSync(path.join(f.installRoot, 'program', 'K-SESSION.exe')));
-  await scenario('launcher hash conflict', 35,
-    f => fs.appendFileSync(path.join(f.installRoot, 'program', 'K-SESSION.exe'), 'tampered'));
-  await t.test('usage', () => assert.equal(invoke([]), 36));
+  await scenario('program inventory reparse entry', 35, f => fs.symlinkSync(
+    path.join(f.installRoot, 'program', 'app'), path.join(f.installRoot, 'program', 'linked-app'), 'junction'));
+  await scenario('runtime manifest hash conflict', 36,
+    f => mutateJson(path.join(f.uninstall, 'build-info.json'), value => { value.runtimeManifestSha256 = '0'.repeat(64); }));
+  await scenario('launcher hash conflict', 37,
+    f => mutateJson(path.join(f.uninstall, 'build-info.json'), value => { value.launcherSha256 = '0'.repeat(64); }));
+  await scenario('payload count conflict', 38,
+    f => fs.writeFileSync(path.join(f.installRoot, 'program', 'extra.synthetic'), 'extra'));
+  await scenario('payload path conflict', 39,
+    f => mutateManifest(f, payload => { payload[0].path = 'synthetic-path'; }));
+  await scenario('payload bytes conflict', 40,
+    f => mutateManifest(f, payload => { payload[0].bytes += 1; }));
+  await scenario('payload hash conflict', 41,
+    f => mutateManifest(f, payload => { payload[0].sha256 = '0'.repeat(64); }));
+  await scenario('payload schema conflict', 42,
+    f => mutateManifest(f, payload => { payload[0].extra = true; }));
+  await t.test('usage', () => assert.equal(invoke([]), 43));
 });
 
 test('install-log CLI checks only fixed marker presence and emits no log content', async t => {

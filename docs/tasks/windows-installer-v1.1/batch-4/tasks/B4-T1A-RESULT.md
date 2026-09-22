@@ -1,6 +1,6 @@
 # B4-T1A Result — Historical beta.1 identity evidence capability
 
-状态：**BLOCKED — 云端真实取证失败，REGISTRY 根因修复已在本地完成**。主控尚未整合、push 或重跑该修复，也尚未取得历史 identity anchors；不能据此放行 T3 或报告 Batch 4 PASS。
+状态：**BLOCKED — 云端真实 anchors 仍未取得，最小细分诊断已在本地完成**。主控尚未整合、push 或重跑本轮诊断；不能据此放行 T3 或报告 Batch 4 PASS。
 
 ## 已完成
 
@@ -53,13 +53,17 @@
 
 主控在含中文的正式主项目路径复测时发现专项47/48：测试夹具曾把 GUI helper 放在 `$PSScriptRoot` 下，因而被生产 ASCII 路径门禁正确拒绝；这不是生产缺陷。夹具现依次检查 `RUNNER_TEMP`、`TEMP`、`TMP` 与系统临时目录，只在现有、可写、规范化且匹配同一 ASCII allowlist 的根下创建唯一子目录，无法找到合格候选即明确失败，`finally` 删除全部合成产物。Node 测试另外构造带空格和中文的 `RepositoryRoot` 副本入口，证明仓库路径可以不安全而实际传给生产 helper 的所有执行路径仍安全；测试结束后删除该副本，不在仓库留下产物。生产 `Assert-SetupLaunchPath` 未改动或放宽。
 
+主控整合该测试修复并精确同步公开开发分支到 `80792bd156d1df78340dc8637c8ad339e674a9c6` 后，manual run 35760381250 / `historical-identity` job 106856997239 的静态与合成门禁通过，真实步骤唯一固定结果仍为 `HISTORICAL_IDENTITY_BLOCKED_INSTALL_FOOTPRINT_ANCHORS`，且未上传 evidence。公开 job 元数据确认受测 head SHA 为上述精确提交；现有阶段码只能证明 manifest、build info、binding、runtime manifest、Launcher 五个单文件门禁均已越过，不能区分程序目录枚举、两个固定文件 hash 或 payload 清单的具体冲突。14 秒真实步骤耗时也不足以单独证明仍是进程时序问题，因此没有依据继续修改等待机制、identity 契约或历史 hash。
+
+本轮只把原 `ANCHORS` 汇总类别拆成固定、无观测值的 allowlist：`INVENTORY`、`RUNTIME_HASH`、`LAUNCHER_HASH`、`PAYLOAD_COUNT`、`PAYLOAD_PATH`、`PAYLOAD_BYTES`、`PAYLOAD_HASH`、`PAYLOAD_SCHEMA`。比较顺序保持 fail closed：先安全枚举实际 program，再分别核对 build-info 的 runtime/Launcher hash，最后按清单数组、长度及逐项精确字段、路径、字节数、hash 核对；任何额外字段立即归入 schema 冲突，未知异常仍归 `INSTALL_FOOTPRINT_OTHER`。CLI 继续静默，仅以固定退出码向 PowerShell 映射阶段，不输出路径、文件名、数量、hash 或异常正文，也未放宽 manifest、payload、历史身份或 Setup hash。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：48 PASS，0 FAIL，0 SKIP；Windows GUI 父子进程合成验证等待整个进程树、固定参数保真、非0 bootstrapper 退出码和不安全路径拒绝；在带空格及中文的合成仓库根下同样通过，且静态禁止旧 `& $setup`、单进程 `WaitForExit`、有限等待及强杀路径。
+- historical-identity 专项：55 PASS，0 FAIL，0 SKIP；除既有 Windows GUI 父子进程、中文/空格仓库根及安全路径门禁外，新增 program inventory reparse、runtime/Launcher hash 与 payload count/path/bytes/hash/schema 各固定静默分类测试。
 - 既有 T1 upgrade-detection：43 PASS，0 FAIL，0 SKIP。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。
