@@ -7,7 +7,7 @@ Preflight：公开仓库/正确分支/干净；本地与 GitHub API 远端均为
 
 | Task | 职责 / 独占文件 | 依赖 | Thread / Worktree / commit | 状态 |
 | --- | --- | --- | --- | --- |
-| B4-T1 | 旧安装身份及版本识别；新增 tools/windows-installer/upgrade-detection/、对应专项测试、tasks/B4-T1-RESULT.md | b96543d 文档检查点 | worktree E:/CodexWorkspace/CodexWorktrees/a536/public-source；branch codex/b4-t1-upgrade-detection；thread ID 待回单 | 身份符合，执行中 |
+| B4-T1 | 旧安装身份及版本识别；新增 tools/windows-installer/upgrade-detection/、对应专项测试、tasks/B4-T1-RESULT.md | b96543d 文档检查点 | thread 01a0c900-5811-7053-829d-49daa90e9c56；worktree E:/CodexWorkspace/CodexWorktrees/a536/public-source；branch codex/b4-t1-upgrade-detection；commit 0afecb0 | 首轮专项27/27；单策略仅锚fresh重建会漏真实历史Artifact，已退原任务实现封闭多身份bundle |
 | B4-T2 | 只读实例预检；新增 tools/windows-installer/upgrade-preflight/、对应专项测试、tasks/B4-T2-RESULT.md | b96543d 文档检查点 | thread 01a0c900-5901-71f3-a961-24c634605ed4；worktree E:/CodexWorkspace/CodexWorktrees/2f94/public-source；task commits ff21397+8ec1c33；integrated 0e4e4b4+9d59809 | 主控 Review PASS；专项19 PASS/1权限SKIP，已整合；CI待补file symlink实测 |
 | B4-T3 | 事务升级及失败恢复；独占 setup.iss/build.cjs/安装元数据与必要 Launcher 适配 | T1/T2 Review | 尚未创建 | 等待依赖 |
 | B4-T4 | 真实旧版重建、升级生命周期与故障注入；独占 CI/workflow/生命周期测试 | T3 集成 | 尚未创建 | 等待依赖 |
@@ -29,6 +29,8 @@ T1/T2 首轮不得 push；返回接口与限制后由主控审查再派 T3。实
 2026-09-22 T2 首轮 Review：提交只含 helper、专项与本任务报告，diff-check 通过；主控独立复跑专项 17/17、语法检查通过。反例审查发现 initialized instance 根下未知名称的 junction/symlink 未被全局树检查覆盖，与“实例不存在危险 reparse/symlink”不完全一致，故暂不整合，退原 T2 增加根级及深层未知路径反例并最小修复。binding 精确位置与 staged app 全依赖可信 hash 留给 T1/T3，不扩大 T2。
 
 T2 返工复核：先得到 17 PASS/2 FAIL/1 SKIP 的预期失败证据，再改为完整 instance 元数据递归遍历；未知普通文件/目录仍接受，任意名称/深度的 reparse/symlink/特殊文件失败关闭，不读取未知文件正文。主控复跑 19 PASS/1 SKIP、startup 80 checks、installer/R2 contract、语法和diff-check均通过；file symlink 因本机权限跳过，T4 Windows CI需补实测，不把skip写成通过。
+
+T1 首轮 Review：单策略严格校验专项27/27由主控复跑通过，但不能只信任T4本次fresh重建。实际用户来源是Run35514357007/Artifact10606870944，API核实head=e9417f0、success、未过期（2026-10-20）；动态build-info/Runtime环境令fresh与历史安装不保证字节相同。已退T1增加beta.2构建侧固定hash的封闭identity bundle，历史Artifact及同次fresh baseline均必须各自精确锚定；不因同commit/tree放宽。历史安装后identity提取列为T3/T4前置，Artifact过期前只持久化非敏感hash/evidence，长期不依赖下载。
 
 用户报告工作树自动回收开启、限制20。不得主动触发删除；记录任务 commit 和路径，未整合结果不得清理，派单前检查现存公开 worktree。若发现路径/结果被回收，停止，不伪造恢复。
 
