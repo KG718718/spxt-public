@@ -10,10 +10,12 @@ $ast=[Management.Automation.Language.Parser]::ParseFile($invokeScript,[ref]$toke
 if($errors.Count -ne 0){throw 'INVOKE_PARSE_FAILED'}
 $functions=@($ast.FindAll({param($node)
   $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
-    $node.Name -in @('Assert-SetupLaunchPath','Invoke-SetupTreeAndWait','Wait-UninstallerSelfCleanup')
+    $node.Name -in @('Assert-SetupLaunchPath','Invoke-SetupTreeAndWait','Wait-UninstallerSelfCleanup','Get-RemainingPayloadCount')
 },$true))
-if($functions.Count -ne 3){throw 'PROCESS_WAIT_FUNCTION_MISSING'}
+if($functions.Count -ne 4){throw 'PROCESS_HELPER_FUNCTION_MISSING'}
 $functions | Sort-Object {$_.Extent.StartOffset} | ForEach-Object {Invoke-Expression $_.Extent.Text}
+$observedPhase=$null
+function Set-TaskPhase([string]$Phase) {$script:observedPhase=$Phase}
 
 $temporary=$null
 $candidates=@($env:RUNNER_TEMP,$env:TEMP,$env:TMP,[IO.Path]::GetTempPath()) |
@@ -121,6 +123,29 @@ public static class GuiHelper {
   $taskUninstallSelfCleanupTimeoutMilliseconds=200
   if(Wait-UninstallerSelfCleanup $uninstaller){throw 'UNINSTALLER_SELF_CLEANUP_TIMEOUT_NOT_ENFORCED'}
   Remove-Item -LiteralPath $uninstaller -Force
+  $remainingOne=Join-Path $temporary 'remaining-one.bin'
+  $remainingTwo=Join-Path $temporary 'remaining-two.bin'
+  $missingOne=Join-Path $temporary 'missing-one.bin'
+  $missingTwo=Join-Path $temporary 'missing-two.bin'
+  $payloadPaths=@($remainingOne,$remainingTwo,$missingOne,$missingTwo)
+  $evaluatePayloads={param([int]$Expected)
+    $script:observedPhase=$null
+    $count=Get-RemainingPayloadCount $payloadPaths
+    $payloadRemoved=$count -eq 0
+    if(!$payloadRemoved){Set-TaskPhase 'CLEANUP_PAYLOAD_REMOVE'}
+    if($count -ne $Expected){throw 'PAYLOAD_REMAINING_COUNT_INCORRECT'}
+    if(($Expected -eq 0 -and (!$payloadRemoved -or $null-ne$script:observedPhase)) -or
+       ($Expected -gt 0 -and ($payloadRemoved -or $script:observedPhase -ne 'CLEANUP_PAYLOAD_REMOVE'))){
+      throw 'PAYLOAD_REMAINING_PHASE_INCORRECT'
+    }
+  }
+  & $evaluatePayloads 0
+  [IO.File]::WriteAllText($remainingOne,'synthetic',[Text.UTF8Encoding]::new($false))
+  & $evaluatePayloads 1
+  [IO.File]::WriteAllText($remainingTwo,'synthetic',[Text.UTF8Encoding]::new($false))
+  & $evaluatePayloads 2
+  Remove-Item -LiteralPath $remainingOne -Force
+  Remove-Item -LiteralPath $remainingTwo -Force
   'SETUP PROCESS TEST PASS'
 }finally{
   if(Test-Path -LiteralPath $temporary){Remove-Item -LiteralPath $temporary -Recurse -Force}

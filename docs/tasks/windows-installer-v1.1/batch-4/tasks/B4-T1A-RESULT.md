@@ -1,6 +1,6 @@
 # B4-T1A Result — Historical beta.1 identity evidence capability
 
-状态：**BLOCKED — 云端真实 anchors 仍未取得，cleanup 只读检查阶段已在本地细分**。主控尚未整合、push 或重跑本轮诊断；不能据此放行 T3 或报告 Batch 4 PASS。
+状态：**BLOCKED — 云端真实 anchors 仍未取得，payload 零残留计数缺陷已在本地修复**。主控尚未整合、push 或重跑本轮修复；不能据此放行 T3 或报告 Batch 4 PASS。
 
 ## 已完成
 
@@ -87,13 +87,17 @@
 
 本轮不改变任何读取表达式或判定值，只在每一步读取前设置唯一封闭阶段：`CLEANUP_READ_PROGRAM_ROOT`、`CLEANUP_READ_UNINSTALL_REGISTRATION`、`CLEANUP_READ_DESKTOP_SHORTCUT`、`CLEANUP_READ_START_MENU_SHORTCUT`、`CLEANUP_READ_BINDING_RETAINED`、`CLEANUP_READ_INSTANCE_RETAINED`、`CLEANUP_READ_BINDING_AFTER_HARNESS`、`CLEANUP_READ_INSTANCE_AFTER_HARNESS`、`CLEANUP_READ_PAYLOAD_AFTER_HARNESS`。无法归入这些已知读取边界的异常仍保留 `CLEANUP_INSPECTION`/`CLEANUP_OTHER`；catch 不输出路径、异常正文、registry 值或日志。等待、删除、卸载、数据保留及最终 fail-closed 判断全部保持不变。
 
+主控整合读取细分后，manual run 35779664184 / `historical-identity` job 106922046863 在精确 HEAD `82732d571cba550351a02b4ace6cdcb9df6a6ae9` 的唯一固定结果为 `HISTORICAL_IDENTITY_BLOCKED_CLEANUP_READ_PAYLOAD_AFTER_HARNESS`。主控本机在 `Set-StrictMode -Version Latest` 下复现：原表达式的过滤结果为零项时是 `$null`，直接访问 `.Count` 抛 `PropertyNotFoundException`。因此该 token 与“全部固定 payload 已删除”一致，不是 payload 残留证据。
+
+最小修复仅把固定 payload 路径过滤结果先以 `@(...)` 显式数组化，再读取 `Count`；`$payloadRemoved` 仍且仅在计数为0时为 true，任意正数仍切换到 `CLEANUP_PAYLOAD_REMOVE` 并失败。删除列表、`Assert-TaskPath`、`-LiteralPath`、清理顺序和产品/数据契约均未变化。动态 PowerShell 回归验证零、一、两项残留分别得到0、1、2；零项不进入失败 phase，一项与两项都保持 `CLEANUP_PAYLOAD_REMOVE`。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：69 PASS，0 FAIL，0 SKIP；cleanup 回归逐项固定九类只读状态阶段，并继续覆盖精确 uninstaller 终态等待、固定超时、每项残留、精确删除边界、最终状态及 evidence 写入；hosted 根目录测试保持通过。
+- historical-identity 专项：69 PASS，0 FAIL，0 SKIP；cleanup 回归动态覆盖 payload 零/一/多项准确计数及残留失败 phase，并继续覆盖九类只读状态、uninstaller 终态等待、固定超时、精确删除边界、最终状态及 evidence 写入；hosted 根目录测试保持通过。
 - T1 upgrade-detection：45 PASS，0 FAIL，0 SKIP；新增构建期全局路径排序契约及“同集合重排 manifest 仍拒绝”回归。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。

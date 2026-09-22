@@ -329,6 +329,9 @@ function Wait-UninstallerSelfCleanup([string]$Path) {
   }
   return $true
 }
+function Get-RemainingPayloadCount([string[]]$Paths) {
+  return @($Paths | Where-Object {Test-Path -LiteralPath $_}).Count
+}
 
 try{
   Set-TaskPhase 'HOSTED_PREFLIGHT'
@@ -451,7 +454,8 @@ try{
   }
   Set-TaskPhase 'CLEANUP_INSPECTION'
   Set-TaskPhase 'CLEANUP_READ_PAYLOAD_AFTER_HARNESS'
-  $payloadRemoved=(@($taskExtract,$taskZip,$taskInstall,$taskLog,$taskSetupStdout,$taskSetupStderr,$taskRawSnapshot,$taskSnapshot)|Where-Object{Test-Path -LiteralPath $_}).Count -eq 0
+  $payloadRemainingCount=Get-RemainingPayloadCount @($taskExtract,$taskZip,$taskInstall,$taskLog,$taskSetupStdout,$taskSetupStderr,$taskRawSnapshot,$taskSnapshot)
+  $payloadRemoved=$payloadRemainingCount -eq 0
   if(!$payloadRemoved){Set-TaskPhase 'CLEANUP_PAYLOAD_REMOVE';throw 'PAYLOAD_REMOVE_FAILED'}
   Set-TaskPhase 'CLEANUP_FINAL_STATE'
   $cleanup=@{uninstallerExitCode=$taskUninstallExit;programRootExistsAfterUninstall=$programAfter;uninstallRegistrationCountAfterUninstall=$uninstallCount;desktopShortcutExistsAfterUninstall=$desktopAfter;startMenuShortcutExistsAfterUninstall=$programsAfter;bindingRetainedAfterUninstall=($bindingAfter -eq 1);instanceRetainedAfterUninstall=$instanceAfter;bindingRegistrationCountAfterHarnessCleanup=$bindingAfterHarness;instanceExistsAfterHarnessCleanup=$instanceAfterHarness;temporaryPayloadRemoved=$payloadRemoved}

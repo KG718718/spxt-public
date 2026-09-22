@@ -325,11 +325,13 @@ test('cleanup diagnostics map every residual and owned removal boundary to a fix
     ['CLEANUP_READ_INSTANCE_RETAINED', '\\$instanceAfter=Test-Path -LiteralPath \\$taskInstance'],
     ['CLEANUP_READ_BINDING_AFTER_HARNESS', '\\$bindingAfterHarness=Count-Subkey \\$taskBindingSubkey'],
     ['CLEANUP_READ_INSTANCE_AFTER_HARNESS', '\\$instanceAfterHarness=Test-Path -LiteralPath \\$taskInstance'],
-    ['CLEANUP_READ_PAYLOAD_AFTER_HARNESS', '\\$payloadRemoved=\\(@\\([\\s\\S]*Where-Object\\{Test-Path -LiteralPath \\$_\\}\\)\\.Count -eq 0']
+    ['CLEANUP_READ_PAYLOAD_AFTER_HARNESS', '\\$payloadRemainingCount=Get-RemainingPayloadCount @\\([\\s\\S]*\\$taskSnapshot\\)']
   ];
   for (const [phase, read] of inspectionReads) {
     assert.match(cleanup, new RegExp(`Set-TaskPhase '${phase}'\\s+${read}`), `${phase} read mapping missing`);
   }
+  assert.match(script, /function Get-RemainingPayloadCount\(\[string\[\]\]\$Paths\)[\s\S]*return @\(\$Paths \| Where-Object \{Test-Path -LiteralPath \$_\}\)\.Count/);
+  assert.match(cleanup, /\$payloadRemoved=\$payloadRemainingCount -eq 0\s+if\(!\$payloadRemoved\)\{Set-TaskPhase 'CLEANUP_PAYLOAD_REMOVE';throw 'PAYLOAD_REMOVE_FAILED'\}/);
   const residualMap = [
     ['\\$programAfter', 'CLEANUP_PROGRAM_ROOT'], ['\\$uninstallCount -ne 0', 'CLEANUP_UNINSTALL_REGISTRATION'],
     ['\\$desktopAfter', 'CLEANUP_DESKTOP_SHORTCUT'], ['\\$programsAfter', 'CLEANUP_START_MENU_SHORTCUT'],
