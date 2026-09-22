@@ -2,7 +2,7 @@
 'use strict';
 
 const fs = require('node:fs');
-const {Rejection, sha, validate} = require('./index.cjs');
+const {Rejection, sha, validateApprovedIdentity} = require('./index.cjs');
 
 function emit(value) { process.stdout.write(JSON.stringify(value) + '\n'); }
 function argumentsExact() {
@@ -10,7 +10,7 @@ function argumentsExact() {
   if (args.length !== 6) return null;
   const values = {};
   for (let i = 0; i < args.length; i += 2) {
-    if (!['--policy', '--policy-sha256', '--snapshot'].includes(args[i]) || values[args[i]] !== undefined || !args[i + 1]) return null;
+    if (!['--bundle', '--bundle-sha256', '--snapshot'].includes(args[i]) || values[args[i]] !== undefined || !args[i + 1]) return null;
     values[args[i]] = args[i + 1];
   }
   return values;
@@ -23,12 +23,12 @@ function readRegular(file) {
 
 try {
   const args = argumentsExact();
-  if (!args || !/^[a-f0-9]{64}$/.test(args['--policy-sha256'])) {
+  if (!args || !/^[a-f0-9]{64}$/.test(args['--bundle-sha256'])) {
     emit({status: 'REJECT', code: 'USAGE'}); process.exitCode = 64;
   } else {
-    const policyBytes = readRegular(args['--policy']);
-    if (sha(policyBytes) !== args['--policy-sha256']) throw new Rejection(40, 'POLICY_HASH_MISMATCH', '可信策略哈希不匹配。');
-    const result = validate(JSON.parse(readRegular(args['--snapshot']).toString('utf8')), JSON.parse(policyBytes));
+    const bundleBytes = readRegular(args['--bundle']);
+    if (sha(bundleBytes) !== args['--bundle-sha256']) throw new Rejection(40, 'BUNDLE_HASH_MISMATCH', '受信任身份集合哈希不匹配。');
+    const result = validateApprovedIdentity(JSON.parse(readRegular(args['--snapshot']).toString('utf8')), JSON.parse(bundleBytes));
     emit(result);
   }
 } catch (error) {

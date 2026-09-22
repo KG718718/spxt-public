@@ -10,6 +10,7 @@ const UNINSTALL_KEY = String.raw`Software\Microsoft\Windows\CurrentVersion\Unins
 const BINDING_KEY = String.raw`Software\KSESSION\Beta\InstallerBinding`;
 const BASELINE_COMMIT = 'e9417f036d0cdf736ff84682556a994040f0de0b';
 const BASELINE_TREE = '5da66cb9b73dfa307948634634bfab2cfaaead12';
+const APPROVED_PROFILE_IDS = new Set(['historical-run-35514357007', 'fresh-ci-baseline']);
 
 class Rejection extends Error {
   constructor(exitCode, code, diagnostic) {
@@ -60,6 +61,53 @@ function validatePolicy(policy) {
   }
   for (const field of ['programManifestSha256', 'programInventorySha256', 'runtimeManifestSha256', 'launcherSha256', 'buildInfoSha256']) {
     if (!SHA.test(policy[field])) reject(40, 'POLICY_INVALID', '可信策略缺少固定构建哈希。');
+  }
+}
+
+function policyFingerprint(policy) {
+  validatePolicy(policy);
+  const ordered = [
+    policy.schema, policy.appId, policy.uninstallKey, policy.bindingKey,
+    policy.fromInstallerVersion, policy.targetInstallerVersion, policy.appVersion,
+    policy.dataContractVersion, policy.allowLegacyMissingDataContract,
+    policy.sourceCommit, policy.sourceTree, policy.programManifestSha256,
+    policy.programInventorySha256, policy.runtimeManifestSha256,
+    policy.launcherSha256, policy.buildInfoSha256
+  ];
+  return sha(Buffer.from(JSON.stringify(ordered)));
+}
+
+function validateBundle(bundle) {
+  if (!exactKeys(bundle, ['schema', 'profiles']) || bundle.schema !== 1 ||
+      !Array.isArray(bundle.profiles) || bundle.profiles.length < 1 || bundle.profiles.length > 2) {
+    reject(41, 'BUNDLE_INVALID', '受信任身份集合结构或数量无效。');
+  }
+  const ids = new Set();
+  const fingerprints = new Set();
+  const coveredSources = new Set();
+  for (const profile of bundle.profiles) {
+    if (!exactKeys(profile, ['id', 'sources', 'policy']) || !APPROVED_PROFILE_IDS.has(profile.id) || ids.has(profile.id) ||
+        !Array.isArray(profile.sources) || profile.sources.length < 1 || profile.sources.length > 2 || profile.sources[0] !== profile.id) {
+      reject(41, 'BUNDLE_INVALID', '受信任身份 profile 名称无效或重复。');
+    }
+    ids.add(profile.id);
+    for (const source of profile.sources) {
+      if (!APPROVED_PROFILE_IDS.has(source) || coveredSources.has(source)) {
+        reject(41, 'BUNDLE_INVALID', '受信任身份来源缺失、未知或重复。');
+      }
+      coveredSources.add(source);
+    }
+    const fingerprint = policyFingerprint(profile.policy);
+    if (fingerprints.has(fingerprint)) {
+      reject(41, 'BUNDLE_DUPLICATE_IDENTITY', '受信任身份集合包含重复完整锚。');
+    }
+    fingerprints.add(fingerprint);
+  }
+  if (coveredSources.size !== APPROVED_PROFILE_IDS.size ||
+      [...APPROVED_PROFILE_IDS].some(source => !coveredSources.has(source)) ||
+      (bundle.profiles.length === 1 && bundle.profiles[0].sources.join('\0') !== [...APPROVED_PROFILE_IDS].join('\0')) ||
+      (bundle.profiles.length === 2 && bundle.profiles.some(profile => profile.sources.length !== 1))) {
+    reject(41, 'BUNDLE_INCOMPLETE', '受信任身份集合未完整覆盖两个批准来源。');
   }
 }
 
@@ -290,4 +338,20 @@ function validate(snapshot, policy) {
     dataContractVersion: policy.dataContractVersion};
 }
 
-module.exports = {BINDING_KEY, Rejection, UNINSTALL_KEY, inventory, sha, validate, validatePolicy};
+function validateApprovedIdentity(snapshot, bundle) {
+  validateBundle(bundle);
+  const matches = [];
+  for (const profile of bundle.profiles) {
+    try {
+      matches.push({profileId: profile.id, result: validate(snapshot, profile.policy)});
+    } catch {
+      // Do not reveal which exact anchor failed or why when matching an approved set.
+    }
+  }
+  if (matches.length === 0) reject(31, 'IDENTITY_NOT_APPROVED', '已安装 beta.1 不匹配任何已批准的精确身份。');
+  if (matches.length !== 1) reject(41, 'BUNDLE_AMBIGUOUS', '受信任身份集合产生不唯一匹配。');
+  return {...matches[0].result, profileId: matches[0].profileId};
+}
+
+module.exports = {BINDING_KEY, Rejection, UNINSTALL_KEY, inventory, policyFingerprint, sha,
+  validate, validateApprovedIdentity, validateBundle, validatePolicy};
