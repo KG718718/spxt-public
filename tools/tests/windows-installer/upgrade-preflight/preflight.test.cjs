@@ -179,6 +179,52 @@ test('rejects an instance whose ancestor is a reparse point without changing the
     assert.deepEqual(result, { status: 13, output: { ok: false, code: 'INSTANCE_PATH_UNSAFE' } });
 });
 
+test('rejects an unknown top-level directory junction without changing instance or target', t => {
+    const fixture = makeFixture(t);
+    const outside = path.join(fixture.base, 'outside-top-level');
+    fs.mkdirSync(outside);
+    fs.writeFileSync(path.join(outside, 'sentinel.bin'), crypto.randomBytes(13));
+    fs.symlinkSync(outside, path.join(fixture.instancePath, 'unexpected-link'), process.platform === 'win32' ? 'junction' : 'dir');
+    const targetBefore = snapshot(outside);
+    const result = invoke(fixture);
+    assert.deepEqual(snapshot(outside), targetBefore);
+    assert.deepEqual(result, { status: 16, output: { ok: false, code: 'INSTANCE_STRUCTURE_UNSAFE' } });
+});
+
+test('rejects a link inside an unknown ordinary directory without changing instance or target', t => {
+    const fixture = makeFixture(t);
+    const outside = path.join(fixture.base, 'outside-deep');
+    const unknown = path.join(fixture.instancePath, 'ordinary-unknown', 'nested');
+    fs.mkdirSync(outside);
+    fs.mkdirSync(unknown, { recursive: true });
+    fs.writeFileSync(path.join(outside, 'sentinel.bin'), crypto.randomBytes(15));
+    fs.symlinkSync(outside, path.join(unknown, 'escape'), process.platform === 'win32' ? 'junction' : 'dir');
+    const targetBefore = snapshot(outside);
+    const result = invoke(fixture);
+    assert.deepEqual(snapshot(outside), targetBefore);
+    assert.deepEqual(result, { status: 16, output: { ok: false, code: 'INSTANCE_STRUCTURE_UNSAFE' } });
+});
+
+test('rejects an unknown top-level file symlink when Windows permits creating one', t => {
+    const fixture = makeFixture(t);
+    const outside = path.join(fixture.base, 'outside-file.bin');
+    const link = path.join(fixture.instancePath, 'unexpected-file-link.bin');
+    fs.writeFileSync(outside, crypto.randomBytes(17));
+    try {
+        fs.symlinkSync(outside, link, 'file');
+    } catch (error) {
+        if (process.platform === 'win32' && (error.code === 'EPERM' || error.code === 'EACCES')) {
+            t.skip('Windows file symlink privilege is unavailable; junction coverage remains active.');
+            return;
+        }
+        throw error;
+    }
+    const targetBefore = snapshot(path.dirname(outside));
+    const result = invoke(fixture);
+    assert.deepEqual(snapshot(path.dirname(outside)), targetBefore);
+    assert.deepEqual(result, { status: 16, output: { ok: false, code: 'INSTANCE_STRUCTURE_UNSAFE' } });
+});
+
 test('diagnostics never include path or stored user content', t => {
     const fixture = makeFixture(t);
     const sentinel = 'SYNTHETIC-CONTENT-' + crypto.randomBytes(12).toString('hex');

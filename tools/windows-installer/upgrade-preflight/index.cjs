@@ -267,9 +267,9 @@ function runPreflight(options) {
     }
 
     const contract = loadStartupContract(appRoot);
-    for (const directory of ['attachments', 'backups', 'logs', 'runtime', path.join('runtime', 'secrets'), 'launcher-logs', 'temp']) {
-        assertSafeTree(path.join(instancePath, directory));
-    }
+    // Unknown ordinary files/directories remain accepted. Walk the complete instance metadata so
+    // a reparse point cannot hide under an unrecognized name and escape the validated root.
+    assertSafeTree(instancePath);
     for (const filename of ['data.json', 'config.json', 'mail-reminder.config.json',
         path.join('runtime', 'secrets', 'smtp-pass.dpapi'), '.launcher.lock']) {
         assertOptionalRegularFile(path.join(instancePath, filename));
