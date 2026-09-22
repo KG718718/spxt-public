@@ -77,6 +77,8 @@ $taskAllowedPhases=@(
   'T1_PATH_REPARSE_OTHER',
   'COLLECT',
   'CLEANUP_UNINSTALLER_EXIT',
+  'CLEANUP_UNINSTALLER_SELF_CLEANUP',
+  'CLEANUP_UNINSTALLER_SELF_CLEANUP_TIMEOUT',
   'CLEANUP_PROGRAM_ROOT',
   'CLEANUP_UNINSTALL_REGISTRATION',
   'CLEANUP_DESKTOP_SHORTCUT',
@@ -117,6 +119,7 @@ $taskProductSubkey='Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION
 $taskBindingSubkey='Software\KSESSION\Beta\InstallerBinding'
 $taskInstalled=$false
 $taskUninstallExit=-1
+$taskUninstallSelfCleanupTimeoutMilliseconds=25000
 $taskFinalized=$false
 $taskWorkCreated=$false
 $taskOutputWasPresent=Test-Path -LiteralPath $OutputFile
@@ -306,6 +309,17 @@ function Invoke-HostedRootCheck([string]$Candidate) {
   }
   throw 'HOST_ROOT_GATE'
 }
+function Wait-UninstallerSelfCleanup([string]$Path) {
+  $trustedPath=[IO.Path]::GetFullPath($Path)
+  $expectedPath=[IO.Path]::GetFullPath((Join-Path $taskInstall 'uninstall\unins000.exe'))
+  if(!$trustedPath.Equals($expectedPath,[StringComparison]::OrdinalIgnoreCase)){throw 'UNINSTALLER_PATH_SCOPE'}
+  $deadline=[DateTime]::UtcNow.AddMilliseconds($taskUninstallSelfCleanupTimeoutMilliseconds)
+  while(Test-Path -LiteralPath $trustedPath){
+    if([DateTime]::UtcNow -ge $deadline){return $false}
+    Start-Sleep -Milliseconds 100
+  }
+  return $true
+}
 
 try{
   Set-TaskPhase 'HOSTED_PREFLIGHT'
@@ -384,6 +398,11 @@ try{
   $taskUninstallExit=$LASTEXITCODE
   if($taskUninstallExit -ne 0){throw 'UNINSTALL_FAILED'}
   $taskInstalled=$false
+  Set-TaskPhase 'CLEANUP_UNINSTALLER_SELF_CLEANUP'
+  if(!(Wait-UninstallerSelfCleanup $uninstaller)){
+    Set-TaskPhase 'CLEANUP_UNINSTALLER_SELF_CLEANUP_TIMEOUT'
+    throw 'UNINSTALLER_SELF_CLEANUP_TIMEOUT'
+  }
 
   Set-TaskPhase 'CLEANUP_INSPECTION'
   $programAfter=Test-Path -LiteralPath $taskInstall

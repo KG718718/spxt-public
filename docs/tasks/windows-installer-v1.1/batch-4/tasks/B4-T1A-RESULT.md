@@ -1,6 +1,6 @@
 # B4-T1A Result — Historical beta.1 identity evidence capability
 
-状态：**BLOCKED — 云端真实 anchors 仍未取得，cleanup 最小细分诊断已在本地完成**。主控尚未整合、push 或重跑本轮诊断；不能据此放行 T3 或报告 Batch 4 PASS。
+状态：**BLOCKED — 云端真实 anchors 仍未取得，uninstaller 自清理终态等待已在本地完成**。主控尚未整合、push 或重跑本轮修复；不能据此放行 T3 或报告 Batch 4 PASS。
 
 ## 已完成
 
@@ -77,13 +77,19 @@
 
 本轮只细分清理诊断。卸载程序非零退出、program root、卸载登记、桌面/开始菜单快捷方式残留、binding/instance 未按产品契约保留、owned binding 精确移除、instance 精确移除、固定临时 payload 精确移除、最终 cleanup 状态及 cleanup evidence 写入分别使用封闭 `CLEANUP_*` 阶段；状态读取异常统一进入 `CLEANUP_INSPECTION`，其他未知清理边界保留 `CLEANUP_OTHER`。所有检查仍 fail closed，删除仍只用既有 `-LiteralPath`、`Assert-TaskPath` 和 owned binding 比对，没有新增通配删除、跳过清理或产品卸载行为修改。
 
+主控整合 cleanup 分类后，manual run 35776206098 / `historical-identity` job 106910326823 在精确 HEAD `4f0f0330d69806b8ea42076bb000ab6bc0e8b224` 的唯一固定结果为 `HISTORICAL_IDENTITY_BLOCKED_CLEANUP_PROGRAM_ROOT`。这证明卸载入口已返回0，而 harness 立即采样时安装根仍存在；该 token 本身不等于真实产品文件残留，也不能把残留改判为成功。
+
+公开源码提供了可复核的返回时机证据。beta.1 精确来源提交 `e9417f036d0cdf736ff84682556a994040f0de0b` 的 `setup_windows_test.go` 在 `cmd.Run()` 返回后仍以100ms间隔、最多25秒等待同一安装根内 `unins000.exe` 消失，之后才验证卸载结果；同一提交的 `setup.iss` 把 `UninstallFilesDir` 固定在 `{app}\uninstall` 且禁用自动重启。Inno 官方[源码调试说明](https://github.com/jrsoftware/issrc/blob/main/README.md)明确卸载器存在 `/SECONDPHASE`，其[安装函数源码](https://github.com/jrsoftware/issrc/blob/main/Projects/Src/SetupLdrAndSetup.InstFunc.pas)包含卸载共用的延迟删除机制。historical harness 的 Node/PowerShell 文件读取均为同步短句柄，Setup 重定向进程已结束，没有持有安装根的长期流；现有证据因此支持“首阶段返回后卸载器仍在完成自身删除”，而不支持任意 sleep、跳过根目录验证或修改产品卸载行为。
+
+最小修复复用既有公开自动化的终态模型：卸载入口返回0后，只轮询已经过 T1/路径门禁的精确 `<taskInstall>\uninstall\unins000.exe`，固定100ms间隔和25秒上限；路径必须与任务安装根推导值完全相等，不枚举、等待或终止任何进程。超时固定为 `CLEANUP_UNINSTALLER_SELF_CLEANUP_TIMEOUT`，读取或其他异常停在 `CLEANUP_UNINSTALLER_SELF_CLEANUP`。只有该明确终态出现后才继续原 cleanup 检查；此时 program root、登记、快捷方式任一残留仍按原类别失败，因此延迟删除、重启后删除、被占用或真实残留都不会被伪造成 PASS。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：69 PASS，0 FAIL，0 SKIP；除既有安装、registry、payload、路径静默分类外，新增 cleanup 每项残留、精确删除边界、最终状态和 evidence 写入的封闭阶段静态回归；hosted 根目录测试继续覆盖普通固定卷、合成映射卷及不合规路径。
+- historical-identity 专项：69 PASS，0 FAIL，0 SKIP；cleanup 回归新增精确 uninstaller 终态等待、延迟删除成功和固定超时反例，并继续覆盖每项残留、精确删除边界、最终状态及 evidence 写入的封闭阶段；hosted 根目录测试保持通过。
 - T1 upgrade-detection：45 PASS，0 FAIL，0 SKIP；新增构建期全局路径排序契约及“同集合重排 manifest 仍拒绝”回归。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。

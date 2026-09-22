@@ -10,9 +10,9 @@ $ast=[Management.Automation.Language.Parser]::ParseFile($invokeScript,[ref]$toke
 if($errors.Count -ne 0){throw 'INVOKE_PARSE_FAILED'}
 $functions=@($ast.FindAll({param($node)
   $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
-    $node.Name -in @('Assert-SetupLaunchPath','Invoke-SetupTreeAndWait')
+    $node.Name -in @('Assert-SetupLaunchPath','Invoke-SetupTreeAndWait','Wait-UninstallerSelfCleanup')
 },$true))
-if($functions.Count -ne 2){throw 'SETUP_WAIT_FUNCTION_MISSING'}
+if($functions.Count -ne 3){throw 'PROCESS_WAIT_FUNCTION_MISSING'}
 $functions | Sort-Object {$_.Extent.StartOffset} | ForEach-Object {Invoke-Expression $_.Extent.Text}
 
 $temporary=$null
@@ -49,6 +49,11 @@ using System.Threading;
 public static class GuiHelper {
   [STAThread]
   public static int Main(string[] args) {
+    if (args.Length == 2 && args[0] == "--delete") {
+      Thread.Sleep(600);
+      File.Delete(args[1]);
+      return 0;
+    }
     if (args.Length == 2 && args[0] == "--child") {
       Thread.Sleep(600);
       File.WriteAllText(args[1], "CHILD_COMPLETED");
@@ -98,6 +103,24 @@ public static class GuiHelper {
       throw 'UNSAFE_PATH_ACCEPTED'
     }catch{if($_.Exception.Message -ne 'SETUP_PATH_UNSAFE'){throw}}
   }
+  $taskInstall=Join-Path $temporary 'uninstall-fixture'
+  $uninstallDir=Join-Path $taskInstall 'uninstall'
+  [IO.Directory]::CreateDirectory($uninstallDir)|Out-Null
+  $uninstaller=Join-Path $uninstallDir 'unins000.exe'
+  [IO.File]::WriteAllText($uninstaller,'synthetic',[Text.UTF8Encoding]::new($false))
+  $deleteProcess=Start-Process -FilePath $helper -ArgumentList @('--delete',$uninstaller) -WindowStyle Hidden -PassThru
+  $taskUninstallSelfCleanupTimeoutMilliseconds=25000
+  $stopwatch.Restart()
+  $removed=Wait-UninstallerSelfCleanup $uninstaller
+  $stopwatch.Stop()
+  $deleteProcess.WaitForExit()
+  if(!$removed -or $stopwatch.ElapsedMilliseconds -lt 500 -or (Test-Path -LiteralPath $uninstaller)){
+    throw 'UNINSTALLER_SELF_CLEANUP_NOT_WAITED'
+  }
+  [IO.File]::WriteAllText($uninstaller,'synthetic',[Text.UTF8Encoding]::new($false))
+  $taskUninstallSelfCleanupTimeoutMilliseconds=200
+  if(Wait-UninstallerSelfCleanup $uninstaller){throw 'UNINSTALLER_SELF_CLEANUP_TIMEOUT_NOT_ENFORCED'}
+  Remove-Item -LiteralPath $uninstaller -Force
   'SETUP PROCESS TEST PASS'
 }finally{
   if(Test-Path -LiteralPath $temporary){Remove-Item -LiteralPath $temporary -Recurse -Force}

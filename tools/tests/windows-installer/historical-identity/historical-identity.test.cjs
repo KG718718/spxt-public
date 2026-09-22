@@ -280,7 +280,8 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
     'T1_PATH_REPARSE_UNINSTALL_ANCESTOR', 'T1_PATH_REPARSE_PLATFORM_VOLUME',
     'T1_PATH_REPARSE_INSTALL_ROOT_REALPATH', 'T1_PATH_REPARSE_INSTANCE_REALPATH',
     'T1_PATH_REPARSE_UNINSTALL_REALPATH', 'T1_PATH_REPARSE_INSPECTION', 'T1_PATH_REPARSE_USAGE',
-    'T1_PATH_REPARSE_OTHER', 'COLLECT', 'CLEANUP_UNINSTALLER_EXIT', 'CLEANUP_PROGRAM_ROOT',
+    'T1_PATH_REPARSE_OTHER', 'COLLECT', 'CLEANUP_UNINSTALLER_EXIT',
+    'CLEANUP_UNINSTALLER_SELF_CLEANUP', 'CLEANUP_UNINSTALLER_SELF_CLEANUP_TIMEOUT', 'CLEANUP_PROGRAM_ROOT',
     'CLEANUP_UNINSTALL_REGISTRATION', 'CLEANUP_DESKTOP_SHORTCUT', 'CLEANUP_START_MENU_SHORTCUT',
     'CLEANUP_BINDING_RETAINED', 'CLEANUP_INSTANCE_RETAINED', 'CLEANUP_BINDING_REMOVE',
     'CLEANUP_INSTANCE_REMOVE', 'CLEANUP_PAYLOAD_REMOVE', 'CLEANUP_FINAL_STATE', 'CLEANUP_EVIDENCE_WRITE',
@@ -307,6 +308,11 @@ test('cleanup diagnostics map every residual and owned removal boundary to a fix
   assert.ok(block, 'cleanup diagnostic block missing');
   const cleanup = block[0];
   assert.match(cleanup, /Set-TaskPhase 'CLEANUP_UNINSTALLER_EXIT'[\s\S]*\$taskUninstallExit=\$LASTEXITCODE[\s\S]*if\(\$taskUninstallExit -ne 0\)/);
+  assert.match(cleanup, /Set-TaskPhase 'CLEANUP_UNINSTALLER_SELF_CLEANUP'[\s\S]*Wait-UninstallerSelfCleanup \$uninstaller[\s\S]*Set-TaskPhase 'CLEANUP_UNINSTALLER_SELF_CLEANUP_TIMEOUT'/);
+  assert.match(script, /\$taskUninstallSelfCleanupTimeoutMilliseconds=25000/);
+  assert.match(script, /function Wait-UninstallerSelfCleanup[\s\S]*Join-Path \$taskInstall 'uninstall\\unins000\.exe'[\s\S]*Start-Sleep -Milliseconds 100/);
+  assert.doesNotMatch(cleanup, /Get-Process|Win32_Process|Wait-Process|Stop-Process|taskkill/i,
+    'uninstaller completion must use only its exact terminal file, never unrelated processes');
   assert.match(cleanup, /Set-TaskPhase 'CLEANUP_INSPECTION'[\s\S]*\$programAfter=Test-Path[\s\S]*\$instanceAfter=Test-Path/);
   const residualMap = [
     ['\\$programAfter', 'CLEANUP_PROGRAM_ROOT'], ['\\$uninstallCount -ne 0', 'CLEANUP_UNINSTALL_REGISTRATION'],
