@@ -162,6 +162,61 @@ func TestUpgradeLifecycle(t *testing.T) {
 		}
 		return true
 	}
+	readShortcut := func(file string, includeArguments bool) string {
+		t.Helper()
+		args := []string{"-NoProfile", "-NonInteractive", "-File", filepath.Join(repo, "tools/tests/windows-installer/read-shortcut.ps1"),
+			"-PathBase64", base64.StdEncoding.EncodeToString([]byte(file))}
+		if includeArguments {
+			args = append(args, "-IncludeArguments")
+		}
+		encoded := strings.TrimSpace(string(cmdOut(ps, args...)))
+		decoded, err := base64.StdEncoding.DecodeString(encoded)
+		if err != nil {
+			t.Fatal("invalid shortcut result")
+		}
+		return string(decoded)
+	}
+	assertBeta2Registration := func() {
+		t.Helper()
+		script := `$product='Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1';$binding='Software\KSESSION\Beta\InstallerBinding';$rows=@();$machine=0;foreach($viewName in @('Registry64','Registry32')){$view=[Microsoft.Win32.RegistryView]::$viewName;$cu=[Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser,$view);try{$u=$cu.OpenSubKey($product,$false);$b=$cu.OpenSubKey($binding,$false);try{if($null-ne$u-or$null-ne$b){$rows+=@{view=$viewName;registration=if($null-ne$u){@{displayVersion=[string]$u.GetValue('DisplayVersion');installLocation=[string]$u.GetValue('InstallLocation')}}else{$null};binding=if($null-ne$b){@{installRoot=[string]$b.GetValue('InstallRoot');instance=[string]$b.GetValue('Instance')}}else{$null}}}}finally{if($null-ne$u){$u.Dispose()};if($null-ne$b){$b.Dispose()}}}finally{$cu.Dispose()};$lm=[Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine,$view);try{$k=$lm.OpenSubKey($product,$false);if($null-ne$k){$machine++;$k.Dispose()};$k=$lm.OpenSubKey($binding,$false);if($null-ne$k){$machine++;$k.Dispose()}}finally{$lm.Dispose()}};$j=@{rows=$rows;machine=$machine}|ConvertTo-Json -Depth 6 -Compress;[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($j))`
+		encoded := strings.TrimSpace(string(cmdOut(ps, "-NoProfile", "-NonInteractive", "-Command", script)))
+		bytes, err := base64.StdEncoding.DecodeString(encoded)
+		if err != nil {
+			t.Fatal("invalid registry result")
+		}
+		var state struct {
+			Rows []struct {
+				View         string `json:"view"`
+				Registration *struct {
+					DisplayVersion  string `json:"displayVersion"`
+					InstallLocation string `json:"installLocation"`
+				} `json:"registration"`
+				Binding *struct {
+					InstallRoot string `json:"installRoot"`
+					Instance    string `json:"instance"`
+				} `json:"binding"`
+			} `json:"rows"`
+			Machine int `json:"machine"`
+		}
+		if err = json.Unmarshal(bytes, &state); err != nil || state.Machine != 0 || len(state.Rows) < 1 || len(state.Rows) > 2 {
+			t.Fatal("registration count or machine-hive conflict")
+		}
+		for _, row := range state.Rows {
+			if row.Registration == nil || row.Binding == nil || row.Registration.DisplayVersion != "1.1.0-beta.2" ||
+				!sameFile(row.Registration.InstallLocation, target) || !sameFile(row.Binding.InstallRoot, target) ||
+				!sameFile(row.Binding.Instance, instance) {
+				t.Fatal("beta.2 registration or binding mismatch")
+			}
+		}
+		if len(state.Rows) == 2 {
+			a, b := state.Rows[0], state.Rows[1]
+			if a.View == b.View || a.Registration.DisplayVersion != b.Registration.DisplayVersion ||
+				!sameFile(a.Registration.InstallLocation, b.Registration.InstallLocation) ||
+				!sameFile(a.Binding.InstallRoot, b.Binding.InstallRoot) || !sameFile(a.Binding.Instance, b.Binding.Instance) {
+				t.Fatal("32/64 registry aliases conflict")
+			}
+		}
+	}
 
 	runSetup(beta1, true)
 	record("U01", "fresh rebuilt beta.1 installed with real registration and binding")
@@ -232,7 +287,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 		record(probe.id, "real beta.1 corruption rejected before persistent changes")
 	}
 
-	fixtures := []struct{ id, dir, marker string }{{"U18", "fault-space", "KSESSION_REJECT_SPACE"}, {"U20", "fault-cancel", "KSESSION_FIXTURE_CANCEL_DURING_COPY"}, {"U21", "fault-copy", "KSESSION_FIXTURE_COPY_FAILURE"}, {"U22", "fault-payload-hash", "KSESSION_UPGRADE_TRANSACTION"}, {"U23", "fault-post-copy", "KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE"}}
+	fixtures := []struct{ id, dir, marker string }{{"U18", "fault-space", "KSESSION_REJECT_SPACE"}, {"U20", "fault-cancel", "KSESSION_FIXTURE_CANCEL_DURING_COPY"}, {"U21", "fault-copy", "KSESSION_FIXTURE_COPY_FAILURE"}, {"U22", "fault-payload-hash", "KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED"}, {"U23", "fault-post-copy", "KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE"}}
 	for _, f := range fixtures {
 		binary := filepath.Join(build, f.dir, "artifact", "K-SESSION-Setup-1.1.0-beta.2.exe")
 		text := runSetup(binary, false)
@@ -240,7 +295,11 @@ func TestUpgradeLifecycle(t *testing.T) {
 		if !equalMaps(instanceStable, walkHash(instance)) || !equalMaps(ownedStable, owned()) {
 			t.Fatalf("%s did not restore exact state", f.id)
 		}
-		record(f.id, "real Inno fault fixture restored program, metadata, registration, binding, shortcuts and byte-identical instance")
+		method := "real Inno fault fixture restored program, metadata, registration, binding, shortcuts and byte-identical instance"
+		if f.id == "U22" {
+			method = "target manifest hash mismatch rejected before program rewrite; old owned state and byte-identical instance retained"
+		}
+		record(f.id, method)
 	}
 	// Permission failure uses the normal payload under a real deny-write ACL; no product test switch is involved.
 	token, e := syscall.OpenCurrentProcessToken()
@@ -277,8 +336,14 @@ func TestUpgradeLifecycle(t *testing.T) {
 		t.Fatal("install state")
 	}
 	cmdOut(filepath.Join(root, "runtime", "node.exe"), filepath.Join(repo, "tools/windows-portable/package.cjs"), "verify", root)
-	record("U24", "real shortcuts survived and are included in exact pre/post owned-state comparison")
-	record("U25", "single real HKCU registration survived and identifies beta.2")
+	for _, link := range []string{desktop, start} {
+		if !sameFile(readShortcut(link, false), launcher) || readShortcut(link, true) != `--instance "`+instance+`"` {
+			t.Fatal("upgraded shortcut target or instance arguments mismatch")
+		}
+	}
+	record("U24", "both real shortcuts target upgraded Launcher and carry the exact original instance argument")
+	assertBeta2Registration()
+	record("U25", "beta.2 HKCU registration and binding are unique after exact 32/64 shared-alias normalization; HKLM is empty")
 	launcher = filepath.Join(root, "K-SESSION.exe")
 	app = startApp()
 	until(t, func() bool { return eventCount(instance, "READY") >= 2 })

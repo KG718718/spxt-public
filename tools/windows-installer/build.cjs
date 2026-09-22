@@ -56,7 +56,7 @@ writeNew(path.join(gen,'files.iss'),'\ufeff'+files.map(f=>{
  const parts=f.path.split('/'),file=parts.pop(),dir=parts.join('\\'),rel=f.path.replaceAll('/','\\');
  const source='Source: "'+q(path.join(root,f.path))+'"; DestName: "'+q(file)+'"; Flags: ignoreversion';
  return source+'; DestDir: "{app}\\program'+(dir?'\\'+q(dir):'')+'"; Check: IsFreshInstall; BeforeInstall: EnsureAbsent(\''+pas(rel)+'\')\n'+
-   source+'; DestDir: "{tmp}\\ksession-upgrade-v1\\program'+(dir?'\\'+q(dir):'')+'"; Check: IsUpgradeInstall';
+   source+'; DestDir: "{tmp}\\ksession-upgrade-v1\\program'+(dir?'\\'+q(dir):'')+'"; Check: IsUpgradeInstall; BeforeInstall: BeforeUpgradeCopy(\''+pas(rel)+'\')';
 }).join('\n')+'\n');
 writeNew(path.join(gen,'verify.iss'),'\ufeff'+files.map(f=>"  if GetSHA256OfFile(ExpandConstant('{app}\\program\\') + '"+pas(f.path.replaceAll('/','\\'))+"') <> '"+f.sha256+"' then RaiseException('安装内容校验失败，禁止启动。');").join('\n')+'\n');
 const license=fs.readFileSync(path.join(compiler,'License.txt'));

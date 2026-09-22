@@ -501,14 +501,18 @@ end;
 
 procedure EnsureAbsent(Rel: String);
 begin
+  if FileExists(ExpandConstant('{app}\program\') + Rel) or DirExists(ExpandConstant('{app}\program\') + Rel) then RaiseException('目标文件在检查后出现，拒绝覆盖。');
+end;
+
+procedure BeforeUpgradeCopy(Rel: String);
+begin
 #ifdef FaultCopy
   if UpgradeMode and not FaultCopyIssued then begin
     FaultCopyIssued := True;
-    Log('KSESSION_FIXTURE_COPY_FAILURE');
+    Log('KSESSION_FIXTURE_COPY_FAILURE: ' + Rel);
     RaiseException('受控复制故障。');
   end;
 #endif
-  if FileExists(ExpandConstant('{app}\program\') + Rel) or DirExists(ExpandConstant('{app}\program\') + Rel) then RaiseException('目标文件在检查后出现，拒绝覆盖。');
 end;
 
 procedure VerifyInstalled;

@@ -46,11 +46,11 @@
 | U18 | NOT RUN；compile-time required-space fixture，旧版完整状态相等 |
 | U19 | NOT RUN；真实 `icacls` deny-write，旧版完整状态相等 |
 | U20 | NOT RUN；真实 Inno copy progress 取消，事务 rollback 后完整状态相等 |
-| U21 | NOT RUN；真实 Inno file callback copy failure，事务 rollback 后完整状态相等 |
-| U22 | NOT RUN；target manifest hash 冲突，commit 内 rollback 后完整状态相等 |
+| U21 | NOT RUN；upgrade staging 文件项实际调用 `BeforeUpgradeCopy`，真实 Inno copy 前受控异常后完整状态相等 |
+| U22 | NOT RUN；target manifest hash 冲突在事务 prepare 阶段、program 改写前拒绝，旧状态保持 |
 | U23 | NOT RUN；program swap 后 post-copy verify failure，rollback 后完整状态相等 |
-| U24 | NOT RUN；两个 `.lnk` 均纳入失败前后字节比较，成功后由 beta.2 fresh 契约校验 target/instance |
-| U25 | NOT RUN；HKCU registration 真实查询，失败前后 raw values 比较，成功后唯一 beta.2 登记 |
+| U24 | NOT RUN；成功升级后真实读取两个 `.lnk`，断言 target 为升级后 Launcher、arguments 精确绑定原 instance |
+| U25 | NOT RUN；成功升级后核验 beta.2 DisplayVersion/InstallLocation/binding/HKLM 空；HKCU 32/64 仅字段完全一致时折叠为唯一登记 |
 | U26 | NOT RUN；真实 beta.2 uninstaller 后完整 instance hash 相等 |
 | U27 | NOT RUN；fresh beta.2 显式选择保留 instance，首次启动前 hash 相等 |
 | U28 | NOT RUN；重装后原合成 Admin 登录及原附件下载 |
@@ -60,7 +60,7 @@
 ## 本地测试与首次失败
 
 - 首次 `npm test`：26 suites 中 1 FAIL，原因是本工作树未安装锁文件依赖 `write-excel-file/node`；不是产品断言失败。执行 `npm ci --omit=optional --ignore-scripts --no-audit --no-fund` 后完整重跑：`Public test files: 26; failed: 0`。本机 hosted-only suites 仍按原策略 SKIP，因此不得写成 Actions 的 742/fail0/skip0。
-- T4 lifecycle/fresh identity + T3 transaction：19 PASS / 0 FAIL / 0 SKIP。
+- T4 lifecycle/fresh identity + T3 transaction：Review 修正后 20 PASS / 0 FAIL / 0 SKIP；新增 1 项固定 U21 接线及 U24/U25 断言先后契约。
 - T1/T1A/T2 联合复跑：135 tests，134 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。workflow 已把该情况提升为硬失败，但尚未实跑。
 - installer contract：`INSTALLER CONTRACT PASS`；`R2 DATA LOCATION CONTRACT PASS`。
 - PowerShell AST：PASS；修改/新增 CJS `node --check`：PASS。
