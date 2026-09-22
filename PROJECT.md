@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 4 正式启动 / 编排阶段
+
+用户批准 Safe Upgrade / Rollback / Data Lifecycle，限 beta.1→beta.2；公开仓库已设为当前项目主要目录，Preflight 起点 2839ba62220e53d126e9fb00757cd89ff89a1b83 与 GitHub 开发分支一致且干净。首次 Git 连接重置后经 GitHub API 核实。
+采用一层独立 Execution / QA tasks，Codex managed worktree 限 E:/CodexWorkspace/CodexWorktrees，执行只 local commit，主控统一 Review/整合/开发分支 push。主控不写实质实现。
+入口 docs/tasks/windows-installer-v1.1/batch-4/ORCHESTRATION.md；L2 Intent/Spec/Plan/Acceptance 已按本次批准任务书建立。当前仅文档准备，未生成 beta.2、未执行本批测试或人工验收；不能报告 Batch4 PASS。main/v1.0.0/Release 及其他用途版本禁止操作。后续任务按依赖派发，不自动进入下一 Batch。
+
 ## 工程主控决策边界补充｜2026-09-22
 
 用户明确：网页版负责产品策划、架构分析/研究、Batch范围批准和最终验收；Codex为ENGINEERING ORCHESTRATOR，只能在已批准方案内做工程决定。产品/UX/业务/数据生命周期/安装升级行为/重大架构/主要技术栈/平台范围/Release策略或Batch扩围，必须按AGENTS.md五字段形成决策卡并停止相关实施，交回网页版决定。Execution遇到任务卡与代码冲突返回BLOCKED / NEED PARENT DECISION，不重定义需求。
