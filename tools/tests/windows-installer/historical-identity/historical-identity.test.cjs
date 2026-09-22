@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const childProcess = require('node:child_process');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const {
@@ -314,10 +315,21 @@ test('Setup launcher waits for descendants with constrained arguments and reject
   assert.doesNotMatch(script, /(?:Kill|Stop-Process|WaitForExit)/);
   assert.match(script, /\$setupExit=Invoke-SetupTreeAndWait[\s\S]*if\(\$setupExit -ne 0\)\{throw 'SETUP_FAILED'\}/);
   const processTest = path.join(root, 'tools/tests/windows-installer/historical-identity/setup-process.test.ps1');
-  const result = childProcess.spawnSync('pwsh', ['-NoProfile', '-File', processTest, '-RepositoryRoot', root], {encoding: 'utf8'});
+  const unsafeRepositoryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'repository with space 中文-'));
+  const copiedInvoke = path.join(unsafeRepositoryRoot, 'tools/windows-installer/historical-identity/invoke.ps1');
+  let result;
+  try {
+    fs.mkdirSync(path.dirname(copiedInvoke), {recursive: true});
+    fs.copyFileSync(path.join(root, 'tools/windows-installer/historical-identity/invoke.ps1'), copiedInvoke);
+    result = childProcess.spawnSync('pwsh',
+      ['-NoProfile', '-File', processTest, '-RepositoryRoot', unsafeRepositoryRoot], {encoding: 'utf8'});
+  } finally {
+    fs.rmSync(unsafeRepositoryRoot, {recursive: true, force: true});
+  }
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /SETUP PROCESS TEST PASS/);
   assert.equal(result.stderr, '');
+  assert.equal(fs.existsSync(unsafeRepositoryRoot), false, 'unsafe repository fixture must be removed');
 });
 
 test('registry diagnostics assign every sensitive operation to a fixed closed subphase', () => {

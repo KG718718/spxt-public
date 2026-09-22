@@ -51,13 +51,15 @@
 
 [Microsoft Start-Process 文档](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/start-process)明确 `-Wait` 会等待指定进程及其全部 descendants，并明确 `-ArgumentList` 数组会先拼成单个命令行字符串。最终调用因此改为 `Start-Process -Wait -PassThru -WindowStyle Hidden`；函数只接受 Setup 文件、安装根、instance、log 和私有 stdout/stderr 六条绝对路径，逐条要求规范化值不变且完全匹配无空格、引号或命令元字符的 ASCII allowlist，再内部构造固定8个 Setup 参数。没有通用命令字符串入口；stdout/stderr 只重定向到任务私有目录并随 payload 清理。无脚本级 timeout、Kill 或 `Stop-Process`，仍由 Actions job timeout 兜底。合成 Windows GUI 父进程立即启动延迟写 marker 的子进程并以7退出；测试证明函数只在子进程完成后返回、返回父 bootstrapper 的真实7、固定参数逐项保真，并拒绝含空格的路径。
 
+主控在含中文的正式主项目路径复测时发现专项47/48：测试夹具曾把 GUI helper 放在 `$PSScriptRoot` 下，因而被生产 ASCII 路径门禁正确拒绝；这不是生产缺陷。夹具现依次检查 `RUNNER_TEMP`、`TEMP`、`TMP` 与系统临时目录，只在现有、可写、规范化且匹配同一 ASCII allowlist 的根下创建唯一子目录，无法找到合格候选即明确失败，`finally` 删除全部合成产物。Node 测试另外构造带空格和中文的 `RepositoryRoot` 副本入口，证明仓库路径可以不安全而实际传给生产 helper 的所有执行路径仍安全；测试结束后删除该副本，不在仓库留下产物。生产 `Assert-SetupLaunchPath` 未改动或放宽。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：48 PASS，0 FAIL，0 SKIP；Windows GUI 父子进程合成验证等待整个进程树、固定参数保真、非0 bootstrapper 退出码和不安全路径拒绝，并静态禁止旧 `& $setup`、单进程 `WaitForExit`、有限等待及强杀路径。
+- historical-identity 专项：48 PASS，0 FAIL，0 SKIP；Windows GUI 父子进程合成验证等待整个进程树、固定参数保真、非0 bootstrapper 退出码和不安全路径拒绝；在带空格及中文的合成仓库根下同样通过，且静态禁止旧 `& $setup`、单进程 `WaitForExit`、有限等待及强杀路径。
 - 既有 T1 upgrade-detection：43 PASS，0 FAIL，0 SKIP。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。

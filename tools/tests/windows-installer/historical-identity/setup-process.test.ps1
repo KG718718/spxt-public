@@ -15,8 +15,27 @@ $functions=@($ast.FindAll({param($node)
 if($functions.Count -ne 2){throw 'SETUP_WAIT_FUNCTION_MISSING'}
 $functions | Sort-Object {$_.Extent.StartOffset} | ForEach-Object {Invoke-Expression $_.Extent.Text}
 
-$temporary=Join-Path $PSScriptRoot ('.tmp-process-'+[Guid]::NewGuid().ToString('N'))
-[IO.Directory]::CreateDirectory($temporary)|Out-Null
+$temporary=$null
+$candidates=@($env:RUNNER_TEMP,$env:TEMP,$env:TMP,[IO.Path]::GetTempPath()) |
+  Where-Object{![string]::IsNullOrWhiteSpace($_)} | Select-Object -Unique
+foreach($candidate in $candidates){
+  $attempt=$null
+  try{
+    $root=[IO.Path]::GetFullPath($candidate).TrimEnd('\')
+    if($root -cnotmatch '^[A-Za-z]:\\[A-Za-z0-9._\\-]+$' -or !(Test-Path -LiteralPath $root -PathType Container)){continue}
+    $attempt=Join-Path $root ('KSESSION-B4-T1A-PROCESS-'+[Guid]::NewGuid().ToString('N'))
+    if($attempt -cnotmatch '^[A-Za-z]:\\[A-Za-z0-9._\\-]+$'){continue}
+    [IO.Directory]::CreateDirectory($attempt)|Out-Null
+    $probe=Join-Path $attempt 'write.probe'
+    [IO.File]::WriteAllText($probe,'synthetic',[Text.UTF8Encoding]::new($false))
+    Remove-Item -LiteralPath $probe -Force
+    $temporary=$attempt
+    break
+  }catch{
+    if($attempt -and (Test-Path -LiteralPath $attempt)){Remove-Item -LiteralPath $attempt -Recurse -Force -ErrorAction SilentlyContinue}
+  }
+}
+if(!$temporary){throw 'SAFE_WRITABLE_TEMP_UNAVAILABLE'}
 try{
   $helper=Join-Path $temporary 'gui-helper.exe'
   $sourceFile=Join-Path $temporary 'gui-helper.cs'
