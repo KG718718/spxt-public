@@ -7,8 +7,8 @@ Preflight：公开仓库/正确分支/干净；本地与 GitHub API 远端均为
 
 | Task | 职责 / 独占文件 | 依赖 | Thread / Worktree / commit | 状态 |
 | --- | --- | --- | --- | --- |
-| B4-T1 | 旧安装身份及版本识别；新增 tools/windows-installer/upgrade-detection/、对应专项测试、tasks/B4-T1-RESULT.md | b96543d 文档检查点 | client-new-thread:9346dec5-2644-4601-99dc-8f37bee3a347；正式 thread ID 待建立 | 已提交创建，等待首项身份回报 |
-| B4-T2 | 只读实例预检；新增 tools/windows-installer/upgrade-preflight/、对应专项测试、tasks/B4-T2-RESULT.md | b96543d 文档检查点 | client-new-thread:f0149694-daf1-4205-bfae-e8afdaba0f14；正式 thread ID 待建立 | 已提交创建，等待首项身份回报 |
+| B4-T1 | 旧安装身份及版本识别；新增 tools/windows-installer/upgrade-detection/、对应专项测试、tasks/B4-T1-RESULT.md | b96543d 文档检查点 | worktree E:/CodexWorkspace/CodexWorktrees/a536/public-source；branch codex/b4-t1-upgrade-detection；thread ID 待回单 | 身份符合，执行中 |
+| B4-T2 | 只读实例预检；新增 tools/windows-installer/upgrade-preflight/、对应专项测试、tasks/B4-T2-RESULT.md | b96543d 文档检查点 | thread 01a0c900-5901-71f3-a961-24c634605ed4；worktree E:/CodexWorkspace/CodexWorktrees/2f94/public-source；branch codex/b4-t2-instance-preflight；commit ff21397 | 首轮专项17/17；主控复跑17/17；发现未知名称reparse漏检，已退原任务返工 |
 | B4-T3 | 事务升级及失败恢复；独占 setup.iss/build.cjs/安装元数据与必要 Launcher 适配 | T1/T2 Review | 尚未创建 | 等待依赖 |
 | B4-T4 | 真实旧版重建、升级生命周期与故障注入；独占 CI/workflow/生命周期测试 | T3 集成 | 尚未创建 | 等待依赖 |
 | B4-QA | 独立只读生产代码审查与验证 | 最终集成候选 | 尚未创建 | 必须执行，未开始 |
@@ -25,6 +25,8 @@ T1/T2 首轮不得 push；返回接口与限制后由主控审查再派 T3。实
 
 派单精确 baseline：b96543ddde2888513be2f2cc1f8e39a4831f1571，已 push 仅开发分支。指定本地任务分支 codex/b4-t1-upgrade-detection、codex/b4-t2-instance-preflight。create_thread 使用现有项目（公开版已为主要目录）、worktree、startingState=已批准开发分支，非上层仓库。
 创建后 git worktree list 已发现 E:/CodexWorkspace/CodexWorktrees/2f94/public-source 和 E:/CodexWorkspace/CodexWorktrees/a536/public-source，均在正确 E 盘根且 HEAD=b96543d；当前尚不能将两个路径准确对应任务，等待执行首项回报后填入，不猜测。此时客户端创建ID不能用于 read/wait/send 的 threadId。
+
+2026-09-22 T2 首轮 Review：提交只含 helper、专项与本任务报告，diff-check 通过；主控独立复跑专项 17/17、语法检查通过。反例审查发现 initialized instance 根下未知名称的 junction/symlink 未被全局树检查覆盖，与“实例不存在危险 reparse/symlink”不完全一致，故暂不整合，退原 T2 增加根级及深层未知路径反例并最小修复。binding 精确位置与 staged app 全依赖可信 hash 留给 T1/T3，不扩大 T2。
 
 用户报告工作树自动回收开启、限制20。不得主动触发删除；记录任务 commit 和路径，未整合结果不得清理，派单前检查现存公开 worktree。若发现路径/结果被回收，停止，不伪造恢复。
 
