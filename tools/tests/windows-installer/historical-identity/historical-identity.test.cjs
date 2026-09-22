@@ -621,7 +621,20 @@ test('host-root preflight accepts a fixed local root and rejects mapped or unsaf
   const ordinary = `C:\\KSESSION-B4-T1A-ROOT-${process.pid}-${Date.now()}`;
   assert.equal(fs.existsSync(ordinary), false);
   assert.equal(invoke(ordinary), 0, 'ordinary fixed local volume must pass');
-  assert.equal(invoke(root), 71, 'an existing candidate must fail before hosted work begins');
+  let present = null;
+  const presentStamp = Date.now();
+  for (let attempt = 0; attempt < 32; attempt += 1) {
+    const candidate = `C:\\KSESSION-B4-T1A-PRESENT-${process.pid}-${presentStamp}-${attempt}`;
+    try { fs.mkdirSync(candidate); present = candidate; break; }
+    catch (error) { if (!error || error.code !== 'EEXIST') throw error; }
+  }
+  assert.ok(present, 'a unique existing ASCII candidate is required');
+  try {
+    assert.match(present, /^C:\\KSESSION-B4-T1A-PRESENT-[0-9-]+$/,
+      'the PRESENT fixture must not depend on repository-root characters');
+    assert.equal(invoke(present), 71, 'an existing candidate must fail before hosted work begins');
+  }
+  finally { fs.rmdirSync(present); }
   assert.equal(invoke('C:\\KSESSION B4 中文'), 70, 'unsafe path text must fail closed');
   const scratch = fs.mkdtempSync(path.join(__dirname, '.tmp-host-root-'));
   let mappedDrive = null;
