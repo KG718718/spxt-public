@@ -45,6 +45,25 @@ function exactKeys(value, keys) {
     Object.keys(value).sort().join('\0') === [...keys].sort().join('\0');
 }
 
+function sameSequence(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function classifyPayloadPathConflict(actualPaths, expectedPaths) {
+  if (sameSequence(actualPaths, expectedPaths)) return null;
+  if (sameSequence([...actualPaths].sort(), [...expectedPaths].sort())) return 'INSTALLED_PAYLOAD_PATH_ORDER_CONFLICT';
+  if (sameSequence(actualPaths, expectedPaths.map(value => value.replaceAll('\\', '/')))) {
+    return 'INSTALLED_PAYLOAD_PATH_SEPARATOR_CONFLICT';
+  }
+  if (sameSequence(actualPaths.map(value => value.toLowerCase()), expectedPaths.map(value => value.toLowerCase()))) {
+    return 'INSTALLED_PAYLOAD_PATH_CASE_CONFLICT';
+  }
+  if (sameSequence(actualPaths.map(value => value.normalize('NFC')), expectedPaths.map(value => value.normalize('NFC')))) {
+    return 'INSTALLED_PAYLOAD_PATH_UNICODE_CONFLICT';
+  }
+  return 'INSTALLED_PAYLOAD_PATH_SET_CONFLICT';
+}
+
 function readRegular(file) {
   const info = fs.lstatSync(file);
   if (!info.isFile() || info.isSymbolicLink()) fail('FILE_NOT_REGULAR');
@@ -166,11 +185,14 @@ function collectInstalledPolicy(installRoot) {
   if (build.launcherSha256 !== launcherSha256) fail('INSTALLED_LAUNCHER_HASH_CONFLICT');
   if (!Array.isArray(manifest.payload)) fail('INSTALLED_PAYLOAD_SCHEMA_CONFLICT');
   if (actualPayload.length !== manifest.payload.length) fail('INSTALLED_PAYLOAD_COUNT_CONFLICT');
+  if (manifest.payload.some(expected => !exactKeys(expected, ['path', 'bytes', 'sha256']) ||
+      typeof expected.path !== 'string')) fail('INSTALLED_PAYLOAD_SCHEMA_CONFLICT');
+  const pathConflict = classifyPayloadPathConflict(
+    actualPayload.map(actual => actual.path), manifest.payload.map(expected => expected.path));
+  if (pathConflict) fail(pathConflict);
   for (let index = 0; index < actualPayload.length; index += 1) {
     const actual = actualPayload[index];
     const expected = manifest.payload[index];
-    if (!exactKeys(expected, ['path', 'bytes', 'sha256'])) fail('INSTALLED_PAYLOAD_SCHEMA_CONFLICT');
-    if (actual.path !== expected.path) fail('INSTALLED_PAYLOAD_PATH_CONFLICT');
     if (actual.bytes !== expected.bytes) fail('INSTALLED_PAYLOAD_BYTES_CONFLICT');
     if (actual.sha256 !== expected.sha256) fail('INSTALLED_PAYLOAD_HASH_CONFLICT');
   }

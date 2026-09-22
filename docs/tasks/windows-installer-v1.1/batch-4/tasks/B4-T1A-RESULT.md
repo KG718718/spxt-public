@@ -57,13 +57,17 @@
 
 本轮只把原 `ANCHORS` 汇总类别拆成固定、无观测值的 allowlist：`INVENTORY`、`RUNTIME_HASH`、`LAUNCHER_HASH`、`PAYLOAD_COUNT`、`PAYLOAD_PATH`、`PAYLOAD_BYTES`、`PAYLOAD_HASH`、`PAYLOAD_SCHEMA`。比较顺序保持 fail closed：先安全枚举实际 program，再分别核对 build-info 的 runtime/Launcher hash，最后按清单数组、长度及逐项精确字段、路径、字节数、hash 核对；任何额外字段立即归入 schema 冲突，未知异常仍归 `INSTALL_FOOTPRINT_OTHER`。CLI 继续静默，仅以固定退出码向 PowerShell 映射阶段，不输出路径、文件名、数量、hash 或异常正文，也未放宽 manifest、payload、历史身份或 Setup hash。
 
+主控整合上述分类为 `eaeb1d204fafe703b39c7e1933ac1fba511c2d57` 后，manual run 35762731985 / `historical-identity` job 106864928926 在该精确 HEAD 上返回 `HISTORICAL_IDENTITY_BLOCKED_INSTALL_FOOTPRINT_PAYLOAD_PATH`。因此已确认 program 枚举成功、runtime/Launcher 固定 hash 一致、实际与 manifest 文件数量相同；冲突发生在对应位置的路径字符串。构建期 `windows-runtime/common.cjs` 是“收集后按完整 path 全局排序”，取证/T1 的 `upgrade-detection/index.cjs` 是“各目录排序后深度优先收集”；两实现确有契约结构差异，但本地代表性路径集仍得到相同顺序，尚不能据此直接修改 T1 或接受排序后的集合。
+
+本轮继续把 `PAYLOAD_PATH` 只读诊断细分为 `PATH_ORDER`、`PATH_SEPARATOR`、`PATH_CASE`、`PATH_UNICODE`、`PATH_SET`。`PATH_ORDER` 仅用排序后的副本判断两边是否为完全相同的精确字符串多重集，仍返回失败，不将排序结果用于身份通过；其余类别只比较固定规范化后的序列以定位分隔符、大小写或 Unicode 规范化边界，均不改变原值或接受结果。数量相同但无法归入上述等价关系时固定为 `PATH_SET`，代表至少一项遗漏/新增替换或其他路径契约差异。所有类别仍不输出文件名、路径列表、数量或 hash。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：55 PASS，0 FAIL，0 SKIP；除既有 Windows GUI 父子进程、中文/空格仓库根及安全路径门禁外，新增 program inventory reparse、runtime/Launcher hash 与 payload count/path/bytes/hash/schema 各固定静默分类测试。
+- historical-identity 专项：59 PASS，0 FAIL，0 SKIP；除既有 Windows GUI 父子进程、中文/空格仓库根及安全路径门禁外，覆盖 program inventory reparse、runtime/Launcher hash、payload count、五类 path、bytes/hash/schema 的固定静默分类。
 - 既有 T1 upgrade-detection：43 PASS，0 FAIL，0 SKIP。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。
