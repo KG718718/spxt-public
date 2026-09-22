@@ -10,7 +10,7 @@ Preflight：公开仓库/正确分支/干净；本地与 GitHub API 远端均为
 | B4-T1 | 旧安装身份及版本识别；新增 tools/windows-installer/upgrade-detection/、对应专项测试、tasks/B4-T1-RESULT.md | b96543d 文档检查点 | thread 01a0c900-5811-7053-829d-49daa90e9c56；task commits 0afecb0+752ce3b；integrated 0a8e3a8+c79f114 | 主控Review PASS；43/43，封闭historical+fresh identity bundle已整合 |
 | B4-T1A | 历史Artifact真实安装后identity取证；独立workflow/脚本/专项，不改Setup核心 | 523a522 | thread 01a0c931-f11f-7d02-8d76-cf402ed42098；worktree E:/CodexWorkspace/CodexWorktrees/bfe5/public-source；task commit 4084c9c；integrated 9009154 | 主控Review PASS；run 35781214911 / job 106927326670 成功，历史profile及5个exact anchors已固化；完整双来源bundle仍待T4 fresh baseline |
 | B4-T2 | 只读实例预检；新增 tools/windows-installer/upgrade-preflight/、对应专项测试、tasks/B4-T2-RESULT.md | b96543d 文档检查点 | thread 01a0c900-5901-71f3-a961-24c634605ed4；worktree E:/CodexWorkspace/CodexWorktrees/2f94/public-source；task commits ff21397+8ec1c33；integrated 0e4e4b4+9d59809 | 主控 Review PASS；专项19 PASS/1权限SKIP，已整合；CI待补file symlink实测 |
-| B4-T3 | 事务升级及失败恢复；独占 setup.iss/build.cjs/安装元数据与必要 Launcher 适配 | T1/T2 Review | 尚未创建 | 等待依赖 |
+| B4-T3 | 事务升级及失败恢复；独占 setup.iss/build.cjs/安装元数据与必要 Launcher 适配 | T1/T1A/T2 Review PASS；baseline 3de4b76 | client-new-thread:a3ff3b4d-d9dc-4b37-86dc-26dedc71d1fe；正式thread/worktree/branch待首项回报 | 已提交创建，等待身份硬门禁回报 |
 | B4-T4 | 真实旧版重建、升级生命周期与故障注入；独占 CI/workflow/生命周期测试 | T3 集成 | 尚未创建 | 等待依赖 |
 | B4-QA | 独立只读生产代码审查与验证 | 最终集成候选 | 尚未创建 | 必须执行，未开始 |
 
