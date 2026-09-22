@@ -256,7 +256,7 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
   const script = fs.readFileSync(path.join(root, 'tools/windows-installer/historical-identity/invoke.ps1'), 'utf8');
   const allowlistBlock = script.match(/\$taskAllowedPhases=@\(([\s\S]*?)\)\s*\$taskPhase=/);
   assert.ok(allowlistBlock, 'phase allowlist missing');
-  const allowed = [...allowlistBlock[1].matchAll(/'([A-Z_]+)'/g)].map(match => match[1]);
+  const allowed = [...allowlistBlock[1].matchAll(/'([A-Z0-9_]+)'/g)].map(match => match[1]);
   assert.deepEqual(allowed, ['HOSTED_PREFLIGHT', 'API_METADATA', 'ARTIFACT_DOWNLOAD', 'ARCHIVE_HASH', 'EXTRACT',
     'SETUP_IDENTITY', 'INSTALL', 'INSTALL_FOOTPRINT_MANIFEST', 'INSTALL_FOOTPRINT_BUILD_INFO',
     'INSTALL_FOOTPRINT_BINDING', 'INSTALL_FOOTPRINT_RUNTIME', 'INSTALL_FOOTPRINT_LAUNCHER',
@@ -271,9 +271,14 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
     'REGISTRY_NORMALIZE_INPUT', 'REGISTRY_NORMALIZE_MISSING_REGISTRATION',
     'REGISTRY_NORMALIZE_MISSING_BINDING', 'REGISTRY_NORMALIZE_MISSING_BOTH', 'REGISTRY_NORMALIZE_CONFLICT',
     'REGISTRY_NORMALIZE_USAGE', 'REGISTRY_NORMALIZE_OUTPUT', 'REGISTRY_NORMALIZE_OTHER', 'REGISTRY_RESULT_READ',
-    'REGISTRY_UNIQUENESS', 'COLLECT', 'UNINSTALL', 'CLEANUP', 'FINALIZE']);
+    'REGISTRY_UNIQUENESS', 'T1_PATH_REPARSE_INSTALL_ROOT_SELF', 'T1_PATH_REPARSE_INSTALL_ROOT_ANCESTOR',
+    'T1_PATH_REPARSE_INSTANCE_SELF', 'T1_PATH_REPARSE_INSTANCE_ANCESTOR', 'T1_PATH_REPARSE_UNINSTALL_SELF',
+    'T1_PATH_REPARSE_UNINSTALL_ANCESTOR', 'T1_PATH_REPARSE_PLATFORM_VOLUME',
+    'T1_PATH_REPARSE_INSTALL_ROOT_REALPATH', 'T1_PATH_REPARSE_INSTANCE_REALPATH',
+    'T1_PATH_REPARSE_UNINSTALL_REALPATH', 'T1_PATH_REPARSE_INSPECTION', 'T1_PATH_REPARSE_USAGE',
+    'T1_PATH_REPARSE_OTHER', 'COLLECT', 'UNINSTALL', 'CLEANUP', 'FINALIZE']);
   assert.equal(new Set(allowed).size, allowed.length, 'phase allowlist contains duplicates');
-  const assigned = [...script.matchAll(/Set-TaskPhase '([A-Z_]+)'/g)].map(match => match[1]);
+  const assigned = [...script.matchAll(/Set-TaskPhase '([A-Z0-9_]+)'/g)].map(match => match[1]);
   assert.deepEqual([...new Set(assigned)].sort(), [...allowed].sort(), 'every and only allowlisted phases must be assigned');
   const catchBlock = script.match(/} catch \{([\s\S]*?)\n} finally \{/);
   assert.ok(catchBlock, 'closed catch block missing');
@@ -282,7 +287,7 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
   assert.doesNotMatch(catchBlock[1], /\$_|Exception|\.Message|https?:|taskWork|taskToken|RepositoryRoot|OutputFile|registry/i);
   for (const phase of allowed) {
     const output = `HISTORICAL_IDENTITY_BLOCKED_${phase}`;
-    assert.match(output, /^HISTORICAL_IDENTITY_BLOCKED_[A-Z_]+$/);
+    assert.match(output, /^HISTORICAL_IDENTITY_BLOCKED_[A-Z0-9_]+$/);
     assert.doesNotMatch(output, /[A-Za-z]:[\\/]|Users|token|password|cookie|authorization|https?:|\\Software\\/i);
   }
 });
@@ -534,4 +539,67 @@ test('install-log CLI checks only fixed marker presence and emits no log content
       log('no-postinstall.log', 'KSESSION_PREINSTALL_READY\n')]), 43));
     await t.test('usage', () => assert.equal(invoke([]), 44));
   } finally { fs.rmSync(temporary, {recursive: true, force: true}); }
+});
+
+test('path-safety CLI classifies only path role and reparse boundary without output', async t => {
+  const root = path.resolve(__dirname, '../../../..');
+  const cli = path.resolve(__dirname, '../../../windows-installer/historical-identity/cli.cjs');
+  const script = fs.readFileSync(path.join(root, 'tools/windows-installer/historical-identity/invoke.ps1'), 'utf8');
+  const scratch = fs.mkdtempSync(path.join(__dirname, '.tmp-path-safety-'));
+  function invoke(installRoot, instance) {
+    const result = childProcess.spawnSync(process.execPath,
+      [cli, 'path-safety', '--install-root', installRoot, '--instance', instance], {encoding: 'utf8'});
+    assert.equal(result.signal, null); assert.equal(result.stdout, ''); assert.equal(result.stderr, '');
+    return result.status;
+  }
+  function directories(name) {
+    const base = path.join(scratch, name); const installRoot = path.join(base, 'installed');
+    const instance = path.join(base, 'instance');
+    fs.mkdirSync(path.join(installRoot, 'uninstall'), {recursive: true}); fs.mkdirSync(instance, {recursive: true});
+    return {base, installRoot, instance};
+  }
+  try {
+    await t.test('ordinary directories pass', () => {
+      const f = directories('ordinary'); assert.equal(invoke(f.installRoot, f.instance), 0);
+    });
+    await t.test('install root self reparse', () => {
+      const f = directories('root-self'); const link = path.join(f.base, 'installed-link');
+      fs.symlinkSync(f.installRoot, link, 'junction'); assert.equal(invoke(link, f.instance), 50);
+    });
+    await t.test('install root ancestor reparse', () => {
+      const target = directories('root-ancestor-target'); const base = path.join(scratch, 'root-ancestor');
+      fs.mkdirSync(base); const link = path.join(base, 'parent-link'); fs.symlinkSync(target.base, link, 'junction');
+      assert.equal(invoke(path.join(link, 'installed'), path.join(link, 'instance')), 51);
+    });
+    await t.test('instance self reparse', () => {
+      const f = directories('instance-self'); const link = path.join(f.base, 'instance-link');
+      fs.symlinkSync(f.instance, link, 'junction'); assert.equal(invoke(f.installRoot, link), 52);
+    });
+    await t.test('instance ancestor reparse', () => {
+      const f = directories('instance-ancestor-root'); const target = path.join(scratch, 'instance-ancestor-target');
+      fs.mkdirSync(path.join(target, 'instance'), {recursive: true});
+      const link = path.join(scratch, 'instance-parent-link'); fs.symlinkSync(target, link, 'junction');
+      assert.equal(invoke(f.installRoot, path.join(link, 'instance')), 53);
+    });
+    await t.test('uninstall self reparse', () => {
+      const f = directories('uninstall-self'); const target = path.join(f.base, 'uninstall-target');
+      fs.mkdirSync(target); fs.rmSync(path.join(f.installRoot, 'uninstall'), {recursive: true});
+      fs.symlinkSync(target, path.join(f.installRoot, 'uninstall'), 'junction');
+      assert.equal(invoke(f.installRoot, f.instance), 54);
+    });
+    await t.test('usage', () => {
+      const result = childProcess.spawnSync(process.execPath, [cli, 'path-safety'], {encoding: 'utf8'});
+      assert.equal(result.status, 61); assert.equal(result.stdout, ''); assert.equal(result.stderr, '');
+    });
+    const exitMap = [...script.matchAll(/(5[0-9]|6[01]) \{Set-TaskPhase '(T1_PATH_REPARSE_[A-Z_]+)'\}/g)]
+      .map(match => [Number(match[1]), match[2]]);
+    assert.deepEqual(exitMap, [[50, 'T1_PATH_REPARSE_INSTALL_ROOT_SELF'], [51, 'T1_PATH_REPARSE_INSTALL_ROOT_ANCESTOR'],
+      [52, 'T1_PATH_REPARSE_INSTANCE_SELF'], [53, 'T1_PATH_REPARSE_INSTANCE_ANCESTOR'],
+      [54, 'T1_PATH_REPARSE_UNINSTALL_SELF'], [55, 'T1_PATH_REPARSE_UNINSTALL_ANCESTOR'],
+      [56, 'T1_PATH_REPARSE_PLATFORM_VOLUME'], [57, 'T1_PATH_REPARSE_INSTALL_ROOT_REALPATH'],
+      [58, 'T1_PATH_REPARSE_INSTANCE_REALPATH'], [59, 'T1_PATH_REPARSE_UNINSTALL_REALPATH'],
+      [60, 'T1_PATH_REPARSE_INSPECTION'], [61, 'T1_PATH_REPARSE_USAGE']]);
+    assert.match(script, /default \{Set-TaskPhase 'T1_PATH_REPARSE_OTHER'\}/);
+    assert.match(script, /Set-TaskPhase 'T1_PATH_REPARSE_OTHER'[\s\S]*Invoke-PathSafetyCheck[\s\S]*Set-TaskPhase 'COLLECT'/);
+  } finally { fs.rmSync(scratch, {recursive: true, force: true}); }
 });

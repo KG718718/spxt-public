@@ -65,13 +65,17 @@
 
 修复只在 `upgrade-detection` 的实际 program inventory 完成安全递归枚举后，使用与 beta.1 构建期 `common.cjs` 完全相同的 `a.path.localeCompare(b.path, 'en')` 对完整相对路径做一次全局排序。manifest 不排序、不规范化，`verifyProgram` 仍按原顺序逐项精确比较 path/bytes/hash；因此未知或重排后的 manifest 仍拒绝。回归样本使用目录 `a/a` 与同前缀根文件 `a-`，可稳定证明旧 DFS 会先返回目录内容、而构建期全局排序先返回根文件；另将相同精确集合反向重排并重新固定 manifest/policy，仍必须返回 `PROGRAM_TAMPERED`。未修改历史 manifest、固定 hash、identity policy、Schema 或产品行为。
 
+主控整合排序修复为 `400822f1f4826abd43cf7adc17a2de47247d038f` 后，manual run 35766795264 / `historical-identity` job 106878964446 在精确 HEAD 上已越过 payload/anchors，随后固定输出 `HISTORICAL_IDENTITY_BLOCKED_COLLECT` 与 CLI 的 `HISTORICAL_IDENTITY_T1_PATH_REPARSE`。这证明排序修复对真实 beta.1 生效，但现有 T1 稳定码无法区分 install root、instance、uninstall、各自祖先或 hosted 工作盘映射。
+
+本轮在 historical 私有诊断层新增严格只读 `path-safety` 预检，沿用 T1 的 `lstat` 祖先遍历和 native realpath 等价判断，不删除、不跳过或接受任何重解析点。固定类别按 install root / instance / uninstall 分别区分对象自身、祖先和 realpath 不一致，并单列 `PLATFORM_VOLUME`、`INSPECTION`、`USAGE`、`OTHER`；卷类别仅在盘符根的 native realpath 自身已发生映射时返回，不输出盘符、路径、用户名、目标或错误正文。该预检在真实 `collect` 前运行，非零分类直接阻断；未知情况仍由原 T1 `PATH_REPARSE` fail closed。合成测试覆盖普通目录、三类对象自身、install root/instance 祖先 junction、usage 及完整固定映射。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：59 PASS，0 FAIL，0 SKIP；除既有 Windows GUI 父子进程、中文/空格仓库根及安全路径门禁外，覆盖 program inventory reparse、runtime/Launcher hash、payload count、五类 path、bytes/hash/schema 的固定静默分类。
+- historical-identity 专项：67 PASS，0 FAIL，0 SKIP；除既有安装、registry、payload 静默分类外，新增 T1 路径角色/祖先/卷映射只读诊断测试。
 - T1 upgrade-detection：45 PASS，0 FAIL，0 SKIP；新增构建期全局路径排序契约及“同集合重排 manifest 仍拒绝”回归。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。

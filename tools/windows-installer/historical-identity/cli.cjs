@@ -4,6 +4,7 @@
 const fs = require('node:fs');
 const {
   HistoricalIdentityError,
+  classifyInstalledPathSafety,
   createDraft,
   finalizeEvidence,
   locateUniqueSetup,
@@ -35,6 +36,10 @@ const FOOTPRINT_EXIT = Object.freeze({MANIFEST: 30, BUILD_INFO: 31, BINDING: 32,
   PAYLOAD_BYTES: 44, PAYLOAD_HASH: 45, PAYLOAD_SCHEMA: 46, USAGE: 47, OTHER: 48});
 const INSTALL_LOG_EXIT = Object.freeze({INPUT: 40, FAILURE: 41, NO_PREINSTALL: 42, NO_POSTINSTALL: 43,
   USAGE: 44, OTHER: 45});
+const PATH_SAFETY_EXIT = Object.freeze({INSTALL_ROOT_SELF: 50, INSTALL_ROOT_ANCESTOR: 51,
+  INSTANCE_SELF: 52, INSTANCE_ANCESTOR: 53, UNINSTALL_SELF: 54, UNINSTALL_ANCESTOR: 55,
+  PLATFORM_VOLUME: 56, INSTALL_ROOT_REALPATH: 57, INSTANCE_REALPATH: 58, UNINSTALL_REALPATH: 59,
+  INSPECTION: 60, USAGE: 61, OTHER: 62});
 function normalizeSnapshotCommand() {
   const args = exactArgs(['--input', '--output']);
   if (!args) return NORMALIZE_EXIT.USAGE;
@@ -109,6 +114,15 @@ function installLogCommand() {
   return 0;
 }
 
+function pathSafetyCommand() {
+  const args = exactArgs(['--install-root', '--instance']);
+  if (!args) return PATH_SAFETY_EXIT.USAGE;
+  try {
+    const category = classifyInstalledPathSafety(args['--install-root'], args['--instance']);
+    return category === null ? 0 : (PATH_SAFETY_EXIT[category] ?? PATH_SAFETY_EXIT.OTHER);
+  } catch { return PATH_SAFETY_EXIT.OTHER; }
+}
+
 const command = process.argv[2];
 if (command === 'normalize-snapshot') {
   try { process.exitCode = normalizeSnapshotCommand(); } catch { process.exitCode = NORMALIZE_EXIT.OTHER; }
@@ -120,6 +134,10 @@ if (command === 'installed-footprint') {
 }
 if (command === 'install-log') {
   try { process.exitCode = installLogCommand(); } catch { process.exitCode = INSTALL_LOG_EXIT.OTHER; }
+  return;
+}
+if (command === 'path-safety') {
+  try { process.exitCode = pathSafetyCommand(); } catch { process.exitCode = PATH_SAFETY_EXIT.OTHER; }
   return;
 }
 

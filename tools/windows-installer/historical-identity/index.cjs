@@ -64,6 +64,52 @@ function classifyPayloadPathConflict(actualPaths, expectedPaths) {
   return 'INSTALLED_PAYLOAD_PATH_SET_CONFLICT';
 }
 
+function inspectPathChain(target) {
+  const resolved = path.resolve(target);
+  const volumeRoot = path.parse(resolved).root;
+  let current = resolved;
+  let self = true;
+  for (;;) {
+    let info;
+    try { info = fs.lstatSync(current); }
+    catch (error) {
+      if (error.code !== 'ENOENT') return 'INSPECTION';
+      info = null;
+    }
+    if (info?.isSymbolicLink()) {
+      if (current.toLowerCase() === volumeRoot.toLowerCase()) return 'PLATFORM_VOLUME';
+      return self ? 'SELF' : 'ANCESTOR';
+    }
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+    self = false;
+  }
+  if (!fs.existsSync(resolved)) return null;
+  let realPath;
+  try { realPath = path.resolve(fs.realpathSync.native(resolved)); }
+  catch { return 'INSPECTION'; }
+  if (realPath.toLowerCase() === resolved.toLowerCase()) return null;
+  try {
+    const realVolume = path.resolve(fs.realpathSync.native(volumeRoot));
+    if (realVolume.toLowerCase() !== path.resolve(volumeRoot).toLowerCase()) return 'PLATFORM_VOLUME';
+  } catch { return 'INSPECTION'; }
+  return 'REALPATH';
+}
+
+function classifyInstalledPathSafety(installRoot, instance) {
+  for (const [role, target] of [
+    ['INSTALL_ROOT', installRoot],
+    ['INSTANCE', instance],
+    ['UNINSTALL', path.join(installRoot, 'uninstall')]
+  ]) {
+    const result = inspectPathChain(target);
+    if (result === 'PLATFORM_VOLUME' || result === 'INSPECTION') return result;
+    if (result) return `${role}_${result}`;
+  }
+  return null;
+}
+
 function readRegular(file) {
   const info = fs.lstatSync(file);
   if (!info.isFile() || info.isSymbolicLink()) fail('FILE_NOT_REGULAR');
@@ -358,6 +404,6 @@ function assertNoSensitiveOutput(value) {
 module.exports = {
   ARTIFACT_DIGEST, ARTIFACT_ID, ARTIFACT_NAME, ARTIFACT_URL, PROFILE_ID, REPOSITORY, RUN_ID,
   SETUP_NAME, SETUP_SHA256, SOURCE_COMMIT, HistoricalIdentityError, assertNoSensitiveOutput,
-  collectInstalledPolicy, createDraft, finalizeEvidence, locateUniqueSetup, normalizeSharedHkcuSnapshot,
+  classifyInstalledPathSafety, collectInstalledPolicy, createDraft, finalizeEvidence, locateUniqueSetup, normalizeSharedHkcuSnapshot,
   validateApiMetadata, validateEvidence, validateInstallLogMarkers, validateInstalledFootprint
 };

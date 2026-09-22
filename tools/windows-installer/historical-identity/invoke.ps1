@@ -53,6 +53,19 @@ $taskAllowedPhases=@(
   'REGISTRY_NORMALIZE_OTHER',
   'REGISTRY_RESULT_READ',
   'REGISTRY_UNIQUENESS',
+  'T1_PATH_REPARSE_INSTALL_ROOT_SELF',
+  'T1_PATH_REPARSE_INSTALL_ROOT_ANCESTOR',
+  'T1_PATH_REPARSE_INSTANCE_SELF',
+  'T1_PATH_REPARSE_INSTANCE_ANCESTOR',
+  'T1_PATH_REPARSE_UNINSTALL_SELF',
+  'T1_PATH_REPARSE_UNINSTALL_ANCESTOR',
+  'T1_PATH_REPARSE_PLATFORM_VOLUME',
+  'T1_PATH_REPARSE_INSTALL_ROOT_REALPATH',
+  'T1_PATH_REPARSE_INSTANCE_REALPATH',
+  'T1_PATH_REPARSE_UNINSTALL_REALPATH',
+  'T1_PATH_REPARSE_INSPECTION',
+  'T1_PATH_REPARSE_USAGE',
+  'T1_PATH_REPARSE_OTHER',
   'COLLECT',
   'UNINSTALL',
   'CLEANUP',
@@ -234,6 +247,27 @@ function Invoke-InstallLogCheck {
   }
   throw 'INSTALL_LOG_GATE'
 }
+function Invoke-PathSafetyCheck {
+  & $taskNode $taskCli 'path-safety' '--install-root' $taskInstall '--instance' $taskInstance
+  $pathExit=$LASTEXITCODE
+  if($pathExit -eq 0){return}
+  switch($pathExit){
+    50 {Set-TaskPhase 'T1_PATH_REPARSE_INSTALL_ROOT_SELF'}
+    51 {Set-TaskPhase 'T1_PATH_REPARSE_INSTALL_ROOT_ANCESTOR'}
+    52 {Set-TaskPhase 'T1_PATH_REPARSE_INSTANCE_SELF'}
+    53 {Set-TaskPhase 'T1_PATH_REPARSE_INSTANCE_ANCESTOR'}
+    54 {Set-TaskPhase 'T1_PATH_REPARSE_UNINSTALL_SELF'}
+    55 {Set-TaskPhase 'T1_PATH_REPARSE_UNINSTALL_ANCESTOR'}
+    56 {Set-TaskPhase 'T1_PATH_REPARSE_PLATFORM_VOLUME'}
+    57 {Set-TaskPhase 'T1_PATH_REPARSE_INSTALL_ROOT_REALPATH'}
+    58 {Set-TaskPhase 'T1_PATH_REPARSE_INSTANCE_REALPATH'}
+    59 {Set-TaskPhase 'T1_PATH_REPARSE_UNINSTALL_REALPATH'}
+    60 {Set-TaskPhase 'T1_PATH_REPARSE_INSPECTION'}
+    61 {Set-TaskPhase 'T1_PATH_REPARSE_USAGE'}
+    default {Set-TaskPhase 'T1_PATH_REPARSE_OTHER'}
+  }
+  throw 'PATH_SAFETY_GATE'
+}
 
 try{
   Set-TaskPhase 'HOSTED_PREFLIGHT'
@@ -295,6 +329,8 @@ try{
   Set-TaskPhase 'REGISTRY_UNIQUENESS'
   if($snapshot.registrations.Count -ne 1 -or $snapshot.bindings.Count -ne 1 -or $snapshot.registrations[0].view -ne $snapshot.bindings[0].view){throw 'REGISTRY_NOT_UNIQUE'}
 
+  Set-TaskPhase 'T1_PATH_REPARSE_OTHER'
+  Invoke-PathSafetyCheck
   Set-TaskPhase 'COLLECT'
   Invoke-Node @('collect','--metadata',$taskMetadata,'--snapshot',$taskSnapshot,'--install-root',$taskInstall,'--output',$taskDraft)
 
