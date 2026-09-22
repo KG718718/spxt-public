@@ -213,7 +213,7 @@ function inventory(root) {
     }
   }
   walk(root);
-  return files;
+  return files.sort((a, b) => a.path.localeCompare(b.path, 'en'));
 }
 
 function verifyProgram(root, manifest) {

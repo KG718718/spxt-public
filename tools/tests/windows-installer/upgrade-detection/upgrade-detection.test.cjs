@@ -9,6 +9,7 @@ const test = require('node:test');
 const helperDir = path.resolve(__dirname, '../../../windows-installer/upgrade-detection');
 const {BINDING_KEY, Rejection, UNINSTALL_KEY, inventory, sha, validate,
   validateApprovedIdentity, validateBundle} = require(path.join(helperDir, 'index.cjs'));
+const {inventory: buildInventory} = require('../../../windows-runtime/common.cjs');
 const COMMIT = 'e9417f036d0cdf736ff84682556a994040f0de0b';
 const TREE = '5da66cb9b73dfa307948634634bfab2cfaaead12';
 
@@ -81,6 +82,23 @@ function expectBundleCode(snapshot, bundle, code) {
   assert.throws(() => validateApprovedIdentity(snapshot, bundle), error => error instanceof Rejection && error.code === code);
 }
 
+test('inventory matches beta.1 build ordering by globally sorting complete relative paths', () => {
+  const scratch = path.join(__dirname, '.tmp');
+  fs.mkdirSync(scratch, {recursive: true});
+  const temporary = fs.mkdtempSync(path.join(scratch, 'inventory-order-'));
+  try {
+    fs.mkdirSync(path.join(temporary, 'a'));
+    fs.writeFileSync(path.join(temporary, 'a', 'a'), 'nested');
+    fs.writeFileSync(path.join(temporary, 'a-'), 'root');
+    const betaBuildOrder = buildInventory(temporary).map(item => item.path);
+    assert.deepEqual(betaBuildOrder, ['a-', 'a/a']);
+    assert.deepEqual(inventory(temporary).map(item => item.path), betaBuildOrder);
+  } finally {
+    fs.rmSync(temporary, {recursive: true, force: true});
+    try { fs.rmdirSync(scratch); } catch {}
+  }
+});
+
 test('U01/U07 accepts only exact anchored beta.1 and maps its missing data contract to DC1', () => {
   const f = fixture();
   try {
@@ -128,6 +146,16 @@ test('U17 rejects payload tampering and a rewritten self-consistent old manifest
       manifest.payload[0].path = '../escape'; manifest.payloadInventorySha256 = sha(Buffer.from(JSON.stringify(manifest.payload)));
       writeJSON(file, manifest); f.policy.programManifestSha256 = sha(fs.readFileSync(file)); f.policy.programInventorySha256 = manifest.payloadInventorySha256;
       expectCode(f, 'MANIFEST_INVALID');
+    } finally { cleanup(f); }
+  });
+  await t.test('reordered manifest entries remain rejected even when the same exact set is repinned', () => {
+    const f = fixture();
+    try {
+      const file = path.join(f.uninstall, 'installer-manifest.json'); const manifest = JSON.parse(fs.readFileSync(file));
+      manifest.payload.reverse(); manifest.payloadInventorySha256 = sha(Buffer.from(JSON.stringify(manifest.payload)));
+      writeJSON(file, manifest); f.policy.programManifestSha256 = sha(fs.readFileSync(file));
+      f.policy.programInventorySha256 = manifest.payloadInventorySha256;
+      expectCode(f, 'PROGRAM_TAMPERED');
     } finally { cleanup(f); }
   });
 });

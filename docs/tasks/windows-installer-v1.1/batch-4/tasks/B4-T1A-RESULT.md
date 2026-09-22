@@ -61,6 +61,10 @@
 
 本轮继续把 `PAYLOAD_PATH` 只读诊断细分为 `PATH_ORDER`、`PATH_SEPARATOR`、`PATH_CASE`、`PATH_UNICODE`、`PATH_SET`。`PATH_ORDER` 仅用排序后的副本判断两边是否为完全相同的精确字符串多重集，仍返回失败，不将排序结果用于身份通过；其余类别只比较固定规范化后的序列以定位分隔符、大小写或 Unicode 规范化边界，均不改变原值或接受结果。数量相同但无法归入上述等价关系时固定为 `PATH_SET`，代表至少一项遗漏/新增替换或其他路径契约差异。所有类别仍不输出文件名、路径列表、数量或 hash。
 
+主控整合该细分诊断为 `d2db1ffa944b6da0bb7a92d59f544fe32dce8a1d` 后，manual run 35764961697 / `historical-identity` job 106872262499 在精确 HEAD 上返回 `HISTORICAL_IDENTITY_BLOCKED_INSTALL_FOOTPRINT_PAYLOAD_PATH_ORDER`。该固定阶段的已验证语义是：actual 与 manifest 的路径数量和精确字符串多重集完全一致，仅序列不同；分隔符、大小写、Unicode 规范化、遗漏/新增以及 bytes/hash 尚未成为失败原因。至此已有证据确认 beta.1 构建期全局排序与 T1 深度优先收集的顺序契约不一致，主控明确扩展本任务范围，授权修复 T1 inventory 排序工程实现。
+
+修复只在 `upgrade-detection` 的实际 program inventory 完成安全递归枚举后，使用与 beta.1 构建期 `common.cjs` 完全相同的 `a.path.localeCompare(b.path, 'en')` 对完整相对路径做一次全局排序。manifest 不排序、不规范化，`verifyProgram` 仍按原顺序逐项精确比较 path/bytes/hash；因此未知或重排后的 manifest 仍拒绝。回归样本使用目录 `a/a` 与同前缀根文件 `a-`，可稳定证明旧 DFS 会先返回目录内容、而构建期全局排序先返回根文件；另将相同精确集合反向重排并重新固定 manifest/policy，仍必须返回 `PROGRAM_TAMPERED`。未修改历史 manifest、固定 hash、identity policy、Schema 或产品行为。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
@@ -68,7 +72,7 @@
 最终本地结果：
 
 - historical-identity 专项：59 PASS，0 FAIL，0 SKIP；除既有 Windows GUI 父子进程、中文/空格仓库根及安全路径门禁外，覆盖 program inventory reparse、runtime/Launcher hash、payload count、五类 path、bytes/hash/schema 的固定静默分类。
-- 既有 T1 upgrade-detection：43 PASS，0 FAIL，0 SKIP。
+- T1 upgrade-detection：45 PASS，0 FAIL，0 SKIP；新增构建期全局路径排序契约及“同集合重排 manifest 仍拒绝”回归。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。
 - Node 三文件语法检查、PowerShell AST parse、workflow 静态权限/上传范围检查及 `git diff --check`：PASS。
