@@ -223,7 +223,9 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
   assert.ok(allowlistBlock, 'phase allowlist missing');
   const allowed = [...allowlistBlock[1].matchAll(/'([A-Z_]+)'/g)].map(match => match[1]);
   assert.deepEqual(allowed, ['HOSTED_PREFLIGHT', 'API_METADATA', 'ARTIFACT_DOWNLOAD', 'ARCHIVE_HASH', 'EXTRACT',
-    'SETUP_IDENTITY', 'INSTALL', 'REGISTRY', 'COLLECT', 'UNINSTALL', 'CLEANUP', 'FINALIZE']);
+    'SETUP_IDENTITY', 'INSTALL', 'REGISTRY_HKLM', 'REGISTRY_HKCU_READ', 'REGISTRY_SNAPSHOT_WRITE',
+    'REGISTRY_NORMALIZE', 'REGISTRY_RESULT_READ', 'REGISTRY_UNIQUENESS', 'COLLECT', 'UNINSTALL', 'CLEANUP',
+    'FINALIZE']);
   assert.equal(new Set(allowed).size, allowed.length, 'phase allowlist contains duplicates');
   const assigned = [...script.matchAll(/Set-TaskPhase '([A-Z_]+)'/g)].map(match => match[1]);
   assert.deepEqual([...new Set(assigned)], allowed, 'every and only allowlisted phases must be assigned');
@@ -236,5 +238,29 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
     const output = `HISTORICAL_IDENTITY_BLOCKED_${phase}`;
     assert.match(output, /^HISTORICAL_IDENTITY_BLOCKED_[A-Z_]+$/);
     assert.doesNotMatch(output, /[A-Za-z]:[\\/]|Users|token|password|cookie|authorization|https?:|\\Software\\/i);
+  }
+});
+
+test('registry diagnostics assign every sensitive operation to a fixed closed subphase', () => {
+  const root = path.resolve(__dirname, '../../../..');
+  const script = fs.readFileSync(path.join(root, 'tools/windows-installer/historical-identity/invoke.ps1'), 'utf8');
+  const registry = script.match(/Set-TaskPhase 'REGISTRY_HKLM'([\s\S]*?)Set-TaskPhase 'COLLECT'/);
+  assert.ok(registry, 'registry diagnostic block missing');
+  const expected = [
+    ['REGISTRY_HKLM', 'Count-MachineSubkey'],
+    ['REGISTRY_HKCU_READ', 'Read-Snapshot'],
+    ['REGISTRY_SNAPSHOT_WRITE', 'Write-PrivateJson $taskRawSnapshot'],
+    ['REGISTRY_NORMALIZE', "Invoke-Node @('normalize-snapshot'"],
+    ['REGISTRY_RESULT_READ', 'Get-Content -LiteralPath $taskSnapshot'],
+    ['REGISTRY_UNIQUENESS', '$snapshot.registrations.Count']
+  ];
+  for (let index = 0; index < expected.length; index += 1) {
+    const [phase, operation] = expected[index];
+    const start = registry[0].indexOf(`Set-TaskPhase '${phase}'`);
+    const end = index + 1 < expected.length
+      ? registry[0].indexOf(`Set-TaskPhase '${expected[index + 1][0]}'`)
+      : registry[0].indexOf("Set-TaskPhase 'COLLECT'");
+    assert.ok(start >= 0 && end > start, `${phase} boundary missing`);
+    assert.match(registry[0].slice(start, end), new RegExp(operation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
 });

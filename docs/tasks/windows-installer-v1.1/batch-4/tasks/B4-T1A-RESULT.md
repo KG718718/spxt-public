@@ -31,13 +31,15 @@
 
 最小修复只将 32/64 两份字段逐项完全相同的 HKCU observation 识别为一个共享别名，并固定选择安装器名义上的64位 view；任一字段不同、缺失、额外记录、registration/binding view不一致，或 HKLM 32/64 任一视图出现同名登记，仍 fail closed。原始与规范化 snapshot 都只在 runner 私有临时目录存在并于清理阶段删除，不输出或上传路径及 registry 值。
 
+主控整合上述修复为 `3c303dce64366ba55012d553e31e2d65ff14e760` 后触发 manual run 35744708122 / `historical-identity` job 106803581714；静态与合成门禁继续通过，真实步骤仍返回 `HISTORICAL_IDENTITY_BLOCKED_REGISTRY`。该结果不能证明是哪一个 registry 操作失败。本轮继续将这一阶段封闭细分为 `REGISTRY_HKLM`、`REGISTRY_HKCU_READ`、`REGISTRY_SNAPSHOT_WRITE`、`REGISTRY_NORMALIZE`、`REGISTRY_RESULT_READ`、`REGISTRY_UNIQUENESS`；catch 仍只输出固定 allowlist 中的阶段名，不输出异常正文或观测值。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：17 PASS，0 FAIL，0 SKIP；新增共享 HKCU 完全同值折叠、差异 view 拒绝、缺失拒绝，并保留原始多 view snapshot 的严格拒绝测试。
+- historical-identity 专项：18 PASS，0 FAIL，0 SKIP；新增 registry 子阶段边界测试，并逐项合成验证所有诊断输出都属于固定 allowlist 且不含路径、用户信息、URL、registry 值或凭据标记。
 - 既有 T1 upgrade-detection：43 PASS，0 FAIL，0 SKIP。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。

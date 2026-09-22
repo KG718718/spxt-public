@@ -15,7 +15,12 @@ $taskAllowedPhases=@(
   'EXTRACT',
   'SETUP_IDENTITY',
   'INSTALL',
-  'REGISTRY',
+  'REGISTRY_HKLM',
+  'REGISTRY_HKCU_READ',
+  'REGISTRY_SNAPSHOT_WRITE',
+  'REGISTRY_NORMALIZE',
+  'REGISTRY_RESULT_READ',
+  'REGISTRY_UNIQUENESS',
   'COLLECT',
   'UNINSTALL',
   'CLEANUP',
@@ -159,12 +164,17 @@ try{
   if($LASTEXITCODE -ne 0){throw 'SETUP_FAILED'}
   $taskInstalled=$true
 
-  Set-TaskPhase 'REGISTRY'
+  Set-TaskPhase 'REGISTRY_HKLM'
   if((Count-MachineSubkey $taskProductSubkey) -ne 0 -or (Count-MachineSubkey $taskBindingSubkey) -ne 0){throw 'REGISTRY_SCOPE_CONFLICT'}
+  Set-TaskPhase 'REGISTRY_HKCU_READ'
   $snapshot=Read-Snapshot
+  Set-TaskPhase 'REGISTRY_SNAPSHOT_WRITE'
   Write-PrivateJson $taskRawSnapshot $snapshot
+  Set-TaskPhase 'REGISTRY_NORMALIZE'
   Invoke-Node @('normalize-snapshot','--input',$taskRawSnapshot,'--output',$taskSnapshot)
+  Set-TaskPhase 'REGISTRY_RESULT_READ'
   $snapshot=Get-Content -LiteralPath $taskSnapshot -Raw|ConvertFrom-Json
+  Set-TaskPhase 'REGISTRY_UNIQUENESS'
   if($snapshot.registrations.Count -ne 1 -or $snapshot.bindings.Count -ne 1 -or $snapshot.registrations[0].view -ne $snapshot.bindings[0].view){throw 'REGISTRY_NOT_UNIQUE'}
 
   Set-TaskPhase 'COLLECT'
