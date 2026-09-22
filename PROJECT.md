@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## 工程主控决策边界补充｜2026-09-22
+
+用户明确：网页版负责产品策划、架构分析/研究、Batch范围批准和最终验收；Codex为ENGINEERING ORCHESTRATOR，只能在已批准方案内做工程决定。产品/UX/业务/数据生命周期/安装升级行为/重大架构/主要技术栈/平台范围/Release策略或Batch扩围，必须按AGENTS.md五字段形成决策卡并停止相关实施，交回网页版决定。Execution遇到任务卡与代码冲突返回BLOCKED / NEED PARENT DECISION，不重定义需求。
+
+只补公开治理文档；Batch3 PASS — Windows10 x64 Beta Track保持，不进入Batch4、不创建执行/QA/Agent/worktree、不改生产代码或历史构建身份。决策入口docs/tasks/windows-installer-v1.1/governance-20260922/DECISION.md。下方历史职责表述以本次边界约束为准。
+
 ## Batch 3 PASS / 协作治理已更新｜2026-09-21
 
 用户本次任务书明确确认Batch3-R2人工1—10全部正常。结合受测e9417f036d0cdf736ff84682556a994040f0de0b / Setup35514357007 / Artifact10606870944既有D13/13、I29自动通过及26套742项0失败0跳过，正式记录 **Batch 3 PASS — Windows 10 x64 Beta Track**。I01/I02/I09由此次用户人工验收补齐；原Artifact的PENDING历史字段不重写。本轮仅归档，不重新测试或构建，不扩大为Win11、干净机或代码签名认证。

@@ -1,5 +1,13 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## 网页版决策层 / ENGINEERING ORCHESTRATOR｜2026-09-22
+
+按用户补充原则：网页版承担产品策划、架构分析、方案比较研究、Batch范围批准和最终验收；Codex主控只负责已批准方案内工程编排，不是产品决策者。THREAD ORCHESTRATOR仍是执行方式，不等于产品授权。
+
+产品功能/UX/业务规则/数据生命周期/安装升级行为/重大架构/主要技术栈/平台范围/Release策略/Batch扩围等决策，按AGENTS.md提交【当前事实】【技术约束】【可选方案】【各方案影响】【需要网页版决定的问题】，停止该决策点和依赖实施，等待明确批准。Execution冲突返回BLOCKED / NEED PARENT DECISION；主控不能借工程整合自行替换产品或架构目标。详见[治理补充](governance-20260922/DECISION.md)。
+
+Batch3已PASS的Win10 Beta范围不变；本次只补治理，不实施Batch4，不产生新构建或认证，不创建任务树/worktree。
+
 ## 当前：Batch 3 PASS / THREAD ORCHESTRATOR｜2026-09-21
 
 用户确认R2新包人工1—10全部正常，正式记录 **Batch 3 PASS — Windows 10 x64 Beta Track**。受测e9417f036d0cdf736ff84682556a994040f0de0b、Setup35514357007、Artifact10606870944不变；既有D13/13、I29自动通过、26套742项0失败0跳过与本次人工反馈共同构成结论。I01/I02/I09人工门禁已补齐，原Artifact历史PENDING不改。本轮不复测/重建，不代表Win11、干净机或签名认证。
