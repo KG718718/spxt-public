@@ -7,6 +7,7 @@ const {
   BINDING_KEY,
   UNINSTALL_KEY,
   Rejection,
+  inventory,
   sha,
   validate,
   validatePolicy
@@ -55,6 +56,14 @@ function readJsonBytes(file) {
   let value;
   try { value = JSON.parse(bytes.toString('utf8')); } catch { fail('JSON_INVALID'); }
   return {bytes, value};
+}
+
+function readInstalledJson(file, code) {
+  try { return readJsonBytes(file); } catch { fail(code); }
+}
+
+function readInstalledRegular(file, code) {
+  try { return readRegular(file); } catch { fail(code); }
 }
 
 function validateApiMetadata(metadata, now = Date.now()) {
@@ -130,10 +139,10 @@ function normalizeSharedHkcuSnapshot(snapshot) {
 function collectInstalledPolicy(installRoot) {
   const uninstall = path.join(installRoot, 'uninstall');
   const program = path.join(installRoot, 'program');
-  const manifestRecord = readJsonBytes(path.join(uninstall, 'installer-manifest.json'));
-  const buildRecord = readJsonBytes(path.join(uninstall, 'build-info.json'));
-  const runtimeRecord = readJsonBytes(path.join(program, 'manifest', 'runtime-manifest.json'));
-  const launcherBytes = readRegular(path.join(program, 'K-SESSION.exe'));
+  const manifestRecord = readInstalledJson(path.join(uninstall, 'installer-manifest.json'), 'INSTALLED_MANIFEST_INVALID');
+  const buildRecord = readInstalledJson(path.join(uninstall, 'build-info.json'), 'INSTALLED_BUILD_INFO_INVALID');
+  const runtimeRecord = readInstalledJson(path.join(program, 'manifest', 'runtime-manifest.json'), 'INSTALLED_RUNTIME_INVALID');
+  const launcherBytes = readInstalledRegular(path.join(program, 'K-SESSION.exe'), 'INSTALLED_LAUNCHER_INVALID');
   const manifest = manifestRecord.value;
   const build = buildRecord.value;
   const runtime = runtimeRecord.value;
@@ -151,9 +160,12 @@ function collectInstalledPolicy(installRoot) {
   }
   const runtimeManifestSha256 = sha(runtimeRecord.bytes);
   const launcherSha256 = sha(launcherBytes);
+  let actualPayload;
+  try { actualPayload = inventory(program); } catch { fail('INSTALLED_ANCHOR_CONFLICT'); }
   if (build.runtimeManifestSha256 !== runtimeManifestSha256 || build.launcherSha256 !== launcherSha256) {
     fail('INSTALLED_ANCHOR_CONFLICT');
   }
+  if (JSON.stringify(actualPayload) !== JSON.stringify(manifest.payload)) fail('INSTALLED_ANCHOR_CONFLICT');
   const policy = {
     schema: 1,
     appId: 'KSESSION-Beta-Installer-v1',
@@ -174,6 +186,44 @@ function collectInstalledPolicy(installRoot) {
   };
   validatePolicy(policy);
   return policy;
+}
+
+function validateInstalledFootprint(installRoot, instance) {
+  const policy = collectInstalledPolicy(installRoot);
+  const bindingFile = path.join(installRoot, 'uninstall', 'instance-binding.ini');
+  const bytes = readInstalledRegular(bindingFile, 'INSTALLED_BINDING_INVALID');
+  if (bytes.length < 2 || bytes[0] !== 0xff || bytes[1] !== 0xfe) fail('INSTALLED_BINDING_INVALID');
+  const lines = bytes.subarray(2).toString('utf16le').split(/\r?\n/).filter(line => line.length > 0);
+  if (lines.shift() !== '[Installation]') fail('INSTALLED_BINDING_INVALID');
+  const values = {};
+  for (const line of lines) {
+    const separator = line.indexOf('=');
+    if (separator < 1) fail('INSTALLED_BINDING_INVALID');
+    const key = line.slice(0, separator);
+    if (Object.hasOwn(values, key)) fail('INSTALLED_BINDING_INVALID');
+    values[key] = line.slice(separator + 1);
+  }
+  if (!exactKeys(values, ['Schema', 'InstallRoot', 'Instance']) || values.Schema !== '1' ||
+      path.resolve(values.InstallRoot).toLowerCase() !== path.resolve(installRoot).toLowerCase() ||
+      path.resolve(values.Instance).toLowerCase() !== path.resolve(instance).toLowerCase()) {
+    fail('INSTALLED_BINDING_INVALID');
+  }
+  return policy;
+}
+
+function validateInstallLogMarkers(bytes) {
+  if (!Buffer.isBuffer(bytes)) fail('INSTALL_LOG_INVALID');
+  const log = bytes.toString('utf8');
+  const failureMarkers = [
+    'KSESSION_DATA_PRIOR_MISSING', 'KSESSION_DATA_REJECT_', 'KSESSION_REJECT_REGISTERED',
+    'KSESSION_REJECT_RUNNING', 'KSESSION_DATA_SWITCH_UNCONFIRMED', 'KSESSION_REJECT_PATH',
+    'KSESSION_REJECT_NONEMPTY', 'KSESSION_REJECT_SPACE_QUERY', 'KSESSION_REJECT_SPACE',
+    'KSESSION_REJECT_WRITE', 'KSESSION_UNINSTALL_REJECT_RUNNING'
+  ];
+  if (failureMarkers.some(marker => log.includes(marker))) fail('INSTALL_LOG_FAILURE_MARKER');
+  if (!log.includes('KSESSION_PREINSTALL_READY')) fail('INSTALL_LOG_NO_PREINSTALL');
+  if (!log.includes('KSESSION_INSTALLED_PAYLOAD_VERIFIED')) fail('INSTALL_LOG_NO_POSTINSTALL');
+  return true;
 }
 
 function createDraft(metadata, snapshot, installRoot) {
@@ -279,5 +329,5 @@ module.exports = {
   ARTIFACT_DIGEST, ARTIFACT_ID, ARTIFACT_NAME, ARTIFACT_URL, PROFILE_ID, REPOSITORY, RUN_ID,
   SETUP_NAME, SETUP_SHA256, SOURCE_COMMIT, HistoricalIdentityError, assertNoSensitiveOutput,
   collectInstalledPolicy, createDraft, finalizeEvidence, locateUniqueSetup, normalizeSharedHkcuSnapshot,
-  validateApiMetadata, validateEvidence
+  validateApiMetadata, validateEvidence, validateInstallLogMarkers, validateInstalledFootprint
 };

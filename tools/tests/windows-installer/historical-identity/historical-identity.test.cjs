@@ -256,7 +256,11 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
   assert.ok(allowlistBlock, 'phase allowlist missing');
   const allowed = [...allowlistBlock[1].matchAll(/'([A-Z_]+)'/g)].map(match => match[1]);
   assert.deepEqual(allowed, ['HOSTED_PREFLIGHT', 'API_METADATA', 'ARTIFACT_DOWNLOAD', 'ARCHIVE_HASH', 'EXTRACT',
-    'SETUP_IDENTITY', 'INSTALL', 'REGISTRY_HKLM', 'REGISTRY_HKCU_READ', 'REGISTRY_SNAPSHOT_WRITE',
+    'SETUP_IDENTITY', 'INSTALL', 'INSTALL_FOOTPRINT_MANIFEST', 'INSTALL_FOOTPRINT_BUILD_INFO',
+    'INSTALL_FOOTPRINT_BINDING', 'INSTALL_FOOTPRINT_RUNTIME', 'INSTALL_FOOTPRINT_LAUNCHER',
+    'INSTALL_FOOTPRINT_ANCHORS', 'INSTALL_FOOTPRINT_USAGE', 'INSTALL_FOOTPRINT_OTHER', 'INSTALL_LOG_INPUT',
+    'INSTALL_LOG_FAILURE', 'INSTALL_LOG_NO_PREINSTALL', 'INSTALL_LOG_NO_POSTINSTALL', 'INSTALL_LOG_USAGE',
+    'INSTALL_LOG_OTHER', 'REGISTRY_HKLM', 'REGISTRY_HKCU_READ', 'REGISTRY_SNAPSHOT_WRITE',
     'REGISTRY_NORMALIZE_INPUT', 'REGISTRY_NORMALIZE_MISSING_REGISTRATION',
     'REGISTRY_NORMALIZE_MISSING_BINDING', 'REGISTRY_NORMALIZE_MISSING_BOTH', 'REGISTRY_NORMALIZE_CONFLICT',
     'REGISTRY_NORMALIZE_USAGE', 'REGISTRY_NORMALIZE_OUTPUT', 'REGISTRY_NORMALIZE_OTHER', 'REGISTRY_RESULT_READ',
@@ -274,6 +278,29 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
     assert.match(output, /^HISTORICAL_IDENTITY_BLOCKED_[A-Z_]+$/);
     assert.doesNotMatch(output, /[A-Za-z]:[\\/]|Users|token|password|cookie|authorization|https?:|\\Software\\/i);
   }
+});
+
+test('post-install footprint and private log checks map only fixed silent categories', () => {
+  const root = path.resolve(__dirname, '../../../..');
+  const script = fs.readFileSync(path.join(root, 'tools/windows-installer/historical-identity/invoke.ps1'), 'utf8');
+  const cli = fs.readFileSync(path.join(root, 'tools/windows-installer/historical-identity/cli.cjs'), 'utf8');
+  const block = script.match(/Set-TaskPhase 'INSTALL_FOOTPRINT_OTHER'([\s\S]*?)Set-TaskPhase 'REGISTRY_HKLM'/);
+  assert.ok(block, 'post-install diagnostic block missing');
+  assert.match(block[0], /Invoke-InstalledFootprint/);
+  assert.match(block[0], /Set-TaskPhase 'INSTALL_LOG_OTHER'[\s\S]*Invoke-InstallLogCheck/);
+  const footprintMap = [...script.matchAll(/(30|31|32|33|34|35|36) \{Set-TaskPhase '(INSTALL_FOOTPRINT_[A-Z_]+)'\}/g)]
+    .map(match => [Number(match[1]), match[2]]);
+  assert.deepEqual(footprintMap, [[30, 'INSTALL_FOOTPRINT_MANIFEST'], [31, 'INSTALL_FOOTPRINT_BUILD_INFO'],
+    [32, 'INSTALL_FOOTPRINT_BINDING'], [33, 'INSTALL_FOOTPRINT_RUNTIME'], [34, 'INSTALL_FOOTPRINT_LAUNCHER'],
+    [35, 'INSTALL_FOOTPRINT_ANCHORS'], [36, 'INSTALL_FOOTPRINT_USAGE']]);
+  const logMap = [...script.matchAll(/(40|41|42|43|44) \{Set-TaskPhase '(INSTALL_LOG_[A-Z_]+)'\}/g)]
+    .map(match => [Number(match[1]), match[2]]);
+  assert.deepEqual(logMap, [[40, 'INSTALL_LOG_INPUT'], [41, 'INSTALL_LOG_FAILURE'],
+    [42, 'INSTALL_LOG_NO_PREINSTALL'], [43, 'INSTALL_LOG_NO_POSTINSTALL'], [44, 'INSTALL_LOG_USAGE']]);
+  assert.match(script, /default \{Set-TaskPhase 'INSTALL_FOOTPRINT_OTHER'\}/);
+  assert.match(script, /default \{Set-TaskPhase 'INSTALL_LOG_OTHER'\}/);
+  assert.match(cli, /installedFootprintCommand\(\); \} catch \{ process\.exitCode = FOOTPRINT_EXIT\.OTHER; \}/);
+  assert.match(cli, /installLogCommand\(\); \} catch \{ process\.exitCode = INSTALL_LOG_EXIT\.OTHER; \}/);
 });
 
 test('registry diagnostics assign every sensitive operation to a fixed closed subphase', () => {
@@ -377,4 +404,55 @@ test('normalize CLI maps failures to fixed silent exit categories', async t => {
     fs.rmSync(temporary, {recursive: true, force: true});
     try { fs.rmdirSync(scratch); } catch {}
   }
+});
+
+test('installed-footprint CLI validates fixed files and hashes without output', async t => {
+  const cli = path.resolve(__dirname, '../../../windows-installer/historical-identity/cli.cjs');
+  function invoke(args) {
+    const result = childProcess.spawnSync(process.execPath, [cli, 'installed-footprint', ...args], {encoding: 'utf8'});
+    assert.equal(result.signal, null); assert.equal(result.stdout, ''); assert.equal(result.stderr, '');
+    return result.status;
+  }
+  async function scenario(name, expected, mutate) {
+    await t.test(name, () => {
+      const f = fixture();
+      try {
+        if (mutate) mutate(f);
+        assert.equal(invoke(['--install-root', f.installRoot, '--instance', f.instance]), expected);
+      } finally { cleanup(f); }
+    });
+  }
+  await scenario('success', 0);
+  await scenario('installer manifest missing', 30, f => fs.rmSync(path.join(f.uninstall, 'installer-manifest.json')));
+  await scenario('build info missing', 31, f => fs.rmSync(path.join(f.uninstall, 'build-info.json')));
+  await scenario('instance binding missing', 32, f => fs.rmSync(path.join(f.uninstall, 'instance-binding.ini')));
+  await scenario('runtime manifest missing', 33,
+    f => fs.rmSync(path.join(f.installRoot, 'program', 'manifest', 'runtime-manifest.json')));
+  await scenario('launcher missing', 34, f => fs.rmSync(path.join(f.installRoot, 'program', 'K-SESSION.exe')));
+  await scenario('launcher hash conflict', 35,
+    f => fs.appendFileSync(path.join(f.installRoot, 'program', 'K-SESSION.exe'), 'tampered'));
+  await t.test('usage', () => assert.equal(invoke([]), 36));
+});
+
+test('install-log CLI checks only fixed marker presence and emits no log content', async t => {
+  const cli = path.resolve(__dirname, '../../../windows-installer/historical-identity/cli.cjs');
+  const temporary = fs.mkdtempSync(path.join(__dirname, '.tmp-log-'));
+  function invoke(args) {
+    const result = childProcess.spawnSync(process.execPath, [cli, 'install-log', ...args], {encoding: 'utf8'});
+    assert.equal(result.signal, null); assert.equal(result.stdout, ''); assert.equal(result.stderr, '');
+    return result.status;
+  }
+  function log(name, text) { const file = path.join(temporary, name); fs.writeFileSync(file, text); return file; }
+  try {
+    await t.test('completed post-install', () => assert.equal(invoke(['--input',
+      log('complete.log', 'KSESSION_PREINSTALL_READY\nKSESSION_INSTALLED_PAYLOAD_VERIFIED\n')]), 0));
+    await t.test('log input unavailable', () => assert.equal(invoke(['--input', path.join(temporary, 'missing.log')]), 40));
+    await t.test('approved failure marker', () => assert.equal(invoke(['--input',
+      log('failure.log', 'KSESSION_PREINSTALL_READY\nKSESSION_REJECT_WRITE\n')]), 41));
+    await t.test('preinstall marker missing', () => assert.equal(invoke(['--input',
+      log('no-preinstall.log', 'KSESSION_INSTALLED_PAYLOAD_VERIFIED\n')]), 42));
+    await t.test('postinstall marker missing', () => assert.equal(invoke(['--input',
+      log('no-postinstall.log', 'KSESSION_PREINSTALL_READY\n')]), 43));
+    await t.test('usage', () => assert.equal(invoke([]), 44));
+  } finally { fs.rmSync(temporary, {recursive: true, force: true}); }
 });

@@ -15,6 +15,20 @@ $taskAllowedPhases=@(
   'EXTRACT',
   'SETUP_IDENTITY',
   'INSTALL',
+  'INSTALL_FOOTPRINT_MANIFEST',
+  'INSTALL_FOOTPRINT_BUILD_INFO',
+  'INSTALL_FOOTPRINT_BINDING',
+  'INSTALL_FOOTPRINT_RUNTIME',
+  'INSTALL_FOOTPRINT_LAUNCHER',
+  'INSTALL_FOOTPRINT_ANCHORS',
+  'INSTALL_FOOTPRINT_USAGE',
+  'INSTALL_FOOTPRINT_OTHER',
+  'INSTALL_LOG_INPUT',
+  'INSTALL_LOG_FAILURE',
+  'INSTALL_LOG_NO_PREINSTALL',
+  'INSTALL_LOG_NO_POSTINSTALL',
+  'INSTALL_LOG_USAGE',
+  'INSTALL_LOG_OTHER',
   'REGISTRY_HKLM',
   'REGISTRY_HKCU_READ',
   'REGISTRY_SNAPSHOT_WRITE',
@@ -145,6 +159,36 @@ function Invoke-Normalize {
   }
   throw 'NORMALIZE_GATE'
 }
+function Invoke-InstalledFootprint {
+  & $taskNode $taskCli 'installed-footprint' '--install-root' $taskInstall '--instance' $taskInstance
+  $footprintExit=$LASTEXITCODE
+  if($footprintExit -eq 0){return}
+  switch($footprintExit){
+    30 {Set-TaskPhase 'INSTALL_FOOTPRINT_MANIFEST'}
+    31 {Set-TaskPhase 'INSTALL_FOOTPRINT_BUILD_INFO'}
+    32 {Set-TaskPhase 'INSTALL_FOOTPRINT_BINDING'}
+    33 {Set-TaskPhase 'INSTALL_FOOTPRINT_RUNTIME'}
+    34 {Set-TaskPhase 'INSTALL_FOOTPRINT_LAUNCHER'}
+    35 {Set-TaskPhase 'INSTALL_FOOTPRINT_ANCHORS'}
+    36 {Set-TaskPhase 'INSTALL_FOOTPRINT_USAGE'}
+    default {Set-TaskPhase 'INSTALL_FOOTPRINT_OTHER'}
+  }
+  throw 'FOOTPRINT_GATE'
+}
+function Invoke-InstallLogCheck {
+  & $taskNode $taskCli 'install-log' '--input' $taskLog
+  $logExit=$LASTEXITCODE
+  if($logExit -eq 0){return}
+  switch($logExit){
+    40 {Set-TaskPhase 'INSTALL_LOG_INPUT'}
+    41 {Set-TaskPhase 'INSTALL_LOG_FAILURE'}
+    42 {Set-TaskPhase 'INSTALL_LOG_NO_PREINSTALL'}
+    43 {Set-TaskPhase 'INSTALL_LOG_NO_POSTINSTALL'}
+    44 {Set-TaskPhase 'INSTALL_LOG_USAGE'}
+    default {Set-TaskPhase 'INSTALL_LOG_OTHER'}
+  }
+  throw 'INSTALL_LOG_GATE'
+}
 
 try{
   Set-TaskPhase 'HOSTED_PREFLIGHT'
@@ -186,6 +230,11 @@ try{
   & $setup '/VERYSILENT' '/SUPPRESSMSGBOXES' '/NORESTART' '/SP-' ('/DIR='+$taskInstall) ('/INSTANCE='+$taskInstance) '/CONFIRMDATACHANGE=1' ('/LOG='+$taskLog)
   if($LASTEXITCODE -ne 0){throw 'SETUP_FAILED'}
   $taskInstalled=$true
+
+  Set-TaskPhase 'INSTALL_FOOTPRINT_OTHER'
+  Invoke-InstalledFootprint
+  Set-TaskPhase 'INSTALL_LOG_OTHER'
+  Invoke-InstallLogCheck
 
   Set-TaskPhase 'REGISTRY_HKLM'
   if((Count-MachineSubkey $taskProductSubkey) -ne 0 -or (Count-MachineSubkey $taskBindingSubkey) -ne 0){throw 'REGISTRY_SCOPE_CONFLICT'}

@@ -37,13 +37,19 @@
 
 “PowerShell 子键字面量含双反斜杠”的候选解释经原始字节和 AST 值核对后不成立：本地源码、公开整合提交 `1fe9cea39b0c3b6040f8f7dbb771ba639a8fdd1b` 与 beta.1 源提交 `e9417f036d0cdf736ff84682556a994040f0de0b` 都使用单路径分隔符，工具 JSON 中的 `\\` 只是单反斜杠的转义展示。新增静态回归同时固定两条已批准键、拒绝重复分隔符，并校验其与 `setup.iss` 一致；未制造无效生产改动。为定位真实缺失来源，稳定缺失类别进一步细分为 registration、binding 与 both，仅按数组计数选择固定退出码及 `REGISTRY_NORMALIZE_MISSING_*` 阶段，不读取或输出任何值。
 
+主控整合上述两次返工为公开提交 `f1b105a9fe4d120fbb37869848f4deee03ae61d7`（tree `16aec82122d22fbbdd0425c46fabab7108673ea4`）后，manual run 35750803309 / `historical-identity` job 106824103307 的唯一固定结果为 `HISTORICAL_IDENTITY_BLOCKED_REGISTRY_NORMALIZE_MISSING_BOTH`。已确认安装进程返回0、HKLM 污染检查通过，但 HKCU snapshot 的 registration 与 binding 均为空。公开 job 没有输出或上传私有 Setup log，因此现有 run 无更多安全标记可提取。
+
+[Inno AppId 文档](https://jrsoftware.org/ishelp/topic_setup_appid.htm)明确卸载键名由 `AppId` 加 `_is1` 组成；[非管理员安装模式文档](https://jrsoftware.org/ishelp/topic_admininstallmode.htm)明确卸载信息写入 HKCU；[64位安装模式文档](https://jrsoftware.org/ishelp/topic_32vs64bitinstalls.htm)明确卸载键使用64位视图。[Uninstallable](https://jrsoftware.org/ishelp/topic_setup_uninstallable.htm) 与 [CreateUninstallRegKey](https://jrsoftware.org/ishelp/topic_setup_createuninstallregkey.htm) 默认均为 `yes`，beta.1 未覆盖这两个默认值。结合 beta.1 的 `AppId=KSESSION-Beta-Installer-v1`、`PrivilegesRequired=lowest`、`ArchitecturesInstallIn64BitMode=x64os` 和显式 `RegWriteStringValue(HKCU64, BindingKey, ...)`，现有批准键与 hive/view 规则一致，无证据支持改变 identity 契约。
+
+下一轮诊断在 Setup 返回0后、读取 registry 前增加两道静默门禁。`installed-footprint` 对安装目录内 installer manifest、build info、instance binding、runtime manifest、launcher 及 payload/hash 关系做固定验证，只以 `INSTALL_FOOTPRINT_*` 阶段分类；`install-log` 私下只检查批准的 preinstall、postinstall 与失败标记存在性，只以 `INSTALL_LOG_*` 阶段分类，不输出日志正文。若两道门禁通过后仍进入 `REGISTRY_NORMALIZE_MISSING_BOTH`，即可证明安装落盘及 `ssPostInstall` 完成标记存在而 registry 仍不可见；否则固定阶段会区分落盘不完整、未到 preinstall、未到 postinstall或批准失败标记。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：30 PASS，0 FAIL，0 SKIP；真实 CLI 进程分别覆盖 registration、binding、both 缺失，新增键字面量固定值、单分隔符及与 `setup.iss` 一致性回归；全部类别保持静默固定退出码。
+- historical-identity 专项：47 PASS，0 FAIL，0 SKIP；新增真实 CLI 进程覆盖全部 footprint 文件/hash类别与 Setup log 固定标记类别，所有成功/失败路径 stdout、stderr 均为空；静态测试确认退出码只映射固定 allowlist 阶段。
 - 既有 T1 upgrade-detection：43 PASS，0 FAIL，0 SKIP。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。

@@ -9,7 +9,9 @@ const {
   locateUniqueSetup,
   normalizeSharedHkcuSnapshot,
   validateApiMetadata,
-  validateEvidence
+  validateEvidence,
+  validateInstallLogMarkers,
+  validateInstalledFootprint
 } = require('./index.cjs');
 
 function readJson(file) { return JSON.parse(fs.readFileSync(file, 'utf8')); }
@@ -27,6 +29,10 @@ function exactArgs(names) {
 
 const NORMALIZE_EXIT = Object.freeze({INPUT: 20, MISSING_REGISTRATION: 21, MISSING_BINDING: 22, MISSING_BOTH: 23,
   CONFLICT: 24, USAGE: 25, OUTPUT: 26, OTHER: 27});
+const FOOTPRINT_EXIT = Object.freeze({MANIFEST: 30, BUILD_INFO: 31, BINDING: 32, RUNTIME: 33, LAUNCHER: 34,
+  ANCHORS: 35, USAGE: 36, OTHER: 37});
+const INSTALL_LOG_EXIT = Object.freeze({INPUT: 40, FAILURE: 41, NO_PREINSTALL: 42, NO_POSTINSTALL: 43,
+  USAGE: 44, OTHER: 45});
 function normalizeSnapshotCommand() {
   const args = exactArgs(['--input', '--output']);
   if (!args) return NORMALIZE_EXIT.USAGE;
@@ -48,9 +54,59 @@ function normalizeSnapshotCommand() {
   return 0;
 }
 
+function installedFootprintCommand() {
+  const args = exactArgs(['--install-root', '--instance']);
+  if (!args) return FOOTPRINT_EXIT.USAGE;
+  try { validateInstalledFootprint(args['--install-root'], args['--instance']); }
+  catch (error) {
+    if (!(error instanceof HistoricalIdentityError)) return FOOTPRINT_EXIT.OTHER;
+    const codes = {
+      INSTALLED_MANIFEST_INVALID: FOOTPRINT_EXIT.MANIFEST,
+      INSTALLED_BUILD_INFO_INVALID: FOOTPRINT_EXIT.BUILD_INFO,
+      INSTALLED_BINDING_INVALID: FOOTPRINT_EXIT.BINDING,
+      INSTALLED_RUNTIME_INVALID: FOOTPRINT_EXIT.RUNTIME,
+      INSTALLED_LAUNCHER_INVALID: FOOTPRINT_EXIT.LAUNCHER,
+      INSTALLED_ANCHOR_CONFLICT: FOOTPRINT_EXIT.ANCHORS
+    };
+    return codes[error.code] ?? FOOTPRINT_EXIT.OTHER;
+  }
+  return 0;
+}
+
+function installLogCommand() {
+  const args = exactArgs(['--input']);
+  if (!args) return INSTALL_LOG_EXIT.USAGE;
+  let bytes;
+  try {
+    const info = fs.lstatSync(args['--input']);
+    if (!info.isFile() || info.isSymbolicLink()) return INSTALL_LOG_EXIT.INPUT;
+    bytes = fs.readFileSync(args['--input']);
+  } catch { return INSTALL_LOG_EXIT.INPUT; }
+  try { validateInstallLogMarkers(bytes); }
+  catch (error) {
+    if (!(error instanceof HistoricalIdentityError)) return INSTALL_LOG_EXIT.OTHER;
+    const codes = {
+      INSTALL_LOG_INVALID: INSTALL_LOG_EXIT.INPUT,
+      INSTALL_LOG_FAILURE_MARKER: INSTALL_LOG_EXIT.FAILURE,
+      INSTALL_LOG_NO_PREINSTALL: INSTALL_LOG_EXIT.NO_PREINSTALL,
+      INSTALL_LOG_NO_POSTINSTALL: INSTALL_LOG_EXIT.NO_POSTINSTALL
+    };
+    return codes[error.code] ?? INSTALL_LOG_EXIT.OTHER;
+  }
+  return 0;
+}
+
 const command = process.argv[2];
 if (command === 'normalize-snapshot') {
   try { process.exitCode = normalizeSnapshotCommand(); } catch { process.exitCode = NORMALIZE_EXIT.OTHER; }
+  return;
+}
+if (command === 'installed-footprint') {
+  try { process.exitCode = installedFootprintCommand(); } catch { process.exitCode = FOOTPRINT_EXIT.OTHER; }
+  return;
+}
+if (command === 'install-log') {
+  try { process.exitCode = installLogCommand(); } catch { process.exitCode = INSTALL_LOG_EXIT.OTHER; }
   return;
 }
 
