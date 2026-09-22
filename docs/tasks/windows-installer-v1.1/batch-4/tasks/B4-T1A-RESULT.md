@@ -43,13 +43,17 @@
 
 下一轮诊断在 Setup 返回0后、读取 registry 前增加两道静默门禁。`installed-footprint` 对安装目录内 installer manifest、build info、instance binding、runtime manifest、launcher 及 payload/hash 关系做固定验证，只以 `INSTALL_FOOTPRINT_*` 阶段分类；`install-log` 私下只检查批准的 preinstall、postinstall 与失败标记存在性，只以 `INSTALL_LOG_*` 阶段分类，不输出日志正文。若两道门禁通过后仍进入 `REGISTRY_NORMALIZE_MISSING_BOTH`，即可证明安装落盘及 `ssPostInstall` 完成标记存在而 registry 仍不可见；否则固定阶段会区分落盘不完整、未到 preinstall、未到 postinstall或批准失败标记。
 
+主控整合该诊断为公开提交 `7257dd14587f730280236fbc79ce89736d72f658` 后，manual run 35753184857 / `historical-identity` job 106832725056 的唯一固定结果为 `HISTORICAL_IDENTITY_BLOCKED_INSTALL_FOOTPRINT_MANIFEST`。已确认旧实现通过 `& $setup` 返回控制权并读取到 `$LASTEXITCODE=0` 时，批准的 installer manifest 尚不存在或不可读；结合 Windows GUI Setup 调用方式与约34秒的整个真实步骤耗时，证据强烈支持“PowerShell 未等待安装完成”，但该阶段本身不能单独排除其他落盘失败。此前 registry 缺失与该过早检查解释一致，而没有证据指向 identity 键规则变化。
+
+安装调用改用 `System.Diagnostics.ProcessStartInfo`：`UseShellExecute=false`、`CreateNoWindow=true`，每个批准参数通过 `ArgumentList.Add()` 独立传递，stdout/stderr 在内存中排空后丢弃；调用无超时的 `WaitForExit()` 后才读取真实 `ExitCode`。[Microsoft ArgumentList 文档](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.argumentlist)说明列表项无需预先转义，[WaitForExit 文档](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.waitforexit)明确无参重载会等待关联进程退出。未增加超时或强杀逻辑，由 workflow 既有30分钟 job timeout 处理平台级卡死，避免在未知安装状态下中止进程。合成测试用延迟写入且返回非0的 Windows GUI helper 验证显式等待、逐项参数保真和真实退出码传递；静态测试禁止恢复 `& $setup`，并确认非0退出码仍 fail closed。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：47 PASS，0 FAIL，0 SKIP；新增真实 CLI 进程覆盖全部 footprint 文件/hash类别与 Setup log 固定标记类别，所有成功/失败路径 stdout、stderr 均为空；静态测试确认退出码只映射固定 allowlist 阶段。
+- historical-identity 专项：48 PASS，0 FAIL，0 SKIP；在既有 footprint/log 覆盖外，新增 Windows GUI helper 合成验证显式等待、参数逐项传递和非0退出码，并静态拒绝旧 `& $setup` 调用路径。
 - 既有 T1 upgrade-detection：43 PASS，0 FAIL，0 SKIP。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。

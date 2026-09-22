@@ -143,6 +143,26 @@ function Invoke-Node([string[]]$Arguments) {
   & $taskNode $taskCli @Arguments
   if($LASTEXITCODE -ne 0){throw 'NODE_GATE'}
 }
+function Invoke-SetupAndWait([string]$FileName,[string[]]$Arguments) {
+  $startInfo=[Diagnostics.ProcessStartInfo]::new()
+  $startInfo.FileName=$FileName
+  $startInfo.UseShellExecute=$false
+  $startInfo.CreateNoWindow=$true
+  $startInfo.RedirectStandardOutput=$true
+  $startInfo.RedirectStandardError=$true
+  foreach($argument in $Arguments){[void]$startInfo.ArgumentList.Add($argument)}
+  $process=[Diagnostics.Process]::new()
+  $process.StartInfo=$startInfo
+  try{
+    if(!$process.Start()){throw 'SETUP_START_FAILED'}
+    $stdoutTask=$process.StandardOutput.ReadToEndAsync()
+    $stderrTask=$process.StandardError.ReadToEndAsync()
+    $process.WaitForExit()
+    $stdoutTask.GetAwaiter().GetResult()|Out-Null
+    $stderrTask.GetAwaiter().GetResult()|Out-Null
+    $process.ExitCode
+  }finally{$process.Dispose()}
+}
 function Invoke-Normalize {
   & $taskNode $taskCli 'normalize-snapshot' '--input' $taskRawSnapshot '--output' $taskSnapshot
   $normalizeExit=$LASTEXITCODE
@@ -227,8 +247,10 @@ try{
   $setup=$setups[0].FullName
 
   Set-TaskPhase 'INSTALL'
-  & $setup '/VERYSILENT' '/SUPPRESSMSGBOXES' '/NORESTART' '/SP-' ('/DIR='+$taskInstall) ('/INSTANCE='+$taskInstance) '/CONFIRMDATACHANGE=1' ('/LOG='+$taskLog)
-  if($LASTEXITCODE -ne 0){throw 'SETUP_FAILED'}
+  $setupArguments=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/DIR='+$taskInstall),
+    ('/INSTANCE='+$taskInstance),'/CONFIRMDATACHANGE=1',('/LOG='+$taskLog))
+  $setupExit=Invoke-SetupAndWait -FileName $setup -Arguments $setupArguments
+  if($setupExit -ne 0){throw 'SETUP_FAILED'}
   $taskInstalled=$true
 
   Set-TaskPhase 'INSTALL_FOOTPRINT_OTHER'
