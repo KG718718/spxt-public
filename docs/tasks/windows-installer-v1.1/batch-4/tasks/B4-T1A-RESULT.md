@@ -1,6 +1,6 @@
 # B4-T1A Result — Historical beta.1 identity evidence capability
 
-状态：**BLOCKED — 云端真实 anchors 仍未取得，uninstaller 自清理终态等待已在本地完成**。主控尚未整合、push 或重跑本轮修复；不能据此放行 T3 或报告 Batch 4 PASS。
+状态：**BLOCKED — 云端真实 anchors 仍未取得，cleanup 只读检查阶段已在本地细分**。主控尚未整合、push 或重跑本轮诊断；不能据此放行 T3 或报告 Batch 4 PASS。
 
 ## 已完成
 
@@ -83,13 +83,17 @@
 
 最小修复复用既有公开自动化的终态模型：卸载入口返回0后，只轮询已经过 T1/路径门禁的精确 `<taskInstall>\uninstall\unins000.exe`，固定100ms间隔和25秒上限；路径必须与任务安装根推导值完全相等，不枚举、等待或终止任何进程。超时固定为 `CLEANUP_UNINSTALLER_SELF_CLEANUP_TIMEOUT`，读取或其他异常停在 `CLEANUP_UNINSTALLER_SELF_CLEANUP`。只有该明确终态出现后才继续原 cleanup 检查；此时 program root、登记、快捷方式任一残留仍按原类别失败，因此延迟删除、重启后删除、被占用或真实残留都不会被伪造成 PASS。
 
+主控整合终态等待后，manual run 35778116363 / `historical-identity` job 106916777568 在精确 HEAD `9a7f89bb093ae482f419225f212158a9e28afaec` 已越过 uninstaller self-cleanup，唯一固定结果为 `HISTORICAL_IDENTITY_BLOCKED_CLEANUP_INSPECTION`。该 token 只证明后续某个只读状态读取或移除后复核抛错，不能证明具体残留、删除失败或产品行为缺陷。
+
+本轮不改变任何读取表达式或判定值，只在每一步读取前设置唯一封闭阶段：`CLEANUP_READ_PROGRAM_ROOT`、`CLEANUP_READ_UNINSTALL_REGISTRATION`、`CLEANUP_READ_DESKTOP_SHORTCUT`、`CLEANUP_READ_START_MENU_SHORTCUT`、`CLEANUP_READ_BINDING_RETAINED`、`CLEANUP_READ_INSTANCE_RETAINED`、`CLEANUP_READ_BINDING_AFTER_HARNESS`、`CLEANUP_READ_INSTANCE_AFTER_HARNESS`、`CLEANUP_READ_PAYLOAD_AFTER_HARNESS`。无法归入这些已知读取边界的异常仍保留 `CLEANUP_INSPECTION`/`CLEANUP_OTHER`；catch 不输出路径、异常正文、registry 值或日志。等待、删除、卸载、数据保留及最终 fail-closed 判断全部保持不变。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：69 PASS，0 FAIL，0 SKIP；cleanup 回归新增精确 uninstaller 终态等待、延迟删除成功和固定超时反例，并继续覆盖每项残留、精确删除边界、最终状态及 evidence 写入的封闭阶段；hosted 根目录测试保持通过。
+- historical-identity 专项：69 PASS，0 FAIL，0 SKIP；cleanup 回归逐项固定九类只读状态阶段，并继续覆盖精确 uninstaller 终态等待、固定超时、每项残留、精确删除边界、最终状态及 evidence 写入；hosted 根目录测试保持通过。
 - T1 upgrade-detection：45 PASS，0 FAIL，0 SKIP；新增构建期全局路径排序契约及“同集合重排 manifest 仍拒绝”回归。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。

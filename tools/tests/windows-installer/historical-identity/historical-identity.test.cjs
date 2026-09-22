@@ -285,7 +285,10 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
     'CLEANUP_UNINSTALL_REGISTRATION', 'CLEANUP_DESKTOP_SHORTCUT', 'CLEANUP_START_MENU_SHORTCUT',
     'CLEANUP_BINDING_RETAINED', 'CLEANUP_INSTANCE_RETAINED', 'CLEANUP_BINDING_REMOVE',
     'CLEANUP_INSTANCE_REMOVE', 'CLEANUP_PAYLOAD_REMOVE', 'CLEANUP_FINAL_STATE', 'CLEANUP_EVIDENCE_WRITE',
-    'CLEANUP_INSPECTION', 'CLEANUP_OTHER', 'FINALIZE']);
+    'CLEANUP_INSPECTION', 'CLEANUP_READ_PROGRAM_ROOT', 'CLEANUP_READ_UNINSTALL_REGISTRATION',
+    'CLEANUP_READ_DESKTOP_SHORTCUT', 'CLEANUP_READ_START_MENU_SHORTCUT', 'CLEANUP_READ_BINDING_RETAINED',
+    'CLEANUP_READ_INSTANCE_RETAINED', 'CLEANUP_READ_BINDING_AFTER_HARNESS',
+    'CLEANUP_READ_INSTANCE_AFTER_HARNESS', 'CLEANUP_READ_PAYLOAD_AFTER_HARNESS', 'CLEANUP_OTHER', 'FINALIZE']);
   assert.equal(new Set(allowed).size, allowed.length, 'phase allowlist contains duplicates');
   const assigned = [...script.matchAll(/Set-TaskPhase '([A-Z0-9_]+)'/g)].map(match => match[1]);
   assert.deepEqual([...new Set(assigned)].sort(), [...allowed].sort(), 'every and only allowlisted phases must be assigned');
@@ -313,7 +316,20 @@ test('cleanup diagnostics map every residual and owned removal boundary to a fix
   assert.match(script, /function Wait-UninstallerSelfCleanup[\s\S]*Join-Path \$taskInstall 'uninstall\\unins000\.exe'[\s\S]*Start-Sleep -Milliseconds 100/);
   assert.doesNotMatch(cleanup, /Get-Process|Win32_Process|Wait-Process|Stop-Process|taskkill/i,
     'uninstaller completion must use only its exact terminal file, never unrelated processes');
-  assert.match(cleanup, /Set-TaskPhase 'CLEANUP_INSPECTION'[\s\S]*\$programAfter=Test-Path[\s\S]*\$instanceAfter=Test-Path/);
+  const inspectionReads = [
+    ['CLEANUP_READ_PROGRAM_ROOT', '\\$programAfter=Test-Path -LiteralPath \\$taskInstall'],
+    ['CLEANUP_READ_UNINSTALL_REGISTRATION', '\\$uninstallCount=Count-Subkey \\$taskProductSubkey'],
+    ['CLEANUP_READ_DESKTOP_SHORTCUT', '\\$desktopAfter=Test-Path -LiteralPath \\$taskDesktopLink'],
+    ['CLEANUP_READ_START_MENU_SHORTCUT', '\\$programsAfter=Test-Path -LiteralPath \\$taskProgramsLink'],
+    ['CLEANUP_READ_BINDING_RETAINED', '\\$bindingAfter=Count-Subkey \\$taskBindingSubkey'],
+    ['CLEANUP_READ_INSTANCE_RETAINED', '\\$instanceAfter=Test-Path -LiteralPath \\$taskInstance'],
+    ['CLEANUP_READ_BINDING_AFTER_HARNESS', '\\$bindingAfterHarness=Count-Subkey \\$taskBindingSubkey'],
+    ['CLEANUP_READ_INSTANCE_AFTER_HARNESS', '\\$instanceAfterHarness=Test-Path -LiteralPath \\$taskInstance'],
+    ['CLEANUP_READ_PAYLOAD_AFTER_HARNESS', '\\$payloadRemoved=\\(@\\([\\s\\S]*Where-Object\\{Test-Path -LiteralPath \\$_\\}\\)\\.Count -eq 0']
+  ];
+  for (const [phase, read] of inspectionReads) {
+    assert.match(cleanup, new RegExp(`Set-TaskPhase '${phase}'\\s+${read}`), `${phase} read mapping missing`);
+  }
   const residualMap = [
     ['\\$programAfter', 'CLEANUP_PROGRAM_ROOT'], ['\\$uninstallCount -ne 0', 'CLEANUP_UNINSTALL_REGISTRATION'],
     ['\\$desktopAfter', 'CLEANUP_DESKTOP_SHORTCUT'], ['\\$programsAfter', 'CLEANUP_START_MENU_SHORTCUT'],

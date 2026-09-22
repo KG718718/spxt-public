@@ -91,6 +91,15 @@ $taskAllowedPhases=@(
   'CLEANUP_FINAL_STATE',
   'CLEANUP_EVIDENCE_WRITE',
   'CLEANUP_INSPECTION',
+  'CLEANUP_READ_PROGRAM_ROOT',
+  'CLEANUP_READ_UNINSTALL_REGISTRATION',
+  'CLEANUP_READ_DESKTOP_SHORTCUT',
+  'CLEANUP_READ_START_MENU_SHORTCUT',
+  'CLEANUP_READ_BINDING_RETAINED',
+  'CLEANUP_READ_INSTANCE_RETAINED',
+  'CLEANUP_READ_BINDING_AFTER_HARNESS',
+  'CLEANUP_READ_INSTANCE_AFTER_HARNESS',
+  'CLEANUP_READ_PAYLOAD_AFTER_HARNESS',
   'CLEANUP_OTHER',
   'FINALIZE'
 )
@@ -405,11 +414,17 @@ try{
   }
 
   Set-TaskPhase 'CLEANUP_INSPECTION'
+  Set-TaskPhase 'CLEANUP_READ_PROGRAM_ROOT'
   $programAfter=Test-Path -LiteralPath $taskInstall
+  Set-TaskPhase 'CLEANUP_READ_UNINSTALL_REGISTRATION'
   $uninstallCount=Count-Subkey $taskProductSubkey
+  Set-TaskPhase 'CLEANUP_READ_DESKTOP_SHORTCUT'
   $desktopAfter=Test-Path -LiteralPath $taskDesktopLink
+  Set-TaskPhase 'CLEANUP_READ_START_MENU_SHORTCUT'
   $programsAfter=Test-Path -LiteralPath $taskProgramsLink
+  Set-TaskPhase 'CLEANUP_READ_BINDING_RETAINED'
   $bindingAfter=Count-Subkey $taskBindingSubkey
+  Set-TaskPhase 'CLEANUP_READ_INSTANCE_RETAINED'
   $instanceAfter=Test-Path -LiteralPath $taskInstance
   if($programAfter){Set-TaskPhase 'CLEANUP_PROGRAM_ROOT';throw 'UNINSTALL_CONTRACT'}
   if($uninstallCount -ne 0){Set-TaskPhase 'CLEANUP_UNINSTALL_REGISTRATION';throw 'UNINSTALL_CONTRACT'}
@@ -420,12 +435,14 @@ try{
   Set-TaskPhase 'CLEANUP_BINDING_REMOVE'
   Remove-OwnedBinding
   Set-TaskPhase 'CLEANUP_INSPECTION'
+  Set-TaskPhase 'CLEANUP_READ_BINDING_AFTER_HARNESS'
   $bindingAfterHarness=Count-Subkey $taskBindingSubkey
   if($bindingAfterHarness -ne 0){Set-TaskPhase 'CLEANUP_BINDING_REMOVE';throw 'BINDING_REMOVE_FAILED'}
   Set-TaskPhase 'CLEANUP_INSTANCE_REMOVE'
   Assert-TaskPath $taskInstance
   Remove-Item -LiteralPath $taskInstance -Recurse -Force
   Set-TaskPhase 'CLEANUP_INSPECTION'
+  Set-TaskPhase 'CLEANUP_READ_INSTANCE_AFTER_HARNESS'
   $instanceAfterHarness=Test-Path -LiteralPath $taskInstance
   if($instanceAfterHarness){Set-TaskPhase 'CLEANUP_INSTANCE_REMOVE';throw 'INSTANCE_REMOVE_FAILED'}
   Set-TaskPhase 'CLEANUP_PAYLOAD_REMOVE'
@@ -433,6 +450,7 @@ try{
     if(Test-Path -LiteralPath $payloadPath){Assert-TaskPath $payloadPath;Remove-Item -LiteralPath $payloadPath -Recurse -Force}
   }
   Set-TaskPhase 'CLEANUP_INSPECTION'
+  Set-TaskPhase 'CLEANUP_READ_PAYLOAD_AFTER_HARNESS'
   $payloadRemoved=(@($taskExtract,$taskZip,$taskInstall,$taskLog,$taskSetupStdout,$taskSetupStderr,$taskRawSnapshot,$taskSnapshot)|Where-Object{Test-Path -LiteralPath $_}).Count -eq 0
   if(!$payloadRemoved){Set-TaskPhase 'CLEANUP_PAYLOAD_REMOVE';throw 'PAYLOAD_REMOVE_FAILED'}
   Set-TaskPhase 'CLEANUP_FINAL_STATE'
