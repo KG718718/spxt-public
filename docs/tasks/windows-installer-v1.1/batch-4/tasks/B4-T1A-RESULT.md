@@ -1,6 +1,6 @@
 # B4-T1A Result — Historical beta.1 identity evidence capability
 
-状态：**BLOCKED — 云端真实 anchors 仍未取得，payload 零残留计数缺陷已在本地修复**。主控尚未整合、push 或重跑本轮修复；不能据此放行 T3 或报告 Batch 4 PASS。
+状态：**PASS — B4-T1A 历史 beta.1 身份取证已在托管 Windows runner 成功，严格 evidence 与历史 profile 已固化**。本结论仅覆盖 B4-T1A；不等于 Batch 4 PASS，也不替代 T4 的 `fresh-ci-baseline` 与最终双来源 identity bundle。
 
 ## 已完成
 
@@ -91,13 +91,25 @@
 
 最小修复仅把固定 payload 路径过滤结果先以 `@(...)` 显式数组化，再读取 `Count`；`$payloadRemoved` 仍且仅在计数为0时为 true，任意正数仍切换到 `CLEANUP_PAYLOAD_REMOVE` 并失败。删除列表、`Assert-TaskPath`、`-LiteralPath`、清理顺序和产品/数据契约均未变化。动态 PowerShell 回归验证零、一、两项残留分别得到0、1、2；零项不进入失败 phase，一项与两项都保持 `CLEANUP_PAYLOAD_REMOVE`。
 
+## 托管真实取证 PASS 与长期固化
+
+主控整合上述修复后，2026-09-23 的 manual workflow run `35781214911` 在精确 HEAD `3adc874e168261aa699b169683f932f14300a80d` 上执行。GitHub API 确认该 run 为 `workflow_dispatch`、attempt 1；其中唯一用于本任务结论的 `historical-identity` job `106927326670` 为 `completed/success`，公开日志含一次 `HISTORICAL_IDENTITY_PASS` 且不含 `HISTORICAL_IDENTITY_BLOCKED`。同一 run 的 sibling `setup` job 不是历史身份取证证据；它导致 workflow run 总结论为 failure，不改变已独立成功并上传证据的 historical job 结论，也不得据此报告整个 workflow 或 Batch 4 PASS。
+
+成功 job 上传 evidence Artifact `10718411569`：名称 `b4-historical-identity-evidence-3adc874e168261aa699b169683f932f14300a80d`，digest `sha256:d2ed233ba188abaa6e4ea80e24d8e658e3baa9041249a36d4ae13da48452bf60`，API 核验 `expired=false`，到期时间 `2026-10-22T20:37:16Z`。该 evidence 证明历史来源 run `35514357007` / Artifact `10606870944` / source commit `e9417f036d0cdf736ff84682556a994040f0de0b` / source tree `5da66cb9b73dfa307948634634bfab2cfaaead12`，旧 Artifact digest 为 `sha256:4d88dd071fb9c14e85c2f2b0c5aab26f425ae25765c564ea275bc21483043f7f`；唯一 Setup 为 32,988,254 bytes，SHA256 `49d28d4dbd131b0dd0890e44aea358d75a8406803ff10df808f073d5c2a72af8`。
+
+真实安装后五个 exact anchors 为：program manifest `9160ce5dc49b2439759fa64273fd35bc529ad029a1fe0081f9c9396bedb1fe05`、program inventory `8818d2f74a52adaf4f89dd124ad9e2041286fbd44b509198d5c38860f6487f24`、runtime manifest `ed3ad8843eba580c3c233cd1e0c3a5635c23e47c24c0d95a5f41121f2f0a34f0`、Launcher `12e421cc3d00f79c4802991b59446d654e0782860eb701265ea523ce1ca00e8b`、build info `d6e45d1f737266230c96e37652a118dea2e2f0c79d73de125a3625525222dd27`。`anchorCount=5`、`t1SinglePolicy=PASS`、registry view 为 64，唯一 registration/binding 均为1。
+
+卸载与夹具清理证据全部满足批准契约：uninstaller exit 0；program root、卸载登记、桌面/开始菜单快捷方式均已清除；产品卸载后 binding 与 instance 均保留；harness 随后精确移除 owned binding、instance 与全部临时 payload，最终 registration/binding 计数和 instance 存在状态均为零/false。
+
+经审查的同 schema evidence 已固化为 `tools/windows-installer/historical-identity/historical-run-35514357007-evidence.json`，专项测试通过 `validateEvidence` 校验封闭字段、固定来源、精确 policy、五锚及 cleanup。这里固化的是批准的 `historical-run-35514357007` profile，不是提前伪造最终 bundle；完整 bundle 仍必须等待 T4 产生并核验 `fresh-ci-baseline` 后，由主控按 T1 已批准规则组合或在完整 fingerprint 相同时显式去重。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：69 PASS，0 FAIL，0 SKIP；cleanup 回归动态覆盖 payload 零/一/多项准确计数及残留失败 phase，并继续覆盖九类只读状态、uninstaller 终态等待、固定超时、精确删除边界、最终状态及 evidence 写入；hosted 根目录测试保持通过。
+- historical-identity 专项：70 PASS，0 FAIL，0 SKIP；新增 checked-in hosted evidence 严格 schema、精确历史 policy、五锚与 cleanup 固化回归；cleanup 动态回归继续覆盖 payload 零/一/多项准确计数及残留失败 phase，并覆盖九类只读状态、uninstaller 终态等待、固定超时、精确删除边界、最终状态及 evidence 写入；hosted 根目录测试保持通过。
 - T1 upgrade-detection：45 PASS，0 FAIL，0 SKIP；新增构建期全局路径排序契约及“同集合重排 manifest 仍拒绝”回归。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。
@@ -105,11 +117,11 @@
 
 ## 未验证与风险
 
-- 本任务未在开发机下载 Artifact 或保存发行包。云端首次真实 workflow 已失败且没有 evidence，历史 profile 中五个 hash 仍未知；只有诊断返工整合、重跑并得到成功 JSON 后才能固化这些锚。
+- 本任务未在开发机下载 Artifact 或保存发行包。成功 historical job 的临时 Artifact 将于 2026-10-22 到期；其经审查、非敏感、严格 schema evidence 已在仓库固化，因此后续不应依赖到期 Artifact 才能恢复历史 profile。Artifact digest 是上传归档 digest，不是仓库内 JSON 文件 hash，两者不得混同。
 - [Microsoft WOW64 registry 文档](https://learn.microsoft.com/en-us/windows/win32/winprog64/shared-registry-keys)说明共享键可把同一物理副本映射到两个逻辑视图；本修复在进入已批准 T1 契约前，仅折叠字段完全相同的 HKCU 共享别名，仍向 T1 提供唯一 view。若 hosted runner 返回任何差异或额外记录，workflow 仍将 `BLOCKED`，不能放宽为 commit/tree。
 - GitHub Artifact API 若 digest/大小/attempt/expiry 等任一固定元数据变化、Artifact 已过期、下载 ZIP digest 或 Setup hash 不符、真实安装参数失败、安装内锚冲突、T1 单 policy 不通过或清理不完整，均 fail closed；不产出成功 evidence。
 - 两代 Setup 仍为 unsigned development artifact。本任务只证明相对固定公开 Artifact 和 beta.2 未来内置锚的一致性，不提供发布者签名保证。
 
 ## 主控后续
 
-Review 本任务追加 local commit 后重新整合到开发分支，通过默认分支已登记的 `setup-v3.yml` 对开发分支 ref 发起 manual dispatch。必须确认 historical job 不再创建 `subst E:`，hosted 根目录预检通过，并审查实际 Actions JSON、Run ID、Artifact ID、五个安装后 anchors、T1 PASS 和 cleanup PASS；云端失败则按稳定 BLOCKED 结论处理。本任务不接续 T3/T4。
+Review 本任务 local commit，核对 checked-in evidence 与 run `35781214911` / job `106927326670` / Artifact `10718411569` 的已审查事实一致；随后把其中 `profile` 作为最终 beta.2 identity bundle 的 historical 输入。只有 T4 的真实 `fresh-ci-baseline` 也取得并通过批准规则后，才能生成完整 bundle并继续相应门禁。本任务不授权 T3/T4、push、main、tag 或 Release。

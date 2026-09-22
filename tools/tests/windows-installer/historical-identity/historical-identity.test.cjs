@@ -208,6 +208,32 @@ test('draft and finalized evidence use the closed profile schema and contain onl
   } finally { cleanup(f); }
 });
 
+test('reviewed hosted evidence anchors the exact historical policy in the repository', () => {
+  const evidenceFile = path.resolve(__dirname,
+    '../../../windows-installer/historical-identity/historical-run-35514357007-evidence.json');
+  const evidence = JSON.parse(fs.readFileSync(evidenceFile, 'utf8'));
+  assert.equal(validateEvidence(evidence), evidence);
+  assert.deepEqual(evidence.profile.policy, {
+    schema: 1,
+    appId: 'KSESSION-Beta-Installer-v1',
+    uninstallKey: UNINSTALL_KEY,
+    bindingKey: BINDING_KEY,
+    fromInstallerVersion: '1.1.0-beta.1',
+    targetInstallerVersion: '1.1.0-beta.2',
+    appVersion: '1.0.0',
+    dataContractVersion: 1,
+    allowLegacyMissingDataContract: true,
+    sourceCommit: SOURCE_COMMIT,
+    sourceTree: TREE,
+    programManifestSha256: '9160ce5dc49b2439759fa64273fd35bc529ad029a1fe0081f9c9396bedb1fe05',
+    programInventorySha256: '8818d2f74a52adaf4f89dd124ad9e2041286fbd44b509198d5c38860f6487f24',
+    runtimeManifestSha256: 'ed3ad8843eba580c3c233cd1e0c3a5635c23e47c24c0d95a5f41121f2f0a34f0',
+    launcherSha256: '12e421cc3d00f79c4802991b59446d654e0782860eb701265ea523ce1ca00e8b',
+    buildInfoSha256: 'd6e45d1f737266230c96e37652a118dea2e2f0c79d73de125a3625525222dd27'
+  });
+  assert.deepEqual(evidence.verification.cleanup, cleanupProof());
+});
+
 test('output redaction rejects local paths, usernames, tokens, credentials and business filenames', () => {
   for (const value of [
     {note: 'E:\\runner\\payload'}, {note: 'C:/Users/runneradmin'}, {note: 'authorization bearer'},

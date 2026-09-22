@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "kind": "k-session-historical-identity-evidence",
+  "status": "PASS",
+  "source": {
+    "repository": "KG718718/spxt-public",
+    "runId": 35514357007,
+    "runAttempt": 1,
+    "artifactId": 10606870944,
+    "artifactName": "K-SESSION-setup-win-x64-e9417f036d0cdf736ff84682556a994040f0de0b",
+    "artifactDigest": "sha256:4d88dd071fb9c14e85c2f2b0c5aab26f425ae25765c564ea275bc21483043f7f",
+    "headSha": "e9417f036d0cdf736ff84682556a994040f0de0b",
+    "setupFileName": "K-SESSION-Setup-1.1.0-beta.1.exe",
+    "setupBytes": 32988254,
+    "setupSha256": "49d28d4dbd131b0dd0890e44aea358d75a8406803ff10df808f073d5c2a72af8"
+  },
+  "profile": {
+    "id": "historical-run-35514357007",
+    "sources": [
+      "historical-run-35514357007"
+    ],
+    "policy": {
+      "schema": 1,
+      "appId": "KSESSION-Beta-Installer-v1",
+      "uninstallKey": "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\KSESSION-Beta-Installer-v1_is1",
+      "bindingKey": "Software\\KSESSION\\Beta\\InstallerBinding",
+      "fromInstallerVersion": "1.1.0-beta.1",
+      "targetInstallerVersion": "1.1.0-beta.2",
+      "appVersion": "1.0.0",
+      "dataContractVersion": 1,
+      "allowLegacyMissingDataContract": true,
+      "sourceCommit": "e9417f036d0cdf736ff84682556a994040f0de0b",
+      "sourceTree": "5da66cb9b73dfa307948634634bfab2cfaaead12",
+      "programManifestSha256": "9160ce5dc49b2439759fa64273fd35bc529ad029a1fe0081f9c9396bedb1fe05",
+      "programInventorySha256": "8818d2f74a52adaf4f89dd124ad9e2041286fbd44b509198d5c38860f6487f24",
+      "runtimeManifestSha256": "ed3ad8843eba580c3c233cd1e0c3a5635c23e47c24c0d95a5f41121f2f0a34f0",
+      "launcherSha256": "12e421cc3d00f79c4802991b59446d654e0782860eb701265ea523ce1ca00e8b",
+      "buildInfoSha256": "d6e45d1f737266230c96e37652a118dea2e2f0c79d73de125a3625525222dd27"
+    }
+  },
+  "verification": {
+    "artifactMetadata": "PASS",
+    "uniqueSetup": "PASS",
+    "installedAnchors": "PASS",
+    "registrySnapshot": "PASS",
+    "t1SinglePolicy": "PASS",
+    "registryView": "64",
+    "registrationCount": 1,
+    "bindingCount": 1,
+    "anchorCount": 5,
+    "cleanup": {
+      "uninstallerExitCode": 0,
+      "programRootExistsAfterUninstall": false,
+      "uninstallRegistrationCountAfterUninstall": 0,
+      "desktopShortcutExistsAfterUninstall": false,
+      "startMenuShortcutExistsAfterUninstall": false,
+      "bindingRetainedAfterUninstall": true,
+      "instanceRetainedAfterUninstall": true,
+      "bindingRegistrationCountAfterHarnessCleanup": 0,
+      "instanceExistsAfterHarnessCleanup": false,
+      "temporaryPayloadRemoved": true
+    }
+  }
+}
