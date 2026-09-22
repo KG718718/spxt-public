@@ -1,6 +1,6 @@
 # B4-T1A Result — Historical beta.1 identity evidence capability
 
-状态：**PASS（仅本地取证能力候选）**。尚未由主控整合、push 或触发 GitHub Actions；未下载历史 Artifact、未实际安装 beta.1、未取得历史 identity anchors，不能据此放行 T3 或报告 Batch 4 PASS。
+状态：**BLOCKED — 云端真实取证失败，封闭阶段诊断返工候选已完成**。主控已整合并触发一次 GitHub Actions，但尚未取得历史 identity anchors；本地返工尚未 push 或重跑，不能据此放行 T3 或报告 Batch 4 PASS。
 
 ## 已完成
 
@@ -19,13 +19,19 @@
 
 返工删除不可调度的独立 workflow，将同一 historical job 接入默认分支已有的 `setup-v3.yml`。静态测试固定以下门禁：push 触发存在但 historical job 条件必为 false；只有开发分支 manual dispatch 可以运行；historical job 仅有一次 upload-artifact，路径只能是 evidence JSON。现有 Setup job 的 push/manual 行为不改。
 
+## 首次真实取证与诊断返工
+
+开发分支最终源码 `4516203` 的 manual Setup run 35738365701 已实际启动；`historical-identity` job 106783536357 的静态与合成门禁通过，但真实取证步骤约 4 秒内只输出 `HISTORICAL_IDENTITY_BLOCKED` 后退出 1，未生成 evidence。该事实只能证明真实取证未通过，现有日志无法区分 hosted preflight、API metadata、下载、archive hash、解包、Setup 身份、安装、registry、锚收集、卸载、清理或最终输出中的哪一阶段，失败原因仍未知。
+
+诊断返工把所有可能失败的执行边界划分为封闭 allowlist：`HOSTED_PREFLIGHT`、`API_METADATA`、`ARTIFACT_DOWNLOAD`、`ARCHIVE_HASH`、`EXTRACT`、`SETUP_IDENTITY`、`INSTALL`、`REGISTRY`、`COLLECT`、`UNINSTALL`、`CLEANUP`、`FINALIZE`。catch 只允许输出 `HISTORICAL_IDENTITY_BLOCKED_<PHASE>`，不读取或输出异常消息、URL、路径、用户名、registry 值、token 或业务内容；所有原有 fail-closed 门禁保持不变。需由主控整合后诊断重跑才能定位阶段。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：12 PASS，0 FAIL，0 SKIP。
+- historical-identity 专项：13 PASS，0 FAIL，0 SKIP；新增项证明阶段值完整覆盖封闭 allowlist、无重复或动态阶段、catch 不读取异常正文，且每个可能输出均不含路径、用户名、URL、registry、token、密码或业务标记。
 - 既有 T1 upgrade-detection：43 PASS，0 FAIL，0 SKIP。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。
@@ -33,7 +39,7 @@
 
 ## 未验证与风险
 
-- 本任务未在开发机下载 Artifact 或保存发行包，亦未运行云端 workflow；历史 profile 中五个 hash 目前仍未知。只有主控整合并 push 后的实际 workflow 成功 JSON 才能固化这些锚。
+- 本任务未在开发机下载 Artifact 或保存发行包。云端首次真实 workflow 已失败且没有 evidence，历史 profile 中五个 hash 仍未知；只有诊断返工整合、重跑并得到成功 JSON 后才能固化这些锚。
 - [Microsoft WOW64 registry 文档](https://learn.microsoft.com/en-us/windows/win32/winprog64/shared-registry-keys)说明共享键可把同一物理副本映射到两个逻辑视图；已批准 T1 契约要求 snapshot 中唯一 view，本实现不擅自把两个结果去重。若 hosted runner 实测同时返回两份，workflow 将 `BLOCKED`，需主控依据原始非敏感计数判断是否退回 T1/上报决策，不能放宽为 commit/tree。
 - GitHub Artifact API 若 digest/大小/attempt/expiry 等任一固定元数据变化、Artifact 已过期、下载 ZIP digest 或 Setup hash 不符、真实安装参数失败、安装内锚冲突、T1 单 policy 不通过或清理不完整，均 fail closed；不产出成功 evidence。
 - 两代 Setup 仍为 unsigned development artifact。本任务只证明相对固定公开 Artifact 和 beta.2 未来内置锚的一致性，不提供发布者签名保证。

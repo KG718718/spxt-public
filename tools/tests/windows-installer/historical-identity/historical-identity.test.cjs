@@ -186,3 +186,26 @@ test('default-registered Setup workflow isolates historical capture to manual de
   assert.doesNotMatch(historical, /(?:\.exe|artifact\.zip|installed|taskWork)\s*$/im);
   assert.equal((historical.match(/actions\/upload-artifact@/g) || []).length, 1, 'historical job uploads exactly one artifact');
 });
+
+test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist', () => {
+  const root = path.resolve(__dirname, '../../../..');
+  const script = fs.readFileSync(path.join(root, 'tools/windows-installer/historical-identity/invoke.ps1'), 'utf8');
+  const allowlistBlock = script.match(/\$taskAllowedPhases=@\(([\s\S]*?)\)\s*\$taskPhase=/);
+  assert.ok(allowlistBlock, 'phase allowlist missing');
+  const allowed = [...allowlistBlock[1].matchAll(/'([A-Z_]+)'/g)].map(match => match[1]);
+  assert.deepEqual(allowed, ['HOSTED_PREFLIGHT', 'API_METADATA', 'ARTIFACT_DOWNLOAD', 'ARCHIVE_HASH', 'EXTRACT',
+    'SETUP_IDENTITY', 'INSTALL', 'REGISTRY', 'COLLECT', 'UNINSTALL', 'CLEANUP', 'FINALIZE']);
+  assert.equal(new Set(allowed).size, allowed.length, 'phase allowlist contains duplicates');
+  const assigned = [...script.matchAll(/Set-TaskPhase '([A-Z_]+)'/g)].map(match => match[1]);
+  assert.deepEqual([...new Set(assigned)], allowed, 'every and only allowlisted phases must be assigned');
+  const catchBlock = script.match(/} catch \{([\s\S]*?)\n} finally \{/);
+  assert.ok(catchBlock, 'closed catch block missing');
+  assert.match(catchBlock[1], /\$taskAllowedPhases -notcontains \$taskPhase/);
+  assert.match(catchBlock[1], /WriteLine\('HISTORICAL_IDENTITY_BLOCKED_'\+\$taskPhase\)/);
+  assert.doesNotMatch(catchBlock[1], /\$_|Exception|\.Message|https?:|taskWork|taskToken|RepositoryRoot|OutputFile|registry/i);
+  for (const phase of allowed) {
+    const output = `HISTORICAL_IDENTITY_BLOCKED_${phase}`;
+    assert.match(output, /^HISTORICAL_IDENTITY_BLOCKED_[A-Z_]+$/);
+    assert.doesNotMatch(output, /[A-Za-z]:[\\/]|Users|token|password|cookie|authorization|https?:|\\Software\\/i);
+  }
+});
