@@ -14,8 +14,8 @@
 [Setup]
 AppId=KSESSION-Beta-Installer-v1
 AppName=K⁺-SESSION Beta
-AppVersion=1.1.0-beta.1
-AppVerName=K⁺-SESSION Beta — Installer 1.1.0-beta.1 (Unsigned)
+AppVersion=1.1.0-beta.2
+AppVerName=K⁺-SESSION Beta — Installer 1.1.0-beta.2 (Unsigned)
 VersionInfoVersion=1.1.0.0
 VersionInfoDescription=K-SESSION Unsigned Beta Installer
 DefaultDirName={localappdata}\Programs\K-SESSION-Beta
@@ -43,16 +43,33 @@ WizardStyle=modern
 Compression=lzma2
 SolidCompression=yes
 OutputDir={#Output}
-OutputBaseFilename=K-SESSION-Setup-1.1.0-beta.1
+OutputBaseFilename=K-SESSION-Setup-1.1.0-beta.2
 InfoBeforeFile={#Generated}\install-info.txt
 
 [Files]
 #include AddBackslash(Generated) + "files.iss"
-Source: "{#Generated}\build-info.json"; DestDir: "{app}\uninstall"; Flags: ignoreversion
-Source: "{#Generated}\installer-manifest.json"; DestDir: "{app}\uninstall"; Flags: ignoreversion
+Source: "{#Generated}\build-info.json"; DestDir: "{app}\uninstall"; Flags: ignoreversion; Check: IsFreshInstall
+Source: "{#Generated}\installer-manifest.json"; DestDir: "{app}\uninstall"; Flags: ignoreversion; Check: IsFreshInstall
+Source: "{#Generated}\build-info.json"; DestDir: "{tmp}\ksession-upgrade-v1\metadata"; Flags: ignoreversion; Check: IsUpgradeInstall
+Source: "{#Generated}\installer-manifest.json"; DestDir: "{tmp}\ksession-upgrade-v1\metadata"; Flags: ignoreversion; Check: IsUpgradeInstall
 Source: "{#Generated}\LICENSE-Inno-Setup.txt"; DestDir: "{app}\uninstall"; Flags: ignoreversion
-Source: "{#Generated}\instance-binding.ini"; DestDir: "{app}\uninstall"; Flags: ignoreversion; AfterInstall: WriteInstanceBinding
+Source: "{#Generated}\instance-binding.ini"; DestDir: "{app}\uninstall"; Flags: ignoreversion; AfterInstall: WriteInstanceBinding; Check: IsFreshInstall
 Source: "{#Payload}\K-SESSION.exe"; DestName: "ksession-location-check.exe"; Flags: dontcopy
+Source: "{#Payload}\runtime\node.exe"; DestName: "ksession-beta2-node.exe"; Flags: dontcopy
+Source: "{#Generated}\approved-identity-bundle.json"; Flags: dontcopy
+Source: "{#Generated}\upgrade-detection.cjs"; Flags: dontcopy
+Source: "{#Generated}\upgrade-preflight.cjs"; Flags: dontcopy
+Source: "{#Generated}\upgrade-gate.cjs"; Flags: dontcopy
+Source: "{#Generated}\upgrade-gate-cli.cjs"; Flags: dontcopy
+Source: "{#Generated}\upgrade-transaction.cjs"; Flags: dontcopy
+Source: "{#Generated}\upgrade-transaction-cli.cjs"; Flags: dontcopy
+Source: "{#Generated}\runtime-common.cjs"; Flags: dontcopy
+Source: "{#Generated}\public-startup.js"; Flags: dontcopy
+Source: "{#Generated}\public-config-store.js"; Flags: dontcopy
+Source: "{#Generated}\tax-config.js"; Flags: dontcopy
+Source: "{#Generated}\invoice-access-policy.js"; Flags: dontcopy
+Source: "{#Generated}\service-fee-config.js"; Flags: dontcopy
+Source: "{#Generated}\bonus-config.js"; Flags: dontcopy
 
 [Icons]
 Name: "{userdesktop}\K⁺-SESSION"; Filename: "{app}\program\K-SESSION.exe"; Parameters: "--instance ""{code:SelectedInstance}"""; WorkingDir: "{app}\program"
@@ -70,7 +87,11 @@ const
 var
   InstanceLock, LauncherLock, NodeLock: LongWord;
   DataPage: TInputDirWizardPage;
+  UpgradePage: TOutputMsgWizardPage;
   PriorInstance, ConfirmedInstance, LocationChecker: String;
+  UpgradeMode, TransactionPrepared, TransactionSwapped, TransactionFinalized: Boolean;
+  PriorDisplayName, PriorDisplayVersion, PriorInstallRoot, PriorUninstallString: String;
+  PriorBindingRoot, PriorBindingInstance, UpgradeRequest, UpgradePlan: String;
 #ifdef FaultCancel
   FaultCancelIssued: Boolean;
 #endif
@@ -107,6 +128,7 @@ function SelectedInstance(Param: String): String;
 begin
   if IsUninstaller then
     Result := GetIniString('Installation', 'Instance', '', ExpandConstant('{app}\uninstall\instance-binding.ini'))
+  else if UpgradeMode then Result := PriorBindingInstance
   else Result := DataPage.Values[0];
 end;
 
@@ -120,9 +142,12 @@ procedure InitializeWizard;
 var Saved: String;
 begin
   PriorInstance := '';
-  Saved := LegacyInstance;
-  if RegQueryStringValue(HKCU64, BindingKey, 'Instance', PriorInstance) and (PriorInstance <> '') then Saved := PriorInstance
-  else if DirExists(Saved) then PriorInstance := Saved;
+  if UpgradeMode then begin PriorInstance := PriorBindingInstance; Saved := PriorBindingInstance; end
+  else begin
+    Saved := LegacyInstance;
+    if RegQueryStringValue(HKCU64, BindingKey, 'Instance', PriorInstance) and (PriorInstance <> '') then Saved := PriorInstance
+    else if DirExists(Saved) then PriorInstance := Saved;
+  end;
   DataPage := CreateInputDirPage(wpInfoBefore, '业务数据与附件保存位置', '请选择长期稳定的数据目录（不是程序安装目录）',
     '项目附件、发票附件、备份及业务数据会保存在这里。'#13#10 +
     '卸载K⁺-SESSION不会删除这里的数据，请选择长期稳定的位置。'#13#10 +
@@ -131,7 +156,19 @@ begin
   DataPage.Values[0] := Saved;
   Saved := ExpandConstant('{param:INSTANCE|}');
   if Saved <> '' then DataPage.Values[0] := Saved;
+  UpgradePage := CreateOutputMsgPage(wpInfoBefore, '升级现有 K⁺-SESSION Beta', '将沿用原业务数据与附件位置',
+    '原数据位置：' + PriorBindingInstance + #13#10#13#10 + '升级不会移动或删除业务数据与附件。');
 end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := (UpgradeMode and (PageID = DataPage.ID)) or ((not UpgradeMode) and (PageID = UpgradePage.ID));
+end;
+
+function IsFreshInstall: Boolean;
+begin Result := not UpgradeMode; end;
+function IsUpgradeInstall: Boolean;
+begin Result := UpgradeMode; end;
 
 function CheckDataLocation(Prepare: Boolean): String;
 var Code: Integer; Mode: String;
@@ -256,7 +293,10 @@ begin
   Result := True;
   if InstanceLock <> 0 then exit;
   P := BetaInstance + '\.launcher.lock';
-  if not FileExists(P) then exit; { never create or initialize an instance }
+  if not FileExists(P) then begin
+    Result := not UpgradeMode; { upgrade requires an existing lock object; never create one }
+    exit;
+  end;
   if (GetFileAttributesW(P) and $400) <> 0 then begin Result := False; exit; end;
   H := CreateFileW(P, $C0000000, 0, 0, 3, $80, 0); { OPEN_EXISTING; no write }
   Result := H <> $FFFFFFFF;
@@ -268,11 +308,156 @@ begin
   Result := RegKeyExists(HKCU64, ProductKey) or RegKeyExists(HKCU32, ProductKey);
 end;
 
+function JsonEscape(S: String): String;
+begin
+  Result := S;
+  StringChangeEx(Result, '\', '\\', True);
+  StringChangeEx(Result, '"', '\"', True);
+end;
+
+function ReadUpgradeIdentity: Boolean;
+var N, V, R, U, BR, BI: String;
+begin
+  Result := False;
+  if not RegQueryStringValue(HKCU64, ProductKey, 'DisplayName', PriorDisplayName) or
+     not RegQueryStringValue(HKCU64, ProductKey, 'DisplayVersion', PriorDisplayVersion) or
+     not RegQueryStringValue(HKCU64, ProductKey, 'InstallLocation', PriorInstallRoot) or
+     not RegQueryStringValue(HKCU64, ProductKey, 'UninstallString', PriorUninstallString) or
+     not RegQueryStringValue(HKCU64, BindingKey, 'InstallRoot', PriorBindingRoot) or
+     not RegQueryStringValue(HKCU64, BindingKey, 'Instance', PriorBindingInstance) then exit;
+  if RegQueryStringValue(HKCU32, ProductKey, 'DisplayName', N) then begin
+    if not RegQueryStringValue(HKCU32, ProductKey, 'DisplayVersion', V) or
+       not RegQueryStringValue(HKCU32, ProductKey, 'InstallLocation', R) or
+       not RegQueryStringValue(HKCU32, ProductKey, 'UninstallString', U) or
+       (N <> PriorDisplayName) or (V <> PriorDisplayVersion) or (CompareText(R, PriorInstallRoot) <> 0) or
+       (CompareText(U, PriorUninstallString) <> 0) then exit;
+  end;
+  if RegQueryStringValue(HKCU32, BindingKey, 'InstallRoot', BR) then begin
+    if not RegQueryStringValue(HKCU32, BindingKey, 'Instance', BI) or
+       (CompareText(BR, PriorBindingRoot) <> 0) or (CompareText(BI, PriorBindingInstance) <> 0) then exit;
+  end;
+  Result := (PriorDisplayName = 'K⁺-SESSION Beta') and (PriorDisplayVersion <> '') and
+    (PriorInstallRoot <> '') and (PriorBindingRoot <> '') and (PriorBindingInstance <> '');
+end;
+
+procedure ExtractUpgradeTools;
+begin
+  ExtractTemporaryFile('ksession-beta2-node.exe');
+  ExtractTemporaryFile('approved-identity-bundle.json');
+  ExtractTemporaryFile('upgrade-detection.cjs');
+  ExtractTemporaryFile('upgrade-preflight.cjs');
+  ExtractTemporaryFile('upgrade-gate.cjs');
+  ExtractTemporaryFile('upgrade-gate-cli.cjs');
+  ExtractTemporaryFile('upgrade-transaction.cjs');
+  ExtractTemporaryFile('upgrade-transaction-cli.cjs');
+  ExtractTemporaryFile('runtime-common.cjs');
+  ExtractTemporaryFile('public-startup.js');
+  ExtractTemporaryFile('public-config-store.js');
+  ExtractTemporaryFile('tax-config.js');
+  ExtractTemporaryFile('invoice-access-policy.js');
+  ExtractTemporaryFile('service-fee-config.js');
+  ExtractTemporaryFile('bonus-config.js');
+end;
+
+function RunNode(Script, Args: String): Boolean;
+var Code: Integer;
+begin
+  Result := Exec(ExpandConstant('{tmp}\ksession-beta2-node.exe'), '"' + ExpandConstant('{tmp}\') + Script + '" ' + Args,
+    ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, Code) and (Code = 0);
+end;
+
+function WriteUpgradeRequest: Boolean;
+var S: String;
+begin
+  UpgradeRequest := ExpandConstant('{tmp}\ksession-upgrade-request.json');
+  S := '{"schema":1,"snapshot":{"registrations":[{"view":"64","key":"' + JsonEscape(ProductKey) +
+    '","displayName":"' + JsonEscape(PriorDisplayName) + '","displayVersion":"' + JsonEscape(PriorDisplayVersion) +
+    '","installLocation":"' + JsonEscape(PriorInstallRoot) + '","uninstallString":"' + JsonEscape(PriorUninstallString) +
+    '"}],"bindings":[{"view":"64","key":"' + JsonEscape(BindingKey) + '","installRoot":"' + JsonEscape(PriorBindingRoot) +
+    '","instance":"' + JsonEscape(PriorBindingInstance) + '"}]},"preflight":{"installRoot":"' + JsonEscape(PriorInstallRoot) +
+    '","instancePath":"' + JsonEscape(PriorBindingInstance) + '","bindingFile":"' + JsonEscape(AddBackslash(PriorInstallRoot) + 'uninstall\instance-binding.ini') +
+    '","registeredInstallRoot":"' + JsonEscape(PriorBindingRoot) + '","registeredInstance":"' + JsonEscape(PriorBindingInstance) +
+    '","dataContractVersion":"1","appRoot":"' + JsonEscape(ExpandConstant('{tmp}')) + '"}}';
+  Result := SaveStringToFile(UpgradeRequest, S, False);
+end;
+
+function WriteUpgradePlan: Boolean;
+var S: String;
+begin
+  UpgradePlan := ExpandConstant('{tmp}\ksession-upgrade-plan.json');
+  S := '{"schema":1,"installRoot":"' + JsonEscape(PriorInstallRoot) + '","instancePath":"' + JsonEscape(PriorBindingInstance) +
+    '","stagedProgram":"' + JsonEscape(ExpandConstant('{tmp}\ksession-upgrade-v1\program')) +
+    '","stagedMetadata":"' + JsonEscape(ExpandConstant('{tmp}\ksession-upgrade-v1\metadata')) +
+    '","desktopShortcut":"' + JsonEscape(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) +
+    '","startMenuShortcut":"' + JsonEscape(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) +
+    '","sourceCommit":"{#SourceCommit}","runtimeManifestHash":"{#RuntimeManifestSha256}","launcherHash":"{#LauncherSha256}","programManifestHash":"{#ProgramManifestSha256}","instanceBindingSchema":1,"upgradeFrom":"1.1.0-beta.1","upgradeTo":"1.1.0-beta.2"}';
+  Result := SaveStringToFile(UpgradePlan, S, False);
+end;
+
+function RunUpgradeGate: Boolean;
+begin
+  Result := False;
+  ExtractUpgradeTools;
+  if not WriteUpgradeRequest then exit;
+  Result := RunNode('upgrade-gate-cli.cjs', '--request "' + UpgradeRequest + '" "' +
+    ExpandConstant('{tmp}\approved-identity-bundle.json') + '" "{#IdentityBundleSha256}"');
+end;
+
+function PrepareUpgradeTransaction: Boolean;
+begin
+  Result := False;
+  if not WriteUpgradePlan then exit;
+  Result := RunNode('upgrade-transaction-cli.cjs', 'prepare "' + UpgradePlan + '"');
+  if Result then TransactionPrepared := True;
+end;
+
+function WriteFreshInstallState: Boolean;
+var S, P: String;
+begin
+  P := ExpandConstant('{app}\uninstall\install-state.json');
+  S := '{"schema":1,"installerVersion":"1.1.0-beta.2","appVersion":"1.0.0","dataContractVersion":1,' +
+    '"sourceCommit":"{#SourceCommit}","runtimeManifestHash":"{#RuntimeManifestSha256}","launcherHash":"{#LauncherSha256}",' +
+    '"programManifestHash":"{#ProgramManifestSha256}","instanceBindingSchema":1,"installRoot":"' +
+    JsonEscape(ExpandConstant('{app}')) + '","instancePath":"' + JsonEscape(BetaInstance) +
+    '","upgradeFrom":"fresh","upgradeTo":"1.1.0-beta.2"}';
+  Result := SaveStringToFile(P, S, False);
+end;
+
+procedure RestoreUpgradeRegistration;
+begin
+  RegWriteStringValue(HKCU64, ProductKey, 'DisplayName', PriorDisplayName);
+  RegWriteStringValue(HKCU64, ProductKey, 'DisplayVersion', PriorDisplayVersion);
+  RegWriteStringValue(HKCU64, ProductKey, 'InstallLocation', PriorInstallRoot);
+  RegWriteStringValue(HKCU64, ProductKey, 'UninstallString', PriorUninstallString);
+  RegWriteStringValue(HKCU64, BindingKey, 'InstallRoot', PriorBindingRoot);
+  RegWriteStringValue(HKCU64, BindingKey, 'Instance', PriorBindingInstance);
+end;
+
+function VerifyFinalRegistration: Boolean;
+var V, R, I, S, V32, R32: String;
+begin
+  Result := False;
+  if not RegQueryStringValue(HKCU64, ProductKey, 'DisplayVersion', V) or (V <> '1.1.0-beta.2') or
+     not RegQueryStringValue(HKCU64, ProductKey, 'InstallLocation', R) or (CompareText(R, ExpandConstant('{app}')) <> 0) or
+     not RegQueryStringValue(HKCU64, BindingKey, 'Instance', I) or (CompareText(I, PriorBindingInstance) <> 0) then exit;
+  if RegQueryStringValue(HKCU32, ProductKey, 'DisplayVersion', V32) then begin
+    if not RegQueryStringValue(HKCU32, ProductKey, 'InstallLocation', R32) or (V32 <> V) or (CompareText(R32, R) <> 0) then exit;
+  end;
+  S := GetIniString('Installation', 'Schema', '', ExpandConstant('{app}\uninstall\instance-binding.ini'));
+  R := GetIniString('Installation', 'InstallRoot', '', ExpandConstant('{app}\uninstall\instance-binding.ini'));
+  I := GetIniString('Installation', 'Instance', '', ExpandConstant('{app}\uninstall\instance-binding.ini'));
+  Result := (S = '1') and (CompareText(R, ExpandConstant('{app}')) = 0) and (CompareText(I, PriorBindingInstance) = 0);
+end;
+
 function InitializeSetup: Boolean;
 begin
   Result := False;
-  if HasRegistration then begin Log('KSESSION_REJECT_REGISTERED'); SuppressibleMsgBox(ExistingMessage, mbError, MB_OK, IDOK); exit; end;
   if RunningProduct then begin Log('KSESSION_REJECT_RUNNING'); SuppressibleMsgBox(RunningMessage, mbError, MB_OK, IDOK); exit; end;
+  UpgradeMode := HasRegistration;
+  if UpgradeMode and not ReadUpgradeIdentity then begin
+    Log('KSESSION_UPGRADE_REGISTRATION_REJECTED');
+    SuppressibleMsgBox('现有安装登记缺失、冲突或损坏，无法安全升级。不会修改现有程序或数据。', mbError, MB_OK, IDOK); exit;
+  end;
   Result := True;
 end;
 
@@ -282,12 +467,18 @@ begin
   Result := '';
   ReleaseLocks;
   P := ExpandConstant('{app}');
-  Result := CheckDataLocation(False); if Result <> '' then exit;
-  if not ConfirmDataChoice then begin Log('KSESSION_DATA_SWITCH_UNCONFIRMED'); Result := '未确认使用另一数据位置（不会自动迁移）。'; exit; end;
+  if not UpgradeMode then begin
+    Result := CheckDataLocation(False); if Result <> '' then exit;
+    if not ConfirmDataChoice then begin Log('KSESSION_DATA_SWITCH_UNCONFIRMED'); Result := '未确认使用另一数据位置（不会自动迁移）。'; exit; end;
+  end;
   if not SafePath(P) then begin Log('KSESSION_REJECT_PATH'); Result := '安装路径无效、包含重解析点或与数据/系统目录重叠。'; exit; end;
-  if HasRegistration then begin Result := ExistingMessage; exit; end;
-  if FileExists(P) or (DirExists(P) and NonEmpty(P)) then begin Log('KSESSION_REJECT_NONEMPTY'); Result := '目标目录不是空目录，拒绝覆盖未知文件。'; exit; end;
-  if FileExists(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) or FileExists(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) then begin Result := '已有同名快捷方式，拒绝覆盖。请确认其来源后再安装。'; exit; end;
+  if UpgradeMode then begin
+    if CompareText(P, PriorInstallRoot) <> 0 then begin Result := '升级安装目录与原登记不一致，已拒绝。'; exit; end;
+  end else begin
+    if HasRegistration then begin Result := ExistingMessage; exit; end;
+    if FileExists(P) or (DirExists(P) and NonEmpty(P)) then begin Log('KSESSION_REJECT_NONEMPTY'); Result := '目标目录不是空目录，拒绝覆盖未知文件。'; exit; end;
+    if FileExists(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) or FileExists(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) then begin Result := '已有同名快捷方式，拒绝覆盖。请确认其来源后再安装。'; exit; end;
+  end;
   if RunningProduct or not AcquireExistingInstanceLock then begin Result := RunningMessage; exit; end;
   Ancestor := P;
   while not DirExists(Ancestor) do Ancestor := ExtractFileDir(Ancestor);
@@ -298,6 +489,10 @@ begin
   H := CreateFileW(Probe, $40000000, 0, 0, 1, $04000100, 0); { CREATE_NEW, delete-on-close }
   if H = $FFFFFFFF then begin Log('KSESSION_REJECT_WRITE'); Result := '当前用户没有目录写入权限。不会请求管理员权限。'; exit; end;
   CloseHandle(H);
+  if UpgradeMode then begin
+    if not RunUpgradeGate then begin Log('KSESSION_UPGRADE_PREFLIGHT_REJECTED'); Result := '现有安装、数据绑定或业务实例未通过安全升级检查；未修改现有程序或数据。'; exit; end;
+    if not PrepareUpgradeTransaction then begin Log('KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED'); Result := '无法建立可恢复升级事务；未修改现有程序或数据。'; exit; end;
+  end;
   Log('KSESSION_PREINSTALL_READY');
 end;
 
@@ -314,10 +509,26 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then begin
+    if UpgradeMode then begin
+      if not RunNode('upgrade-transaction-cli.cjs', 'commit "' + UpgradePlan + '"') then
+        RaiseException('升级提交失败；旧程序恢复结果请查看安装日志。');
+      TransactionSwapped := True;
+    end;
     VerifyInstalled;
-    if CheckDataLocation(True) <> '' then RaiseException('无法准备所选数据位置；不会改写已有数据。');
+    if (not UpgradeMode) and (CheckDataLocation(True) <> '') then RaiseException('无法准备所选数据位置；不会改写已有数据。');
+    if (not UpgradeMode) and not WriteFreshInstallState then RaiseException('无法保存安装状态。');
     if not RegWriteStringValue(HKCU64, BindingKey, 'InstallRoot', ExpandConstant('{app}')) or
        not RegWriteStringValue(HKCU64, BindingKey, 'Instance', BetaInstance) then RaiseException('无法记录上次数据位置。');
+    if UpgradeMode then begin
+      if not FileExists(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) or
+         not FileExists(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) then
+        RaiseException('升级后的快捷方式验证失败。');
+      if not VerifyFinalRegistration then RaiseException('升级后的安装登记或数据绑定验证失败。');
+      if not RunNode('upgrade-transaction-cli.cjs', 'finalize "' + UpgradePlan + '"') then
+        RaiseException('升级终态验证失败；将尝试恢复旧程序。');
+      TransactionFinalized := True;
+      Log('KSESSION_UPGRADE_TRANSACTION_COMMITTED');
+    end;
     ReleaseLocks; { allow first start only after completed checks }
     Log('KSESSION_INSTALLED_PAYLOAD_VERIFIED');
     Log('KSESSION_DESKTOP_LINK=' + ExpandConstant('{userdesktop}\K⁺-SESSION.lnk'));
@@ -352,7 +563,16 @@ begin
 end;
 
 procedure DeinitializeSetup;
-begin ReleaseLocks; end;
+begin
+  if UpgradeMode and TransactionPrepared and not TransactionFinalized then begin
+    if RunNode('upgrade-transaction-cli.cjs', 'rollback "' + UpgradePlan + '"') then begin
+      Log('KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK');
+    end else Log('KSESSION_UPGRADE_ROLLBACK_FAILED');
+    { commit may already have completed its filesystem rollback and removed the journal }
+    RestoreUpgradeRegistration;
+  end;
+  ReleaseLocks;
+end;
 procedure DeinitializeUninstall;
 begin ReleaseLocks; end;
 

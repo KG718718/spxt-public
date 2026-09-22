@@ -8,12 +8,18 @@ $taskPortable=Join-Path $taskWork 'portable'
 & (Join-Path $taskRepo 'tools/windows-portable/ci.ps1') -Work $taskPortable -Commit $Commit
 $taskNode=Join-Path $taskPortable 'node-tool/node-v24.21.0-win-x64/node.exe'
 $taskGo=Join-Path $taskPortable 'go-tool/go/bin/go.exe'
+$taskBundle=[IO.Path]::GetFullPath([string]$env:KSESSION_APPROVED_IDENTITY_BUNDLE)
+if(!$env:KSESSION_APPROVED_IDENTITY_BUNDLE -or $taskBundle -notmatch '^E:\\' -or !(Test-Path -LiteralPath $taskBundle -PathType Leaf)){
+ throw 'T4 must provide the reviewed historical+fresh identity bundle on the fixed E volume'
+}
 & $taskNode (Join-Path $taskRepo 'tools/tests/windows-installer/contract.cjs')
 if($LASTEXITCODE -ne 0){throw 'Installer contract failed'}
+& $taskNode --test (Join-Path $taskRepo 'tools/tests/windows-installer/upgrade-transaction/contract.test.cjs') (Join-Path $taskRepo 'tools/tests/windows-installer/upgrade-transaction/gate.test.cjs') (Join-Path $taskRepo 'tools/tests/windows-installer/upgrade-transaction/transaction.test.cjs')
+if($LASTEXITCODE -ne 0){throw 'Upgrade transaction contract failed'}
 & (Join-Path $PSScriptRoot 'toolchain.ps1') -Work (Join-Path $taskWork 'toolchain')
 $taskCompiler=Join-Path $taskWork 'toolchain/compiler'
 foreach($taskMode in @('candidate','fault-space','fault-cancel')){
- & $taskNode (Join-Path $PSScriptRoot 'build.cjs') $taskPortable $taskCompiler (Join-Path $taskWork $taskMode) $Commit $taskMode
+ & $taskNode (Join-Path $PSScriptRoot 'build.cjs') $taskPortable $taskCompiler (Join-Path $taskWork $taskMode) $Commit $taskMode $taskBundle
  if($LASTEXITCODE -ne 0){throw "Installer build failed: $taskMode"}
 }
 $taskArtifact=Join-Path $taskWork 'candidate/artifact'

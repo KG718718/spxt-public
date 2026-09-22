@@ -2,10 +2,12 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {sha,inventory}=require('../windows-runtime/common.cjs');
 const [root,commit]=process.argv.slice(2);
-const names=['K-SESSION-Setup-1.1.0-beta.1.exe','K-SESSION-Setup-1.1.0-beta.1.exe.sha256','build-info.json','installer-manifest.json','LICENSE-Inno-Setup.txt','license-summary.json','INSTALLER-TEST-REPORT.json','toolchain-verification.json','portable-test-report.json','public-regression.json','offline-network.json'];
+const names=['K-SESSION-Setup-1.1.0-beta.2.exe','K-SESSION-Setup-1.1.0-beta.2.exe.sha256','build-info.json','installer-manifest.json','LICENSE-Inno-Setup.txt','license-summary.json','INSTALLER-TEST-REPORT.json','toolchain-verification.json','portable-test-report.json','public-regression.json','offline-network.json'];
 assert.deepEqual(fs.readdirSync(root).sort(),names.sort());
 const read=p=>fs.readFileSync(path.join(root,p)),json=p=>JSON.parse(read(p).toString().replace(/^\uFEFF/,''));
 const i=json('build-info.json');assert.equal(i.sourceCommit,commit);assert.equal(i.mode,'candidate');assert.equal(i.unsigned,true);
+assert.equal(i.installerVersion,'1.1.0-beta.2');assert.equal(i.appVersion,'1.0.0');assert.equal(i.dataContractVersion,1);assert.equal(i.instanceBindingSchema,1);
+for(const key of ['runtimeManifestSha256','launcherSha256','programManifestHash'])assert.match(i[key],/^[a-f0-9]{64}$/,key);
 assert.equal(i.setupSha256,sha(read(names.find(n=>n.endsWith('.exe')))));
 const regression=json('public-regression.json');assert.equal(regression.sourceCommit,commit);assert.equal(regression.testTotal,742);assert.equal(regression.fail,0);assert.equal(regression.skipped,0);assert.equal(regression.suitePass,26);
 const tests=json('INSTALLER-TEST-REPORT.json');assert.equal(tests.sourceCommit,commit);assert.equal(tests.status,'AUTOMATED_PASS_HUMAN_PENDING');assert.equal(Object.keys(tests.checks).length,32);
