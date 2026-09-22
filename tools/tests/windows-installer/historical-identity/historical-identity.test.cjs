@@ -228,6 +228,8 @@ test('default-registered Setup workflow isolates historical capture to manual de
   assert.match(historical, /if: github\.event_name == 'workflow_dispatch' && github\.repository == 'KG718718\/spxt-public' && github\.ref == 'refs\/heads\/codex\/windows-installer-v1\.1'/);
   assert.match(historical, /permissions:\s*\n\s+contents: read\s*\n\s+actions: read/);
   assert.match(historical, /invoke\.ps1/);
+  assert.match(historical, /C:\/KSESSION-B4-T1A-EVIDENCE\/historical-identity-evidence\.json/);
+  assert.doesNotMatch(historical, /subst\s+E:|E:\/KSESSION-B4-T1A-EVIDENCE/);
   assert.match(historical, /if: success\(\)[\s\S]*path: \$\{\{ env\.KSESSION_HISTORICAL_EVIDENCE \}\}/);
   assert.doesNotMatch(historical, /(?:\.exe|artifact\.zip|installed|taskWork)\s*$/im);
   assert.equal((historical.match(/actions\/upload-artifact@/g) || []).length, 1, 'historical job uploads exactly one artifact');
@@ -257,7 +259,9 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
   const allowlistBlock = script.match(/\$taskAllowedPhases=@\(([\s\S]*?)\)\s*\$taskPhase=/);
   assert.ok(allowlistBlock, 'phase allowlist missing');
   const allowed = [...allowlistBlock[1].matchAll(/'([A-Z0-9_]+)'/g)].map(match => match[1]);
-  assert.deepEqual(allowed, ['HOSTED_PREFLIGHT', 'API_METADATA', 'ARTIFACT_DOWNLOAD', 'ARCHIVE_HASH', 'EXTRACT',
+  assert.deepEqual(allowed, ['HOSTED_PREFLIGHT', 'HOSTED_ROOT_INPUT', 'HOSTED_ROOT_PRESENT', 'HOSTED_ROOT_NOT_FIXED',
+    'HOSTED_ROOT_PLATFORM_VOLUME', 'HOSTED_ROOT_ANCESTOR', 'HOSTED_ROOT_REALPATH', 'HOSTED_ROOT_INSPECTION',
+    'HOSTED_ROOT_USAGE', 'HOSTED_ROOT_OTHER', 'API_METADATA', 'ARTIFACT_DOWNLOAD', 'ARCHIVE_HASH', 'EXTRACT',
     'SETUP_IDENTITY', 'INSTALL', 'INSTALL_FOOTPRINT_MANIFEST', 'INSTALL_FOOTPRINT_BUILD_INFO',
     'INSTALL_FOOTPRINT_BINDING', 'INSTALL_FOOTPRINT_RUNTIME', 'INSTALL_FOOTPRINT_LAUNCHER',
     'INSTALL_FOOTPRINT_INVENTORY', 'INSTALL_FOOTPRINT_RUNTIME_HASH', 'INSTALL_FOOTPRINT_LAUNCHER_HASH',
@@ -602,4 +606,48 @@ test('path-safety CLI classifies only path role and reparse boundary without out
     assert.match(script, /default \{Set-TaskPhase 'T1_PATH_REPARSE_OTHER'\}/);
     assert.match(script, /Set-TaskPhase 'T1_PATH_REPARSE_OTHER'[\s\S]*Invoke-PathSafetyCheck[\s\S]*Set-TaskPhase 'COLLECT'/);
   } finally { fs.rmSync(scratch, {recursive: true, force: true}); }
+});
+
+test('host-root preflight accepts a fixed local root and rejects mapped or unsafe roots without output', async t => {
+  const root = path.resolve(__dirname, '../../../..');
+  const cli = path.resolve(__dirname, '../../../windows-installer/historical-identity/cli.cjs');
+  const script = fs.readFileSync(path.join(root, 'tools/windows-installer/historical-identity/invoke.ps1'), 'utf8');
+  const workflow = fs.readFileSync(path.join(root, '.github/workflows/setup-v3.yml'), 'utf8');
+  function invoke(candidate) {
+    const result = childProcess.spawnSync(process.execPath, [cli, 'host-root', '--candidate', candidate], {encoding: 'utf8'});
+    assert.equal(result.signal, null); assert.equal(result.stdout, ''); assert.equal(result.stderr, '');
+    return result.status;
+  }
+  const ordinary = `C:\\KSESSION-B4-T1A-ROOT-${process.pid}-${Date.now()}`;
+  assert.equal(fs.existsSync(ordinary), false);
+  assert.equal(invoke(ordinary), 0, 'ordinary fixed local volume must pass');
+  assert.equal(invoke(root), 71, 'an existing candidate must fail before hosted work begins');
+  assert.equal(invoke('C:\\KSESSION B4 中文'), 70, 'unsafe path text must fail closed');
+  const scratch = fs.mkdtempSync(path.join(__dirname, '.tmp-host-root-'));
+  let mappedDrive = null;
+  try {
+    for (const letter of ['Z:', 'Y:', 'X:', 'W:']) {
+      if (!fs.existsSync(`${letter}\\`)) { mappedDrive = letter; break; }
+    }
+    assert.ok(mappedDrive, 'an unused synthetic drive letter is required');
+    const attach = childProcess.spawnSync('subst.exe', [mappedDrive, scratch], {encoding: 'utf8'});
+    assert.equal(attach.status, 0, 'synthetic mapped volume setup failed');
+    assert.equal(invoke(`${mappedDrive}\\KSESSION-B4-T1A-WORK`), 72, 'mapped platform volume must stay rejected');
+  } finally {
+    if (mappedDrive) childProcess.spawnSync('subst.exe', [mappedDrive, '/D'], {encoding: 'utf8'});
+    fs.rmSync(scratch, {recursive: true, force: true});
+  }
+  const exitMap = [...script.matchAll(/(7[0-6]) \{Set-TaskPhase '(HOSTED_ROOT_[A-Z_]+)'\}/g)]
+    .map(match => [Number(match[1]), match[2]]);
+  assert.deepEqual(exitMap, [[70, 'HOSTED_ROOT_INPUT'], [71, 'HOSTED_ROOT_PRESENT'],
+    [72, 'HOSTED_ROOT_PLATFORM_VOLUME'], [73, 'HOSTED_ROOT_ANCESTOR'], [74, 'HOSTED_ROOT_REALPATH'],
+    [75, 'HOSTED_ROOT_INSPECTION'], [76, 'HOSTED_ROOT_USAGE']]);
+  assert.match(script, /\$taskWork='C:\\KSESSION-B4-T1A-WORK'/);
+  assert.match(script, /DriveType -ne \[IO\.DriveType\]::Fixed/);
+  assert.match(script, /default \{Set-TaskPhase 'HOSTED_ROOT_OTHER'\}/);
+  const hostedBody = script.slice(script.indexOf('\ntry{'));
+  assert.ok(hostedBody.indexOf('Invoke-HostedRootCheck $taskWork') < hostedBody.indexOf('Invoke-WebRequest'),
+    'host roots must be rejected before artifact download');
+  const historical = workflow.slice(workflow.indexOf('\n  historical-identity:'));
+  assert.doesNotMatch(historical, /subst\s+E:/);
 });

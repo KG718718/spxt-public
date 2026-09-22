@@ -9,6 +9,15 @@ Set-StrictMode -Version Latest
 
 $taskAllowedPhases=@(
   'HOSTED_PREFLIGHT',
+  'HOSTED_ROOT_INPUT',
+  'HOSTED_ROOT_PRESENT',
+  'HOSTED_ROOT_NOT_FIXED',
+  'HOSTED_ROOT_PLATFORM_VOLUME',
+  'HOSTED_ROOT_ANCESTOR',
+  'HOSTED_ROOT_REALPATH',
+  'HOSTED_ROOT_INSPECTION',
+  'HOSTED_ROOT_USAGE',
+  'HOSTED_ROOT_OTHER',
   'API_METADATA',
   'ARTIFACT_DOWNLOAD',
   'ARCHIVE_HASH',
@@ -72,7 +81,7 @@ $taskAllowedPhases=@(
   'FINALIZE'
 )
 $taskPhase='HOSTED_PREFLIGHT'
-$taskWork='E:\KSESSION-B4-T1A-WORK'
+$taskWork='C:\KSESSION-B4-T1A-WORK'
 $taskExtract=Join-Path $taskWork 'artifact'
 $taskInstall=Join-Path $taskWork 'installed'
 $taskInstance=Join-Path $taskWork 'instance'
@@ -108,8 +117,9 @@ function Set-TaskPhase([string]$Phase) {
 }
 function Assert-TaskPath([string]$Path) {
   $full=[IO.Path]::GetFullPath($Path)
-  if (!$full.StartsWith('E:\KSESSION-B4-T1A-WORK\',[StringComparison]::OrdinalIgnoreCase) -and
-      !$full.Equals('E:\KSESSION-B4-T1A-WORK',[StringComparison]::OrdinalIgnoreCase)) { throw 'PATH_SCOPE' }
+  $scope=[IO.Path]::GetFullPath($taskWork).TrimEnd('\')
+  if (!$full.StartsWith(($scope+'\'),[StringComparison]::OrdinalIgnoreCase) -and
+      !$full.Equals($scope,[StringComparison]::OrdinalIgnoreCase)) { throw 'PATH_SCOPE' }
 }
 function Write-PrivateJson([string]$Path,$Value) {
   Assert-TaskPath $Path
@@ -268,12 +278,33 @@ function Invoke-PathSafetyCheck {
   }
   throw 'PATH_SAFETY_GATE'
 }
+function Invoke-HostedRootCheck([string]$Candidate) {
+  & $taskNode $taskCli 'host-root' '--candidate' $Candidate
+  $rootExit=$LASTEXITCODE
+  if($rootExit -eq 0){return}
+  switch($rootExit){
+    70 {Set-TaskPhase 'HOSTED_ROOT_INPUT'}
+    71 {Set-TaskPhase 'HOSTED_ROOT_PRESENT'}
+    72 {Set-TaskPhase 'HOSTED_ROOT_PLATFORM_VOLUME'}
+    73 {Set-TaskPhase 'HOSTED_ROOT_ANCESTOR'}
+    74 {Set-TaskPhase 'HOSTED_ROOT_REALPATH'}
+    75 {Set-TaskPhase 'HOSTED_ROOT_INSPECTION'}
+    76 {Set-TaskPhase 'HOSTED_ROOT_USAGE'}
+    default {Set-TaskPhase 'HOSTED_ROOT_OTHER'}
+  }
+  throw 'HOST_ROOT_GATE'
+}
 
 try{
   Set-TaskPhase 'HOSTED_PREFLIGHT'
   $taskNode=(Get-Command node.exe -ErrorAction Stop).Source
   if($env:GITHUB_ACTIONS -ne 'true' -or [string]::IsNullOrWhiteSpace($taskToken)){throw 'HOSTED_RUNNER_REQUIRED'}
-  if(Test-Path -LiteralPath $taskWork){throw 'WORK_ALREADY_EXISTS'}
+  Set-TaskPhase 'HOSTED_ROOT_OTHER'
+  Invoke-HostedRootCheck $taskWork
+  Invoke-HostedRootCheck ([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($OutputFile)))
+  $taskDrive=[IO.DriveInfo]::new(([IO.Path]::GetPathRoot($taskWork)))
+  if($taskDrive.DriveType -ne [IO.DriveType]::Fixed){Set-TaskPhase 'HOSTED_ROOT_NOT_FIXED';throw 'HOST_DRIVE_NOT_FIXED'}
+  Set-TaskPhase 'HOSTED_PREFLIGHT'
   if(Test-Path -LiteralPath $OutputFile){throw 'OUTPUT_ALREADY_EXISTS'}
   if((Count-Subkey $taskProductSubkey) -ne 0 -or (Count-Subkey $taskBindingSubkey) -ne 0 -or
      (Count-MachineSubkey $taskProductSubkey) -ne 0 -or (Count-MachineSubkey $taskBindingSubkey) -ne 0 -or

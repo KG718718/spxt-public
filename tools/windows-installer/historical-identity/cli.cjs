@@ -4,6 +4,7 @@
 const fs = require('node:fs');
 const {
   HistoricalIdentityError,
+  classifyHostedRootCandidate,
   classifyInstalledPathSafety,
   createDraft,
   finalizeEvidence,
@@ -40,6 +41,8 @@ const PATH_SAFETY_EXIT = Object.freeze({INSTALL_ROOT_SELF: 50, INSTALL_ROOT_ANCE
   INSTANCE_SELF: 52, INSTANCE_ANCESTOR: 53, UNINSTALL_SELF: 54, UNINSTALL_ANCESTOR: 55,
   PLATFORM_VOLUME: 56, INSTALL_ROOT_REALPATH: 57, INSTANCE_REALPATH: 58, UNINSTALL_REALPATH: 59,
   INSPECTION: 60, USAGE: 61, OTHER: 62});
+const HOST_ROOT_EXIT = Object.freeze({INPUT: 70, PRESENT: 71, PLATFORM_VOLUME: 72, ANCESTOR: 73,
+  REALPATH: 74, INSPECTION: 75, USAGE: 76, OTHER: 77});
 function normalizeSnapshotCommand() {
   const args = exactArgs(['--input', '--output']);
   if (!args) return NORMALIZE_EXIT.USAGE;
@@ -123,6 +126,15 @@ function pathSafetyCommand() {
   } catch { return PATH_SAFETY_EXIT.OTHER; }
 }
 
+function hostRootCommand() {
+  const args = exactArgs(['--candidate']);
+  if (!args) return HOST_ROOT_EXIT.USAGE;
+  try {
+    const category = classifyHostedRootCandidate(args['--candidate']);
+    return category === null ? 0 : (HOST_ROOT_EXIT[category] ?? HOST_ROOT_EXIT.OTHER);
+  } catch { return HOST_ROOT_EXIT.OTHER; }
+}
+
 const command = process.argv[2];
 if (command === 'normalize-snapshot') {
   try { process.exitCode = normalizeSnapshotCommand(); } catch { process.exitCode = NORMALIZE_EXIT.OTHER; }
@@ -138,6 +150,10 @@ if (command === 'install-log') {
 }
 if (command === 'path-safety') {
   try { process.exitCode = pathSafetyCommand(); } catch { process.exitCode = PATH_SAFETY_EXIT.OTHER; }
+  return;
+}
+if (command === 'host-root') {
+  try { process.exitCode = hostRootCommand(); } catch { process.exitCode = HOST_ROOT_EXIT.OTHER; }
   return;
 }
 

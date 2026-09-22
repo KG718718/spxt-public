@@ -112,13 +112,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if (!(Test-Path E:/)) {
-            $taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-b4-t1a-e'
-            New-Item -ItemType Directory -Path $taskDrive | Out-Null
-            subst E: $taskDrive
-            if ($LASTEXITCODE -ne 0) { throw 'E isolation unavailable' }
-          }
-          $taskOutput='E:/KSESSION-B4-T1A-EVIDENCE/historical-identity-evidence.json'
+          $taskOutput='C:/KSESSION-B4-T1A-EVIDENCE/historical-identity-evidence.json'
           & tools/windows-installer/historical-identity/invoke.ps1 -RepositoryRoot $env:GITHUB_WORKSPACE -OutputFile $taskOutput
           if ($LASTEXITCODE -ne 0) { throw 'Historical identity capture blocked' }
           "KSESSION_HISTORICAL_EVIDENCE=$taskOutput" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8

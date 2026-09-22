@@ -1,11 +1,11 @@
 # B4-T1A Result — Historical beta.1 identity evidence capability
 
-状态：**BLOCKED — 云端真实 anchors 仍未取得，最小细分诊断已在本地完成**。主控尚未整合、push 或重跑本轮诊断；不能据此放行 T3 或报告 Batch 4 PASS。
+状态：**BLOCKED — 云端真实 anchors 仍未取得，平台映射卷根因的最小修复已在本地完成**。主控尚未整合、push 或重跑本轮修复；不能据此放行 T3 或报告 Batch 4 PASS。
 
 ## 已完成
 
 - 复用默认分支已登记的 `setup-v3.yml` 作为 `workflow_dispatch` 入口，并新增独立 `historical-identity` job。该 job 仅允许 `workflow_dispatch`、公开仓库和开发分支 ref 同时成立时运行；push 事件绝不会进入历史 Artifact 下载/安装路径。job 权限仅 `contents: read`、`actions: read`。
-- 下载、解包和安装只在 GitHub 托管 Windows runner 的合成 E 盘工作目录；严格定位唯一 `K-SESSION-Setup-1.1.0-beta.1.exe`，固定 32,988,254 bytes 和 SHA256 `49d28d4dbd131b0dd0890e44aea358d75a8406803ff10df808f073d5c2a72af8`。
+- 下载、解包和安装只在 GitHub 托管 Windows runner 的任务专用本地固定卷工作目录；hosted 入口先以只读检查拒绝已存在、非固定、平台映射、祖先重解析或 realpath 不一致的根目录。严格定位唯一 `K-SESSION-Setup-1.1.0-beta.1.exe`，固定 32,988,254 bytes 和 SHA256 `49d28d4dbd131b0dd0890e44aea358d75a8406803ff10df808f073d5c2a72af8`。
 - 使用 beta.1 已有静默参数安装到隔离 program/instance 路径；不启动业务服务、不创建账号/业务/附件、不发邮件。安装前拒绝既有登记、binding 或同名快捷方式。
 - 从真实安装根的 `uninstall/installer-manifest.json`、`uninstall/build-info.json`、`program/manifest/runtime-manifest.json` 和 `program/K-SESSION.exe` 提取五个精确锚；不会读取 Artifact 外层 `build-info.json` 代替安装内身份。
 - PowerShell 显式查询 HKCU 64/32 两视图，生成仅供私有临时调用的最小 snapshot；仅当两视图观测逐字段完全相同时折叠共享 HKCU 别名，再要求唯一登记和唯一 binding 且同 view，并调用现有 T1 `validate(snapshot, historical policy)`。缺失、差异、额外记录或 HKLM 污染均停止。
@@ -69,17 +69,21 @@
 
 本轮在 historical 私有诊断层新增严格只读 `path-safety` 预检，沿用 T1 的 `lstat` 祖先遍历和 native realpath 等价判断，不删除、不跳过或接受任何重解析点。固定类别按 install root / instance / uninstall 分别区分对象自身、祖先和 realpath 不一致，并单列 `PLATFORM_VOLUME`、`INSPECTION`、`USAGE`、`OTHER`；卷类别仅在盘符根的 native realpath 自身已发生映射时返回，不输出盘符、路径、用户名、目标或错误正文。该预检在真实 `collect` 前运行，非零分类直接阻断；未知情况仍由原 T1 `PATH_REPARSE` fail closed。合成测试覆盖普通目录、三类对象自身、install root/instance 祖先 junction、usage 及完整固定映射。
 
+主控整合该诊断后的 manual run 35769940343 / `historical-identity` job 106889229232 在精确 HEAD `903de4e665da90d5c30eca9cd721c50f19568e3f` 返回 `HISTORICAL_IDENTITY_BLOCKED_T1_PATH_REPARSE_PLATFORM_VOLUME`。这已确认失败来自历史 job 主动用 `subst E:` 构造的平台映射卷，而不是 beta.1 安装目录内部的新重解析对象；原 T1 对卷根 native realpath 的拒绝符合既有安全契约，不能跳过或放宽。
+
+最小修复只调整 historical hosted harness：移除 historical job 的 `subst E:`，将任务工作根与唯一 evidence 输出移到 runner 的本地 `C:` 固定卷。执行任何下载、安装或清理前，新增静默 `host-root` 预检，要求候选为未存在的受限 ASCII 绝对路径、盘符类型为 `Fixed`、从父目录到卷根不存在重解析点且 native realpath 完全一致；已存在、非固定、平台映射、祖先重解析、realpath 差异、检查异常和未知退出码分别映射到封闭 `HOSTED_ROOT_*` 阶段并一律停止。该变化不修改 T1、Setup、安装/升级、业务、数据生命周期或清理契约，也不把映射卷当作安全路径接受。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：67 PASS，0 FAIL，0 SKIP；除既有安装、registry、payload 静默分类外，新增 T1 路径角色/祖先/卷映射只读诊断测试。
+- historical-identity 专项：68 PASS，0 FAIL，0 SKIP；除既有安装、registry、payload 静默分类外，覆盖 T1 路径角色/祖先/卷映射只读诊断，并新增 hosted 根目录测试：普通本地固定卷通过，合成映射卷与含空格/中文的不合规执行路径均拒绝且无输出。
 - T1 upgrade-detection：45 PASS，0 FAIL，0 SKIP；新增构建期全局路径排序契约及“同集合重排 manifest 仍拒绝”回归。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。
-- Node 三文件语法检查、PowerShell AST parse、workflow 静态权限/上传范围检查及 `git diff --check`：PASS。
+- Node `index.cjs`、`cli.cjs` 语法检查、PowerShell AST parse、workflow 静态权限/上传范围检查及 `git diff --check`：PASS。
 
 ## 未验证与风险
 
@@ -90,4 +94,4 @@
 
 ## 主控后续
 
-Review 本任务追加 local commit 后重新整合到开发分支，通过默认分支已登记的 `setup-v3.yml` 对开发分支 ref 发起 manual dispatch。必须审查实际 Actions JSON、Run ID、Artifact ID、五个安装后 anchors、T1 PASS 和 cleanup PASS；云端失败则按稳定 BLOCKED 结论处理。本任务不接续 T3/T4。
+Review 本任务追加 local commit 后重新整合到开发分支，通过默认分支已登记的 `setup-v3.yml` 对开发分支 ref 发起 manual dispatch。必须确认 historical job 不再创建 `subst E:`，hosted 根目录预检通过，并审查实际 Actions JSON、Run ID、Artifact ID、五个安装后 anchors、T1 PASS 和 cleanup PASS；云端失败则按稳定 BLOCKED 结论处理。本任务不接续 T3/T4。

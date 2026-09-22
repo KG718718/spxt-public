@@ -110,6 +110,38 @@ function classifyInstalledPathSafety(installRoot, instance) {
   return null;
 }
 
+function classifyHostedRootCandidate(candidate) {
+  let resolved;
+  try { resolved = path.resolve(candidate); } catch { return 'INPUT'; }
+  if (resolved !== candidate || !/^[A-Za-z]:\\[A-Za-z0-9._\\-]+$/.test(resolved)) return 'INPUT';
+  try {
+    fs.lstatSync(resolved);
+    return 'PRESENT';
+  } catch (error) {
+    if (!error || error.code !== 'ENOENT') return 'INSPECTION';
+  }
+  const volumeRoot = path.parse(resolved).root;
+  let current = path.dirname(resolved);
+  for (;;) {
+    let info;
+    try { info = fs.lstatSync(current); } catch { return 'INSPECTION'; }
+    if (info.isSymbolicLink()) return current.toLowerCase() === volumeRoot.toLowerCase()
+      ? 'PLATFORM_VOLUME' : 'ANCESTOR';
+    if (!info.isDirectory()) return 'INSPECTION';
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  try {
+    const realVolume = path.resolve(fs.realpathSync.native(volumeRoot));
+    if (realVolume.toLowerCase() !== path.resolve(volumeRoot).toLowerCase()) return 'PLATFORM_VOLUME';
+    const parent = path.dirname(resolved);
+    const realParent = path.resolve(fs.realpathSync.native(parent));
+    if (realParent.toLowerCase() !== path.resolve(parent).toLowerCase()) return 'REALPATH';
+  } catch { return 'INSPECTION'; }
+  return null;
+}
+
 function readRegular(file) {
   const info = fs.lstatSync(file);
   if (!info.isFile() || info.isSymbolicLink()) fail('FILE_NOT_REGULAR');
@@ -404,6 +436,7 @@ function assertNoSensitiveOutput(value) {
 module.exports = {
   ARTIFACT_DIGEST, ARTIFACT_ID, ARTIFACT_NAME, ARTIFACT_URL, PROFILE_ID, REPOSITORY, RUN_ID,
   SETUP_NAME, SETUP_SHA256, SOURCE_COMMIT, HistoricalIdentityError, assertNoSensitiveOutput,
-  classifyInstalledPathSafety, collectInstalledPolicy, createDraft, finalizeEvidence, locateUniqueSetup, normalizeSharedHkcuSnapshot,
+  classifyHostedRootCandidate, classifyInstalledPathSafety, collectInstalledPolicy, createDraft, finalizeEvidence,
+  locateUniqueSetup, normalizeSharedHkcuSnapshot,
   validateApiMetadata, validateEvidence, validateInstallLogMarkers, validateInstalledFootprint
 };
