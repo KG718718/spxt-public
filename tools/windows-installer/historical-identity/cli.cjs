@@ -25,8 +25,36 @@ function exactArgs(names) {
   return result;
 }
 
+const NORMALIZE_EXIT = Object.freeze({INPUT: 20, MISSING_REGISTRATION: 21, MISSING_BINDING: 22, MISSING_BOTH: 23,
+  CONFLICT: 24, USAGE: 25, OUTPUT: 26, OTHER: 27});
+function normalizeSnapshotCommand() {
+  const args = exactArgs(['--input', '--output']);
+  if (!args) return NORMALIZE_EXIT.USAGE;
+  let snapshot;
+  try { snapshot = readJson(args['--input']); } catch { return NORMALIZE_EXIT.INPUT; }
+  let normalized;
+  try {
+    normalized = normalizeSharedHkcuSnapshot(snapshot);
+  } catch (error) {
+    if (!(error instanceof HistoricalIdentityError)) return NORMALIZE_EXIT.OTHER;
+    if (error.code === 'REGISTRY_SNAPSHOT_SCHEMA') return NORMALIZE_EXIT.INPUT;
+    if (error.code === 'REGISTRY_MISSING_REGISTRATION') return NORMALIZE_EXIT.MISSING_REGISTRATION;
+    if (error.code === 'REGISTRY_MISSING_BINDING') return NORMALIZE_EXIT.MISSING_BINDING;
+    if (error.code === 'REGISTRY_MISSING_BOTH') return NORMALIZE_EXIT.MISSING_BOTH;
+    if (error.code === 'REGISTRY_VIEW_CONFLICT') return NORMALIZE_EXIT.CONFLICT;
+    return NORMALIZE_EXIT.OTHER;
+  }
+  try { writeJson(args['--output'], normalized); } catch { return NORMALIZE_EXIT.OUTPUT; }
+  return 0;
+}
+
+const command = process.argv[2];
+if (command === 'normalize-snapshot') {
+  try { process.exitCode = normalizeSnapshotCommand(); } catch { process.exitCode = NORMALIZE_EXIT.OTHER; }
+  return;
+}
+
 try {
-  const command = process.argv[2];
   if (command === 'metadata') {
     const args = exactArgs(['--input']); if (!args) throw new HistoricalIdentityError('USAGE');
     validateApiMetadata(readJson(args['--input']));
@@ -37,10 +65,6 @@ try {
     const args = exactArgs(['--metadata', '--snapshot', '--install-root', '--output']);
     if (!args) throw new HistoricalIdentityError('USAGE');
     writeJson(args['--output'], createDraft(readJson(args['--metadata']), readJson(args['--snapshot']), args['--install-root']));
-  } else if (command === 'normalize-snapshot') {
-    const args = exactArgs(['--input', '--output']);
-    if (!args) throw new HistoricalIdentityError('USAGE');
-    writeJson(args['--output'], normalizeSharedHkcuSnapshot(readJson(args['--input'])));
   } else if (command === 'finalize') {
     const args = exactArgs(['--draft', '--cleanup', '--output']);
     if (!args) throw new HistoricalIdentityError('USAGE');

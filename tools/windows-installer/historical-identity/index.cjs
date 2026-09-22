@@ -99,8 +99,12 @@ function locateUniqueSetup(extractedRoot) {
 function normalizeSharedHkcuSnapshot(snapshot) {
   if (!exactKeys(snapshot, ['registrations', 'bindings']) || !Array.isArray(snapshot.registrations) ||
       !Array.isArray(snapshot.bindings)) fail('REGISTRY_SNAPSHOT_SCHEMA');
+  const registrationMissing = snapshot.registrations.length < 1;
+  const bindingMissing = snapshot.bindings.length < 1;
+  if (registrationMissing && bindingMissing) fail('REGISTRY_MISSING_BOTH');
+  if (registrationMissing) fail('REGISTRY_MISSING_REGISTRATION');
+  if (bindingMissing) fail('REGISTRY_MISSING_BINDING');
   function normalize(records, fields) {
-    if (records.length < 1) fail('REGISTRY_MISSING');
     if (records.some(record => !exactKeys(record, fields) || !['64', '32'].includes(record.view))) {
       fail('REGISTRY_VIEW_CONFLICT');
     }

@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const childProcess = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
@@ -170,8 +171,22 @@ test('shared HKCU aliases collapse only when 32/64 observations are byte-for-byt
       expectHistorical('REGISTRY_VIEW_CONFLICT', () => normalizeSharedHkcuSnapshot(raw));
     } finally { cleanup(f); }
   });
-  await t.test('missing observations remain a hard rejection', () => {
-    expectHistorical('REGISTRY_MISSING', () => normalizeSharedHkcuSnapshot({registrations: [], bindings: []}));
+  await t.test('missing registration remains a hard rejection', () => {
+    const f = fixture();
+    try {
+      expectHistorical('REGISTRY_MISSING_REGISTRATION', () =>
+        normalizeSharedHkcuSnapshot({registrations: [], bindings: f.snapshot.bindings}));
+    } finally { cleanup(f); }
+  });
+  await t.test('missing binding remains a hard rejection', () => {
+    const f = fixture();
+    try {
+      expectHistorical('REGISTRY_MISSING_BINDING', () =>
+        normalizeSharedHkcuSnapshot({registrations: f.snapshot.registrations, bindings: []}));
+    } finally { cleanup(f); }
+  });
+  await t.test('both missing observations remain a hard rejection', () => {
+    expectHistorical('REGISTRY_MISSING_BOTH', () => normalizeSharedHkcuSnapshot({registrations: [], bindings: []}));
   });
 });
 
@@ -216,6 +231,24 @@ test('default-registered Setup workflow isolates historical capture to manual de
   assert.equal((historical.match(/actions\/upload-artifact@/g) || []).length, 1, 'historical job uploads exactly one artifact');
 });
 
+test('PowerShell registry subkeys use one separator and exactly match the approved beta.1 keys', () => {
+  const root = path.resolve(__dirname, '../../../..');
+  const script = fs.readFileSync(path.join(root, 'tools/windows-installer/historical-identity/invoke.ps1'), 'utf8');
+  const setup = fs.readFileSync(path.join(root, 'tools/windows-installer/setup.iss'), 'utf8');
+  const expected = {
+    Product: 'Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\KSESSION-Beta-Installer-v1_is1',
+    Binding: 'Software\\KSESSION\\Beta\\InstallerBinding'
+  };
+  for (const [name, value] of Object.entries(expected)) {
+    const task = script.match(new RegExp(`^\\$task${name}Subkey='([^']+)'$`, 'm'));
+    const setupKey = setup.match(new RegExp(`^\\s*${name}Key = '([^']+)';\\s*$`, 'm'));
+    assert.ok(task && setupKey, `${name} key literal missing`);
+    assert.equal(task[1], value);
+    assert.equal(setupKey[1], value);
+    assert.doesNotMatch(task[1], /\\\\/, `${name} key contains a repeated path separator`);
+  }
+});
+
 test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist', () => {
   const root = path.resolve(__dirname, '../../../..');
   const script = fs.readFileSync(path.join(root, 'tools/windows-installer/historical-identity/invoke.ps1'), 'utf8');
@@ -224,11 +257,13 @@ test('PowerShell diagnostics expose only a closed non-sensitive phase allowlist'
   const allowed = [...allowlistBlock[1].matchAll(/'([A-Z_]+)'/g)].map(match => match[1]);
   assert.deepEqual(allowed, ['HOSTED_PREFLIGHT', 'API_METADATA', 'ARTIFACT_DOWNLOAD', 'ARCHIVE_HASH', 'EXTRACT',
     'SETUP_IDENTITY', 'INSTALL', 'REGISTRY_HKLM', 'REGISTRY_HKCU_READ', 'REGISTRY_SNAPSHOT_WRITE',
-    'REGISTRY_NORMALIZE', 'REGISTRY_RESULT_READ', 'REGISTRY_UNIQUENESS', 'COLLECT', 'UNINSTALL', 'CLEANUP',
-    'FINALIZE']);
+    'REGISTRY_NORMALIZE_INPUT', 'REGISTRY_NORMALIZE_MISSING_REGISTRATION',
+    'REGISTRY_NORMALIZE_MISSING_BINDING', 'REGISTRY_NORMALIZE_MISSING_BOTH', 'REGISTRY_NORMALIZE_CONFLICT',
+    'REGISTRY_NORMALIZE_USAGE', 'REGISTRY_NORMALIZE_OUTPUT', 'REGISTRY_NORMALIZE_OTHER', 'REGISTRY_RESULT_READ',
+    'REGISTRY_UNIQUENESS', 'COLLECT', 'UNINSTALL', 'CLEANUP', 'FINALIZE']);
   assert.equal(new Set(allowed).size, allowed.length, 'phase allowlist contains duplicates');
   const assigned = [...script.matchAll(/Set-TaskPhase '([A-Z_]+)'/g)].map(match => match[1]);
-  assert.deepEqual([...new Set(assigned)], allowed, 'every and only allowlisted phases must be assigned');
+  assert.deepEqual([...new Set(assigned)].sort(), [...allowed].sort(), 'every and only allowlisted phases must be assigned');
   const catchBlock = script.match(/} catch \{([\s\S]*?)\n} finally \{/);
   assert.ok(catchBlock, 'closed catch block missing');
   assert.match(catchBlock[1], /\$taskAllowedPhases -notcontains \$taskPhase/);
@@ -250,7 +285,7 @@ test('registry diagnostics assign every sensitive operation to a fixed closed su
     ['REGISTRY_HKLM', 'Count-MachineSubkey'],
     ['REGISTRY_HKCU_READ', 'Read-Snapshot'],
     ['REGISTRY_SNAPSHOT_WRITE', 'Write-PrivateJson $taskRawSnapshot'],
-    ['REGISTRY_NORMALIZE', "Invoke-Node @('normalize-snapshot'"],
+    ['REGISTRY_NORMALIZE_OTHER', 'Invoke-Normalize'],
     ['REGISTRY_RESULT_READ', 'Get-Content -LiteralPath $taskSnapshot'],
     ['REGISTRY_UNIQUENESS', '$snapshot.registrations.Count']
   ];
@@ -262,5 +297,84 @@ test('registry diagnostics assign every sensitive operation to a fixed closed su
       : registry[0].indexOf("Set-TaskPhase 'COLLECT'");
     assert.ok(start >= 0 && end > start, `${phase} boundary missing`);
     assert.match(registry[0].slice(start, end), new RegExp(operation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+  const exitMap = [...script.matchAll(/(20|21|22|23|24|25|26) \{Set-TaskPhase '([A-Z_]+)'\}/g)]
+    .map(match => [Number(match[1]), match[2]]);
+  assert.deepEqual(exitMap, [[20, 'REGISTRY_NORMALIZE_INPUT'], [21, 'REGISTRY_NORMALIZE_MISSING_REGISTRATION'],
+    [22, 'REGISTRY_NORMALIZE_MISSING_BINDING'], [23, 'REGISTRY_NORMALIZE_MISSING_BOTH'],
+    [24, 'REGISTRY_NORMALIZE_CONFLICT'], [25, 'REGISTRY_NORMALIZE_USAGE'],
+    [26, 'REGISTRY_NORMALIZE_OUTPUT']]);
+  assert.match(script, /default \{Set-TaskPhase 'REGISTRY_NORMALIZE_OTHER'\}/);
+});
+
+test('normalize CLI maps failures to fixed silent exit categories', async t => {
+  const cli = path.resolve(__dirname, '../../../windows-installer/historical-identity/cli.cjs');
+  const cliSource = fs.readFileSync(cli, 'utf8');
+  assert.match(cliSource, /catch \{ process\.exitCode = NORMALIZE_EXIT\.OTHER; \}/,
+    'unexpected normalize failures must map silently to OTHER');
+  const scratch = path.join(__dirname, '.tmp');
+  fs.mkdirSync(scratch, {recursive: true});
+  const temporary = fs.mkdtempSync(path.join(scratch, 'normalize-cli-'));
+  function invoke(args) {
+    const result = childProcess.spawnSync(process.execPath, [cli, 'normalize-snapshot', ...args], {encoding: 'utf8'});
+    assert.equal(result.signal, null);
+    assert.equal(result.stdout, '');
+    assert.equal(result.stderr, '');
+    return result.status;
+  }
+  try {
+    await t.test('success', () => {
+      const input = path.join(temporary, 'success-input.json');
+      const output = path.join(temporary, 'success-output.json');
+      writeJson(input, {registrations: [{view: '64', key: 'r', displayName: 'd', displayVersion: 'v',
+        installLocation: 'i', uninstallString: 'u'}], bindings: [{view: '64', key: 'b', installRoot: 'i', instance: 'x'}]});
+      assert.equal(invoke(['--input', input, '--output', output]), 0);
+      assert.equal(JSON.parse(fs.readFileSync(output, 'utf8')).registrations[0].view, '64');
+    });
+    await t.test('invalid JSON or schema', () => {
+      const malformed = path.join(temporary, 'malformed.json');
+      fs.writeFileSync(malformed, '{');
+      assert.equal(invoke(['--input', malformed, '--output', path.join(temporary, 'malformed-output.json')]), 20);
+      const schema = path.join(temporary, 'schema.json');
+      writeJson(schema, {registrations: [], bindings: [], extra: true});
+      assert.equal(invoke(['--input', schema, '--output', path.join(temporary, 'schema-output.json')]), 20);
+    });
+    await t.test('missing registration', () => {
+      const input = path.join(temporary, 'missing-registration.json');
+      writeJson(input, {registrations: [],
+        bindings: [{view: '64', key: 'b', installRoot: 'i', instance: 'x'}]});
+      assert.equal(invoke(['--input', input, '--output', path.join(temporary, 'missing-registration-output.json')]), 21);
+    });
+    await t.test('missing binding', () => {
+      const input = path.join(temporary, 'missing-binding.json');
+      writeJson(input, {registrations: [{view: '64', key: 'r', displayName: 'd', displayVersion: 'v',
+        installLocation: 'i', uninstallString: 'u'}], bindings: []});
+      assert.equal(invoke(['--input', input, '--output', path.join(temporary, 'missing-binding-output.json')]), 22);
+    });
+    await t.test('both record types missing', () => {
+      const input = path.join(temporary, 'missing-both.json');
+      writeJson(input, {registrations: [], bindings: []});
+      assert.equal(invoke(['--input', input, '--output', path.join(temporary, 'missing-both-output.json')]), 23);
+    });
+    await t.test('view or field conflict', () => {
+      const input = path.join(temporary, 'conflict.json');
+      writeJson(input, {registrations: [{view: '64', key: 'r', displayName: 'd', displayVersion: 'v',
+        installLocation: 'i', uninstallString: 'u'}, {view: '32', key: 'r', displayName: 'd', displayVersion: 'other',
+        installLocation: 'i', uninstallString: 'u'}], bindings: [{view: '64', key: 'b', installRoot: 'i', instance: 'x'}]});
+      assert.equal(invoke(['--input', input, '--output', path.join(temporary, 'conflict-output.json')]), 24);
+    });
+    await t.test('usage', () => assert.equal(invoke([]), 25));
+    await t.test('output exists or cannot be written', () => {
+      const input = path.join(temporary, 'output-input.json');
+      const output = path.join(temporary, 'existing-output.json');
+      writeJson(input, {registrations: [{view: '64', key: 'r', displayName: 'd', displayVersion: 'v',
+        installLocation: 'i', uninstallString: 'u'}], bindings: [{view: '64', key: 'b', installRoot: 'i', instance: 'x'}]});
+      fs.writeFileSync(output, 'owned');
+      assert.equal(invoke(['--input', input, '--output', output]), 26);
+      assert.equal(fs.readFileSync(output, 'utf8'), 'owned');
+    });
+  } finally {
+    fs.rmSync(temporary, {recursive: true, force: true});
+    try { fs.rmdirSync(scratch); } catch {}
   }
 });

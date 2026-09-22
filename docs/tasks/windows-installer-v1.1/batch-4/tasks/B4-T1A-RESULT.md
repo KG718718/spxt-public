@@ -33,13 +33,17 @@
 
 主控整合上述修复为 `3c303dce64366ba55012d553e31e2d65ff14e760` 后触发 manual run 35744708122 / `historical-identity` job 106803581714；静态与合成门禁继续通过，真实步骤仍返回 `HISTORICAL_IDENTITY_BLOCKED_REGISTRY`。该结果不能证明是哪一个 registry 操作失败。本轮继续将这一阶段封闭细分为 `REGISTRY_HKLM`、`REGISTRY_HKCU_READ`、`REGISTRY_SNAPSHOT_WRITE`、`REGISTRY_NORMALIZE`、`REGISTRY_RESULT_READ`、`REGISTRY_UNIQUENESS`；catch 仍只输出固定 allowlist 中的阶段名，不输出异常正文或观测值。
 
+主控再整合子阶段诊断为 `1fe9cea39b0c3b6040f8f7dbb771ba639a8fdd1b`，manual run 35746102758 / `historical-identity` job 106808628998 精确返回 `HISTORICAL_IDENTITY_BLOCKED_REGISTRY_NORMALIZE`；因此已确认 HKLM 检查、HKCU snapshot 读取和私有 raw snapshot 写入均已越过。该 job 完成后，从公开日志按固定 allowlist 还可安全提取到先行的 `HISTORICAL_IDENTITY_REGISTRY_MISSING`；该受测版本 CLI 只在严格 normalize 抛出稳定 `REGISTRY_MISSING` code 时输出它，故已确认 registration/binding 至少一类观测记录为空，但现有证据不能区分具体缺少哪一类。为继续安全定位，normalize CLI 现以静默固定退出码区分 input JSON/schema、记录缺失、view/字段冲突、usage、输出已存在/写入和其他错误；PowerShell 只把该退出码映射到固定 `REGISTRY_NORMALIZE_*` allowlist 阶段，未知退出码一律映射 `REGISTRY_NORMALIZE_OTHER`，不传递异常 message、路径或值。
+
+“PowerShell 子键字面量含双反斜杠”的候选解释经原始字节和 AST 值核对后不成立：本地源码、公开整合提交 `1fe9cea39b0c3b6040f8f7dbb771ba639a8fdd1b` 与 beta.1 源提交 `e9417f036d0cdf736ff84682556a994040f0de0b` 都使用单路径分隔符，工具 JSON 中的 `\\` 只是单反斜杠的转义展示。新增静态回归同时固定两条已批准键、拒绝重复分隔符，并校验其与 `setup.iss` 一致；未制造无效生产改动。为定位真实缺失来源，稳定缺失类别进一步细分为 registration、binding 与 both，仅按数组计数选择固定退出码及 `REGISTRY_NORMALIZE_MISSING_*` 阶段，不读取或输出任何值。
+
 ## 本地验证
 
 首次专项运行：12 项中 11 PASS、1 FAIL。失败为 evidence 严格 schema 反例向外透出 T1 `Rejection` 类型；已仅在新模块边界转换为稳定 `HistoricalIdentityError`，未修改 T1 或测试断言。
 
 最终本地结果：
 
-- historical-identity 专项：18 PASS，0 FAIL，0 SKIP；新增 registry 子阶段边界测试，并逐项合成验证所有诊断输出都属于固定 allowlist 且不含路径、用户信息、URL、registry 值或凭据标记。
+- historical-identity 专项：30 PASS，0 FAIL，0 SKIP；真实 CLI 进程分别覆盖 registration、binding、both 缺失，新增键字面量固定值、单分隔符及与 `setup.iss` 一致性回归；全部类别保持静默固定退出码。
 - 既有 T1 upgrade-detection：43 PASS，0 FAIL，0 SKIP。
 - 既有 T2 upgrade-preflight：19 PASS，0 FAIL，1 SKIP；SKIP 为当前开发机无 Windows file-symlink 创建权限，junction/深层链接反例仍通过，必须由 hosted Windows workflow 补实测。
 - installer contract：`INSTALLER CONTRACT PASS`、`R2 DATA LOCATION CONTRACT PASS`。

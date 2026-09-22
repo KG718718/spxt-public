@@ -18,7 +18,14 @@ $taskAllowedPhases=@(
   'REGISTRY_HKLM',
   'REGISTRY_HKCU_READ',
   'REGISTRY_SNAPSHOT_WRITE',
-  'REGISTRY_NORMALIZE',
+  'REGISTRY_NORMALIZE_INPUT',
+  'REGISTRY_NORMALIZE_MISSING_REGISTRATION',
+  'REGISTRY_NORMALIZE_MISSING_BINDING',
+  'REGISTRY_NORMALIZE_MISSING_BOTH',
+  'REGISTRY_NORMALIZE_CONFLICT',
+  'REGISTRY_NORMALIZE_USAGE',
+  'REGISTRY_NORMALIZE_OUTPUT',
+  'REGISTRY_NORMALIZE_OTHER',
   'REGISTRY_RESULT_READ',
   'REGISTRY_UNIQUENESS',
   'COLLECT',
@@ -122,6 +129,22 @@ function Invoke-Node([string[]]$Arguments) {
   & $taskNode $taskCli @Arguments
   if($LASTEXITCODE -ne 0){throw 'NODE_GATE'}
 }
+function Invoke-Normalize {
+  & $taskNode $taskCli 'normalize-snapshot' '--input' $taskRawSnapshot '--output' $taskSnapshot
+  $normalizeExit=$LASTEXITCODE
+  if($normalizeExit -eq 0){return}
+  switch($normalizeExit){
+    20 {Set-TaskPhase 'REGISTRY_NORMALIZE_INPUT'}
+    21 {Set-TaskPhase 'REGISTRY_NORMALIZE_MISSING_REGISTRATION'}
+    22 {Set-TaskPhase 'REGISTRY_NORMALIZE_MISSING_BINDING'}
+    23 {Set-TaskPhase 'REGISTRY_NORMALIZE_MISSING_BOTH'}
+    24 {Set-TaskPhase 'REGISTRY_NORMALIZE_CONFLICT'}
+    25 {Set-TaskPhase 'REGISTRY_NORMALIZE_USAGE'}
+    26 {Set-TaskPhase 'REGISTRY_NORMALIZE_OUTPUT'}
+    default {Set-TaskPhase 'REGISTRY_NORMALIZE_OTHER'}
+  }
+  throw 'NORMALIZE_GATE'
+}
 
 try{
   Set-TaskPhase 'HOSTED_PREFLIGHT'
@@ -170,8 +193,8 @@ try{
   $snapshot=Read-Snapshot
   Set-TaskPhase 'REGISTRY_SNAPSHOT_WRITE'
   Write-PrivateJson $taskRawSnapshot $snapshot
-  Set-TaskPhase 'REGISTRY_NORMALIZE'
-  Invoke-Node @('normalize-snapshot','--input',$taskRawSnapshot,'--output',$taskSnapshot)
+  Set-TaskPhase 'REGISTRY_NORMALIZE_OTHER'
+  Invoke-Normalize
   Set-TaskPhase 'REGISTRY_RESULT_READ'
   $snapshot=Get-Content -LiteralPath $taskSnapshot -Raw|ConvertFrom-Json
   Set-TaskPhase 'REGISTRY_UNIQUENESS'
