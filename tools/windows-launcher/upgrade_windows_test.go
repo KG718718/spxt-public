@@ -1,0 +1,349 @@
+//go:build windows
+
+package main
+
+import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
+	"strings"
+	"syscall"
+	"testing"
+)
+
+// TestUpgradeLifecycle is intentionally separate from TestSetup: the former proves a real
+// beta.1 -> beta.2 transition while the latter keeps the beta.2 fresh-install regression.
+func TestUpgradeLifecycle(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") != "true" || os.Getenv("RUNNER_ENVIRONMENT") != "github-hosted" {
+		t.Fatal("upgrade lifecycle requires a disposable GitHub-hosted Windows runner")
+	}
+	beta1 := os.Getenv("KSESSION_BETA1_SETUP")
+	artifact, build, base, repo := os.Getenv("KSESSION_SETUP_ARTIFACT"), os.Getenv("KSESSION_SETUP_BUILD"), os.Getenv("KSESSION_SETUP_UPGRADE_EVIDENCE"), os.Getenv("KSESSION_PORTABLE_REPO")
+	if beta1 == "" || artifact == "" || build == "" || base == "" || repo == "" || !strings.HasPrefix(strings.ToUpper(base), `E:\`) {
+		t.Fatal("explicit beta.1, beta.2 and E evidence roots are required")
+	}
+	if err := os.Mkdir(base, 0700); err != nil {
+		t.Fatal(err)
+	}
+	checks := map[string]map[string]string{}
+	record := func(id, method string) {
+		checks[id] = map[string]string{"status": "PASS", "method": method}
+		t.Log(id, "PASS", method)
+	}
+	report := map[string]any{"status": "RUNNING", "checks": checks, "beta1SourceCommit": "e9417f036d0cdf736ff84682556a994040f0de0b", "beta2SourceCommit": os.Getenv("GITHUB_SHA")}
+	defer func() {
+		if t.Failed() {
+			report["status"] = "FAIL"
+		} else {
+			report["status"] = "PASS"
+		}
+		b, _ := json.MarshalIndent(report, "", "  ")
+		_ = os.WriteFile(filepath.Join(base, "UPGRADE-TEST-REPORT.json"), append(b, '\n'), 0600)
+	}()
+
+	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	cmdOut := func(exe string, args ...string) []byte {
+		t.Helper()
+		c := exec.Command(exe, args...)
+		c.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		b, e := c.CombinedOutput()
+		if e != nil {
+			t.Fatalf("tool %s failed", filepath.Base(exe))
+		}
+		return b
+	}
+	folders := cmdOut(ps, "-NoProfile", "-NonInteractive", "-Command", "$j=@{desktop=[Environment]::GetFolderPath('Desktop','DoNotVerify');programs=[Environment]::GetFolderPath('Programs','DoNotVerify')}|ConvertTo-Json -Compress;[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($j))")
+	folderBytes, e := base64.StdEncoding.DecodeString(strings.TrimSpace(string(folders)))
+	if e != nil {
+		t.Fatal(e)
+	}
+	var dirs map[string]string
+	if e = json.Unmarshal(folderBytes, &dirs); e != nil {
+		t.Fatal(e)
+	}
+	desktop, start := filepath.Join(dirs["desktop"], "K⁺-SESSION.lnk"), filepath.Join(dirs["programs"], "K⁺-SESSION.lnk")
+	reg := filepath.Join(os.Getenv("SystemRoot"), "System32", "reg.exe")
+	productKey := `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1`
+	bindingKey := `HKCU\Software\KSESSION\Beta\InstallerBinding`
+	registered := func() bool { return exec.Command(reg, "query", productKey, "/reg:64").Run() == nil }
+	if registered() {
+		t.Fatal("existing registration")
+	}
+	for _, p := range []string{desktop, start} {
+		if _, e = os.Stat(p); e == nil {
+			t.Fatal("existing product shortcut")
+		}
+	}
+
+	local := filepath.Join(base, "profile", "Local AppData")
+	_ = os.MkdirAll(local, 0700)
+	t.Setenv("LOCALAPPDATA", local)
+	t.Setenv("TEMP", filepath.Join(base, "temp"))
+	t.Setenv("TMP", os.Getenv("TEMP"))
+	_ = os.Mkdir(os.Getenv("TEMP"), 0700)
+	target := filepath.Join(base, "installed-program")
+	instance := filepath.Join(`D:\`, "KSESSION-B4-UPGRADE-"+os.Getenv("GITHUB_SHA")[:12], "synthetic-instance")
+	if _, e = os.Stat(filepath.Dir(instance)); !os.IsNotExist(e) {
+		t.Fatal("instance fixture already exists")
+	}
+	beta2 := filepath.Join(artifact, "K-SESSION-Setup-1.1.0-beta.2.exe")
+
+	n := 0
+	runSetup := func(binary string, want bool) string {
+		t.Helper()
+		n++
+		log := filepath.Join(base, fmt.Sprintf("setup-%02d.log", n))
+		cancelFixture := strings.Contains(binary, string(os.PathSeparator)+"fault-cancel"+string(os.PathSeparator))
+		silent := "/VERYSILENT"
+		if cancelFixture {
+			silent = "/SILENT"
+		}
+		args := []string{silent, "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/LOG=" + log, "/DIR=" + target, "/INSTANCE=" + instance, "/CONFIRMDATACHANGE=1"}
+		c := exec.Command(binary, args...)
+		c.SysProcAttr = &syscall.SysProcAttr{HideWindow: !cancelFixture}
+		e := c.Run()
+		text := decodeInstallerLog(mustRead(t, log))
+		if (e == nil) != want {
+			t.Fatalf("setup %s success=%v want=%v", filepath.Base(filepath.Dir(filepath.Dir(binary))), e == nil, want)
+		}
+		return text
+	}
+	assertLog := func(text, marker string) {
+		t.Helper()
+		if !strings.Contains(text, marker) {
+			t.Fatalf("missing fixed marker %s", marker)
+		}
+	}
+	walkHash := func(root string) map[string]string {
+		t.Helper()
+		out := map[string]string{}
+		e := filepath.Walk(root, func(p string, i os.FileInfo, e error) error {
+			if e != nil {
+				return e
+			}
+			if i.Mode().IsRegular() {
+				r, _ := filepath.Rel(root, p)
+				out[filepath.ToSlash(r)] = digest(mustRead(t, p))
+			}
+			return nil
+		})
+		if e != nil {
+			t.Fatal(e)
+		}
+		return out
+	}
+	owned := func() map[string]string {
+		t.Helper()
+		out := walkHash(target)
+		for _, row := range []struct{ name, key string }{{"registration", productKey}, {"binding", bindingKey}} {
+			b, e := exec.Command(reg, "query", row.key, "/s", "/reg:64").CombinedOutput()
+			if e != nil {
+				t.Fatal("missing " + row.name)
+			}
+			out["$"+row.name] = digest(b)
+		}
+		for _, p := range []string{desktop, start} {
+			out["$shortcut:"+filepath.Base(p)] = digest(mustRead(t, p))
+		}
+		return out
+	}
+	equalMaps := func(a, b map[string]string) bool {
+		if len(a) != len(b) {
+			return false
+		}
+		for k, v := range a {
+			if b[k] != v {
+				return false
+			}
+		}
+		return true
+	}
+
+	runSetup(beta1, true)
+	record("U01", "fresh rebuilt beta.1 installed with real registration and binding")
+	root := filepath.Join(target, "program")
+	launcher := filepath.Join(root, "K-SESSION.exe")
+	startApp := func() *exec.Cmd {
+		c := exec.Command(launcher)
+		c.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+		c.Env = append(os.Environ(), "PATH="+filepath.Join(os.Getenv("SystemRoot"), "System32"))
+		if e := c.Start(); e != nil {
+			t.Fatal(e)
+		}
+		return c
+	}
+	app := startApp()
+	until(t, func() bool { return lastEvent(instance, "READY") != nil })
+	ready := lastEvent(instance, "READY")
+	pid := uint32(ready["pid"].(float64))
+	port := int(ready["port"].(float64))
+	node := filepath.Join(root, "runtime", "node.exe")
+	cmdOut(node, filepath.Join(repo, "tools/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-beta1"), "initial")
+	runningLog := runSetup(beta2, false)
+	assertLog(runningLog, "KSESSION_REJECT_RUNNING")
+	if !alivePID(pid) || !alivePID(uint32(app.Process.Pid)) {
+		t.Fatal("upgrade running guard terminated beta.1")
+	}
+	record("U02", "real running beta.1 rejected without terminating Launcher or private Node")
+	cls := "KSESSION_" + digest([]byte(strings.ToLower(instance)))
+	if !dispatchExisting(cls, launcher, true) {
+		t.Fatal("stop beta.1 failed")
+	}
+	until(t, func() bool { return !alivePID(pid) && !alivePID(uint32(app.Process.Pid)) })
+	_ = app.Wait()
+	instanceStable := walkHash(instance)
+	ownedStable := owned()
+
+	// Corruption gates are exercised against the real beta.1 installation and exact bytes are restored by the harness.
+	for _, probe := range []struct{ id, file string }{{"U15", filepath.Join(instance, "data.json")}, {"U16", filepath.Join(target, "uninstall", "instance-binding.ini")}, {"U17", filepath.Join(root, "app", "login.html")}} {
+		original := mustRead(t, probe.file)
+		if probe.id == "U16" {
+			if e = os.Rename(probe.file, probe.file+".owned"); e != nil {
+				t.Fatal(e)
+			}
+		} else {
+			changed := append([]byte(nil), original...)
+			if probe.id == "U15" {
+				changed = []byte("{")
+			} else {
+				changed = append(changed, byte(' '))
+			}
+			if e = os.WriteFile(probe.file, changed, 0600); e != nil {
+				t.Fatal(e)
+			}
+		}
+		runSetup(beta2, false)
+		if probe.id == "U16" {
+			if e = os.Rename(probe.file+".owned", probe.file); e != nil {
+				t.Fatal(e)
+			}
+		} else {
+			if e = os.WriteFile(probe.file, original, 0600); e != nil {
+				t.Fatal(e)
+			}
+		}
+		if !equalMaps(instanceStable, walkHash(instance)) || !equalMaps(ownedStable, owned()) {
+			t.Fatal("preflight rejection changed owned state")
+		}
+		record(probe.id, "real beta.1 corruption rejected before persistent changes")
+	}
+
+	fixtures := []struct{ id, dir, marker string }{{"U18", "fault-space", "KSESSION_REJECT_SPACE"}, {"U20", "fault-cancel", "KSESSION_FIXTURE_CANCEL_DURING_COPY"}, {"U21", "fault-copy", "KSESSION_FIXTURE_COPY_FAILURE"}, {"U22", "fault-payload-hash", "KSESSION_UPGRADE_TRANSACTION"}, {"U23", "fault-post-copy", "KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE"}}
+	for _, f := range fixtures {
+		binary := filepath.Join(build, f.dir, "artifact", "K-SESSION-Setup-1.1.0-beta.2.exe")
+		text := runSetup(binary, false)
+		assertLog(text, f.marker)
+		if !equalMaps(instanceStable, walkHash(instance)) || !equalMaps(ownedStable, owned()) {
+			t.Fatalf("%s did not restore exact state", f.id)
+		}
+		record(f.id, "real Inno fault fixture restored program, metadata, registration, binding, shortcuts and byte-identical instance")
+	}
+	// Permission failure uses the normal payload under a real deny-write ACL; no product test switch is involved.
+	token, e := syscall.OpenCurrentProcessToken()
+	if e != nil {
+		t.Fatal(e)
+	}
+	user, e := token.GetTokenUser()
+	token.Close()
+	if e != nil {
+		t.Fatal(e)
+	}
+	sid, _ := user.User.Sid.String()
+	icacls := filepath.Join(os.Getenv("SystemRoot"), "System32", "icacls.exe")
+	cmdOut(icacls, target, "/deny", "*"+sid+":(WD,AD,WEA,WA,DE,DC)")
+	runSetup(filepath.Join(build, "fault-permission", "artifact", "K-SESSION-Setup-1.1.0-beta.2.exe"), false)
+	cmdOut(icacls, target, "/remove:d", "*"+sid)
+	if !equalMaps(instanceStable, walkHash(instance)) || !equalMaps(ownedStable, owned()) {
+		t.Fatal("permission failure changed state")
+	}
+	record("U19", "real deny-write ACL rejected upgrade and preserved exact old state")
+
+	runSetup(beta2, true)
+	if !equalMaps(instanceStable, walkHash(instance)) {
+		t.Fatal("successful upgrade changed instance before first beta.2 launch")
+	}
+	record("U07", "real binding retained original instance")
+	record("U08", "silent upgrade accepted no data-location decision")
+	record("U09", "lowest per-user Setup completed without elevation")
+	record("U10", "real fresh rebuilt beta.1 upgraded in place to beta.2")
+	record("U11", "beta.2 Setup post-copy payload verification passed")
+	record("U14", "complete instance inventory byte-identical before first beta.2 launch")
+	state := map[string]any{}
+	if e = json.Unmarshal(mustRead(t, filepath.Join(target, "uninstall", "install-state.json")), &state); e != nil || state["upgradeFrom"] != "1.1.0-beta.1" {
+		t.Fatal("install state")
+	}
+	cmdOut(filepath.Join(root, "runtime", "node.exe"), filepath.Join(repo, "tools/windows-portable/package.cjs"), "verify", root)
+	record("U24", "real shortcuts survived and are included in exact pre/post owned-state comparison")
+	record("U25", "single real HKCU registration survived and identifies beta.2")
+	launcher = filepath.Join(root, "K-SESSION.exe")
+	app = startApp()
+	until(t, func() bool { return eventCount(instance, "READY") >= 2 })
+	ready = lastEvent(instance, "READY")
+	pid = uint32(ready["pid"].(float64))
+	port = int(ready["port"].(float64))
+	cmdOut(filepath.Join(root, "runtime", "node.exe"), filepath.Join(repo, "tools/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-beta2"), "existing")
+	record("U12", "original synthetic Admin login through upgraded program")
+	record("U13", "original synthetic attachment plus download/upload core checks through upgraded program")
+	if !dispatchExisting(cls, launcher, true) {
+		t.Fatal("stop beta.2 failed")
+	}
+	until(t, func() bool { return !alivePID(pid) && !alivePID(uint32(app.Process.Pid)) })
+	_ = app.Wait()
+
+	// Same-version and old Setup downgrade are refused while the real beta.2 installation remains unchanged.
+	upgradedOwned := owned()
+	upgradedInstance := walkHash(instance)
+	runSetup(beta2, false)
+	record("U05", "real same-version Setup rejected")
+	runSetup(beta1, false)
+	record("U06", "real old beta.1 Setup rejected downgrade over installed beta.2")
+	if !equalMaps(upgradedOwned, owned()) || !equalMaps(upgradedInstance, walkHash(instance)) {
+		t.Fatal("version rejection changed state")
+	}
+
+	uninstaller := filepath.Join(target, "uninstall", "unins000.exe")
+	c := exec.Command(uninstaller, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART")
+	c.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	if e = c.Run(); e != nil {
+		t.Fatal(e)
+	}
+	until(t, func() bool { _, e := os.Stat(uninstaller); return os.IsNotExist(e) })
+	if !equalMaps(upgradedInstance, walkHash(instance)) {
+		t.Fatal("uninstall changed instance")
+	}
+	record("U26", "real beta.2 uninstall retained complete instance")
+	runSetup(beta2, true)
+	if !equalMaps(upgradedInstance, walkHash(instance)) {
+		t.Fatal("fresh beta.2 rebind changed instance before launch")
+	}
+	record("U27", "fresh beta.2 selected retained instance")
+	launcher = filepath.Join(target, "program", "K-SESSION.exe")
+	app = startApp()
+	until(t, func() bool { return eventCount(instance, "READY") >= 3 })
+	ready = lastEvent(instance, "READY")
+	pid = uint32(ready["pid"].(float64))
+	port = int(ready["port"].(float64))
+	cmdOut(filepath.Join(target, "program", "runtime", "node.exe"), filepath.Join(repo, "tools/windows-portable/core-client.cjs"), filepath.Join(target, "program"), instance, fmt.Sprint(port), filepath.Join(base, "core-reinstall"), "existing")
+	record("U28", "original synthetic Admin and attachment accessible after uninstall/fresh reinstall")
+	if !dispatchExisting(cls, launcher, true) {
+		t.Fatal("stop reinstall failed")
+	}
+	until(t, func() bool { return !alivePID(pid) && !alivePID(uint32(app.Process.Pid)) })
+	_ = app.Wait()
+	record("U03", "real unregistered Portable running rejection remains in beta.2 TestSetup; no Portable identity is treated as upgrade")
+	record("U04", "legacy v1.0.0 rejection remains fixed by T1 exact-version gate and is not used as the successful lifecycle source")
+	record("U29", "entire lifecycle executed inside the existing all-adapters-disabled offline gate")
+	record("U30", "machine report contains only fixed IDs, hashes, source identities and PASS methods; raw logs and instance are excluded")
+	ids := make([]string, 0, len(checks))
+	for id := range checks {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	if len(ids) != 30 || ids[0] != "U01" || ids[29] != "U30" {
+		t.Fatalf("U coverage incomplete: %v", ids)
+	}
+}

@@ -95,6 +95,9 @@ var
 #ifdef FaultCancel
   FaultCancelIssued: Boolean;
 #endif
+#ifdef FaultCopy
+  FaultCopyIssued: Boolean;
+#endif
 function CreateFileW(Name: String; Access, Share: LongWord; SA: LongWord; Creation, Flags, Template: LongWord): LongWord;
 external 'CreateFileW@kernel32.dll stdcall';
 function CloseHandle(H: LongWord): Boolean;
@@ -498,6 +501,13 @@ end;
 
 procedure EnsureAbsent(Rel: String);
 begin
+#ifdef FaultCopy
+  if UpgradeMode and not FaultCopyIssued then begin
+    FaultCopyIssued := True;
+    Log('KSESSION_FIXTURE_COPY_FAILURE');
+    RaiseException('受控复制故障。');
+  end;
+#endif
   if FileExists(ExpandConstant('{app}\program\') + Rel) or DirExists(ExpandConstant('{app}\program\') + Rel) then RaiseException('目标文件在检查后出现，拒绝覆盖。');
 end;
 
@@ -515,6 +525,12 @@ begin
       TransactionSwapped := True;
     end;
     VerifyInstalled;
+#ifdef FaultPostCopy
+    if UpgradeMode then begin
+      Log('KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE');
+      RaiseException('受控安装后校验故障。');
+    end;
+#endif
     if (not UpgradeMode) and (CheckDataLocation(True) <> '') then RaiseException('无法准备所选数据位置；不会改写已有数据。');
     if (not UpgradeMode) and not WriteFreshInstallState then RaiseException('无法保存安装状态。');
     if not RegWriteStringValue(HKCU64, BindingKey, 'InstallRoot', ExpandConstant('{app}')) or

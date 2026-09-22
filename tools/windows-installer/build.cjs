@@ -6,7 +6,7 @@ const {verify}=require('../windows-portable/package.cjs');
 const [portable,compiler,outArg,commit,mode='candidate',bundleArg]=process.argv.slice(2);
 const repo=path.resolve(__dirname,'../..'),out=path.resolve(outArg),pin=JSON.parse(fs.readFileSync(path.join(__dirname,'toolchain.json')));
 assert.ok(/^E:\\/i.test(out)&&!fs.existsSync(out));assert.match(commit,/^[a-f0-9]{40}$/);
-assert.ok(['candidate','fault-space','fault-cancel'].includes(mode));
+assert.ok(['candidate','fault-space','fault-permission','fault-cancel','fault-copy','fault-payload-hash','fault-post-copy'].includes(mode));
 assert.ok(bundleArg,'approved beta.1 identity bundle required');
 const bundlePath=path.resolve(bundleArg),bundleBytes=fs.readFileSync(bundlePath),bundle=JSON.parse(bundleBytes.toString('utf8'));
 validateBundle(bundle);
@@ -46,8 +46,9 @@ copyRuntime(path.join(__dirname,'upgrade-transaction/cli.cjs'),'upgrade-transact
 copyRuntime(path.join(repo,'tools/windows-runtime/common.cjs'),'runtime-common.cjs');
 for(const name of ['public-startup.js','public-config-store.js','tax-config.js','invoice-access-policy.js','service-fee-config.js','bonus-config.js']) copyRuntime(path.join(repo,name),name);
 writeNew(path.join(gen,'instance-binding.ini'),Buffer.concat([Buffer.from([0xff,0xfe]),Buffer.from('[Installation]\r\nSchema=1\r\n','utf16le')]));
+const programManifestDefine=mode==='fault-payload-hash'?'0'.repeat(64):info.programManifestHash;
 writeNew(path.join(gen,'identity.iss'),'#define RequiredBytes '+(mode==='fault-space'?'9000000000000000':String(info.installedProgramBytes+512*1024*1024))+'\n'+
-  '#define IdentityBundleSha256 "'+sha(bundleBytes)+'"\n#define ProgramManifestSha256 "'+info.programManifestHash+'"\n'+
+  '#define IdentityBundleSha256 "'+sha(bundleBytes)+'"\n#define ProgramManifestSha256 "'+programManifestDefine+'"\n'+
   '#define RuntimeManifestSha256 "'+info.runtimeManifestSha256+'"\n#define LauncherSha256 "'+info.launcherSha256+'"\n'+
   '#define SourceCommit "'+commit+'"\n');
 const q=s=>s.replaceAll('"','""'),pas=s=>s.replaceAll("'","''");
@@ -61,7 +62,10 @@ writeNew(path.join(gen,'verify.iss'),'\ufeff'+files.map(f=>"  if GetSHA256OfFile
 const license=fs.readFileSync(path.join(compiler,'License.txt'));
 assert.match(license.toString(),/Inno Setup License/);writeNew(path.join(gen,'LICENSE-Inno-Setup.txt'),license);
 writeNew(path.join(gen,'install-info.txt'),'\ufeffK⁺-SESSION Beta / Unsigned\nInstaller 1.1.0-beta.2 | Application '+pkg.version+'\nWindows 10 x64 Beta Track；Win11 未实机认证。\n离线包含核心程序，不需要另装 Node/npm/Python/Git。\n卸载仅移除程序，账号、附件、备份和配置保留。\n只升级经精确验证的beta.1；升级沿用原数据位置，不移动或删除业务数据与附件。\nOCR、真实邮件不在离线核心承诺内。\n');
-const args=['/Qp','/DPayload='+root,'/DGenerated='+gen,'/DOutput='+artifact,...(mode==='fault-cancel'?['/DFaultCancel=1']:[]),path.join(__dirname,'setup.iss')];
+const fixtureDefine={
+ 'fault-cancel':'/DFaultCancel=1','fault-copy':'/DFaultCopy=1','fault-post-copy':'/DFaultPostCopy=1'
+}[mode];
+const args=['/Qp','/DPayload='+root,'/DGenerated='+gen,'/DOutput='+artifact,...(fixtureDefine?[fixtureDefine]:[]),path.join(__dirname,'setup.iss')];
 const result=cp.spawnSync(path.join(compiler,'ISCC.exe'),args,{encoding:'utf8',windowsHide:true,timeout:240000,maxBuffer:4e6});
 writeNew(path.join(out,'compiler.stdout.log'),result.stdout||'');writeNew(path.join(out,'compiler.stderr.log'),result.stderr||'');
 if(result.status!==0){console.error(result.stdout,result.stderr);throw Error('ISCC failed '+result.status);}

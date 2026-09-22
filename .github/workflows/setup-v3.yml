@@ -1,4 +1,4 @@
-name: Setup Batch 3 candidate
+name: Setup Batch 4 upgrade candidate
 on:
   push:
     branches: [codex/windows-installer-v1.1]
@@ -17,7 +17,7 @@ jobs:
   setup:
     if: github.ref == 'refs/heads/codex/windows-installer-v1.1'
     runs-on: windows-2025
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - name: Exact public Git bytes
         shell: pwsh
@@ -39,6 +39,23 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Isolated source clone failed' }
           git -C E:/setup-source -c core.autocrlf=false checkout --detach ${{ github.sha }}
           if ($LASTEXITCODE -ne 0) { throw 'Exact checkout failed' }
+          git clone --no-hardlinks --no-checkout . E:/beta1-source
+          if ($LASTEXITCODE -ne 0) { throw 'Isolated beta.1 source clone failed' }
+          git -C E:/beta1-source -c core.autocrlf=false checkout --detach e9417f036d0cdf736ff84682556a994040f0de0b
+          if ($LASTEXITCODE -ne 0) { throw 'Exact beta.1 checkout failed' }
+          if ((git -C E:/beta1-source rev-parse HEAD) -ne 'e9417f036d0cdf736ff84682556a994040f0de0b' -or
+              (git -C E:/beta1-source rev-parse 'HEAD^{tree}') -ne '5da66cb9b73dfa307948634634bfab2cfaaead12') { throw 'beta.1 source identity mismatch' }
+          & E:/beta1-source/tools/windows-installer/ci.ps1 -Work E:/beta1-build -Commit e9417f036d0cdf736ff84682556a994040f0de0b
+          if ($LASTEXITCODE -ne 0) { throw 'Fresh beta.1 rebuild/lifecycle failed' }
+          $taskNode='E:/beta1-build/portable/node-tool/node-v24.21.0-win-x64/node.exe'
+          $taskHistorical='E:/setup-source/tools/windows-installer/historical-identity/historical-run-35514357007-evidence.json'
+          $taskBundle='E:/fresh-beta1-approved-identity-bundle.json'
+          & $taskNode E:/setup-source/tools/windows-installer/fresh-identity.cjs E:/beta1-build $taskHistorical $taskBundle
+          if ($LASTEXITCODE -ne 0) { throw 'Fresh beta.1 identity bundle generation failed' }
+          $env:KSESSION_APPROVED_IDENTITY_BUNDLE=$taskBundle
+          $env:KSESSION_BETA1_SETUP='E:/beta1-build/candidate/artifact/K-SESSION-Setup-1.1.0-beta.1.exe'
+          "KSESSION_APPROVED_IDENTITY_BUNDLE=$taskBundle" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "KSESSION_BETA1_SETUP=E:/beta1-build/candidate/artifact/K-SESSION-Setup-1.1.0-beta.1.exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           & E:/setup-source/tools/windows-installer/ci.ps1 -Work E:/setup-build -Commit ${{ github.sha }}
       - name: Same-commit full public regression
         shell: pwsh
@@ -76,11 +93,18 @@ jobs:
           name: setup-failure-evidence-${{ github.sha }}-${{ github.run_attempt }}
           path: |
             E:/setup-build/installer-tests/INSTALLER-TEST-REPORT.json
+            E:/setup-build/upgrade-tests/UPGRADE-TEST-REPORT.json
+            E:/fresh-beta1-approved-identity-bundle.json
+            E:/beta1-build/candidate/artifact/build-info.json
+            E:/beta1-build/candidate/artifact/installer-manifest.json
             E:/setup-build/offline-gate/offline-network.json
             E:/setup-build/candidate/compiler.stdout.log
             E:/setup-build/candidate/compiler.stderr.log
             E:/setup-build/fault-space/compiler.stderr.log
             E:/setup-build/fault-cancel/compiler.stderr.log
+            E:/setup-build/fault-copy/compiler.stderr.log
+            E:/setup-build/fault-payload-hash/compiler.stderr.log
+            E:/setup-build/fault-post-copy/compiler.stderr.log
             E:/setup-source/.test-work/r5a-gate/regression.json
           if-no-files-found: warn
           retention-days: 30

@@ -214,6 +214,7 @@ test('rejects an unknown top-level file symlink when Windows permits creating on
         fs.symlinkSync(outside, link, 'file');
     } catch (error) {
         if (process.platform === 'win32' && (error.code === 'EPERM' || error.code === 'EACCES')) {
+            if (process.env.KSESSION_REQUIRE_FILE_SYMLINK === '1') throw error;
             t.skip('Windows file symlink privilege is unavailable; junction coverage remains active.');
             return;
         }

@@ -44,7 +44,13 @@ async function call(p,body,token){const res=await fetch(url+p,{method:body===und
  if(mode==='initial')assert.equal((await call('/api/users',{username:employee,password:id.password,role:'user'},token)).status,200);
  const el=await call('/api/login',{username:employee,password:id.password});assert.equal(el.status,200);
  const bytes=pdf(['SYNTHETIC UPLOAD 12345.67']),form=new FormData();form.set('file',new Blob([bytes],{type:'application/pdf'}),'合成中文附件.pdf');
+ if(mode!=='initial'){
+  assert.equal(typeof id.attachment,'string');const prior=fs.readFileSync(path.join(instance,'attachments',id.attachment));
+  const download=await fetch(url+'/attachments/'+encodeURIComponent(id.attachment),{headers:{Authorization:'Bearer '+el.data.token}});
+  assert.equal(download.status,200);assert.deepEqual(Buffer.from(await download.arrayBuffer()),prior);
+ }
  const up=await fetch(url+'/api/upload',{method:'POST',headers:{Origin:url,Authorization:'Bearer '+el.data.token},body:form});assert.equal(up.status,200);const u=await up.json();assert.equal(u.originalName,'合成中文附件.pdf');assert.equal(path.basename(u.filename),u.filename);assert.equal(sha(fs.readFileSync(path.join(instance,'attachments',u.filename))),sha(bytes));
+ if(mode==='initial'){id.attachment=u.filename;fs.writeFileSync(identityFile,JSON.stringify(id,null,2)+'\n',{mode:0o600});}
  const backup=await call('/api/backups',{},token);assert.equal(backup.status,200);assert.equal(backup.data.success,true);assert.equal(path.basename(backup.data.fileName),backup.data.fileName);
  assert.equal(sha(fs.readFileSync(path.join(instance,'backups',backup.data.fileName))),backup.data.sha256);
  console.log(JSON.stringify({status:'PASS',mode,checks:['admin','login','english-pdf','chinese-pdf','multipage-pdf','xlsx','chinese-upload','structured-backup'],pdf:result}));

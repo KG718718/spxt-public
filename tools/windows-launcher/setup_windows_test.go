@@ -129,7 +129,7 @@ func TestSetup(t *testing.T) {
 	}()
 	target := filepath.Join(base, "安装 中文 with spaces")
 	exe := filepath.Join(target, "program", "K-SESSION.exe")
-	setup := filepath.Join(artifact, "K-SESSION-Setup-1.1.0-beta.1.exe")
+	setup := filepath.Join(artifact, "K-SESSION-Setup-1.1.0-beta.2.exe")
 	// An unrelated Node must not block installation and must never be terminated by Setup.
 	unrelatedDir := filepath.Join(base, "unrelated-node")
 	os.Mkdir(unrelatedDir, 0700)

@@ -22,7 +22,7 @@ function Restore-ExactAdapters($ids){
 if($RestoreWatchdog){
  $taskState=Get-Content -Raw -LiteralPath $taskStateFile | ConvertFrom-Json
  [IO.File]::WriteAllText($taskReady,'ready')
- for($taskTick=0;$taskTick -lt 240;$taskTick++){
+ for($taskTick=0;$taskTick -lt 600;$taskTick++){
   if(Test-Path -LiteralPath $taskDone){exit 0}
   Start-Sleep -Seconds 1
  }
@@ -64,6 +64,8 @@ try {
  try {
   & $Go test -count=1 -timeout=3m -v -run '^TestSetup$' .
   if($LASTEXITCODE -ne 0){throw 'Offline actual Setup/core/uninstall/reinstall test failed'}
+  & $Go test -count=1 -timeout=5m -v -run '^TestUpgradeLifecycle$' .
+  if($LASTEXITCODE -ne 0){throw 'Offline beta.1 to beta.2 lifecycle/fault test failed'}
  } finally {Pop-Location}
  if((Test-Path -LiteralPath $taskFired) -or @(Get-NetAdapter -IncludeHidden | Where-Object Status -eq 'Up').Count -ne 0 -or (Test-ExternalSocket)){
   throw 'Isolation ended before tests completed'
