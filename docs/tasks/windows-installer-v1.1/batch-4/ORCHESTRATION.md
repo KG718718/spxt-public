@@ -11,7 +11,7 @@ Preflight：公开仓库/正确分支/干净；本地与 GitHub API 远端均为
 | B4-T1A | 历史Artifact真实安装后identity取证；独立workflow/脚本/专项，不改Setup核心 | 523a522 | thread 01a0c931-f11f-7d02-8d76-cf402ed42098；worktree E:/CodexWorkspace/CodexWorktrees/bfe5/public-source；task commit 4084c9c；integrated 9009154 | 主控Review PASS；run 35781214911 / job 106927326670 成功，历史profile及5个exact anchors已固化；完整双来源bundle仍待T4 fresh baseline |
 | B4-T2 | 只读实例预检；新增 tools/windows-installer/upgrade-preflight/、对应专项测试、tasks/B4-T2-RESULT.md | b96543d 文档检查点 | thread 01a0c900-5901-71f3-a961-24c634605ed4；worktree E:/CodexWorkspace/CodexWorktrees/2f94/public-source；task commits ff21397+8ec1c33；integrated 0e4e4b4+9d59809 | 主控 Review PASS；专项19 PASS/1权限SKIP，已整合；CI待补file symlink实测 |
 | B4-T3 | 事务升级及失败恢复；独占 setup.iss/build.cjs/安装元数据与必要 Launcher 适配 | T1/T1A/T2 Review PASS；baseline 3de4b76 | client-new-thread:a3ff3b4d-d9dc-4b37-86dc-26dedc71d1fe；worktree E:/CodexWorkspace/CodexWorktrees/e98f/public-source；task commit e0dd777；integrated 072a349 | 主控 Review PASS；专项14/14，上游T1 45/45、T2 19 PASS/1权限SKIP；真实Inno生命周期留T4 |
-| B4-T4 | 真实旧版重建、升级生命周期与故障注入；独占 CI/workflow/生命周期测试 | T3 集成 | recovery thread 01a0cb6a-67cc-7c03-a68b-2727af8fce6e；worktree E:/CodexWorkspace/CodexWorktrees/f8bd/public-source；task commits 7bc6ebf+eb0d786；integrated e85ca46+1dc306e | 主控本地 Review PASS；T4/T3 20/20、Go编译与installer contract通过；真实U01—U30及Actions待首次push验证 |
+| B4-T4 | 真实旧版重建、升级生命周期与故障注入；独占 CI/workflow/生命周期测试 | T3 集成 | recovery thread 01a0cb6a-67cc-7c03-a68b-2727af8fce6e；worktree E:/CodexWorkspace/CodexWorktrees/f8bd/public-source；task commits 7bc6ebf+eb0d786+cb2a6be；integrated e85ca46+1dc306e+0c30b23 | 主控本地 Review PASS；首次Actions在历史beta.1旧GUI回归超时，证据已保留；exact build-only修正后T4/T3 21/21，修正后Actions待运行 |
 | B4-QA | 独立只读生产代码审查与验证 | 最终集成候选 | 尚未创建 | 必须执行，未开始 |
 
 困难任务：安装原子性、来源安全、数据保护及恢复均属高风险；所有执行/QA 使用 gpt-5.6-sol / medium。主控不写实质生产/测试代码。
@@ -40,6 +40,8 @@ T1 返工复核：主控复跑43/43。bundle固定自身SHA，字段及批准来
 2026-09-23 T3 恢复与结项：Codex客户端创建返回client ID后未注册出正式thread ID，重启后仍未出现在任务列表；但managed worktree与本地分支完整保留，并已生成提交e0dd777和正式回单。主控核验worktree位于批准的E盘根、origin正确、基线3de4b76、工作树clean；独立复跑T3 14/14、T1 45/45、T2 19 PASS/1权限SKIP及diff-check，通过只读代码Review后整合为072a349。任务登记异常不冒充正式thread回单；真实Inno编译、注册表全值、快捷方式、取消/空间/ACL故障和U18—U30仍由T4验证。
 
 2026-09-23 T4 本地结项：首个client任务未注册出正式thread，但managed worktree f8bd与未提交成果保留；主控在同一worktree创建恢复thread继续原目标，没有新建代码worktree。首轮Review发现U21故障未接入upgrade staging、U22 marker语义不符、U24/U25缺少成功升级后的真实快捷方式与注册表断言，退回同一执行任务修正。执行任务新增提交eb0d786；主控逐项代码复核，并独立复跑T4/T3 20/20、installer与R2 contract、固定Go测试包编译、diff-check通过后，整合为e85ca46+1dc306e。U01—U30仍全部是Actions pending，未写成PASS；下一步只允许主控push开发分支并保留首次hosted Windows结果，失败退回同一T4任务。f8bd仅余未跟踪.test-work/node_modules，未进入提交，不在未获删除确认时主动清理。
+
+2026-09-23 T4 首次 hosted 结果与修正：run 35800072543 / job 106988166109 在 exact e9417f0 的历史 `ci.ps1` 自带可见向导 `TestSetup` READY/输入同步 COM timeout 处失败；failure Artifact 10725736587 已保存，未进入fresh identity、beta.2 build或U01—U30。未重跑或掩盖该失败。原T4执行任务增加exact beta.1 build-only闭包：固定commit/tree及12个关键blob，仍调用历史Runtime/Launcher/Portable、installer contract、Inno toolchain和candidate build，只跳过已证明不稳定的历史GUI回归；Setup/manifest/program inventory及工具链身份由新验证器失败关闭，最终U01—U30不变。主控独立复跑T4/T3 21/21、installer/R2 contract、CJS/PowerShell语法、固定Go包编译及diff-check后整合为0c30b23；修正后的hosted结果仍pending。
 
 用户报告工作树自动回收开启、限制20。不得主动触发删除；记录任务 commit 和路径，未整合结果不得清理，派单前检查现存公开 worktree。若发现路径/结果被回收，停止，不伪造恢复。
 
