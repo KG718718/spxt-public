@@ -1,17 +1,36 @@
 'use strict';
 // Synthetic core API checks against the Node process started by the real Launcher.
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict'),crypto=require('node:crypto'),{createRequire}=require('node:module');
-const {sha,writeJSON}=require('../../windows-runtime/common.cjs');
-const [root,instance,portArg,evidence,mode]=process.argv.slice(2),port=Number(portArg),url='http://127.0.0.1:'+port;
-const app=path.join(root,'app'),load=createRequire(path.join(app,'package.json'));
-let coreStage='BOOT';
+let coreStage='HANDLER_READY',diagnosticWritten=false;
+const diagnosticStages=new Set(['HANDLER_READY','COMMON_MODULE','ARGUMENTS','APP_REQUIRE','READY','SETUP_STATUS','SETUP_INITIALIZE','ZERO_DATA','EXISTING_IDENTITY','ADMIN_LOGIN','PDF_FIXTURES','PDF_PROBE','XLSX_EXPORT','EMPLOYEE_CREATE','EMPLOYEE_LOGIN','PERSISTED_ATTACHMENT','UPLOAD','BACKUP','COMPLETE']);
 function failureKind(e){
  if(e?.code==='ERR_ASSERTION')return'ASSERTION';
  if(e?.name==='TimeoutError'||e?.name==='AbortError')return'TIMEOUT';
+ if(e?.code==='MODULE_NOT_FOUND')return'MISSING_MODULE';
  if(e?.code==='ENOENT')return'MISSING_FILE';
  if(e?.code==='EACCES'||e?.code==='EPERM')return'ACCESS_DENIED';
  return'UNEXPECTED';
 }
+function emitDiagnostic(e){
+ if(diagnosticWritten)return;
+ diagnosticWritten=true;
+ const stage=diagnosticStages.has(coreStage)?coreStage:'UNKNOWN';
+ try{fs.writeSync(2,'KSESSION_CORE_PROBE_DIAGNOSTIC '+JSON.stringify({code:'CORE_PROBE_FAILED',stage,kind:failureKind(e)})+'\n');}catch{}
+}
+process.once('uncaughtException',e=>{emitDiagnostic(e);process.exit(1);});
+process.once('unhandledRejection',e=>{emitDiagnostic(e);process.exit(1);});
+let sha,writeJSON,root,instance,portArg,evidence,mode,port,url,app,load,topLevelReady=false;
+try{
+ coreStage='COMMON_MODULE';
+ ({sha,writeJSON}=require('../../windows-runtime/common.cjs'));
+ coreStage='ARGUMENTS';
+ [root,instance,portArg,evidence,mode]=process.argv.slice(2);port=Number(portArg);
+ if(!root||!instance||!evidence||!['initial','existing'].includes(mode)||!Number.isInteger(port)||port<1||port>65535)throw Error('Invalid core probe arguments');
+ url='http://127.0.0.1:'+port;
+ coreStage='APP_REQUIRE';
+ app=path.join(root,'app');load=createRequire(path.join(app,'package.json'));
+ coreStage='READY';topLevelReady=true;
+}catch(e){emitDiagnostic(e);process.exitCode=1;}
 function pdf(lines,unicode=false){
  const objs=['',''],pageIds=[];
  const add=s=>{objs.push(s);return objs.length;};
@@ -33,7 +52,7 @@ function pdf(lines,unicode=false){
  s+='xref\n0 '+(objs.length+1)+'\n0000000000 65535 f \n'+off.map(n=>String(n).padStart(10,'0')+' 00000 n \n').join('')+'trailer\n<< /Size '+(objs.length+1)+' /Root 1 0 R >>\nstartxref\n'+x+'\n%%EOF\n';return Buffer.from(s);
 }
 async function call(p,body,token){const res=await fetch(url+p,{method:body===undefined?'GET':'POST',signal:AbortSignal.timeout(15000),headers:{Origin:url,...(body===undefined?{}:{'Content-Type':'application/json'}),...(token?{Authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});return{status:res.status,data:await res.json()};}
-(async()=>{
+async function runCoreProbe(){
  const identityFile=path.join(instance,'.portable-test-identity.json');let id;
  if(mode==='initial'){
   coreStage='SETUP_STATUS';
@@ -79,4 +98,5 @@ async function call(p,body,token){const res=await fetch(url+p,{method:body===und
  assert.equal(sha(fs.readFileSync(path.join(instance,'backups',backup.data.fileName))),backup.data.sha256);
  coreStage='COMPLETE';
  console.log(JSON.stringify({status:'PASS',mode,checks:['admin','login','english-pdf','chinese-pdf','multipage-pdf','xlsx','chinese-upload','structured-backup'],pdf:result}));
-})().catch(e=>{process.stderr.write('KSESSION_CORE_PROBE_DIAGNOSTIC '+JSON.stringify({code:'CORE_PROBE_FAILED',stage:coreStage,kind:failureKind(e)})+'\n');process.exitCode=1;});
+}
+if(topLevelReady)runCoreProbe().catch(e=>{emitDiagnostic(e);process.exitCode=1;});

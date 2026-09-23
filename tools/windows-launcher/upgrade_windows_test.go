@@ -23,12 +23,13 @@ type coreProbeDiagnostic struct {
 
 func safeCoreProbeFailure(output []byte) string {
 	allowedStages := map[string]bool{
-		"BOOT": true, "SETUP_STATUS": true, "SETUP_INITIALIZE": true, "ZERO_DATA": true,
+		"HANDLER_READY": true, "COMMON_MODULE": true, "ARGUMENTS": true, "APP_REQUIRE": true, "READY": true,
+		"SETUP_STATUS": true, "SETUP_INITIALIZE": true, "ZERO_DATA": true,
 		"EXISTING_IDENTITY": true, "ADMIN_LOGIN": true, "PDF_FIXTURES": true, "PDF_PROBE": true,
 		"XLSX_EXPORT": true, "EMPLOYEE_CREATE": true, "EMPLOYEE_LOGIN": true,
 		"PERSISTED_ATTACHMENT": true, "UPLOAD": true, "BACKUP": true, "COMPLETE": true,
 	}
-	allowedKinds := map[string]bool{"ASSERTION": true, "TIMEOUT": true, "MISSING_FILE": true, "ACCESS_DENIED": true, "UNEXPECTED": true}
+	allowedKinds := map[string]bool{"ASSERTION": true, "TIMEOUT": true, "MISSING_MODULE": true, "MISSING_FILE": true, "ACCESS_DENIED": true, "UNEXPECTED": true}
 	const prefix = "KSESSION_CORE_PROBE_DIAGNOSTIC "
 	for _, line := range strings.Split(string(output), "\n") {
 		line = strings.TrimSuffix(line, "\r")
@@ -87,6 +88,15 @@ func TestUpgradeLifecycle(t *testing.T) {
 	}
 	coreProbe := func(phase, exe string, args ...string) {
 		t.Helper()
+		if len(args) == 0 {
+			t.Fatalf("core probe phase=%s failed: code=CORE_PROBE_SCRIPT_MISSING", phase)
+		}
+		check := exec.Command(exe, "--check", args[0])
+		check.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		checkOutput, checkErr := check.CombinedOutput()
+		if checkErr != nil {
+			t.Fatalf("core probe phase=%s failed: code=CORE_PROBE_SYNTAX_FAILED outputBytes=%d outputSHA256=%s", phase, len(checkOutput), digest(checkOutput))
+		}
 		c := exec.Command(exe, args...)
 		c.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		output, err := c.CombinedOutput()
@@ -467,5 +477,41 @@ func TestSafeCoreProbeFailure(t *testing.T) {
 	fallback := safeCoreProbeFailure([]byte("token=private"))
 	if !strings.Contains(fallback, "code=CORE_PROBE_NO_SAFE_DIAGNOSTIC") || strings.Contains(fallback, "private") {
 		t.Fatal("unsafe fallback diagnostic")
+	}
+}
+
+func TestCoreProbeTopLevelDiagnostic(t *testing.T) {
+	node, err := exec.LookPath("node")
+	if err != nil {
+		t.Fatal("Node is required for the core diagnostic contract")
+	}
+	source, err := os.ReadFile(filepath.Join("..", "tests", "windows-portable", "core-client.cjs"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(t.TempDir(), "isolated", "probe")
+	if err = os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	script := filepath.Join(dir, "core-client.cjs")
+	if err = os.WriteFile(script, source, 0600); err != nil {
+		t.Fatal(err)
+	}
+	command := exec.Command(node, script, t.TempDir(), t.TempDir(), "1", t.TempDir(), "initial")
+	output, runErr := command.CombinedOutput()
+	if runErr == nil {
+		t.Fatal("isolated probe unexpectedly loaded its missing local module")
+	}
+	if strings.Count(string(output), "KSESSION_CORE_PROBE_DIAGNOSTIC ") != 1 {
+		t.Fatal("top-level failure did not emit exactly one diagnostic")
+	}
+	summary := safeCoreProbeFailure(output)
+	if !strings.Contains(summary, "stage=COMMON_MODULE") || !strings.Contains(summary, "kind=MISSING_MODULE") {
+		t.Fatal("top-level failure was not classified")
+	}
+	for _, forbidden := range []string{dir, script, "Cannot find module", "Require stack"} {
+		if strings.Contains(string(output), forbidden) || strings.Contains(summary, forbidden) {
+			t.Fatal("top-level diagnostic leaked raw failure data")
+		}
 	}
 }
