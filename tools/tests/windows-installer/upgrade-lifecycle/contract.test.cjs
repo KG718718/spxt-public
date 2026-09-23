@@ -33,6 +33,10 @@ test('real lifecycle has U01-U30 and all five required recoverable failure fixtu
  assert.match(iss,/procedure BeforeUpgradeCopy\(Rel: String\)/);assert.match(iss,/KSESSION_FIXTURE_COPY_FAILURE/);assert.match(iss,/KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE/);
  for(const marker of ['KSESSION_UPGRADE_ROOT_MISMATCH','KSESSION_REJECT_INSTANCE_LOCK'])assert.match(iss,new RegExp(`Log\\('${marker}'\\)`));
  assert.match(iss,/if RunningProduct then begin Log\('KSESSION_REJECT_RUNNING'\); Result := RunningMessage; exit; end;/);
+ assert.match(iss,/function SameInstallRoot\(A, B: String\): Boolean;[\s\S]*Result := CompareText\(RemoveBackslashUnlessRoot\(A\), RemoveBackslashUnlessRoot\(B\)\) = 0;/);
+ assert.match(iss,/if not SameInstallRoot\(P, PriorInstallRoot\) then begin Log\('KSESSION_UPGRADE_ROOT_MISMATCH'\)/);
+ assert.match(iss,/not SameInstallRoot\(R, ExpandConstant\('\{app\}'\)\)/);
+ assert.doesNotMatch(iss,/CompareText\(P, PriorInstallRoot\)/);
  assert.match(go,/fault-payload-hash", "KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED"/);
  assert.match(go,/instanceStable/);assert.match(go,/ownedStable/);assert.match(go,/core-beta1/);assert.match(go,/core-beta2/);assert.match(go,/core-reinstall/);
 });
@@ -41,8 +45,10 @@ test('successful upgrade asserts real shortcut targets, arguments, and normalize
  const go=read('tools/windows-launcher/upgrade_windows_test.go');
  const u24=go.indexOf('record("U24"'),u25=go.indexOf('record("U25"');
  assert.ok(u24>go.indexOf('readShortcut(link, false)'));assert.ok(u24>go.indexOf('readShortcut(link, true)'));
- assert.ok(u25>go.indexOf('assertBeta2Registration()'));
- for(const marker of ['DisplayVersion != "1.1.0-beta.2"','state.Machine != 0','len(state.Rows) < 1','32/64 registry aliases conflict'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.ok(u25>go.indexOf('assertRegistration("1.1.0-beta.2")'));
+ for(const marker of ['row.Registration.DisplayVersion != wantVersion','state.Machine != 0','len(state.Rows) < 1','32/64 registry aliases conflict'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.match(go,/runSetup\(beta1, true\)\s+assertRegistration\("1\.1\.0-beta\.1"\)\s+record\("U01"/);
+ assert.match(go,/assertRegistration\("1\.1\.0-beta\.2"\)/);
 });
 
 test('artifact allowlist requires the closed thirty-check upgrade report',()=>{

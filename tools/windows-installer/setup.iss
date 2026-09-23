@@ -114,6 +114,11 @@ begin
   if NodeLock <> 0 then begin CloseHandle(NodeLock); NodeLock := 0; end;
 end;
 
+function SameInstallRoot(A, B: String): Boolean;
+begin
+  Result := CompareText(RemoveBackslashUnlessRoot(A), RemoveBackslashUnlessRoot(B)) = 0;
+end;
+
 function Overlaps(A, B: String): Boolean;
 begin
   A := Lowercase(AddBackslash(RemoveBackslashUnlessRoot(A)));
@@ -451,7 +456,7 @@ var V, R, I, S, V32, R32: String;
 begin
   Result := False;
   if not RegQueryStringValue(HKCU64, ProductKey, 'DisplayVersion', V) or (V <> '1.1.0-beta.2') or
-     not RegQueryStringValue(HKCU64, ProductKey, 'InstallLocation', R) or (CompareText(R, ExpandConstant('{app}')) <> 0) or
+     not RegQueryStringValue(HKCU64, ProductKey, 'InstallLocation', R) or not SameInstallRoot(R, ExpandConstant('{app}')) or
      not RegQueryStringValue(HKCU64, BindingKey, 'Instance', I) or (CompareText(I, PriorBindingInstance) <> 0) then exit;
   if RegQueryStringValue(HKCU32, ProductKey, 'DisplayVersion', V32) then begin
     if not RegQueryStringValue(HKCU32, ProductKey, 'InstallLocation', R32) or (V32 <> V) or (CompareText(R32, R) <> 0) then exit;
@@ -490,7 +495,7 @@ begin
   end;
   if not SafePath(P) then begin Log('KSESSION_REJECT_PATH'); Result := '安装路径无效、包含重解析点或与数据/系统目录重叠。'; exit; end;
   if UpgradeMode then begin
-    if CompareText(P, PriorInstallRoot) <> 0 then begin Log('KSESSION_UPGRADE_ROOT_MISMATCH'); Result := '升级安装目录与原登记不一致，已拒绝。'; exit; end;
+    if not SameInstallRoot(P, PriorInstallRoot) then begin Log('KSESSION_UPGRADE_ROOT_MISMATCH'); Result := '升级安装目录与原登记不一致，已拒绝。'; exit; end;
   end else begin
     if HasRegistration then begin Result := ExistingMessage; exit; end;
     if FileExists(P) or (DirExists(P) and NonEmpty(P)) then begin Log('KSESSION_REJECT_NONEMPTY'); Result := '目标目录不是空目录，拒绝覆盖未知文件。'; exit; end;

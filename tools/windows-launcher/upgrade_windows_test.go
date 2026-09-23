@@ -308,7 +308,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 		}
 		return string(decoded)
 	}
-	assertBeta2Registration := func() {
+	assertRegistration := func(wantVersion string) {
 		t.Helper()
 		script := `$product='Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1';$binding='Software\KSESSION\Beta\InstallerBinding';$rows=@();$machine=0;foreach($viewName in @('Registry64','Registry32')){$view=[Microsoft.Win32.RegistryView]::$viewName;$cu=[Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser,$view);try{$u=$cu.OpenSubKey($product,$false);$b=$cu.OpenSubKey($binding,$false);try{if($null-ne$u-or$null-ne$b){$rows+=@{view=$viewName;registration=if($null-ne$u){@{displayVersion=[string]$u.GetValue('DisplayVersion');installLocation=[string]$u.GetValue('InstallLocation')}}else{$null};binding=if($null-ne$b){@{installRoot=[string]$b.GetValue('InstallRoot');instance=[string]$b.GetValue('Instance')}}else{$null}}}}finally{if($null-ne$u){$u.Dispose()};if($null-ne$b){$b.Dispose()}}}finally{$cu.Dispose()};$lm=[Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine,$view);try{$k=$lm.OpenSubKey($product,$false);if($null-ne$k){$machine++;$k.Dispose()};$k=$lm.OpenSubKey($binding,$false);if($null-ne$k){$machine++;$k.Dispose()}}finally{$lm.Dispose()}};$j=@{rows=$rows;machine=$machine}|ConvertTo-Json -Depth 6 -Compress;[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($j))`
 		encoded := strings.TrimSpace(string(cmdOut(ps, "-NoProfile", "-NonInteractive", "-Command", script)))
@@ -334,10 +334,10 @@ func TestUpgradeLifecycle(t *testing.T) {
 			t.Fatal("registration count or machine-hive conflict")
 		}
 		for _, row := range state.Rows {
-			if row.Registration == nil || row.Binding == nil || row.Registration.DisplayVersion != "1.1.0-beta.2" ||
+			if row.Registration == nil || row.Binding == nil || row.Registration.DisplayVersion != wantVersion ||
 				!sameFile(row.Registration.InstallLocation, target) || !sameFile(row.Binding.InstallRoot, target) ||
 				!sameFile(row.Binding.Instance, instance) {
-				t.Fatal("beta.2 registration or binding mismatch")
+				t.Fatal("registration or binding mismatch")
 			}
 		}
 		if len(state.Rows) == 2 {
@@ -351,6 +351,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 	}
 
 	runSetup(beta1, true)
+	assertRegistration("1.1.0-beta.1")
 	record("U01", "fresh rebuilt beta.1 installed with real registration and binding")
 	root := filepath.Join(target, "program")
 	launcher := filepath.Join(root, "K-SESSION.exe")
@@ -474,7 +475,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 		}
 	}
 	record("U24", "both real shortcuts target upgraded Launcher and carry the exact original instance argument")
-	assertBeta2Registration()
+	assertRegistration("1.1.0-beta.2")
 	record("U25", "beta.2 HKCU registration and binding are unique after exact 32/64 shared-alias normalization; HKLM is empty")
 	launcher = filepath.Join(root, "K-SESSION.exe")
 	app = startApp()
