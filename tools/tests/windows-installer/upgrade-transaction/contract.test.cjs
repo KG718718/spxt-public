@@ -24,6 +24,18 @@ test('U01-U08/U15-U17 exact beta1 gate runs before recoverable transaction and h
   for (const name of ['upgrade-detection.cjs','upgrade-preflight.cjs','approved-identity-bundle.json','ksession-beta2-node.exe']) assert.ok(iss.includes(name), name);
   assert.ok(build.includes('validateBundle(bundle)'));
 });
+test('installed beta2 is explicitly rejected while older registrations still reach the exact upgrade gate', () => {
+  const start = iss.indexOf('function InitializeSetup: Boolean;');
+  const finish = iss.indexOf('function PrepareToInstall', start);
+  assert.ok(start >= 0 && finish > start);
+  const initialize = iss.slice(start, finish);
+  assert.match(initialize, /UpgradeMode := HasRegistration/);
+  assert.match(initialize, /ReadUpgradeIdentity/);
+  assert.match(initialize, /UpgradeMode and \(PriorDisplayVersion = '1\.1\.0-beta\.2'\)/);
+  assert.match(initialize, /KSESSION_REJECT_REGISTERED/);
+  assert.ok(initialize.indexOf('ReadUpgradeIdentity') < initialize.indexOf('KSESSION_REJECT_REGISTERED'));
+  assert.doesNotMatch(initialize, /RunUpgradeGate|PrepareUpgradeTransaction/);
+});
 test('U11/U14/U18-U25 transaction stages program and metadata, rolls back before finalize, and records complete state', () => {
   assert.match(build, /DestDir: "\{tmp\}\\\\ksession-upgrade-v1\\\\program/);
   assert.match(iss, /DestDir: "\{tmp\}\\ksession-upgrade-v1\\metadata"/);

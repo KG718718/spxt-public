@@ -461,6 +461,10 @@ begin
     Log('KSESSION_UPGRADE_REGISTRATION_REJECTED');
     SuppressibleMsgBox('现有安装登记缺失、冲突或损坏，无法安全升级。不会修改现有程序或数据。', mbError, MB_OK, IDOK); exit;
   end;
+  if UpgradeMode and (PriorDisplayVersion = '1.1.0-beta.2') then begin
+    Log('KSESSION_REJECT_REGISTERED');
+    SuppressibleMsgBox(ExistingMessage, mbError, MB_OK, IDOK); exit;
+  end;
   Result := True;
 end;
 
