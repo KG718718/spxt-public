@@ -2,28 +2,14 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { inventory, sha } = require('../windows-runtime/common.cjs');
+const { sha } = require('../windows-runtime/common.cjs');
 const { policyFingerprint, validateBundle, validatePolicy } = require('./upgrade-detection/index.cjs');
+const { verifyBeta1Build } = require('./verify-beta1-build.cjs');
 
 const [oldBuildArg, historicalArg, outputArg] = process.argv.slice(2);
 if (!oldBuildArg || !historicalArg || !outputArg) throw new Error('old build, historical evidence and output are required');
 const oldBuild = path.resolve(oldBuildArg);
-const generated = path.join(oldBuild, 'candidate', 'generated');
-const program = path.join(oldBuild, 'portable', '解包程序 中文 with spaces', 'K-SESSION');
-const manifestFile = path.join(generated, 'installer-manifest.json');
-const buildFile = path.join(generated, 'build-info.json');
-const manifestBytes = fs.readFileSync(manifestFile);
-const manifest = JSON.parse(manifestBytes);
-const buildBytes = fs.readFileSync(buildFile);
-const build = JSON.parse(buildBytes);
-const actualInventory = inventory(program);
-if (build.sourceCommit !== 'e9417f036d0cdf736ff84682556a994040f0de0b' ||
-    build.sourceTree !== '5da66cb9b73dfa307948634634bfab2cfaaead12' ||
-    build.installerVersion !== '1.1.0-beta.1' || manifest.version !== '1.1.0-beta.1' ||
-    JSON.stringify(actualInventory) !== JSON.stringify(manifest.payload) ||
-    sha(JSON.stringify(actualInventory)) !== manifest.payloadInventorySha256) {
-  throw new Error('fresh beta.1 identity is not the approved source or is internally inconsistent');
-}
+const {build, buildBytes, manifest, manifestBytes} = verifyBeta1Build(oldBuild);
 const fresh = {
   schema: 1,
   appId: 'KSESSION-Beta-Installer-v1',

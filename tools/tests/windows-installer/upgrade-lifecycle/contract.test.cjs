@@ -4,9 +4,16 @@ const repo=path.resolve(__dirname,'../../../..');
 const read=p=>fs.readFileSync(path.join(repo,p),'utf8');
 
 test('workflow rebuilds exact beta.1 and supplies a closed fresh plus historical bundle',()=>{
- const y=read('.github/workflows/setup-v3.yml');
+ const y=read('.github/workflows/setup-v3.yml'),rebuild=read('tools/windows-installer/rebuild-beta1.ps1'),verify=read('tools/windows-installer/verify-beta1-build.cjs'),offline=read('tools/windows-installer/offline-ci.ps1');
  for(const marker of ['checkout --detach e9417f036d0cdf736ff84682556a994040f0de0b','5da66cb9b73dfa307948634634bfab2cfaaead12','fresh-identity.cjs','KSESSION_APPROVED_IDENTITY_BUNDLE','KSESSION_BETA1_SETUP'])assert.match(y,new RegExp(marker));
- assert.match(y,/beta1-source\/tools\/windows-installer\/ci\.ps1/);
+ assert.match(y,/rebuild-beta1\.ps1 -Source E:\/beta1-source -Work E:\/beta1-build/);
+ assert.doesNotMatch(y,/beta1-source\/tools\/windows-installer\/ci\.ps1/);
+ assert.doesNotMatch(rebuild,/windows-installer\/ci\.ps1|offline-ci\.ps1|TestSetup/);
+ for(const marker of ['windows-portable/ci.ps1','windows-installer/toolchain.ps1','windows-installer/build.cjs','verify-beta1-build.cjs','candidate','e9417f036d0cdf736ff84682556a994040f0de0b','5da66cb9b73dfa307948634634bfab2cfaaead12'])assert.match(rebuild,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const marker of ['K-SESSION-Setup-1.1.0-beta.1.exe','programInventorySha256','historicalGuiRegression','NOT_RUN_BUILD_ONLY'])assert.match(verify,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.ok(y.indexOf('fresh-identity.cjs')>y.indexOf('rebuild-beta1.ps1'));
+ assert.match(y,/setup-source\/tools\/windows-installer\/ci\.ps1/);
+ assert.match(offline,/\^TestUpgradeLifecycle\$/);
 });
 
 test('hosted gate makes file-symlink coverage mandatory and runs both real lifecycles offline',()=>{

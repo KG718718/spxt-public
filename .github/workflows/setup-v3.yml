@@ -45,8 +45,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Exact beta.1 checkout failed' }
           if ((git -C E:/beta1-source rev-parse HEAD) -ne 'e9417f036d0cdf736ff84682556a994040f0de0b' -or
               (git -C E:/beta1-source rev-parse 'HEAD^{tree}') -ne '5da66cb9b73dfa307948634634bfab2cfaaead12') { throw 'beta.1 source identity mismatch' }
-          & E:/beta1-source/tools/windows-installer/ci.ps1 -Work E:/beta1-build -Commit e9417f036d0cdf736ff84682556a994040f0de0b
-          if ($LASTEXITCODE -ne 0) { throw 'Fresh beta.1 rebuild/lifecycle failed' }
+          & E:/setup-source/tools/windows-installer/rebuild-beta1.ps1 -Source E:/beta1-source -Work E:/beta1-build
+          if ($LASTEXITCODE -ne 0) { throw 'Exact beta.1 build-only failed' }
           $taskNode='E:/beta1-build/portable/node-tool/node-v24.21.0-win-x64/node.exe'
           $taskHistorical='E:/setup-source/tools/windows-installer/historical-identity/historical-run-35514357007-evidence.json'
           $taskBundle='E:/fresh-beta1-approved-identity-bundle.json'
@@ -95,6 +95,7 @@ jobs:
             E:/setup-build/installer-tests/INSTALLER-TEST-REPORT.json
             E:/setup-build/upgrade-tests/UPGRADE-TEST-REPORT.json
             E:/fresh-beta1-approved-identity-bundle.json
+            E:/beta1-build/BETA1-BUILD-ONLY-REPORT.json
             E:/beta1-build/candidate/artifact/build-info.json
             E:/beta1-build/candidate/artifact/installer-manifest.json
             E:/setup-build/offline-gate/offline-network.json

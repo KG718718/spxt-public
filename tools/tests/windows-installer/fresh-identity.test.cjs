@@ -1,10 +1,34 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {inventory,sha}=require('../../windows-runtime/common.cjs');
+const {verifyBeta1Build}=require('../../windows-installer/verify-beta1-build.cjs');
+const repo=path.resolve(__dirname,'../../..');
 
 test('fresh identity generator is pinned and fails closed',()=>{
  const text=fs.readFileSync(path.join(__dirname,'../../windows-installer/fresh-identity.cjs'),'utf8');
- for(const value of ['e9417f036d0cdf736ff84682556a994040f0de0b','5da66cb9b73dfa307948634634bfab2cfaaead12','fresh-ci-baseline','historical-run-35514357007']) assert.match(text,new RegExp(value));
- assert.match(text,/JSON\.stringify\(actualInventory\) !== JSON\.stringify\(manifest\.payload\)/);
+ const verify=fs.readFileSync(path.join(__dirname,'../../windows-installer/verify-beta1-build.cjs'),'utf8');
+ for(const value of ['fresh-ci-baseline','historical-run-35514357007']) assert.match(text,new RegExp(value));
+ for(const value of ['e9417f036d0cdf736ff84682556a994040f0de0b','5da66cb9b73dfa307948634634bfab2cfaaead12','K-SESSION-Setup-1.1.0-beta.1.exe'])assert.match(verify,new RegExp(value.replaceAll('.','\\.')));
+ assert.match(text,/verifyBeta1Build\(oldBuild\)/);
  assert.match(text,/validateBundle\(bundle\)/);
  assert.match(text,/flag: 'wx'/);
+});
+
+test('synthetic exact beta1 build closure validates and setup tampering fails closed',()=>{
+ const root=fs.mkdtempSync(path.join(repo,'.test-work','beta1-build-verify-'));
+ const put=(name,bytes)=>{const file=path.join(root,...name.split('/'));fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);};
+ try{
+  const program='portable/解包程序 中文 with spaces/K-SESSION';put(program+'/app/server.js','synthetic-beta1-program\n');
+  const payload=inventory(path.join(root,...program.split('/'))),manifest={schema:1,sourceCommit:'e9417f036d0cdf736ff84682556a994040f0de0b',sourceTree:'5da66cb9b73dfa307948634634bfab2cfaaead12',payload,payloadInventorySha256:sha(JSON.stringify(payload)),version:'1.1.0-beta.1'};
+  const manifestBytes=Buffer.from(JSON.stringify(manifest,null,2)+'\n'),setup=Buffer.from('synthetic setup bytes');
+  const build={installerVersion:'1.1.0-beta.1',appVersion:'1.0.0',sourceCommit:manifest.sourceCommit,sourceTree:manifest.sourceTree,nodeVersion:'24.21.0',goVersion:'1.27.1',innoSetupVersion:'6.7.3',packageLockSha256:'7e650d8d4141d888ab7cc81da25fa094f0e36ffaa0f2152d5066346633e8b2b5',runtimeManifestSha256:'1'.repeat(64),launcherSha256:'2'.repeat(64)};
+  put('candidate/generated/installer-manifest.json',manifestBytes);put('candidate/generated/build-info.json',JSON.stringify(build,null,2)+'\n');
+  put('candidate/artifact/installer-manifest.json',manifestBytes);put('candidate/artifact/K-SESSION-Setup-1.1.0-beta.1.exe',setup);
+  const final={...build,mode:'candidate',setupBytes:setup.length,setupSha256:sha(setup)};put('candidate/artifact/build-info.json',JSON.stringify(final,null,2)+'\n');
+  put('candidate/artifact/K-SESSION-Setup-1.1.0-beta.1.exe.sha256',final.setupSha256+'  K-SESSION-Setup-1.1.0-beta.1.exe\n');put('candidate/artifact/LICENSE-Inno-Setup.txt','synthetic license');put('candidate/artifact/license-summary.json','{}\n');
+  put('portable/artifact/portable-test-report.json',JSON.stringify({status:'PASS',sourceCommit:manifest.sourceCommit,staging:{status:'PASS'},extracted:{status:'PASS'}}));
+  assert.equal(verifyBeta1Build(root).report.status,'PASS');
+  fs.appendFileSync(path.join(root,'candidate/artifact/K-SESSION-Setup-1.1.0-beta.1.exe'),'tamper');
+  assert.throws(()=>verifyBeta1Build(root));
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
