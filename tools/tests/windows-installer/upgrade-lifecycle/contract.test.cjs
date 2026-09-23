@@ -53,3 +53,15 @@ test('portable restart expires temporary attachment ownership while admin verifi
  for(const marker of ['UNATTACHED_UPLOAD_EMPLOYEE_ACCESS_MUST_EXPIRE_AFTER_RESTART','PERSISTED_ATTACHMENT_ADMIN_DOWNLOAD_FAILED','employeeDownload.status,403','adminDownload.status,200','Buffer.from(await adminDownload.arrayBuffer()),prior'])assert.match(core,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.ok(core.indexOf('employeeDownload.status,403')<core.indexOf('adminDownload.status,200'));
 });
+
+test('reinstall fixture removes only verified-empty owned shells after proving unknown root content is preserved',()=>{
+ const go=read('tools/windows-launcher/setup_windows_test.go');
+ const removeForeign=go.indexOf('os.Remove(foreign)'),reinstall=go.indexOf('runSetup(setup, target, true)',removeForeign);
+ assert.ok(removeForeign>=0&&reinstall>removeForeign);
+ const cleanup=go.slice(removeForeign,reinstall);
+ for(const marker of ['os.Lstat(dir)','info.Mode()&os.ModeSymlink','os.ReadDir(dir)','len(entries) != 0','os.Remove(dir)',
+  'filepath.Join(target, "program")','filepath.Join(target, "uninstall")','removeEmptyFixtureDir(target)'])assert.match(cleanup,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.doesNotMatch(cleanup,/RemoveAll/);
+ const iss=read('tools/windows-installer/setup.iss');
+ assert.match(iss,/DirExists\(P\) and NonEmpty\(P\)[\s\S]*KSESSION_REJECT_NONEMPTY/);
+});

@@ -501,6 +501,35 @@ func TestSetup(t *testing.T) {
 	if e = os.Remove(foreign); e != nil {
 		t.Fatal(e)
 	}
+	removeEmptyFixtureDir := func(dir string) {
+		t.Helper()
+		info, statErr := os.Lstat(dir)
+		if os.IsNotExist(statErr) {
+			return
+		}
+		if statErr != nil {
+			t.Fatal(statErr)
+		}
+		if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+			t.Fatal("uninstall fixture left a non-directory or linked path")
+		}
+		entries, readErr := os.ReadDir(dir)
+		if readErr != nil {
+			t.Fatal(readErr)
+		}
+		if len(entries) != 0 {
+			t.Fatal("uninstall fixture left unexpected content")
+		}
+		if removeErr := os.Remove(dir); removeErr != nil {
+			t.Fatal(removeErr)
+		}
+	}
+	// The synthetic unknown root file intentionally prevents Inno from removing
+	// its parent shells. Remove only verified-empty test-owned shells so the next
+	// assertion tests existing-instance reuse, not a contaminated program root.
+	removeEmptyFixtureDir(filepath.Join(target, "program"))
+	removeEmptyFixtureDir(filepath.Join(target, "uninstall"))
+	removeEmptyFixtureDir(target)
 	runSetup(setup, target, true)
 	recordData("D07", "actual reinstall accepts existing instance without reinitializing")
 	if string(mustRead(t, filepath.Join(instance, "data.json"))) != string(dataBefore) {

@@ -1,6 +1,6 @@
 # B4-T4 Result — Upgrade Lifecycle / CI / Fault Injection
 
-状态：**BLOCKED — 第六次 GitHub hosted Windows 运行已完成 beta.2 Setup 编译并进入真实 Setup 测试，但同版本已登记拒绝场景缺失产品原因码。** 尚未生成 U01—U30 的真实 PASS 证据。本执行任务无 push 权限；下述 `NOT RUN` 不得改写成 PASS，主控整合并 push 后应以修正后的下一次运行结果为准。
+状态：**BLOCKED — 第七次 GitHub hosted Windows 运行已通过 fresh beta.2 安装、真实启动、运行中拒绝及卸载数据保留，但重装夹具把卸载后空目录壳误当作 instance 身份失败。** 尚未生成 U01—U30 的真实 PASS 证据。本执行任务无 push 权限；下述 `NOT RUN` 不得改写成 PASS，主控整合并 push 后应以修正后的下一次运行结果为准。
 
 ## Preflight
 
@@ -10,6 +10,7 @@
 - local branch：`codex/b4-t4-upgrade-lifecycle`
 - 进入时 `git status --short` 无输出；目标分支此前不存在，从 detached baseline 创建。未 fetch、push、merge、操作 main/tag/Release。
 - 第五次失败恢复轮从本任务既有 local commit `51294c5ba579f36d1b7ebd8904c482237786b314` 继续；对应主控候选 commit 为 `0254bdd90fd8f93c2813da1d57c640f50a14c49d`。恢复轮开始时仅有未跟踪 `.test-work/`、`node_modules/`，均不纳入提交。
+- 第七次失败恢复轮核对指定主控 baseline `ed449ea08a2e4b0f8714a1a405a98f1be484fb6b` 已包含前两轮等价修复；它与本任务上一 local commit 的代码相同，仅增加主控编排记录。tracked 状态 clean 后使用 `reset --keep` 安全同步，未跟踪缓存保持原样。
 
 ## 已完成实现
 
@@ -35,6 +36,8 @@
 - 根因为 hosted runner 将 `E:` 设为 `subst` 别名：`assertExistingPathSafe` 取得物理 `realpath` 后，旧 `samePath` 仍做原始字符串比较，把同一 volume root 的别名路径误判为 reparse。修正仅解析卷根并保留其余相对路径，供 same-path 与 overlap 判断使用；不会解析或放行路径内部 junction/reparse。新增合成 `subst` 回归同时证明：同一安装根别名可通过，真实错误根、跨别名重叠 instance 与 junction 安装根仍拒绝。
 - 第六次候选 commit `96d26f3fc0eaf00aeea4c172c47c27e79d5b64a0` 的 Runtime run `35810440373` success；Setup run `35810440453` / job `107020593126` failure，failure Artifact `10729513518`，digest `sha256:2a902b5b6d4af22407be9c45f4e5d7551496c069c7589b1b34e06207f0c4d114`。本次已证明上一轮 `subst` 修正生效，并完成 exact beta.1 重建/fresh identity、beta.2 Runtime/Launcher/Portable、Setup 编译及部分真实 Setup 回归；`INSTALLER-TEST-REPORT.json` 只记录 D01—D06、D08—D09、I04—I06、I16—I17、I21—I24 的局部 PASS，不能写成完整 Setup 或 U01—U30 PASS。
 - 精确失败在 `setup_windows_test.go:401`：第一次 beta.2 安装后再次运行同一 Setup，日志进入升级页并由 Inno 抛出 `EAbort`，但没有 `KSESSION_REJECT_REGISTERED`，测试正确拒绝把无原因的失败当作通过。根因不是夹具残留或路径别名：登记与 binding 是刚完成安装的预期状态，且本轮已越过 preflight；实际回归是 Batch 4 引入 `UpgradeMode` 时删除了原 `InitializeSetup` 的已有登记拒绝分支，却未补回“当前 beta.2 已安装”的显式拒绝。修正仅在登记读取完整且 `PriorDisplayVersion = 1.1.0-beta.2` 时记录该原因码并停止；beta.1 仍进入 exact upgrade gate，运行中拒绝、路径/数据安全和事务回滚均未放宽。
+- 第七次候选 commit `ed449ea08a2e4b0f8714a1a405a98f1be484fb6b` 的 Setup run `35812914595` / job `107028173471` failure；failure Artifact `10730302530`，digest `sha256:2f88eaf1b0131e7b72a380109d7e3f936615ea9d33ac3ea4574d484b74044fb8`。本次已通过 fresh beta.2 安装、真实 Launcher/私有 Node、合成 Admin 与数据/附件、运行中 Setup/卸载拒绝、停止后卸载以及 data/附件/备份字节保留；报告中的 D01—D06、D08—D09、D11—D12、I04—I12（I09 为 PENDING）、I16—I17、I19、I21—I24、I26—I29 只是局部状态，后续重装及 U01—U30 未完成。
+- 精确失败在 `setup_windows_test.go:504`，Setup 记录 `KSESSION_REJECT_NONEMPTY` 并以 7 退出。该 token 来自程序安装根的非空门禁，不是 instance 身份校验：测试为证明卸载不误删，先在安装根放入合成未知文件；Inno 因其存在保留了空的程序目录壳。测试验证并删除该文件后，没有清理这些测试诱发的空壳，导致重装仍面对非空程序根。修正不改 Setup：只在验证未知文件确实保留后，逐个确认 `program`、`uninstall` 与测试根是普通、非链接、完全空的目录，再用非递归删除清理夹具；任一未知条目、文件、链接或读取失败仍硬失败。合法 instance 继续由原位置检查器验证，未知非空目录、reparse、写权限、程序/数据重叠及 exact upgrade gate 均未放宽。
 
 ## U01—U30 状态
 
@@ -76,7 +79,7 @@
 ## 本地测试与首次失败
 
 - 首次 `npm test`：26 suites 中 1 FAIL，原因是本工作树未安装锁文件依赖 `write-excel-file/node`；不是产品断言失败。执行 `npm ci --omit=optional --ignore-scripts --no-audit --no-fund` 后完整重跑：`Public test files: 26; failed: 0`。本机 hosted-only suites 仍按原策略 SKIP，因此不得写成 Actions 的 742/fail0/skip0。
-- T4 lifecycle/fresh identity + T3 transaction：24 PASS / 0 FAIL / 0 SKIP；新增同版本 beta.2 登记必须在 `InitializeSetup` 显式拒绝、且不得截断 beta.1 exact upgrade gate 的静态契约。
+- T4 lifecycle/fresh identity + T3 transaction：25 PASS / 0 FAIL / 0 SKIP；新增重装夹具只能删除已确认普通、非链接且完全空的自有目录壳，并继续锁定 Setup 的未知非空目录拒绝。
 - upgrade-preflight 直接复跑：21 tests，20 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。新增 `subst` 正例及错误根、overlap、junction 负例均 PASS。
 - T1/T1A/T2 联合复跑：136 tests，135 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。workflow 已把该情况提升为硬失败，但修正后尚未 hosted 实跑。
 - installer contract：`INSTALLER CONTRACT PASS`；`R2 DATA LOCATION CONTRACT PASS`。
@@ -91,8 +94,8 @@
 
 - historical beta.1：沿用已审查 run `35781214911` / job `106927326670` / evidence Artifact `10718411569`；profile exact anchors 由 checked-in evidence 提供。本任务未重新下载历史发行包。
 - fresh beta.1 rebuild identity：run `35804632918` 已通过 build-only verifier 并生成通过 T1 `validateBundle` 的 fresh identity；该局部证据不等于 beta.2 生命周期通过。
-- beta.2 build identity：第六次 Runtime 与 Portable job 已通过，Setup 已真实编译并进入测试；但 Setup 回归失败，没有成功发行 Artifact，完整身份结论仍为 N/A。
-- Actions：run `35800072543` / job `106988166109` = 历史 GUI failure，Artifact `10725736587`；run `35802015923` / job `106994266165` = source clean 合并门禁在构建前 failure、无 Artifact；run `35803383243` / job `106998595821` = subst 路径别名触发 top-level 固定门禁、构建前 failure、无 Artifact；run `35804632918` / job `107002547301` = beta.2 Portable core probe failure，failure Artifact `10727636644`；Runtime run `35804632969` / job `107002547427` = 文档隐私门禁 25/26 suites；第五次 Runtime run `35807722187` 与 Portable run `35807722105` = success，Setup run `35807722197` / job `107012151593` = preflight failure，failure Artifact `10728312842`；第六次 Runtime run `35810440373` = success，Setup run `35810440453` / job `107020593126` = same-version registration reason failure，failure Artifact `10729513518`。原因码修正后的复跑 pending，执行任务禁止 push。
+- beta.2 build identity：第七次 Setup 已真实编译并进入更深的 fresh lifecycle；但完整 Setup 回归仍失败，没有成功发行 Artifact，完整身份结论仍为 N/A。
+- Actions：run `35800072543` / job `106988166109` = 历史 GUI failure，Artifact `10725736587`；run `35802015923` / job `106994266165` = source clean 合并门禁在构建前 failure、无 Artifact；run `35803383243` / job `106998595821` = subst 路径别名触发 top-level 固定门禁、构建前 failure、无 Artifact；run `35804632918` / job `107002547301` = beta.2 Portable core probe failure，failure Artifact `10727636644`；Runtime run `35804632969` / job `107002547427` = 文档隐私门禁 25/26 suites；第五次 Runtime run `35807722187` 与 Portable run `35807722105` = success，Setup run `35807722197` / job `107012151593` = preflight failure，failure Artifact `10728312842`；第六次 Runtime run `35810440373` = success，Setup run `35810440453` / job `107020593126` = same-version registration reason failure，failure Artifact `10729513518`；第七次 Setup run `35812914595` / job `107028173471` = reinstall fixture contamination failure，failure Artifact `10730302530`。夹具修正后的复跑 pending，执行任务禁止 push。
 - 本任务测试工具 ZIP 仅用于本地编译；未加入 Git。清理命令被本机安全策略拒绝，缓存仍在未跟踪 `.test-work`；主控整合时不得加入提交。
 
 ## 修改文件
@@ -107,7 +110,7 @@
 
 ## 风险与主控处理
 
-1. 原因码修正后的真实 Actions 是本任务结论的硬阻塞。主控应先 Review/整合本 commit，仅 push `codex/windows-installer-v1.1`，重新执行 setup workflow；不得隐藏既有失败、自动重跑或把 Runtime/Portable、Setup 编译及局部检查成功写成完整成功。
+1. 夹具修正后的真实 Actions 是本任务结论的硬阻塞。主控应先 Review/整合本 commit，仅 push `codex/windows-installer-v1.1`，重新执行 setup workflow；不得隐藏既有失败、自动重跑或把 Runtime/Portable、Setup 编译及局部检查成功写成完整成功。
 2. 下一次真实运行仍可能暴露 build-only 闭包、Inno 生命周期次序、完整 registry values 恢复、ACL 继承或取消时机问题。任何新失败应保留首次 failure Artifact 并退回本任务修复。
 3. `U03/U04` 成功升级链不会使用伪造 registry；负例由既有 exact T1 gate 与真实 Portable-running Setup gate组成。若 QA 要求 v1.0.0 实物安装负例，需要新的受信任旧发行身份，不能在本任务伪造。
 4. 当前工作树因本任务生成的未跟踪 `.test-work/` 与 `node_modules/` 不 clean；它们不得提交。tracked 变更只限上列文件。
