@@ -13,6 +13,7 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 )
 
 type coreProbeDiagnostic struct {
@@ -92,6 +93,34 @@ func safeInstallerMarkers(logText string) string {
 	}
 	sort.Strings(observed)
 	return strings.Join(observed, ",")
+}
+
+type setupRunResult struct {
+	logText             string
+	exitCode            int
+	exitStatus          string
+	elapsedMilliseconds int64
+}
+
+func safeInnoExitStatus(exitCode int, processStarted bool) string {
+	if !processStarted {
+		return "PROCESS_START_FAILED"
+	}
+	statuses := map[int]string{
+		0: "INNO_EXIT_SUCCESS", 1: "INNO_EXIT_INITIALIZE_FAILED", 2: "INNO_EXIT_CANCEL_BEFORE_INSTALL",
+		3: "INNO_EXIT_PREPARE_FATAL", 4: "INNO_EXIT_INSTALL_FATAL", 5: "INNO_EXIT_CANCEL_DURING_INSTALL",
+		6: "INNO_EXIT_DEBUGGER_TERMINATED", 7: "INNO_EXIT_PREPARE_REJECTED", 8: "INNO_EXIT_PREPARE_RESTART_REQUIRED",
+	}
+	if status, ok := statuses[exitCode]; ok {
+		return status
+	}
+	return "INNO_EXIT_UNEXPECTED_NONZERO"
+}
+
+func safeSetupFailure(expectedMarker string, result setupRunResult) string {
+	return fmt.Sprintf("missing fixed marker %s observedFixedMarkers=%s innoExitCode=%d innoExitStatus=%s elapsedMilliseconds=%d logBytes=%d logSHA256=%s",
+		expectedMarker, safeInstallerMarkers(result.logText), result.exitCode, result.exitStatus, result.elapsedMilliseconds,
+		len(result.logText), digest([]byte(result.logText)))
 }
 
 // TestUpgradeLifecycle is intentionally separate from TestSetup: the former proves a real
@@ -190,7 +219,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 	beta2 := filepath.Join(artifact, "K-SESSION-Setup-1.1.0-beta.2.exe")
 
 	n := 0
-	runSetup := func(binary string, want bool) string {
+	runSetup := func(binary string, want bool) setupRunResult {
 		t.Helper()
 		n++
 		log := filepath.Join(base, fmt.Sprintf("setup-%02d.log", n))
@@ -202,17 +231,23 @@ func TestUpgradeLifecycle(t *testing.T) {
 		args := []string{silent, "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/LOG=" + log, "/DIR=" + target, "/INSTANCE=" + instance, "/CONFIRMDATACHANGE=1"}
 		c := exec.Command(binary, args...)
 		c.SysProcAttr = &syscall.SysProcAttr{HideWindow: !cancelFixture}
+		startedAt := time.Now()
 		e := c.Run()
+		elapsed := time.Since(startedAt).Milliseconds()
+		exitCode, processStarted := -1, c.ProcessState != nil
+		if processStarted {
+			exitCode = c.ProcessState.ExitCode()
+		}
 		text := decodeInstallerLog(mustRead(t, log))
 		if (e == nil) != want {
 			t.Fatalf("setup %s success=%v want=%v", filepath.Base(filepath.Dir(filepath.Dir(binary))), e == nil, want)
 		}
-		return text
+		return setupRunResult{logText: text, exitCode: exitCode, exitStatus: safeInnoExitStatus(exitCode, processStarted), elapsedMilliseconds: elapsed}
 	}
-	assertLog := func(text, marker string) {
+	assertLog := func(result setupRunResult, marker string) {
 		t.Helper()
-		if !strings.Contains(text, marker) {
-			t.Fatalf("missing fixed marker %s observedFixedMarkers=%s logBytes=%d logSHA256=%s", marker, safeInstallerMarkers(text), len(text), digest([]byte(text)))
+		if !strings.Contains(result.logText, marker) {
+			t.Fatal(safeSetupFailure(marker, result))
 		}
 	}
 	walkHash := func(root string) map[string]string {
@@ -536,6 +571,29 @@ func TestSafeCoreProbeFailure(t *testing.T) {
 	}
 	if safeInstallerMarkers("KSESSION_REJECT_SPACE_QUERY") != "KSESSION_REJECT_SPACE_QUERY" {
 		t.Fatal("installer marker diagnostic confused an exact marker with its prefix")
+	}
+	for _, probe := range []struct {
+		code    int
+		started bool
+		want    string
+	}{{0, true, "INNO_EXIT_SUCCESS"}, {1, true, "INNO_EXIT_INITIALIZE_FAILED"}, {7, true, "INNO_EXIT_PREPARE_REJECTED"}, {8, true, "INNO_EXIT_PREPARE_RESTART_REQUIRED"}, {99, true, "INNO_EXIT_UNEXPECTED_NONZERO"}, {-1, false, "PROCESS_START_FAILED"}} {
+		if got := safeInnoExitStatus(probe.code, probe.started); got != probe.want {
+			t.Fatalf("unsafe Inno exit classification: got %s want %s", got, probe.want)
+		}
+	}
+	safeSetup := safeSetupFailure("KSESSION_REJECT_SPACE", setupRunResult{
+		logText: "password=Synthetic-secret path=C:\\private KSESSION_UNKNOWN_SECRET", exitCode: 1,
+		exitStatus: safeInnoExitStatus(1, true), elapsedMilliseconds: 123,
+	})
+	for _, marker := range []string{"KSESSION_REJECT_SPACE", "observedFixedMarkers=NONE", "innoExitCode=1", "innoExitStatus=INNO_EXIT_INITIALIZE_FAILED", "elapsedMilliseconds=123", "logBytes=", "logSHA256="} {
+		if !strings.Contains(safeSetup, marker) {
+			t.Fatalf("missing safe Setup diagnostic field %s", marker)
+		}
+	}
+	for _, forbidden := range []string{"Synthetic-secret", "C:\\private", "UNKNOWN"} {
+		if strings.Contains(safeSetup, forbidden) {
+			t.Fatal("unsafe Setup output escaped diagnostic filter")
+		}
 	}
 }
 
