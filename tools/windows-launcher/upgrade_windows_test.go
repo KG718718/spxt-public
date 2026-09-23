@@ -45,6 +45,55 @@ func safeCoreProbeFailure(output []byte) string {
 	return fmt.Sprintf("code=CORE_PROBE_NO_SAFE_DIAGNOSTIC outputBytes=%d outputSHA256=%s", len(output), digest(output))
 }
 
+func safeInstallerMarkers(logText string) string {
+	allowed := []string{
+		"KSESSION_DATA_PRIOR_MISSING", "KSESSION_DATA_SWITCH_UNCONFIRMED",
+		"KSESSION_FIXTURE_CANCEL_DURING_COPY", "KSESSION_FIXTURE_COPY_FAILURE", "KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE",
+		"KSESSION_INSTALLED_PAYLOAD_VERIFIED", "KSESSION_PREINSTALL_READY", "KSESSION_PROCESS_INSPECTION_UNAVAILABLE",
+		"KSESSION_REJECT_NONEMPTY", "KSESSION_REJECT_PATH", "KSESSION_REJECT_REGISTERED", "KSESSION_REJECT_RUNNING",
+		"KSESSION_REJECT_SPACE", "KSESSION_REJECT_SPACE_QUERY", "KSESSION_REJECT_WRITE",
+		"KSESSION_UPGRADE_PREFLIGHT_REJECTED", "KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED",
+		"KSESSION_UPGRADE_REGISTRATION_REJECTED", "KSESSION_UPGRADE_ROLLBACK_FAILED",
+		"KSESSION_UPGRADE_TRANSACTION_COMMITTED", "KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK",
+	}
+	allowedSet := make(map[string]bool, len(allowed))
+	for _, marker := range allowed {
+		allowedSet[marker] = true
+	}
+	seen := map[string]bool{}
+	for offset := 0; ; {
+		relative := strings.Index(logText[offset:], "KSESSION_")
+		if relative < 0 {
+			break
+		}
+		start := offset + relative
+		end := start
+		for end < len(logText) {
+			c := logText[end]
+			if (c < 'A' || c > 'Z') && (c < '0' || c > '9') && c != '_' {
+				break
+			}
+			end++
+		}
+		marker := logText[start:end]
+		if allowedSet[marker] {
+			seen[marker] = true
+		} else if strings.HasPrefix(marker, "KSESSION_DATA_REJECT_") {
+			seen["KSESSION_DATA_REJECT_"] = true
+		}
+		offset = end
+	}
+	observed := make([]string, 0, len(seen))
+	for marker := range seen {
+		observed = append(observed, marker)
+	}
+	if len(observed) == 0 {
+		return "NONE"
+	}
+	sort.Strings(observed)
+	return strings.Join(observed, ",")
+}
+
 // TestUpgradeLifecycle is intentionally separate from TestSetup: the former proves a real
 // beta.1 -> beta.2 transition while the latter keeps the beta.2 fresh-install regression.
 func TestUpgradeLifecycle(t *testing.T) {
@@ -163,7 +212,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 	assertLog := func(text, marker string) {
 		t.Helper()
 		if !strings.Contains(text, marker) {
-			t.Fatalf("missing fixed marker %s", marker)
+			t.Fatalf("missing fixed marker %s observedFixedMarkers=%s logBytes=%d logSHA256=%s", marker, safeInstallerMarkers(text), len(text), digest([]byte(text)))
 		}
 	}
 	walkHash := func(root string) map[string]string {
@@ -477,6 +526,16 @@ func TestSafeCoreProbeFailure(t *testing.T) {
 	fallback := safeCoreProbeFailure([]byte("token=private"))
 	if !strings.Contains(fallback, "code=CORE_PROBE_NO_SAFE_DIAGNOSTIC") || strings.Contains(fallback, "private") {
 		t.Fatal("unsafe fallback diagnostic")
+	}
+	installer := safeInstallerMarkers("password=Synthetic-secret KSESSION_REJECT_RUNNING token=private KSESSION_UNKNOWN_SECRET")
+	if installer != "KSESSION_REJECT_RUNNING" || strings.Contains(installer, "secret") || strings.Contains(installer, "UNKNOWN") {
+		t.Fatal("unsafe installer marker diagnostic")
+	}
+	if safeInstallerMarkers("password=Synthetic-secret") != "NONE" {
+		t.Fatal("installer marker fallback leaked raw log data")
+	}
+	if safeInstallerMarkers("KSESSION_REJECT_SPACE_QUERY") != "KSESSION_REJECT_SPACE_QUERY" {
+		t.Fatal("installer marker diagnostic confused an exact marker with its prefix")
 	}
 }
 

@@ -56,6 +56,7 @@ test('portable restart expires temporary attachment ownership while admin verifi
  assert.doesNotMatch(core,/CORE_TEST_FAILED|console\.error\([^\n]*e\.message/);
  const upgrade=read('tools/windows-launcher/upgrade_windows_test.go');
  for(const marker of ['safeCoreProbeFailure(output)','CORE_PROBE_NO_SAFE_DIAGNOSTIC','CORE_PROBE_SYNTAX_FAILED','exec.Command(exe, "--check", args[0])','outputBytes=%d','outputSHA256=%s','TestCoreProbeTopLevelDiagnostic','coreProbe("BETA1_INITIAL"','coreProbe("BETA2_EXISTING"','coreProbe("REINSTALL_EXISTING"'])assert.match(upgrade,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const marker of ['safeInstallerMarkers(text)','observedFixedMarkers=%s','logBytes=%d','logSHA256=%s','KSESSION_REJECT_SPACE_QUERY'])assert.match(upgrade,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.equal((upgrade.match(/tools\/tests\/windows-portable\/core-client\.cjs/g)||[]).length,3);
  assert.doesNotMatch(upgrade,/tools\/windows-portable\/core-client\.cjs/);
  assert.doesNotMatch(upgrade,/core probe phase=%s failed: %s[^\n]*string\(output\)/);
