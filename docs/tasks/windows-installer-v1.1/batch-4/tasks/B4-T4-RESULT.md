@@ -134,18 +134,17 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - 本任务测试工具 ZIP 仅用于本地编译；未加入 Git。清理命令被本机安全策略拒绝，缓存仍在未跟踪 `.test-work`；主控整合时不得加入提交。
 - 第十七次补充 Actions：Setup run `35841262430` / job `107116614557` = U18 PASS 后 U20 在 copy/cancel 前被 upgrade preflight rejection 截断；failure Artifact `10742285228`，digest `sha256:101e3c8910f8b2ee9972330cd1118f166cdc3595dbf7e2579076d67c8b7f65d0`。内部 request/plan 根目录表示修正后的复跑 pending，执行任务禁止 push。
 - 第十八次补充 Actions：Setup run `35843571342` / job `107124188994` = U01/U02/U15—U18 PASS，U20 仍为 `observedFixedMarkers=KSESSION_UPGRADE_PREFLIGHT_REJECTED innoExitCode=7 innoExitStatus=INNO_EXIT_PREPARE_REJECTED elapsedMilliseconds=3896 logBytes=5346 logSHA256=bd6e9fb8abec2ce1349518351ea4490b37ac9a1e31f3b8b8b85821aa30d2f7c3`；failure Artifact `10742583830`，digest `sha256:a13c74df6cd36659c8b885ec3f02020c56197cfbf69c104ebe1de4d6923d47af`。主控保存的 Artifact 只含封闭报告与编译证据，没有可安全证明内部字段的运行日志；固定 reason marker 后复跑 pending。
-- 第十九次补充 Actions：Setup run `35846952206` / job `107135286484` 的 U01/U02/U15—U18 PASS，U20 固定为 identity rejected；failure Artifact `10744014234`。Stop-Loss workflow 仅执行 exact fresh beta.1 rebuild/install、真实 HKCU64 registration/binding 快照和当前 detection/gate identity 调用，Artifact/summary 只保留一个 `IDENTITY_*` 阶段码，不构建 beta.2 或执行完整门禁。
+- 第十九次补充 Actions：Setup run `35846952206` / job `107135286484` 的 U01/U02/U15—U18 PASS，U20 固定为 identity rejected；failure Artifact `10744014234`。独立新 workflow 因不在默认分支登记而被 GitHub dispatch API 404 拒绝，未产生 run、不计两轮诊断；现将 Stop-Loss 作为已登记 `setup-v3.yml` 的严格互斥 identity job，只执行 exact fresh beta.1 rebuild/install、真实 HKCU64 registration/binding 快照和当前 detection/gate identity 调用。
 
 ## 修改文件
 
-- `.github/workflows/setup-v3.yml`
+- `.github/workflows/setup-v3.yml`（内置 identity/full dispatch 互斥及 push marker）
 - `tools/windows-installer/{build.cjs,ci.ps1,offline-ci.ps1,setup.iss,verify-artifact.cjs,fresh-identity.cjs,rebuild-beta1.ps1,verify-beta1-source.cjs,verify-beta1-build.cjs}`
 - `tools/tests/windows-installer/{fresh-identity.test.cjs,upgrade-lifecycle/contract.test.cjs,upgrade-preflight/preflight.test.cjs}`
 - `tools/tests/windows-installer/upgrade-transaction/contract.test.cjs`
 - `tools/windows-installer/upgrade-gate/{index.cjs,cli.cjs}`
 - `tools/windows-installer/upgrade-detection/index.cjs`
 - `tools/tests/windows-installer/upgrade-detection/upgrade-detection.test.cjs`
-- `.github/workflows/identity-gate-diagnostic.yml`
 - `tools/windows-installer/{identity-diagnostic.cjs,identity-diagnostic.ps1}`
 - `tools/windows-launcher/{setup_windows_test.go,setup_wizard_windows_test.go,upgrade_windows_test.go}`
 - `tools/tests/windows-portable/core-client.cjs`
@@ -153,7 +152,7 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 
 ## 风险与主控处理
 
-1. U20 identity 拒绝的具体阶段仍未知，是本任务结论的硬阻塞。主控应先只触发最多两轮 `Identity gate stop-loss diagnostic`，取得唯一 `IDENTITY_*` 阶段码后再退回本任务做有证据的最小修复；不得先运行完整 Batch 4。最终仍必须到达真实 Inno copy progress 取消 marker，并通过 rollback 后完整状态相等。
+1. U20 identity 拒绝的具体阶段仍未知，是本任务结论的硬阻塞。主控整合后应对已登记 `setup-v3.yml` 做无 input dispatch（安全默认 identity），最多两轮；取得唯一 `IDENTITY_*` 阶段码后再退回本任务做有证据的最小修复，不得选择 `full`。最终仍必须到达真实 Inno copy progress 取消 marker，并通过 rollback 后完整状态相等。
 2. 下一次真实运行仍可能暴露 build-only 闭包、Inno 生命周期次序、完整 registry values 恢复、ACL 继承或取消时机问题。任何新失败应保留首次 failure Artifact 并退回本任务修复。
 3. `U03/U04` 成功升级链不会使用伪造 registry；负例由既有 exact T1 gate 与真实 Portable-running Setup gate组成。若 QA 要求 v1.0.0 实物安装负例，需要新的受信任旧发行身份，不能在本任务伪造。
 4. 当前工作树因本任务生成的未跟踪 `.test-work/` 与 `node_modules/` 不 clean；它们不得提交。tracked 变更只限上列文件。

@@ -26,9 +26,16 @@ test('hosted gate makes file-symlink coverage mandatory and runs both real lifec
 });
 
 test('identity stop-loss workflow runs only the exact beta1 identity diagnostic',()=>{
- const workflow=read('.github/workflows/identity-gate-diagnostic.yml'),script=read('tools/windows-installer/identity-diagnostic.ps1'),helper=read('tools/windows-installer/identity-diagnostic.cjs');
+ const workflow=read('.github/workflows/setup-v3.yml'),script=read('tools/windows-installer/identity-diagnostic.ps1'),helper=read('tools/windows-installer/identity-diagnostic.cjs');
+ const setup=workflow.slice(workflow.indexOf('  setup:'),workflow.indexOf('  identity:'));
+ const identity=workflow.slice(workflow.indexOf('  identity:'),workflow.indexOf('  historical-identity:'));
+ assert.match(workflow,/workflow_dispatch:[\s\S]*mode:[\s\S]*required: false[\s\S]*default: identity[\s\S]*options:[\s\S]*- identity[\s\S]*- full/);
+ assert.match(setup,/github\.event_name == 'push'[\s\S]*\[identity-diagnostic\][\s\S]*github\.event_name == 'workflow_dispatch' && inputs\.mode == 'full'/);
+ assert.match(identity,/github\.event_name == 'workflow_dispatch' && \(inputs\.mode == '' \|\| inputs\.mode == 'identity'\)/);
+ assert.match(workflow,/historical-identity:[\s\S]*if: github\.event_name == 'workflow_dispatch' && inputs\.mode == 'full'/);
  for(const marker of ['workflow_dispatch','persist-credentials: false','rebuild-beta1.ps1','e9417f036d0cdf736ff84682556a994040f0de0b','5da66cb9b73dfa307948634634bfab2cfaaead12','fresh-identity.cjs','identity-diagnostic.ps1','IDENTITY-DIAGNOSTIC.json','Fixed summary only'])assert.match(workflow,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
- for(const forbidden of ['windows-installer/ci.ps1','windows-portable/ci.ps1','npm test','hosted-gate.cjs','fault-cancel','setup-v3.yml'])assert.doesNotMatch(workflow,new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const forbidden of ['windows-installer/ci.ps1','windows-portable/ci.ps1','npm test','hosted-gate.cjs','fault-cancel','testTotal','742'])assert.doesNotMatch(identity,new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const retained of ['tools/windows-installer/ci.ps1','hosted-gate.cjs regression','testTotal -ne 742','fault-cancel'])assert.match(setup,new RegExp(retained.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  for(const marker of ['github-hosted','Start-Process','Registry64','private-request.json','Remove-Item'])assert.match(script,new RegExp(marker));
  assert.match(script,/\^IDENTITY_\(ACCEPTED\|REGISTRATION\|BINDING\|PATH\|MANIFEST\|PROGRAM\|BUILD\|RUNTIME\|LAUNCHER\|INTERNAL\)\$/);
  assert.doesNotMatch(script,/Write-Output \$taskSnapshot|Write-Output \$taskRequest|Get-Content -LiteralPath \$taskLog/);

@@ -8,6 +8,15 @@ on:
       - 'tools/windows-launcher/**'
       - '.github/workflows/setup-v3.yml'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Run the identity stop-loss diagnostic or the full Setup workflow
+        required: false
+        default: identity
+        type: choice
+        options:
+          - identity
+          - full
 permissions:
   contents: read
 concurrency:
@@ -15,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   setup:
-    if: github.ref == 'refs/heads/codex/windows-installer-v1.1'
+    if: github.ref == 'refs/heads/codex/windows-installer-v1.1' && ((github.event_name == 'push' && !contains(github.event.head_commit.message, '[identity-diagnostic]')) || (github.event_name == 'workflow_dispatch' && inputs.mode == 'full'))
     runs-on: windows-2025
     timeout-minutes: 120
     steps:
@@ -109,8 +118,57 @@ jobs:
             E:/setup-source/.test-work/r5a-gate/regression.json
           if-no-files-found: warn
           retention-days: 30
+  identity:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1' && github.event_name == 'workflow_dispatch' && (inputs.mode == '' || inputs.mode == 'identity')
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - name: Exact public Git bytes
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Exact fresh beta.1 identity only
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD) -ne '${{ github.sha }}') { throw 'Tested commit mismatch' }
+          if (!(Test-Path E:/)) {
+            $taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-identity-e'
+            New-Item -ItemType Directory -Path $taskDrive|Out-Null
+            subst E: $taskDrive
+            if ($LASTEXITCODE -ne 0) { throw 'E isolation unavailable' }
+          }
+          git clone --no-hardlinks --no-checkout . E:/beta1-source *> $null
+          if ($LASTEXITCODE -ne 0) { throw 'Isolated beta.1 source clone failed' }
+          git -C E:/beta1-source -c core.autocrlf=false checkout --detach e9417f036d0cdf736ff84682556a994040f0de0b *> $null
+          if ($LASTEXITCODE -ne 0 -or (git -C E:/beta1-source rev-parse HEAD) -ne 'e9417f036d0cdf736ff84682556a994040f0de0b' -or
+              (git -C E:/beta1-source rev-parse 'HEAD^{tree}') -ne '5da66cb9b73dfa307948634634bfab2cfaaead12') { throw 'beta.1 source identity mismatch' }
+          & ./tools/windows-installer/rebuild-beta1.ps1 -Source E:/beta1-source -Work E:/beta1-build *> $null
+          if ($LASTEXITCODE -ne 0) { throw 'Exact beta.1 build-only failed' }
+          $taskNode='E:/beta1-build/portable/node-tool/node-v24.21.0-win-x64/node.exe'
+          $taskBundle='E:/fresh-beta1-approved-identity-bundle.json'
+          & $taskNode ./tools/windows-installer/fresh-identity.cjs E:/beta1-build ./tools/windows-installer/historical-identity/historical-run-35514357007-evidence.json $taskBundle *> $null
+          if ($LASTEXITCODE -ne 0) { throw 'Approved identity bundle generation failed' }
+          & ./tools/windows-installer/identity-diagnostic.ps1 -Work E:/identity-diagnostic -Beta1Setup E:/beta1-build/candidate/artifact/K-SESSION-Setup-1.1.0-beta.1.exe -Bundle $taskBundle -Node $taskNode
+          if ($LASTEXITCODE -ne 0) { throw 'Identity diagnostic failed' }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: identity-gate-diagnostic-${{ github.run_id }}-${{ github.run_attempt }}
+          path: E:/identity-diagnostic/IDENTITY-DIAGNOSTIC.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Fixed summary only
+        if: always()
+        shell: pwsh
+        run: |
+          $taskReport=Get-Content -LiteralPath E:/identity-diagnostic/IDENTITY-DIAGNOSTIC.json -Raw|ConvertFrom-Json
+          if($taskReport.reason -notmatch '^IDENTITY_(ACCEPTED|REGISTRATION|BINDING|PATH|MANIFEST|PROGRAM|BUILD|RUNTIME|LAUNCHER|INTERNAL)$'){throw 'Unsafe identity diagnostic reason'}
+          "Identity diagnostic: $($taskReport.reason)" >> $env:GITHUB_STEP_SUMMARY
   historical-identity:
-    if: github.event_name == 'workflow_dispatch' && github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1'
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'full' && github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1'
     permissions:
       contents: read
       actions: read
