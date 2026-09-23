@@ -13,7 +13,11 @@ function runGate(request, bundleBytes, expectedBundleSha, deps = { detection, pr
   try { bundle = JSON.parse(bundleBytes.toString('utf8')); } catch { throw new GateError('GATE_BUNDLE_INVALID'); }
   let identity;
   try { identity = deps.detection.validateApprovedIdentity(request.snapshot, bundle); }
-  catch { throw new GateError('GATE_IDENTITY_REJECTED'); }
+  catch (error) {
+    const safe = new Set(['IDENTITY_REGISTRATION', 'IDENTITY_BINDING', 'IDENTITY_PATH', 'IDENTITY_MANIFEST',
+      'IDENTITY_PROGRAM', 'IDENTITY_BUILD', 'IDENTITY_RUNTIME', 'IDENTITY_LAUNCHER', 'IDENTITY_INTERNAL']);
+    throw new GateError('GATE_IDENTITY_REJECTED', safe.has(error?.reason) ? error.reason : 'IDENTITY_INTERNAL');
+  }
   let instance;
   try { instance = deps.preflight.runPreflight(request.preflight); }
   catch (error) {

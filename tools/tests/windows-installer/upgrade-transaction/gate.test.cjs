@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const childProcess = require('node:child_process');
 const path = require('node:path');
 const test = require('node:test');
-const { runGate, sha } = require('../../../windows-installer/upgrade-gate/index.cjs');
+const { GateError, runGate, sha } = require('../../../windows-installer/upgrade-gate/index.cjs');
+const {safeIdentityReason} = require('../../../windows-installer/identity-diagnostic.cjs');
 const bundleBytes = Buffer.from('{"schema":1,"profiles":[]}\n');
 const request = { schema: 1, snapshot: { registrations: [], bindings: [] }, preflight: { installRoot: 'C:\\Install', instancePath: 'D:\\Instance' } };
 const good = {
@@ -18,7 +19,12 @@ test('gate rejects bundle hash before identity evaluation', () => {
 });
 test('gate collapses identity details to one stable rejection', () => {
   const deps = { ...good, detection: { validateApprovedIdentity: () => { throw Error('sensitive path'); } } };
-  assert.throws(() => runGate(request, bundleBytes, sha(bundleBytes), deps), error => error.code === 'GATE_IDENTITY_REJECTED' && !error.message.includes('sensitive'));
+  assert.throws(() => runGate(request, bundleBytes, sha(bundleBytes), deps), error => error.code === 'GATE_IDENTITY_REJECTED' && error.reason === 'IDENTITY_INTERNAL' && !error.message.includes('sensitive'));
+  for (const reason of ['IDENTITY_REGISTRATION', 'IDENTITY_BINDING', 'IDENTITY_PATH', 'IDENTITY_MANIFEST', 'IDENTITY_PROGRAM', 'IDENTITY_BUILD', 'IDENTITY_RUNTIME', 'IDENTITY_LAUNCHER']) {
+    const detection = { validateApprovedIdentity: () => { throw { reason, message: 'path=C:\\private token=secret' }; } };
+    assert.throws(() => runGate(request, bundleBytes, sha(bundleBytes), { ...good, detection }), error =>
+      error.code === 'GATE_IDENTITY_REJECTED' && error.reason === reason && !error.message.includes('private') && !error.message.includes('secret'));
+  }
 });
 test('gate rejects instance failure and cross-helper mismatch', () => {
   assert.throws(() => runGate(request, bundleBytes, sha(bundleBytes), { ...good, preflight: { runPreflight: () => { throw Error('secret'); } } }), error => error.code === 'GATE_INSTANCE_REJECTED' && error.reason === 'PREFLIGHT_INTERNAL' && !error.message.includes('secret'));
@@ -50,4 +56,13 @@ test('gate CLI exposes only fixed JSON and a fixed exit code for invalid invocat
   assert.equal(result.stdout, '{"ok":false,"code":"GATE_ARGUMENT_INVALID"}\n');
   assert.equal(result.stderr, '');
   assert.doesNotMatch(result.stdout, /private|secret|path=/i);
+});
+test('hosted identity diagnostic accepts only fixed reasons', () => {
+  for (const reason of ['IDENTITY_REGISTRATION', 'IDENTITY_BINDING', 'IDENTITY_PATH', 'IDENTITY_MANIFEST', 'IDENTITY_PROGRAM',
+    'IDENTITY_BUILD', 'IDENTITY_RUNTIME', 'IDENTITY_LAUNCHER', 'IDENTITY_INTERNAL']) {
+    assert.equal(safeIdentityReason(new GateError('GATE_IDENTITY_REJECTED', reason)), reason);
+  }
+  for (const error of [Error('path=C:\\private token=secret'), new GateError('GATE_IDENTITY_REJECTED', 'IDENTITY_PRIVATE_HASH')]) {
+    assert.equal(safeIdentityReason(error), 'IDENTITY_INTERNAL');
+  }
 });

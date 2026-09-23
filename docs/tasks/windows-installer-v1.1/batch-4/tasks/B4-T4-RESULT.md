@@ -1,6 +1,6 @@
 # B4-T4 Result — Upgrade Lifecycle / CI / Fault Injection
 
-状态：**BLOCKED — 第十八次 GitHub hosted Windows 仍真实完成 U01、U02、U15—U18；U20 fault-cancel 仍在复制/取消前被统一 `KSESSION_UPGRADE_PREFLIGHT_REJECTED` 截断。** 第十七轮识别出的内部 install root 尾分隔符问题是真实缺陷，但修正后失败摘要完全同类，证明它不是当前 U20 剩余失败的充分解释。现有 marker 无法区分 identity、preflight 各安全类别及 cross-helper 字段；本轮不继续猜测放宽门禁，只加入固定退出码到白名单 marker 的无敏感信息诊断。U20 诊断后 hosted 复验仍是硬门禁。
+状态：**BLOCKED — 第十九次 GitHub hosted Windows 仍真实完成 U01、U02、U15—U18；U20 在复制/取消前固定命中 `KSESSION_UPGRADE_GATE_IDENTITY_REJECTED`。** U18 在 identity gate 之前因空间门禁退出，既有证据不能证明是 U18 污染，也不能区分 registration/binding/path/manifest/program/build/runtime/launcher。经用户批准进入 Identity Gate Stop-Loss：只增加不改变接受条件的固定阶段诊断及独立 hosted 最小复现路径；取得唯一阶段码前不猜修生产身份规则。
 
 ## Preflight
 
@@ -22,6 +22,7 @@
 - 第十六次失败恢复轮复核同一 worktree/origin；GitHub API 返回远端开发分支 HEAD 精确为 `16c87d5e086a805520cea6a14c852a5aa2f66ff5`，与用户指定 main/dev HEAD 一致。本地安全 rebase 到该 baseline，上一轮等价提交被跳过，未跟踪 `.test-work/`、`node_modules/` 未修改。
 - 第十七次失败恢复轮复核同一 worktree/origin；GitHub API 返回远端开发分支 HEAD 精确为 `88fa2f5d269d1906953588fb296f9fd7d4b7e21a`，与用户指定 main/dev HEAD 一致。本地安全 rebase 到该 baseline，上一轮等价提交被跳过，未跟踪缓存未修改。
 - 第十八次失败恢复轮从用户指定且本地可验证的 baseline `eaa2435f6eef158e9f049b36026aa00ef61613ba` 继续；安全 rebase 跳过已等价整合的上一 local commit，HEAD 精确同步到该 commit。网络 fetch 尝试因连接 GitHub 超时失败，因此不宣称本轮独立远端复核；未跟踪缓存保持原样。
+- 第十九次失败恢复轮核对 worktree/origin 正确，并安全 rebase 到用户指定 baseline `3f35d5155a5d5af7194e2ad16f0437b2a9afb206`；上一 local commit 被识别为已等价整合。现有八个阶段诊断文件在该 baseline 上继续，未跟踪缓存不纳入提交。
 
 ## 已完成实现
 
@@ -113,7 +114,7 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 ## 本地测试与首次失败
 
 - 首次 `npm test`：26 suites 中 1 FAIL，原因是本工作树未安装锁文件依赖 `write-excel-file/node`；不是产品断言失败。执行 `npm ci --omit=optional --ignore-scripts --no-audit --no-fund` 后完整重跑：`Public test files: 26; failed: 0`。本机 hosted-only suites 仍按原策略 SKIP，因此不得写成 Actions 的 742/fail0/skip0。
-- T4 lifecycle/fresh identity + T3 transaction：第十八次 hosted 真实证明 U01/U02/U15—U18；U20 仍 FAIL。本轮固定 gate reason、CLI exit code、Inno marker、反泄露及既有 lifecycle/transaction 联合 27 PASS；upgrade-preflight 20 PASS / 0 FAIL / 1 privilege SKIP，静态 installer/data-location contract 均 PASS。完整本地门禁见本轮最终回单。
+- T4 lifecycle/fresh identity + T3 transaction：第十九次 hosted 真实证明 U01/U02/U15—U18；U20 仍 FAIL。本轮 identity 阶段分类、Stop-Loss workflow 边界、gate/CLI/Inno marker、反泄露及既有 detection/lifecycle/transaction 联合 74 PASS；upgrade-preflight 20 PASS / 0 FAIL / 1 privilege SKIP，PowerShell AST、Go 反泄露、静态 installer/data-location contract 均 PASS。完整本地门禁见本轮最终回单。
 - upgrade-preflight 直接复跑：21 tests，20 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。新增 `subst` 正例及错误根、overlap、junction 负例均 PASS。
 - T1/T1A/T2 联合复跑：136 tests，135 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。workflow 已把该情况提升为硬失败，但修正后尚未 hosted 实跑。
 - installer contract：`INSTALLER CONTRACT PASS`；`R2 DATA LOCATION CONTRACT PASS`。
@@ -133,6 +134,7 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - 本任务测试工具 ZIP 仅用于本地编译；未加入 Git。清理命令被本机安全策略拒绝，缓存仍在未跟踪 `.test-work`；主控整合时不得加入提交。
 - 第十七次补充 Actions：Setup run `35841262430` / job `107116614557` = U18 PASS 后 U20 在 copy/cancel 前被 upgrade preflight rejection 截断；failure Artifact `10742285228`，digest `sha256:101e3c8910f8b2ee9972330cd1118f166cdc3595dbf7e2579076d67c8b7f65d0`。内部 request/plan 根目录表示修正后的复跑 pending，执行任务禁止 push。
 - 第十八次补充 Actions：Setup run `35843571342` / job `107124188994` = U01/U02/U15—U18 PASS，U20 仍为 `observedFixedMarkers=KSESSION_UPGRADE_PREFLIGHT_REJECTED innoExitCode=7 innoExitStatus=INNO_EXIT_PREPARE_REJECTED elapsedMilliseconds=3896 logBytes=5346 logSHA256=bd6e9fb8abec2ce1349518351ea4490b37ac9a1e31f3b8b8b85821aa30d2f7c3`；failure Artifact `10742583830`，digest `sha256:a13c74df6cd36659c8b885ec3f02020c56197cfbf69c104ebe1de4d6923d47af`。主控保存的 Artifact 只含封闭报告与编译证据，没有可安全证明内部字段的运行日志；固定 reason marker 后复跑 pending。
+- 第十九次补充 Actions：Setup run `35846952206` / job `107135286484` 的 U01/U02/U15—U18 PASS，U20 固定为 identity rejected；failure Artifact `10744014234`。Stop-Loss workflow 仅执行 exact fresh beta.1 rebuild/install、真实 HKCU64 registration/binding 快照和当前 detection/gate identity 调用，Artifact/summary 只保留一个 `IDENTITY_*` 阶段码，不构建 beta.2 或执行完整门禁。
 
 ## 修改文件
 
@@ -141,13 +143,17 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - `tools/tests/windows-installer/{fresh-identity.test.cjs,upgrade-lifecycle/contract.test.cjs,upgrade-preflight/preflight.test.cjs}`
 - `tools/tests/windows-installer/upgrade-transaction/contract.test.cjs`
 - `tools/windows-installer/upgrade-gate/{index.cjs,cli.cjs}`
+- `tools/windows-installer/upgrade-detection/index.cjs`
+- `tools/tests/windows-installer/upgrade-detection/upgrade-detection.test.cjs`
+- `.github/workflows/identity-gate-diagnostic.yml`
+- `tools/windows-installer/{identity-diagnostic.cjs,identity-diagnostic.ps1}`
 - `tools/windows-launcher/{setup_windows_test.go,setup_wizard_windows_test.go,upgrade_windows_test.go}`
 - `tools/tests/windows-portable/core-client.cjs`
 - `docs/tasks/windows-installer-v1.1/batch-4/tasks/B4-T4-RESULT.md`
 
 ## 风险与主控处理
 
-1. U20 剩余内部拒绝原因仍未知，是本任务结论的硬阻塞。主控应 Review/整合本次诊断 commit，仅 push `codex/windows-installer-v1.1` 并重新执行 setup workflow；先取得唯一固定 `KSESSION_UPGRADE_GATE_*` reason marker，再退回本任务做有证据的最小修复。最终仍必须到达真实 Inno copy progress 取消 marker，并通过 rollback 后完整状态相等。
+1. U20 identity 拒绝的具体阶段仍未知，是本任务结论的硬阻塞。主控应先只触发最多两轮 `Identity gate stop-loss diagnostic`，取得唯一 `IDENTITY_*` 阶段码后再退回本任务做有证据的最小修复；不得先运行完整 Batch 4。最终仍必须到达真实 Inno copy progress 取消 marker，并通过 rollback 后完整状态相等。
 2. 下一次真实运行仍可能暴露 build-only 闭包、Inno 生命周期次序、完整 registry values 恢复、ACL 继承或取消时机问题。任何新失败应保留首次 failure Artifact 并退回本任务修复。
 3. `U03/U04` 成功升级链不会使用伪造 registry；负例由既有 exact T1 gate 与真实 Portable-running Setup gate组成。若 QA 要求 v1.0.0 实物安装负例，需要新的受信任旧发行身份，不能在本任务伪造。
 4. 当前工作树因本任务生成的未跟踪 `.test-work/` 与 `node_modules/` 不 clean；它们不得提交。tracked 变更只限上列文件。

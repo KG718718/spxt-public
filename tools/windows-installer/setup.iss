@@ -453,8 +453,17 @@ begin
     42: Log('KSESSION_UPGRADE_GATE_CONTRACT_INSTANCE_PATH');
     43: Log('KSESSION_UPGRADE_GATE_CONTRACT_DATA');
     49: Log('KSESSION_UPGRADE_GATE_INTERNAL');
+    50: Log('KSESSION_UPGRADE_GATE_IDENTITY_REGISTRATION');
+    51: Log('KSESSION_UPGRADE_GATE_IDENTITY_BINDING');
+    52: Log('KSESSION_UPGRADE_GATE_IDENTITY_PATH');
+    53: Log('KSESSION_UPGRADE_GATE_IDENTITY_MANIFEST');
+    54: Log('KSESSION_UPGRADE_GATE_IDENTITY_PROGRAM');
+    55: Log('KSESSION_UPGRADE_GATE_IDENTITY_BUILD');
+    56: Log('KSESSION_UPGRADE_GATE_IDENTITY_RUNTIME');
+    57: Log('KSESSION_UPGRADE_GATE_IDENTITY_LAUNCHER');
+    58: Log('KSESSION_UPGRADE_GATE_IDENTITY_INTERNAL');
   end;
-  if (Code <> 0) and ((Code < 10) or (Code > 49) or ((Code > 14) and (Code < 20)) or ((Code > 36) and (Code < 40)) or ((Code > 43) and (Code < 49))) then
+  if (Code <> 0) and ((Code < 10) or (Code > 58) or ((Code > 14) and (Code < 20)) or ((Code > 36) and (Code < 40)) or ((Code > 43) and (Code < 49))) then
     Log('KSESSION_UPGRADE_GATE_UNKNOWN');
   Result := Code = 0;
 end;

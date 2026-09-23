@@ -13,11 +13,12 @@ const BASELINE_TREE = '5da66cb9b73dfa307948634634bfab2cfaaead12';
 const APPROVED_PROFILE_IDS = new Set(['historical-run-35514357007', 'fresh-ci-baseline']);
 
 class Rejection extends Error {
-  constructor(exitCode, code, diagnostic) {
+  constructor(exitCode, code, diagnostic, reason = code) {
     super(`${code}: ${diagnostic}`);
     this.exitCode = exitCode;
     this.code = code;
     this.diagnostic = diagnostic;
+    this.reason = reason;
   }
 }
 
@@ -341,14 +342,27 @@ function validate(snapshot, policy) {
 function validateApprovedIdentity(snapshot, bundle) {
   validateBundle(bundle);
   const matches = [];
+  const stages = new Map([
+    ['REGISTRATION_COUNT', 0], ['VERSION_UNSUPPORTED', 0], ['SNAPSHOT_INVALID', 0], ['REGISTRATION_CONFLICT', 0], ['UNINSTALL_METADATA_INVALID', 0],
+    ['BINDING_COUNT', 1], ['BINDING_CONFLICT', 1], ['BINDING_FILE_INVALID', 1],
+    ['PATH_UNSAFE', 2], ['PATH_REPARSE', 2], ['PATH_OVERLAP', 2],
+    ['MANIFEST_UNTRUSTED', 3], ['MANIFEST_INVALID', 3], ['MANIFEST_IDENTITY_INVALID', 3], ['PROGRAM_TAMPERED', 4],
+    ['BUILD_IDENTITY_UNTRUSTED', 5], ['BUILD_IDENTITY_INVALID', 5], ['DATA_CONTRACT_UNKNOWN', 5], ['DATA_CONTRACT_UNSUPPORTED', 5],
+    ['RUNTIME_IDENTITY_UNTRUSTED', 6], ['RUNTIME_IDENTITY_INVALID', 6], ['LAUNCHER_IDENTITY_INVALID', 7]
+  ]);
+  const names = ['REGISTRATION', 'BINDING', 'PATH', 'MANIFEST', 'PROGRAM', 'BUILD', 'RUNTIME', 'LAUNCHER'];
+  let deepest = -1;
   for (const profile of bundle.profiles) {
     try {
       matches.push({profileId: profile.id, result: validate(snapshot, profile.policy)});
-    } catch {
+    } catch (error) {
       // Do not reveal which exact anchor failed or why when matching an approved set.
+      const stage = error instanceof Rejection ? stages.get(error.code) : undefined;
+      if (stage !== undefined && stage > deepest) deepest = stage;
     }
   }
-  if (matches.length === 0) reject(31, 'IDENTITY_NOT_APPROVED', '已安装 beta.1 不匹配任何已批准的精确身份。');
+  if (matches.length === 0) throw new Rejection(31, 'IDENTITY_NOT_APPROVED', '已安装 beta.1 不匹配任何已批准的精确身份。',
+    deepest >= 0 ? `IDENTITY_${names[deepest]}` : 'IDENTITY_INTERNAL');
   if (matches.length !== 1) reject(41, 'BUNDLE_AMBIGUOUS', '受信任身份集合产生不唯一匹配。');
   return {...matches[0].result, profileId: matches[0].profileId};
 }

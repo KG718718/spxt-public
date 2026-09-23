@@ -25,6 +25,17 @@ test('hosted gate makes file-symlink coverage mandatory and runs both real lifec
  assert.match(setup,/testTotal -ne 742/);assert.match(portable,/testTotal -ne 742/);assert.match(hosted,/testTotal:suites\.reduce/);
 });
 
+test('identity stop-loss workflow runs only the exact beta1 identity diagnostic',()=>{
+ const workflow=read('.github/workflows/identity-gate-diagnostic.yml'),script=read('tools/windows-installer/identity-diagnostic.ps1'),helper=read('tools/windows-installer/identity-diagnostic.cjs');
+ for(const marker of ['workflow_dispatch','persist-credentials: false','rebuild-beta1.ps1','e9417f036d0cdf736ff84682556a994040f0de0b','5da66cb9b73dfa307948634634bfab2cfaaead12','fresh-identity.cjs','identity-diagnostic.ps1','IDENTITY-DIAGNOSTIC.json','Fixed summary only'])assert.match(workflow,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const forbidden of ['windows-installer/ci.ps1','windows-portable/ci.ps1','npm test','hosted-gate.cjs','fault-cancel','setup-v3.yml'])assert.doesNotMatch(workflow,new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const marker of ['github-hosted','Start-Process','Registry64','private-request.json','Remove-Item'])assert.match(script,new RegExp(marker));
+ assert.match(script,/\^IDENTITY_\(ACCEPTED\|REGISTRATION\|BINDING\|PATH\|MANIFEST\|PROGRAM\|BUILD\|RUNTIME\|LAUNCHER\|INTERNAL\)\$/);
+ assert.doesNotMatch(script,/Write-Output \$taskSnapshot|Write-Output \$taskRequest|Get-Content -LiteralPath \$taskLog/);
+ for(const marker of ['safeIdentityReason','IDENTITY_ACCEPTED','IDENTITY_INTERNAL','flag: \'wx\'','PREFLIGHT_OK'])assert.match(helper,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.doesNotMatch(helper,/console\.error|error\.message|error\.stack|JSON\.stringify\(request/);
+});
+
 test('real lifecycle has U01-U30 and all five required recoverable failure fixtures',()=>{
  const go=read('tools/windows-launcher/upgrade_windows_test.go'),build=read('tools/windows-installer/build.cjs'),iss=read('tools/windows-installer/setup.iss'),gate=read('tools/windows-installer/upgrade-gate/index.cjs'),cli=read('tools/windows-installer/upgrade-gate/cli.cjs');
  for(let n=1;n<=30;n++)assert.match(go,new RegExp(`U${String(n).padStart(2,'0')}`));
@@ -50,6 +61,9 @@ test('real lifecycle has U01-U30 and all five required recoverable failure fixtu
  }
  for(const marker of ['PREFLIGHT_INTERNAL','CONTRACT_RESULT','CONTRACT_INSTALL_ROOT','CONTRACT_INSTANCE_PATH','CONTRACT_DATA']){
   assert.match(gate,new RegExp(marker));assert.match(cli,new RegExp(marker));assert.match(iss,new RegExp(`KSESSION_UPGRADE_GATE_${marker}`));assert.match(go,new RegExp(`KSESSION_UPGRADE_GATE_${marker}`));
+ }
+ for(const stage of ['REGISTRATION','BINDING','PATH','MANIFEST','PROGRAM','BUILD','RUNTIME','LAUNCHER','INTERNAL']){
+  const marker=`IDENTITY_${stage}`;assert.match(gate,new RegExp(marker));assert.match(cli,new RegExp(marker));assert.match(iss,new RegExp(`KSESSION_UPGRADE_GATE_${marker}`));assert.match(go,new RegExp(`KSESSION_UPGRADE_GATE_${marker}`));
  }
  assert.match(cli,/error instanceof GateError \? \(exits\[error\.reason\] \|\| 49\) : 49/);
  assert.doesNotMatch(iss,/error\.message|process\.stdout|raw-json/);

@@ -78,8 +78,8 @@ function approvedBundle(historicalPolicy, freshPolicy) {
     {id: 'fresh-ci-baseline', sources: ['fresh-ci-baseline'], policy: clone(freshPolicy)}
   ]};
 }
-function expectBundleCode(snapshot, bundle, code) {
-  assert.throws(() => validateApprovedIdentity(snapshot, bundle), error => error instanceof Rejection && error.code === code);
+function expectBundleCode(snapshot, bundle, code, reason) {
+  assert.throws(() => validateApprovedIdentity(snapshot, bundle), error => error instanceof Rejection && error.code === code && (!reason || error.reason === reason));
 }
 
 test('inventory matches beta.1 build ordering by globally sorting complete relative paths', () => {
@@ -215,7 +215,7 @@ test('bundle rejects unlisted same-source identities and dynamic build-info vari
     try {
       const file = path.join(historical.uninstall, 'build-info.json'); const build = JSON.parse(fs.readFileSync(file));
       build.buildTimestamp = 'DIFFERENT-DYNAMIC-TIMESTAMP'; writeJSON(file, build);
-      expectBundleCode(historical.snapshot, approvedBundle(historical.policy, fresh.policy), 'IDENTITY_NOT_APPROVED');
+      expectBundleCode(historical.snapshot, approvedBundle(historical.policy, fresh.policy), 'IDENTITY_NOT_APPROVED', 'IDENTITY_BUILD');
     } finally { cleanup(historical); cleanup(fresh); }
   });
   await t.test('rewritten payload and old manifest still do not create an approved identity', () => {
@@ -225,7 +225,7 @@ test('bundle rejects unlisted same-source identities and dynamic build-info vari
       const payload = inventory(forged.program);
       writeJSON(path.join(forged.uninstall, 'installer-manifest.json'), {schema: 1, sourceCommit: COMMIT, sourceTree: TREE,
         payload, payloadInventorySha256: sha(Buffer.from(JSON.stringify(payload))), version: '1.1.0-beta.1'});
-      expectBundleCode(forged.snapshot, approvedBundle(historical.policy, fresh.policy), 'IDENTITY_NOT_APPROVED');
+      expectBundleCode(forged.snapshot, approvedBundle(historical.policy, fresh.policy), 'IDENTITY_NOT_APPROVED', 'IDENTITY_MANIFEST');
     } finally { cleanup(historical); cleanup(fresh); cleanup(forged); }
   });
 });
