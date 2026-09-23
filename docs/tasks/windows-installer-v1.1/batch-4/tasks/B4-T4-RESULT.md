@@ -1,6 +1,6 @@
 # B4-T4 Result — Upgrade Lifecycle / CI / Fault Injection
 
-状态：**BLOCKED — 第八次 GitHub hosted Windows 运行再次通过 fresh beta.2 安装、真实启动、运行中拒绝及卸载数据保留，但在重装前确认卸载目录仍有安装器自有状态文件。** 尚未生成 U01—U30 的真实 PASS 证据。本执行任务无 push 权限；下述 `NOT RUN` 不得改写成 PASS，主控整合并 push 后应以修正后的下一次运行结果为准。
+状态：**BLOCKED — 第九次 GitHub hosted Windows 运行已通过父目录 junction 拒绝、精确状态文件删除、正常重装及其后全部 fresh lifecycle 检查，但最终可见向导 harness 以同步跨进程消息触发安装，导致 WMI/COM 在 input-synchronous 上下文按 fail-closed 拒绝。** 尚未生成 U01—U30 的真实 PASS 证据。本执行任务无 push 权限；下述 `NOT RUN` 不得改写成 PASS，主控整合并 push 后应以修正后的下一次运行结果为准。
 
 ## Preflight
 
@@ -12,6 +12,7 @@
 - 第五次失败恢复轮从本任务既有 local commit `51294c5ba579f36d1b7ebd8904c482237786b314` 继续；对应主控候选 commit 为 `0254bdd90fd8f93c2813da1d57c640f50a14c49d`。恢复轮开始时仅有未跟踪 `.test-work/`、`node_modules/`，均不纳入提交。
 - 第七次失败恢复轮核对指定主控 baseline `ed449ea08a2e4b0f8714a1a405a98f1be484fb6b` 已包含前两轮等价修复；它与本任务上一 local commit 的代码相同，仅增加主控编排记录。tracked 状态 clean 后使用 `reset --keep` 安全同步，未跟踪缓存保持原样。
 - 第八次失败恢复轮同样核对指定主控 baseline `8913b1ca900288c8cc229e5afd4be100720167aa` 已包含上轮等价修复 `6cb7769`，与本任务上一 local commit 仅有主控编排记录差异；tracked 状态 clean 后安全同步，未跟踪缓存保持原样。
+- 第九次失败恢复轮核对指定主控 baseline `add27a49fd15c2711151c787a58fdc3d3fcff5c0` 已包含上一轮等价修复 `61de717`；它与本任务上一 local commit 的产品、测试和结果文档内容相同，仅增加主控编排记录。tracked 状态 clean 后安全同步，未跟踪缓存保持原样。
 
 ## 已完成实现
 
@@ -42,6 +43,8 @@
 - 第八次候选 commit `8913b1ca900288c8cc229e5afd4be100720167aa` 的 Runtime run `35814718986`、Launcher run `35814718974`、Portable run `35814718987` 均 success；Setup run `35814718991` / job `107033683886` failure，failure Artifact `10731770877`，digest `sha256:9d4d3c043b82c19ba475453964efef1ab198cf651eb138f453e8ac2a2b86e138`。首次安装、Launcher、合成 Admin/数据/附件、运行中拒绝、卸载及 instance 字节保留再次通过；随后严格夹具检查在 `setup_windows_test.go:531` 发现 `uninstall` 目录非空并主动失败，尚未进入重装或 U01—U30。
 - 源码与真实失败位置共同确认剩余内容是 `install-state.json`：fresh Setup 在运行时用 `SaveStringToFile` 创建该精确安装器元数据，它不属于 Inno `[Files]`，因此不进入自动卸载日志；同目录其他 metadata 均由 `[Files]` 跟踪。修正由产品卸载器在 `usUninstall` 只处理这一精确路径：缺失则兼容退出，目录、reparse 或属性读取异常均拒绝，普通文件删除失败则中止卸载，成功记录固定无路径事件；不使用 `[UninstallDelete]`、枚举、通配符或递归删除。测试继续只删除它明确创建并已验证保留的合成外来文件，且在夹具清理前断言产品已删除自有状态文件；未知内容仍失败，业务 instance 从不清理。同步修正 I12 报告文案，使其不在实际重装完成前声称重装通过。
 - 主控 Review 进一步发现，仅检查最终文件属性不能阻止父目录 junction 将删除重定向到安装根外。修正现先校验 `{app}\uninstall` 到卷根的完整既有目录链，任何 reparse 或非目录组件均固定拒绝，再检查并删除精确普通文件；该父链校验不读取 instance 绑定。hosted 生命周期测试新增真实 junction 反例：临时把 `uninstall` 目录移到合成目标并在原位置建立 junction，卸载必须以 `KSESSION_UNINSTALL_STATE_REJECTED` 失败，目标 `install-state.json` 保持逐字节不变，程序、登记和卸载器仍存在；测试随后只移除该精确 junction 并恢复目录，不使用递归删除。
+- 第九次候选 commit `add27a49fd15c2711151c787a58fdc3d3fcff5c0` 的 Runtime run `35818266817`、Launcher run `35818267029`、Portable run `35818266814` 均 success；Setup run `35818266796` / job `107044402164` failure，failure Artifact `10732089023`，digest `sha256:51ab60711af11e70614b4d1ba378b88fa424eaf0fd71923e59d42d5108bc76cc`。本次已实际证明 Inno 6.7.3 编译、父目录 junction 以 `KSESSION_UNINSTALL_STATE_REJECTED` 拒绝、正常卸载以 `KSESSION_UNINSTALL_STATE_REMOVED` 精确删除状态文件、正常重装以及 D07、I18、I30、I31、D13、I25、I20、I03 等后续检查通过；失败发生在最后的可见 GUI 向导自动化，尚未进入 U01—U30。
+- 可见向导日志依次到达 page1/page4/page100/page11；harness 通过跨进程 `SendMessageTimeoutW(WM_COMMAND)` 同步触发 Install 后，`PrepareToInstall` 中未修改的 `RunningProduct` 调用 WMI，COM 明确返回 `An outgoing call cannot be made since the application is dispatching an input-synchronous call`。产品正确记录 `KSESSION_PROCESS_INSPECTION_UNAVAILABLE`、保持 fail-closed 并停留 page11。修正只把同一真实、可见、启用按钮及其实际 parent/control ID 的标准通知改为 `PostMessageW` 异步排队，使向导从正常 UI 消息泵处理；每个预期按钮标签最多排队一次，避免轮询重复点击跨页。未改 WMI、`RunningProduct`、向导页、完成页 `[Run]`、timeout 或验收断言。
 
 ## U01—U30 状态
 
@@ -83,7 +86,7 @@
 ## 本地测试与首次失败
 
 - 首次 `npm test`：26 suites 中 1 FAIL，原因是本工作树未安装锁文件依赖 `write-excel-file/node`；不是产品断言失败。执行 `npm ci --omit=optional --ignore-scripts --no-audit --no-fund` 后完整重跑：`Public test files: 26; failed: 0`。本机 hosted-only suites 仍按原策略 SKIP，因此不得写成 Actions 的 742/fail0/skip0。
-- T4 lifecycle/fresh identity + T3 transaction：25 PASS / 0 FAIL / 0 SKIP；锁定卸载器仅在完整父目录链无 reparse 后删除精确普通 `install-state.json`，禁止枚举/递归；静态契约覆盖真实 junction 反例结构，并要求夹具在清理空壳前确认该产品元数据已消失。hosted 真实 junction 分支仍须随下一次 Setup Actions 执行，不能将本机静态 PASS 写成 hosted PASS。
+- T4 lifecycle/fresh identity + T3 transaction：25 PASS / 0 FAIL / 0 SKIP；锁定卸载器仅在完整父目录链无 reparse 后删除精确普通 `install-state.json`，禁止枚举/递归；第九次 hosted 已实际通过 junction 拒绝和正常精确删除。静态契约另锁定可见向导只对真实可见、启用的预期按钮使用异步 `PostMessageW`，点击路径禁止同步 `SendMessageTimeoutW` 和 sleep；修正后的可见向导仍须下一次 hosted 复验。
 - upgrade-preflight 直接复跑：21 tests，20 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。新增 `subst` 正例及错误根、overlap、junction 负例均 PASS。
 - T1/T1A/T2 联合复跑：136 tests，135 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。workflow 已把该情况提升为硬失败，但修正后尚未 hosted 实跑。
 - installer contract：`INSTALLER CONTRACT PASS`；`R2 DATA LOCATION CONTRACT PASS`。
@@ -98,8 +101,8 @@
 
 - historical beta.1：沿用已审查 run `35781214911` / job `106927326670` / evidence Artifact `10718411569`；profile exact anchors 由 checked-in evidence 提供。本任务未重新下载历史发行包。
 - fresh beta.1 rebuild identity：run `35804632918` 已通过 build-only verifier 并生成通过 T1 `validateBundle` 的 fresh identity；该局部证据不等于 beta.2 生命周期通过。
-- beta.2 build identity：第八次 Runtime、Launcher 与 Portable job 已通过，Setup 已真实编译并进入 fresh lifecycle；但完整 Setup 回归仍失败，没有成功发行 Artifact，完整身份结论仍为 N/A。
-- Actions：run `35800072543` / job `106988166109` = 历史 GUI failure，Artifact `10725736587`；run `35802015923` / job `106994266165` = source clean 合并门禁在构建前 failure、无 Artifact；run `35803383243` / job `106998595821` = subst 路径别名触发 top-level 固定门禁、构建前 failure、无 Artifact；run `35804632918` / job `107002547301` = beta.2 Portable core probe failure，failure Artifact `10727636644`；Runtime run `35804632969` / job `107002547427` = 文档隐私门禁 25/26 suites；第五次 Runtime run `35807722187` 与 Portable run `35807722105` = success，Setup run `35807722197` / job `107012151593` = preflight failure，failure Artifact `10728312842`；第六次 Runtime run `35810440373` = success，Setup run `35810440453` / job `107020593126` = same-version registration reason failure，failure Artifact `10729513518`；第七次 Setup run `35812914595` / job `107028173471` = reinstall fixture contamination failure，failure Artifact `10730302530`；第八次 Runtime/Launcher/Portable = success，Setup run `35814718991` / job `107033683886` = installer-owned state cleanup failure，failure Artifact `10731770877`。卸载状态修正后的复跑 pending，执行任务禁止 push。
+- beta.2 build identity：第九次 Runtime、Launcher 与 Portable job 已通过，Setup 已真实编译并完成除最终可见向导外的 fresh lifecycle；但完整 Setup 回归仍失败，没有成功发行 Artifact，完整身份结论仍为 N/A。
+- Actions：run `35800072543` / job `106988166109` = 历史 GUI failure，Artifact `10725736587`；run `35802015923` / job `106994266165` = source clean 合并门禁在构建前 failure、无 Artifact；run `35803383243` / job `106998595821` = subst 路径别名触发 top-level 固定门禁、构建前 failure、无 Artifact；run `35804632918` / job `107002547301` = beta.2 Portable core probe failure，failure Artifact `10727636644`；Runtime run `35804632969` / job `107002547427` = 文档隐私门禁 25/26 suites；第五次 Runtime run `35807722187` 与 Portable run `35807722105` = success，Setup run `35807722197` / job `107012151593` = preflight failure，failure Artifact `10728312842`；第六次 Runtime run `35810440373` = success，Setup run `35810440453` / job `107020593126` = same-version registration reason failure，failure Artifact `10729513518`；第七次 Setup run `35812914595` / job `107028173471` = reinstall fixture contamination failure，failure Artifact `10730302530`；第八次 Runtime/Launcher/Portable = success，Setup run `35814718991` / job `107033683886` = installer-owned state cleanup failure，failure Artifact `10731770877`；第九次 Runtime/Launcher/Portable = success，Setup run `35818266796` / job `107044402164` = 可见向导同步消息导致 COM input-synchronous fail-closed，failure Artifact `10732089023`。异步 harness 修正后的复跑 pending，执行任务禁止 push。
 - 本任务测试工具 ZIP 仅用于本地编译；未加入 Git。清理命令被本机安全策略拒绝，缓存仍在未跟踪 `.test-work`；主控整合时不得加入提交。
 
 ## 修改文件
@@ -108,7 +111,7 @@
 - `tools/windows-installer/{build.cjs,ci.ps1,offline-ci.ps1,setup.iss,verify-artifact.cjs,fresh-identity.cjs,rebuild-beta1.ps1,verify-beta1-source.cjs,verify-beta1-build.cjs}`
 - `tools/tests/windows-installer/{fresh-identity.test.cjs,upgrade-lifecycle/contract.test.cjs,upgrade-preflight/preflight.test.cjs}`
 - `tools/tests/windows-installer/upgrade-transaction/contract.test.cjs`
-- `tools/windows-launcher/{setup_windows_test.go,upgrade_windows_test.go}`
+- `tools/windows-launcher/{setup_windows_test.go,setup_wizard_windows_test.go,upgrade_windows_test.go}`
 - `tools/tests/windows-portable/core-client.cjs`
 - `docs/tasks/windows-installer-v1.1/batch-4/tasks/B4-T4-RESULT.md`
 

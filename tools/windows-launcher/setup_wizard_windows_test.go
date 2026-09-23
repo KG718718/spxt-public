@@ -11,6 +11,8 @@ import (
 
 // Disposable Setup CI only. Activate enabled Next/Install/Finish controls of this product's wizard.
 // No modal error/risk dialogue is dismissed here; an unexpected page must time out and fail.
+var queuedSetupWizardLabels = map[string]bool{}
+
 func advanceSetupWizard() []string {
 	var observed []string
 	text := func(h uintptr) string {
@@ -43,13 +45,20 @@ func advanceSetupWizard() []string {
 			label := strings.TrimSpace(strings.ReplaceAll(text(c), "&", ""))
 			observed = append(observed, fmt.Sprintf("control=%q visible=%t enabled=%t", label, visible != 0, enabled != 0))
 			if visible != 0 && enabled != 0 && (label == "Next" || label == "Next >" || label == "Install" || label == "Finish") {
-				// Send the standard button notification to its actual parent. BM_CLICK can fail
-				// on an inactive dialog in a hosted runner; no unexpected modal is accepted.
+				if queuedSetupWizardLabels[label] {
+					observed = append(observed, fmt.Sprintf("button=%s already-queued=true", label))
+					return 0
+				}
+				// Queue the real visible button's standard notification. The wizard handles it
+				// from its normal UI pump, outside a cross-process input-synchronous call.
+				// No unexpected modal or disabled control is accepted.
 				parent, _ := call(user32, "GetParent", c)
 				id, _ := call(user32, "GetDlgCtrlID", c)
-				var response uintptr
-				ok, _ := call(user32, "SendMessageTimeoutW", parent, 0x0111, id&0xffff, c, 0x0002, 2000, uintptr(unsafe.Pointer(&response)))
-				observed = append(observed, fmt.Sprintf("button=%s notified=%t", label, ok != 0))
+				ok, _ := call(user32, "PostMessageW", parent, 0x0111, id&0xffff, c)
+				if ok != 0 {
+					queuedSetupWizardLabels[label] = true
+				}
+				observed = append(observed, fmt.Sprintf("button=%s queued=%t", label, ok != 0))
 				return 0
 			}
 			return 1

@@ -56,6 +56,7 @@ test('portable restart expires temporary attachment ownership while admin verifi
 
 test('uninstaller removes only its exact ordinary state file before the fixture removes verified-empty shells',()=>{
  const go=read('tools/windows-launcher/setup_windows_test.go');
+ const wizard=read('tools/windows-launcher/setup_wizard_windows_test.go');
  const removeForeign=go.indexOf('os.Remove(foreign)'),reinstall=go.indexOf('runSetup(setup, target, true)',removeForeign);
  assert.ok(removeForeign>=0&&reinstall>removeForeign);
  const cleanup=go.slice(removeForeign,reinstall);
@@ -76,4 +77,8 @@ test('uninstaller removes only its exact ordinary state file before the fixture 
  assert.match(go,/uninstall left installer-owned state/);
  assert.doesNotMatch(go,/RemoveAll/);
  assert.doesNotMatch(go,/record\("I12", "PASS", "[^"]*uninstall/);
+ const wizardClick=wizard.slice(wizard.indexOf('if visible != 0 && enabled != 0'),wizard.indexOf('call(user32, "EnumChildWindows"'));
+ for(const marker of ['queuedSetupWizardLabels[label]','GetParent','GetDlgCtrlID','PostMessageW','0x0111','id&0xffff','button=%s queued=%t'])assert.match(wizardClick,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.doesNotMatch(wizardClick,/SendMessageTimeoutW|Sleep/);
+ assert.ok(wizardClick.indexOf('visible != 0 && enabled != 0')<wizardClick.indexOf('PostMessageW'));
 });
