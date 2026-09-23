@@ -452,13 +452,45 @@ func TestSetup(t *testing.T) {
 	if os.Getenv("KSESSION_EXTERNAL_NETWORK_DISABLED") != "1" {
 		t.Fatal("Whole hosted runner external-network isolation required")
 	}
-	record("I12", "PASS", "actual install, initial Admin, login, PDF/Chinese PDF, Excel, upload, backup, uninstall/reinstall with all hosted-runner external adapters disabled; offline-network.json separately gates restoration and duration")
+	record("I12", "PASS", "actual install, initial Admin, login, PDF/Chinese PDF, Excel, upload and backup with all hosted-runner external adapters disabled; offline-network.json separately gates restoration and duration")
 	runSetup(setup, filepath.Join(base, "running-reject"), false)
 	assertReason(uninstall(false), "KSESSION_UNINSTALL_REJECT_RUNNING")
 	if !alivePID(pid) || !alivePID(uint32(app.Process.Pid)) || !exists(exe) {
 		t.Fatal("guard killed process or removed program")
 	}
 	stopApp(app, pid, exe)
+	// A redirected uninstall parent must fail closed before the exact state file is touched.
+	uninstallDir := filepath.Join(target, "uninstall")
+	junctionTarget := filepath.Join(base, "junction-uninstall-target")
+	if e := os.Rename(uninstallDir, junctionTarget); e != nil {
+		t.Fatal(e)
+	}
+	junctionRestored := false
+	t.Cleanup(func() {
+		if junctionRestored {
+			return
+		}
+		_ = os.Remove(uninstallDir)
+		_ = os.Rename(junctionTarget, uninstallDir)
+	})
+	cmdExe := filepath.Join(os.Getenv("SystemRoot"), "System32", "cmd.exe")
+	command(cmdExe, "/d", "/c", "mklink", "/J", uninstallDir, junctionTarget)
+	redirectedState := filepath.Join(junctionTarget, "install-state.json")
+	stateBeforeReject := mustRead(t, redirectedState)
+	assertReason(uninstall(false), "KSESSION_UNINSTALL_STATE_REJECTED")
+	if string(mustRead(t, redirectedState)) != string(stateBeforeReject) {
+		t.Fatal("rejected uninstall changed redirected state")
+	}
+	if !registered() || !exists(exe) || !exists(uninstaller) {
+		t.Fatal("rejected uninstall removed installed product")
+	}
+	if e := os.Remove(uninstallDir); e != nil {
+		t.Fatal(e)
+	}
+	if e := os.Rename(junctionTarget, uninstallDir); e != nil {
+		t.Fatal(e)
+	}
+	junctionRestored = true
 	dataBefore := mustRead(t, filepath.Join(instance, "data.json"))
 	// Preserve synthetic user-owned data and unknown install-root content during uninstall.
 	userMarker := filepath.Join(instance, "user-retained.txt")
@@ -480,6 +512,9 @@ func TestSetup(t *testing.T) {
 	uninstall(true)
 	if exists(exe) || exists(desktop) || exists(start) || registered() {
 		t.Fatal("uninstall leftovers")
+	}
+	if exists(filepath.Join(target, "uninstall", "install-state.json")) {
+		t.Fatal("uninstall left installer-owned state")
 	}
 	if string(mustRead(t, filepath.Join(instance, "data.json"))) != string(dataBefore) || string(mustRead(t, userMarker)) != "synthetic retained" {
 		t.Fatal("data lost")
@@ -525,8 +560,8 @@ func TestSetup(t *testing.T) {
 		}
 	}
 	// The synthetic unknown root file intentionally prevents Inno from removing
-	// its parent shells. Remove only verified-empty test-owned shells so the next
-	// assertion tests existing-instance reuse, not a contaminated program root.
+	// its parent shells. The product must already have removed its exact owned
+	// install-state file; this fixture removes only verified-empty directory shells.
 	removeEmptyFixtureDir(filepath.Join(target, "program"))
 	removeEmptyFixtureDir(filepath.Join(target, "uninstall"))
 	removeEmptyFixtureDir(target)

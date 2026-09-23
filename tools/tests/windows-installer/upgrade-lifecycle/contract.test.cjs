@@ -54,7 +54,7 @@ test('portable restart expires temporary attachment ownership while admin verifi
  assert.ok(core.indexOf('employeeDownload.status,403')<core.indexOf('adminDownload.status,200'));
 });
 
-test('reinstall fixture removes only verified-empty owned shells after proving unknown root content is preserved',()=>{
+test('uninstaller removes only its exact ordinary state file before the fixture removes verified-empty shells',()=>{
  const go=read('tools/windows-launcher/setup_windows_test.go');
  const removeForeign=go.indexOf('os.Remove(foreign)'),reinstall=go.indexOf('runSetup(setup, target, true)',removeForeign);
  assert.ok(removeForeign>=0&&reinstall>removeForeign);
@@ -64,4 +64,16 @@ test('reinstall fixture removes only verified-empty owned shells after proving u
  assert.doesNotMatch(cleanup,/RemoveAll/);
  const iss=read('tools/windows-installer/setup.iss');
  assert.match(iss,/DirExists\(P\) and NonEmpty\(P\)[\s\S]*KSESSION_REJECT_NONEMPTY/);
+ const safeChain=iss.slice(iss.indexOf('function SafeDirectoryChain'),iss.indexOf('function SafePath'));
+ for(const marker of ['GetFileAttributesW(Q)','while Length(Q) > 3','(Attr and $400) <> 0','Q := ExtractFileDir(Q)'])assert.match(safeChain,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ const uninstall=iss.slice(iss.indexOf('procedure CurUninstallStepChanged'),iss.indexOf('procedure DeinitializeSetup'));
+ for(const marker of ["CurUninstallStep <> usUninstall","{app}\\uninstall\\install-state.json","SafeDirectoryChain(ExtractFileDir(P))","GetFileAttributesW(P)",
+  "GetLastErrorCode","(ErrorCode = 2) or (ErrorCode = 3)","(Attr and $400) <> 0","DeleteFile(P)",
+  "KSESSION_UNINSTALL_STATE_REMOVED"])assert.match(uninstall,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.ok(uninstall.indexOf('SafeDirectoryChain(ExtractFileDir(P))')<uninstall.indexOf('DeleteFile(P)'));
+ assert.doesNotMatch(uninstall,/DelTree|RemoveAll|FindFirst|FindNext/);
+ for(const marker of ['junction-uninstall-target','"mklink", "/J"','stateBeforeReject','KSESSION_UNINSTALL_STATE_REJECTED','rejected uninstall changed redirected state'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.match(go,/uninstall left installer-owned state/);
+ assert.doesNotMatch(go,/RemoveAll/);
+ assert.doesNotMatch(go,/record\("I12", "PASS", "[^"]*uninstall/);
 });

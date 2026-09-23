@@ -104,6 +104,8 @@ function CloseHandle(H: LongWord): Boolean;
 external 'CloseHandle@kernel32.dll stdcall';
 function GetFileAttributesW(Name: String): LongWord;
 external 'GetFileAttributesW@kernel32.dll stdcall';
+function GetLastErrorCode: LongWord;
+external 'GetLastError@kernel32.dll stdcall';
 
 procedure ReleaseLocks;
 begin
@@ -231,15 +233,13 @@ begin
      not SetIniString('Installation', 'Instance', BetaInstance, P) then RaiseException('无法保存安装数据目录绑定。');
 end;
 
-function SafePath(P: String): Boolean;
+function SafeDirectoryChain(P: String): Boolean;
 var Q: String; Attr: LongWord;
 begin
   Result := False;
   P := RemoveBackslashUnlessRoot(P);
   if (Length(P) < 7) or (Length(ExtractFileDrive(P)) <> 2) or (Copy(P, 2, 2) <> ':\') then exit;
   if CompareText(ExpandFileName(P), P) <> 0 then exit;
-  if Overlaps(P, BetaInstance) then exit;
-  if Overlaps(P, ExpandConstant('{win}')) then exit;
   Q := P;
   while Length(Q) > 3 do begin
     Attr := GetFileAttributesW(Q);
@@ -249,6 +249,16 @@ begin
     end;
     Q := ExtractFileDir(Q);
   end;
+  Result := True;
+end;
+
+function SafePath(P: String): Boolean;
+begin
+  Result := False;
+  if not SafeDirectoryChain(P) then exit;
+  P := RemoveBackslashUnlessRoot(P);
+  if Overlaps(P, BetaInstance) then exit;
+  if Overlaps(P, ExpandConstant('{win}')) then exit;
   Result := True;
 end;
 
@@ -584,6 +594,33 @@ begin
     ReleaseLocks; SuppressibleMsgBox(RunningMessage, mbError, MB_OK, IDOK); exit;
   end;
   Result := True;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var P: String; Attr, ErrorCode: LongWord;
+begin
+  if CurUninstallStep <> usUninstall then exit;
+  P := ExpandConstant('{app}\uninstall\install-state.json');
+  if not SafeDirectoryChain(ExtractFileDir(P)) then begin
+    Log('KSESSION_UNINSTALL_STATE_REJECTED');
+    RaiseException('安装状态目录异常，拒绝删除。');
+  end;
+  Attr := GetFileAttributesW(P);
+  if Attr = $FFFFFFFF then begin
+    ErrorCode := GetLastErrorCode;
+    if (ErrorCode = 2) or (ErrorCode = 3) then exit; { file/path not found }
+    Log('KSESSION_UNINSTALL_STATE_REJECTED');
+    RaiseException('无法检查安装状态文件，拒绝继续卸载。');
+  end;
+  if ((Attr and $400) <> 0) or ((Attr and $10) <> 0) then begin
+    Log('KSESSION_UNINSTALL_STATE_REJECTED');
+    RaiseException('安装状态文件异常，拒绝删除。');
+  end;
+  if not DeleteFile(P) then begin
+    Log('KSESSION_UNINSTALL_STATE_DELETE_FAILED');
+    RaiseException('无法删除安装状态文件。');
+  end;
+  Log('KSESSION_UNINSTALL_STATE_REMOVED');
 end;
 
 procedure DeinitializeSetup;
