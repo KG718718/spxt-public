@@ -415,12 +415,48 @@ begin
 end;
 
 function RunUpgradeGate: Boolean;
+var Code: Integer;
 begin
   Result := False;
   ExtractUpgradeTools;
   if not WriteUpgradeRequest then exit;
-  Result := RunNode('upgrade-gate-cli.cjs', '--request "' + UpgradeRequest + '" "' +
-    ExpandConstant('{tmp}\approved-identity-bundle.json') + '" "{#IdentityBundleSha256}"');
+  if not Exec(ExpandConstant('{tmp}\ksession-beta2-node.exe'), '"' + ExpandConstant('{tmp}\upgrade-gate-cli.cjs') + '" --request "' +
+    UpgradeRequest + '" "' + ExpandConstant('{tmp}\approved-identity-bundle.json') + '" "{#IdentityBundleSha256}"',
+    ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, Code) then begin
+    Log('KSESSION_UPGRADE_GATE_PROCESS_START_FAILED'); exit;
+  end;
+  case Code of
+    10: Log('KSESSION_UPGRADE_GATE_ARGUMENT_INVALID');
+    11: Log('KSESSION_UPGRADE_GATE_REQUEST_INVALID');
+    12: Log('KSESSION_UPGRADE_GATE_BUNDLE_HASH');
+    13: Log('KSESSION_UPGRADE_GATE_BUNDLE_INVALID');
+    14: Log('KSESSION_UPGRADE_GATE_IDENTITY_REJECTED');
+    20: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_ARGUMENT_INVALID');
+    21: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_DATA_CONTRACT_UNSUPPORTED');
+    22: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_APP_RESOURCE_INVALID');
+    23: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_INSTALL_ROOT_INVALID');
+    24: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_INSTANCE_NOT_FOUND');
+    25: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_INSTANCE_PATH_UNSAFE');
+    26: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_INSTANCE_UNREADABLE');
+    27: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_BINDING_INVALID');
+    28: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_REGISTRATION_CONFLICT');
+    29: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_BINDING_CONFLICT');
+    30: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_STORE_UNREADABLE');
+    31: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_STORE_INVALID');
+    32: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_CONFIG_INVALID');
+    33: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_ORPHANED_INSTALLATION');
+    34: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_STORE_VALIDATION_FAILED');
+    35: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_INSTANCE_STRUCTURE_UNSAFE');
+    36: Log('KSESSION_UPGRADE_GATE_PREFLIGHT_INTERNAL');
+    40: Log('KSESSION_UPGRADE_GATE_CONTRACT_RESULT');
+    41: Log('KSESSION_UPGRADE_GATE_CONTRACT_INSTALL_ROOT');
+    42: Log('KSESSION_UPGRADE_GATE_CONTRACT_INSTANCE_PATH');
+    43: Log('KSESSION_UPGRADE_GATE_CONTRACT_DATA');
+    49: Log('KSESSION_UPGRADE_GATE_INTERNAL');
+  end;
+  if (Code <> 0) and ((Code < 10) or (Code > 49) or ((Code > 14) and (Code < 20)) or ((Code > 36) and (Code < 40)) or ((Code > 43) and (Code < 49))) then
+    Log('KSESSION_UPGRADE_GATE_UNKNOWN');
+  Result := Code = 0;
 end;
 
 function PrepareUpgradeTransaction: Boolean;

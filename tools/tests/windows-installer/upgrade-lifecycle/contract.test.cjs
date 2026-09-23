@@ -26,7 +26,7 @@ test('hosted gate makes file-symlink coverage mandatory and runs both real lifec
 });
 
 test('real lifecycle has U01-U30 and all five required recoverable failure fixtures',()=>{
- const go=read('tools/windows-launcher/upgrade_windows_test.go'),build=read('tools/windows-installer/build.cjs'),iss=read('tools/windows-installer/setup.iss');
+ const go=read('tools/windows-launcher/upgrade_windows_test.go'),build=read('tools/windows-installer/build.cjs'),iss=read('tools/windows-installer/setup.iss'),gate=read('tools/windows-installer/upgrade-gate/index.cjs'),cli=read('tools/windows-installer/upgrade-gate/cli.cjs');
  for(let n=1;n<=30;n++)assert.match(go,new RegExp(`U${String(n).padStart(2,'0')}`));
  for(const mode of ['fault-space','fault-permission','fault-cancel','fault-copy','fault-payload-hash','fault-post-copy'])assert.match(build,new RegExp(mode));
  assert.match(build,/Check: IsUpgradeInstall; BeforeInstall: BeforeUpgradeCopy/);
@@ -45,6 +45,14 @@ test('real lifecycle has U01-U30 and all five required recoverable failure fixtu
  }
  assert.match(request,/"installLocation":"' \+ JsonEscape\(PriorInstallRoot\)/);
  assert.doesNotMatch(request,/"preflight":\{"installRoot":"' \+ JsonEscape\(PriorInstallRoot\)/);
+ for(const code of ['ARGUMENT_INVALID','DATA_CONTRACT_UNSUPPORTED','APP_RESOURCE_INVALID','INSTALL_ROOT_INVALID','INSTANCE_NOT_FOUND','INSTANCE_PATH_UNSAFE','INSTANCE_UNREADABLE','BINDING_INVALID','REGISTRATION_CONFLICT','BINDING_CONFLICT','STORE_UNREADABLE','STORE_INVALID','CONFIG_INVALID','ORPHANED_INSTALLATION','STORE_VALIDATION_FAILED','INSTANCE_STRUCTURE_UNSAFE']){
+  const marker=`PREFLIGHT_${code}`;assert.match(gate,new RegExp(`'${code}'`));assert.match(cli,new RegExp(marker));assert.match(iss,new RegExp(`KSESSION_UPGRADE_GATE_${marker}`));assert.match(go,new RegExp(`KSESSION_UPGRADE_GATE_${marker}`));
+ }
+ for(const marker of ['PREFLIGHT_INTERNAL','CONTRACT_RESULT','CONTRACT_INSTALL_ROOT','CONTRACT_INSTANCE_PATH','CONTRACT_DATA']){
+  assert.match(gate,new RegExp(marker));assert.match(cli,new RegExp(marker));assert.match(iss,new RegExp(`KSESSION_UPGRADE_GATE_${marker}`));assert.match(go,new RegExp(`KSESSION_UPGRADE_GATE_${marker}`));
+ }
+ assert.match(cli,/error instanceof GateError \? \(exits\[error\.reason\] \|\| 49\) : 49/);
+ assert.doesNotMatch(iss,/error\.message|process\.stdout|raw-json/);
  assert.match(go,/fault-payload-hash", "KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED"/);
  assert.match(go,/instanceStable/);assert.match(go,/ownedStable/);assert.match(go,/core-beta1/);assert.match(go,/core-beta2/);assert.match(go,/core-reinstall/);
 });

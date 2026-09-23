@@ -1,9 +1,19 @@
 'use strict';
 const { GateError, runFiles } = require('./index.cjs');
+const exits = Object.freeze({
+  GATE_ARGUMENT_INVALID: 10, GATE_REQUEST_INVALID: 11, GATE_BUNDLE_HASH: 12, GATE_BUNDLE_INVALID: 13,
+  GATE_IDENTITY_REJECTED: 14, PREFLIGHT_ARGUMENT_INVALID: 20, PREFLIGHT_DATA_CONTRACT_UNSUPPORTED: 21,
+  PREFLIGHT_APP_RESOURCE_INVALID: 22, PREFLIGHT_INSTALL_ROOT_INVALID: 23, PREFLIGHT_INSTANCE_NOT_FOUND: 24,
+  PREFLIGHT_INSTANCE_PATH_UNSAFE: 25, PREFLIGHT_INSTANCE_UNREADABLE: 26, PREFLIGHT_BINDING_INVALID: 27,
+  PREFLIGHT_REGISTRATION_CONFLICT: 28, PREFLIGHT_BINDING_CONFLICT: 29, PREFLIGHT_STORE_UNREADABLE: 30,
+  PREFLIGHT_STORE_INVALID: 31, PREFLIGHT_CONFIG_INVALID: 32, PREFLIGHT_ORPHANED_INSTALLATION: 33,
+  PREFLIGHT_STORE_VALIDATION_FAILED: 34, PREFLIGHT_INSTANCE_STRUCTURE_UNSAFE: 35, PREFLIGHT_INTERNAL: 36,
+  CONTRACT_RESULT: 40, CONTRACT_INSTALL_ROOT: 41, CONTRACT_INSTANCE_PATH: 42, CONTRACT_DATA: 43
+});
 try {
   if (process.argv.length !== 6 || process.argv[2] !== '--request') throw new GateError('GATE_ARGUMENT_INVALID');
   process.stdout.write(JSON.stringify(runFiles(process.argv[3], process.argv[4], process.argv[5])) + '\n');
 } catch (error) {
   process.stdout.write(JSON.stringify({ ok: false, code: error instanceof GateError ? error.code : 'GATE_INTERNAL' }) + '\n');
-  process.exitCode = 1;
+  process.exitCode = error instanceof GateError ? (exits[error.reason] || 49) : 49;
 }
