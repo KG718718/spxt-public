@@ -34,19 +34,23 @@ test('synthetic exact beta1 build closure validates and setup tampering fails cl
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
 
-test('source verifier normalizes paths, pins commit/tree and rejects tracked dirty under global CRLF config',()=>{
- const root=fs.mkdtempSync(path.join(repo,'.test-work','beta1-source-verify-')),sub=path.join(root,'sub');
+test('source verifier resolves path aliases, pins commit/tree and rejects wrong roots or tracked dirty under global CRLF config',()=>{
+ const parent=fs.mkdtempSync(path.join(repo,'.test-work','beta1-source-verify-')),root=path.join(parent,'repo'),alias=path.join(parent,'repo-alias'),sub=path.join(root,'sub');
  const run=(args,env=process.env)=>cp.execFileSync('git',args,{cwd:root,env,windowsHide:true,encoding:'utf8'}).trim();
  try{
+  fs.mkdirSync(root);
   run(['init']);run(['config','user.name','Synthetic']);run(['config','user.email','synthetic@example.invalid']);
   fs.writeFileSync(path.join(root,'fixed.txt'),'line one\nline two\n');run(['-c','core.autocrlf=false','add','fixed.txt']);run(['-c','core.autocrlf=false','commit','-m','synthetic']);fs.mkdirSync(sub);
   const commit=run(['rev-parse','HEAD']),tree=run(['rev-parse','HEAD^{tree}']),blob=run(['hash-object','fixed.txt']);
   const env={...process.env,GIT_CONFIG_COUNT:'1',GIT_CONFIG_KEY_0:'core.autocrlf',GIT_CONFIG_VALUE_0:'true'};
   fs.unlinkSync(path.join(root,'fixed.txt'));run(['-c','core.autocrlf=false','checkout','--','fixed.txt'],env);
-  assert.equal(verifyCheckout(path.join(sub,'..'),{commit,tree,blobs:{'fixed.txt':blob}},{env}).trackedClean,true);
+  fs.symlinkSync(root,alias,process.platform==='win32'?'junction':'dir');
+  assert.notEqual(path.resolve(root),path.resolve(alias));
+  assert.equal(verifyCheckout(path.join(alias,'sub','..'),{commit,tree,blobs:{'fixed.txt':blob}},{env}).trackedClean,true);
+  assert.throws(()=>verifyCheckout(sub,{commit,tree,blobs:{'fixed.txt':blob}},{env}),e=>e instanceof SourceError&&e.code==='BETA1_SOURCE_TOPLEVEL_MISMATCH');
   assert.throws(()=>verifyCheckout(root,{commit:'0'.repeat(40),tree,blobs:{'fixed.txt':blob}},{env}),e=>e instanceof SourceError&&e.code==='BETA1_SOURCE_COMMIT_MISMATCH');
   assert.throws(()=>verifyCheckout(root,{commit,tree:'0'.repeat(40),blobs:{'fixed.txt':blob}},{env}),e=>e instanceof SourceError&&e.code==='BETA1_SOURCE_TREE_MISMATCH');
   fs.appendFileSync(path.join(root,'fixed.txt'),'tracked mutation\n');
   assert.throws(()=>verifyCheckout(root,{commit,tree,blobs:{'fixed.txt':blob}},{env}),e=>e instanceof SourceError&&e.code==='BETA1_SOURCE_TRACKED_DIRTY');
- }finally{fs.rmSync(root,{recursive:true,force:true});}
+ }finally{fs.rmSync(parent,{recursive:true,force:true});}
 });

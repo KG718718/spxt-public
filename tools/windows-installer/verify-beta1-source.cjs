@@ -2,6 +2,7 @@
 
 const assert = require('node:assert/strict');
 const cp = require('node:child_process');
+const fs = require('node:fs');
 const path = require('node:path');
 
 const SOURCE_COMMIT = 'e9417f036d0cdf736ff84682556a994040f0de0b';
@@ -25,7 +26,14 @@ class SourceError extends Error {
   constructor(code) { super(code); this.code = code; }
 }
 function fail(code) { throw new SourceError(code); }
-function samePath(a, b) { return path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase(); }
+function canonicalPath(value) {
+  const resolved = fs.realpathSync.native(path.resolve(value));
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+}
+function samePath(a, b) {
+  try { return canonicalPath(a) === canonicalPath(b); }
+  catch { return false; }
+}
 function git(source, args, env) {
   const result = cp.spawnSync('git', ['-c', 'core.autocrlf=false', '-C', source, ...args],
     {encoding: 'utf8', windowsHide: true, env, maxBuffer: 2e6});
