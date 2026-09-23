@@ -27,12 +27,30 @@ function fail(code, exitCode) {
     throw new PreflightError(code, exitCode);
 }
 
+function volumeNormalizedPath(value) {
+    const normalized = path.normalize(value);
+    const volumeRoot = path.parse(normalized).root;
+    const physicalRoot = fs.realpathSync.native(volumeRoot);
+    return path.resolve(physicalRoot, path.relative(volumeRoot, normalized));
+}
+
 function samePath(left, right) {
-    return process.platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right;
+    try {
+        const a = volumeNormalizedPath(left);
+        const b = volumeNormalizedPath(right);
+        return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
+    } catch {
+        return false;
+    }
 }
 
 function within(parent, child) {
-    const relative = path.relative(parent, child);
+    let relative;
+    try {
+        relative = path.relative(volumeNormalizedPath(parent), volumeNormalizedPath(child));
+    } catch {
+        return false;
+    }
     return relative === '' || (!path.isAbsolute(relative) && relative !== '..'
         && !relative.startsWith('..' + path.sep));
 }

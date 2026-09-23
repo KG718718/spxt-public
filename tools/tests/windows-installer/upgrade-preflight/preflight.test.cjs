@@ -104,6 +104,21 @@ function invoke(fixture, changes = {}) {
     return { status: result.status, output: JSON.parse(result.stdout) };
 }
 
+function substFixture(t, target) {
+    assert.equal(process.platform, 'win32');
+    const subst = path.join(process.env.SystemRoot, 'System32', 'subst.exe');
+    const letter = 'ZYXWVUTSRQP'.split('').find(candidate => !fs.existsSync(candidate + ':\\'));
+    assert.ok(letter, 'no unused drive letter for synthetic subst alias');
+    const drive = letter + ':';
+    const created = spawnSync(subst, [drive, target], { encoding: 'utf8', windowsHide: true });
+    assert.equal(created.status, 0, 'synthetic subst alias creation failed');
+    t.after(() => {
+        const removed = spawnSync(subst, [drive, '/D'], { encoding: 'utf8', windowsHide: true });
+        assert.equal(removed.status, 0, 'synthetic subst alias cleanup failed');
+    });
+    return drive + '\\';
+}
+
 test('accepts initialized DC1 without changing data, config, attachments, backups, or secret fixture', t => {
     const fixture = makeFixture(t);
     fs.writeFileSync(path.join(fixture.instancePath, 'config.json'), '{}');
@@ -127,6 +142,29 @@ test('accepts the owned uninitialized state without creating data or config', t 
     const fixture = makeFixture(t, 'uninitialized');
     const result = invoke(fixture);
     assert.deepEqual(result, { status: 0, output: { ok: true, code: 'PREFLIGHT_OK', state: 'uninitialized' } });
+});
+
+test('accepts only a volume alias for the same install root and still rejects wrong, overlapping, or junction roots', t => {
+    const fixture = makeFixture(t);
+    const aliasRoot = substFixture(t, fixture.base);
+    const aliasInstall = path.join(aliasRoot, 'install');
+    assert.deepEqual(invoke(fixture, { installRoot: aliasInstall }),
+        { status: 0, output: { ok: true, code: 'PREFLIGHT_OK', state: 'initialized' } });
+
+    const wrongRoot = path.join(fixture.base, 'wrong-install');
+    fs.mkdirSync(wrongRoot);
+    assert.deepEqual(invoke(fixture, { installRoot: wrongRoot }),
+        { status: 14, output: { ok: false, code: 'REGISTRATION_CONFLICT' } });
+
+    const overlap = path.join(fixture.installRoot, 'overlapping-instance');
+    fs.mkdirSync(overlap);
+    assert.deepEqual(invoke(fixture, { installRoot: aliasInstall, instancePath: overlap, registeredInstance: overlap }),
+        { status: 13, output: { ok: false, code: 'INSTANCE_PATH_UNSAFE' } });
+
+    const junctionRoot = path.join(fixture.base, 'install-junction');
+    fs.symlinkSync(fixture.installRoot, junctionRoot, 'junction');
+    assert.deepEqual(invoke(fixture, { installRoot: junctionRoot, registeredInstallRoot: junctionRoot }),
+        { status: 14, output: { ok: false, code: 'INSTALL_ROOT_INVALID' } });
 });
 
 for (const sample of [
