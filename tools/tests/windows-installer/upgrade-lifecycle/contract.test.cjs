@@ -31,6 +31,8 @@ test('real lifecycle has U01-U30 and all five required recoverable failure fixtu
  for(const mode of ['fault-space','fault-permission','fault-cancel','fault-copy','fault-payload-hash','fault-post-copy'])assert.match(build,new RegExp(mode));
  assert.match(build,/Check: IsUpgradeInstall; BeforeInstall: BeforeUpgradeCopy/);
  assert.match(iss,/procedure BeforeUpgradeCopy\(Rel: String\)/);assert.match(iss,/KSESSION_FIXTURE_COPY_FAILURE/);assert.match(iss,/KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE/);
+ for(const marker of ['KSESSION_UPGRADE_ROOT_MISMATCH','KSESSION_REJECT_INSTANCE_LOCK'])assert.match(iss,new RegExp(`Log\\('${marker}'\\)`));
+ assert.match(iss,/if RunningProduct then begin Log\('KSESSION_REJECT_RUNNING'\); Result := RunningMessage; exit; end;/);
  assert.match(go,/fault-payload-hash", "KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED"/);
  assert.match(go,/instanceStable/);assert.match(go,/ownedStable/);assert.match(go,/core-beta1/);assert.match(go,/core-beta2/);assert.match(go,/core-reinstall/);
 });
@@ -56,7 +58,7 @@ test('portable restart expires temporary attachment ownership while admin verifi
  assert.doesNotMatch(core,/CORE_TEST_FAILED|console\.error\([^\n]*e\.message/);
  const upgrade=read('tools/windows-launcher/upgrade_windows_test.go');
  for(const marker of ['safeCoreProbeFailure(output)','CORE_PROBE_NO_SAFE_DIAGNOSTIC','CORE_PROBE_SYNTAX_FAILED','exec.Command(exe, "--check", args[0])','outputBytes=%d','outputSHA256=%s','TestCoreProbeTopLevelDiagnostic','coreProbe("BETA1_INITIAL"','coreProbe("BETA2_EXISTING"','coreProbe("REINSTALL_EXISTING"'])assert.match(upgrade,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
- for(const marker of ['safeSetupFailure(marker, result)','safeInstallerMarkers(result.logText)','observedFixedMarkers=%s','innoExitCode=%d','innoExitStatus=%s','elapsedMilliseconds=%d','logBytes=%d','logSHA256=%s','KSESSION_REJECT_SPACE_QUERY','safeInnoExitStatus(exitCode, processStarted)','INNO_EXIT_INITIALIZE_FAILED','INNO_EXIT_PREPARE_REJECTED','INNO_EXIT_UNEXPECTED_NONZERO','PROCESS_START_FAILED','unsafe Setup output escaped diagnostic filter'])assert.match(upgrade,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const marker of ['safeSetupFailure(marker, result)','safeInstallerMarkers(result.logText)','observedFixedMarkers=%s','innoExitCode=%d','innoExitStatus=%s','elapsedMilliseconds=%d','logBytes=%d','logSHA256=%s','KSESSION_REJECT_SPACE_QUERY','KSESSION_UPGRADE_ROOT_MISMATCH','KSESSION_REJECT_INSTANCE_LOCK','safeInnoExitStatus(exitCode, processStarted)','INNO_EXIT_INITIALIZE_FAILED','INNO_EXIT_PREPARE_REJECTED','INNO_EXIT_UNEXPECTED_NONZERO','PROCESS_START_FAILED','unsafe Setup output escaped diagnostic filter'])assert.match(upgrade,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.equal((upgrade.match(/tools\/tests\/windows-portable\/core-client\.cjs/g)||[]).length,3);
  assert.doesNotMatch(upgrade,/tools\/windows-portable\/core-client\.cjs/);
  assert.doesNotMatch(upgrade,/core probe phase=%s failed: %s[^\n]*string\(output\)/);

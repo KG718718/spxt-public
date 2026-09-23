@@ -490,13 +490,14 @@ begin
   end;
   if not SafePath(P) then begin Log('KSESSION_REJECT_PATH'); Result := '安装路径无效、包含重解析点或与数据/系统目录重叠。'; exit; end;
   if UpgradeMode then begin
-    if CompareText(P, PriorInstallRoot) <> 0 then begin Result := '升级安装目录与原登记不一致，已拒绝。'; exit; end;
+    if CompareText(P, PriorInstallRoot) <> 0 then begin Log('KSESSION_UPGRADE_ROOT_MISMATCH'); Result := '升级安装目录与原登记不一致，已拒绝。'; exit; end;
   end else begin
     if HasRegistration then begin Result := ExistingMessage; exit; end;
     if FileExists(P) or (DirExists(P) and NonEmpty(P)) then begin Log('KSESSION_REJECT_NONEMPTY'); Result := '目标目录不是空目录，拒绝覆盖未知文件。'; exit; end;
     if FileExists(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) or FileExists(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) then begin Result := '已有同名快捷方式，拒绝覆盖。请确认其来源后再安装。'; exit; end;
   end;
-  if RunningProduct or not AcquireExistingInstanceLock then begin Result := RunningMessage; exit; end;
+  if RunningProduct then begin Log('KSESSION_REJECT_RUNNING'); Result := RunningMessage; exit; end;
+  if not AcquireExistingInstanceLock then begin Log('KSESSION_REJECT_INSTANCE_LOCK'); Result := RunningMessage; exit; end;
   Ancestor := P;
   while not DirExists(Ancestor) do Ancestor := ExtractFileDir(Ancestor);
   if not GetSpaceOnDisk64(Ancestor, Free, Total) then begin Log('KSESSION_REJECT_SPACE_QUERY'); Result := '无法确认可用磁盘空间。'; exit; end;

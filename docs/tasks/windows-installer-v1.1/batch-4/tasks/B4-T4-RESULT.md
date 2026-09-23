@@ -1,6 +1,6 @@
 # B4-T4 Result — Upgrade Lifecycle / CI / Fault Injection
 
-状态：**BLOCKED — 第十四次 GitHub hosted Windows 仍真实完成 U01、U02、U15、U16、U17；U18 的安全摘要为 `observedFixedMarkers=NONE`，证明现有日志未记录任何允许的产品固定标识。** 这不能再解释为某个已知产品门禁命中；失败范围收窄到 Inno 初始化/阶段退出、进程启动时序或日志层。U03—U14、U18—U30 尚未生成真实 PASS 证据。本执行任务无 push 权限；下述 `NOT RUN` 不得改写成 PASS，主控整合并 push 后应以新增 Inno 退出状态诊断的下一次运行结果为准。
+状态：**BLOCKED — 第十五次 GitHub hosted Windows 仍真实完成 U01、U02、U15、U16、U17；U18 为 Inno exit 7 `INNO_EXIT_PREPARE_REJECTED`，但 `observedFixedMarkers=NONE`。** 这证明进程正常进入 Preparing to Install 并由非空结果拒绝，不是启动/初始化失败；升级模式下只剩安装根不一致，或运行状态/实例锁不可获取这两个未标记代码位置。现有证据仍不能在二者间作结论。U03—U14、U18—U30 尚未生成真实 PASS 证据。本执行任务无 push 权限；主控整合并 push 后应以新增固定分支 marker 的下一次运行结果为准。
 
 ## Preflight
 
@@ -18,6 +18,7 @@
 - 第十二次失败恢复轮核对指定主控 baseline `4e1c3adfaf5e301bde62d48fadff3083ed1a2eca` 已包含上一轮等价诊断增强 `400319e`；它与本任务上一 local commit 的产品、测试和结果文档内容相同，仅增加主控编排记录。tracked 状态 clean 后安全同步，未跟踪缓存保持原样。
 - 第十三次失败恢复轮核对指定主控 baseline `124d19273bf50795fce403952d61ad6fc9889959` 已包含上一轮等价路径修正；与本任务上一 local commit 相比仅增加主控编排记录。tracked 状态 clean 后安全 rebase 到该精确公开 commit，未跟踪 `.test-work/`、`node_modules/` 保持原样且不纳入提交。
 - 第十四次失败恢复轮核对指定主控 baseline `f8d51b736da2dcd95ccf0ceb391934ee7c389d6f` 已等价包含上一轮安全 marker 诊断，与本任务上一 local commit 相比仅增加主控编排记录；`git rebase` 安全跳过已应用提交并精确同步到该 baseline。未跟踪 `.test-work/`、`node_modules/` 保持原样且不纳入提交。
+- 第十五次失败恢复轮核对 worktree `E:/CodexWorkspace/CodexWorktrees/f8bd/public-source`、origin `https://github.com/KG718718/spxt-public.git` 正确；GitHub API 返回远端开发分支 HEAD 精确为 `9f90a8b99c533b3d7e9bdb72bd1edcec142cc313`。本地与该 commit 仅有主控编排差异，rebase 安全跳过已等价应用提交并同步到精确 baseline；未跟踪缓存保持原样。
 
 ## 已完成实现
 
@@ -60,10 +61,12 @@
 - 对比确认 fresh I23 使用同一 `setup-build/fault-space/artifact` 并已命中 `KSESSION_REJECT_SPACE`；Launcher 停止逻辑只关闭锁句柄，不删除 `.launcher.lock`，故“停止时删除锁文件”假设不成立。现有 failure Artifact 按既定 allowlist 不含 raw Setup logs，不能从证据判断是 process inspection、existing lock、space query、upgrade registration/preflight 或其他更早门禁。未猜测修改产品行为或降低断言；仅让 marker 缺失时输出源码内固定白名单标识、解码后日志字节数和 SHA256，未知 token、原文、路径、实例内容及秘密均不输出，并以专项测试验证过滤。
 - 第十四次 Setup run `35831228916` / job `107084053271` failure；failure Artifact `10738100665`，digest `sha256:1a92df013e620858fe444877dd55b42492040ecbf79a67b11bca04d974801401`。U01/U02/U15/U16/U17 再次 PASS；U18 摘要为 `observedFixedMarkers=NONE logBytes=3267 logSHA256=e8a0283ae5c89e71b0837ed9dd065fa08d34c835e19911828f6fd273df8b3a8a`。因此没有证据支持 process inspection、lock、space query、registration 或 preflight 中任一产品门禁已执行，不能再从 marker 缺失猜测产品原因。
 - 脚本未配置 `SetupMutex`，相同 `AppId` 只用于安装/卸载身份，现阶段也没有证据证明 mutex 冲突；`exec.Cmd.Run` 会等待其启动的进程退出，但尚不知道该次实际退出码及耗时。下一层诊断只记录进程是否启动、Inno 6.7.3 官方 0—8 退出码的固定白名单分类、整数退出码及耗时；未知非零码统一归类，启动失败不输出原始错误。raw log、路径、命令行、环境、实例内容与秘密仍不进入输出或 Artifact。
+- 第十五次 Setup run `35833689471` / job `107092001596` failure；failure Artifact `10738927441`，digest `sha256:d47bde04e5dca95e682ab50de8657c6bb87631d21ed40fa6617f3346b5760088`。U01/U02/U15/U16/U17 再次 PASS；U18 安全摘要为 `innoExitCode=7 innoExitStatus=INNO_EXIT_PREPARE_REJECTED elapsedMilliseconds=359 observedFixedMarkers=NONE logBytes=3267 logSHA256=27e5288388d1b9bcda4ed5f7c9d476c6512db4d60ddd385d1cbad5cd72527a20`。
+- 按 Inno 6.7.3 官方语义，exit 7 只表示 `PrepareToInstall` 返回非空结果。逐行审计当前升级分支后，所有空间、路径、preflight、transaction 拒绝均已有 marker；只有安装根比较失败，以及 `RunningProduct or not AcquireExistingInstanceLock` 没有 marker。359ms 不能可靠区分这些条件。本轮不猜测更改 fixture 或安全门禁，仅给三个拒绝原因补固定且不含路径的 `KSESSION_UPGRADE_ROOT_MISMATCH`、`KSESSION_REJECT_RUNNING`、`KSESSION_REJECT_INSTANCE_LOCK`；原检查顺序、拒绝结果、U18 预期与状态保护断言保持不变。
 
 ## U01—U30 状态
 
-U01、U02、U15、U16、U17 已在第十三次 hosted 真实 PASS；U18 为 **FAIL**；U03—U14、U19—U30 为 **NOT RUN — 等待主控整合后 GitHub hosted Windows 执行**。括号内是已经落地的真实测试路径，不是通过结论。
+U01、U02、U15、U16、U17 已在第十五次 hosted 再次真实 PASS；U18 为 **FAIL**；U03—U14、U19—U30 为 **NOT RUN — 等待主控整合后 GitHub hosted Windows 执行**。括号内是已经落地的真实测试路径，不是通过结论。
 
 | ID | 状态 / 预期证据 |
 | --- | --- |
@@ -84,7 +87,7 @@ U01、U02、U15、U16、U17 已在第十三次 hosted 真实 PASS；U18 为 **FA
 | U15 | PASS；第十三次 hosted 的损坏 data 被拒绝，夹具恢复原字节后 instance/owned state 精确相等 |
 | U16 | PASS；第十三次 hosted 的 binding 暂时缺失被拒绝，夹具恢复后 instance/owned state 精确相等 |
 | U17 | PASS；第十三次 hosted 的 program tamper 被拒绝，夹具恢复原字节后 instance/owned state 精确相等 |
-| U18 | FAIL；第十三、十四次 hosted 的 compile-time required-space fixture 均未出现预期空间标识；第十四次白名单 marker 为 NONE，失败发生在旧版状态相等断言之前 |
+| U18 | FAIL；第十五次 hosted 为 Inno exit 7/Prepare rejected，白名单 marker 仍为 NONE；失败发生在预期空间 marker 和旧版状态相等断言之前 |
 | U19 | NOT RUN；真实 `icacls` deny-write，旧版完整状态相等 |
 | U20 | NOT RUN；真实 Inno copy progress 取消，事务 rollback 后完整状态相等 |
 | U21 | NOT RUN；upgrade staging 文件项实际调用 `BeforeUpgradeCopy`，真实 Inno copy 前受控异常后完整状态相等 |
@@ -101,7 +104,7 @@ U01、U02、U15、U16、U17 已在第十三次 hosted 真实 PASS；U18 为 **FA
 ## 本地测试与首次失败
 
 - 首次 `npm test`：26 suites 中 1 FAIL，原因是本工作树未安装锁文件依赖 `write-excel-file/node`；不是产品断言失败。执行 `npm ci --omit=optional --ignore-scripts --no-audit --no-fund` 后完整重跑：`Public test files: 26; failed: 0`。本机 hosted-only suites 仍按原策略 SKIP，因此不得写成 Actions 的 742/fail0/skip0。
-- T4 lifecycle/fresh identity + T3 transaction：25 PASS / 0 FAIL / 0 SKIP；第十四次 hosted 仍真实证明 U01/U02/U15/U16/U17。静态契约要求 marker 缺失只报告白名单 marker、Inno 退出码/固定分类、耗时、日志字节数和 SHA256；Go 专项 `TestSafeCoreProbeFailure|TestCoreProbeTopLevelDiagnostic` PASS，并覆盖退出码 0、1、7、8、未知码及未启动分类；合成密码、路径和未知 marker 的端到端反泄漏断言 PASS；整个 Windows launcher 测试包 `go test -run '^$' .` 编译 PASS。
+- T4 lifecycle/fresh identity + T3 transaction：25 PASS / 0 FAIL / 0 SKIP；第十五次 hosted 仍真实证明 U01/U02/U15/U16/U17。静态契约要求 upgrade Prepare 的三个 pre-space 拒绝分别记录固定 marker，安全摘要白名单同步覆盖 root mismatch 与 instance lock；Go 专项 `TestSafeCoreProbeFailure|TestCoreProbeTopLevelDiagnostic` PASS，合成秘密反泄漏断言 PASS；整个 Windows launcher 测试包 `go test -run '^$' .` 编译 PASS。
 - upgrade-preflight 直接复跑：21 tests，20 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。新增 `subst` 正例及错误根、overlap、junction 负例均 PASS。
 - T1/T1A/T2 联合复跑：136 tests，135 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。workflow 已把该情况提升为硬失败，但修正后尚未 hosted 实跑。
 - installer contract：`INSTALLER CONTRACT PASS`；`R2 DATA LOCATION CONTRACT PASS`。
@@ -117,7 +120,7 @@ U01、U02、U15、U16、U17 已在第十三次 hosted 真实 PASS；U18 为 **FA
 - historical beta.1：沿用已审查 run `35781214911` / job `106927326670` / evidence Artifact `10718411569`；profile exact anchors 由 checked-in evidence 提供。本任务未重新下载历史发行包。
 - fresh beta.1 rebuild identity：run `35804632918` 已通过 build-only verifier 并生成通过 T1 `validateBundle` 的 fresh identity；该局部证据不等于 beta.2 生命周期通过。
 - beta.2 build identity：第十三次 Runtime、Launcher 与 Portable job 均通过，Setup 已真实编译且 `TestSetup` 完整 PASS；升级生命周期完成 U01/U02/U15/U16/U17 后在 U18 停止，完整身份结论仍为 N/A。
-- Actions：run `35800072543` / job `106988166109` = 历史 GUI failure，Artifact `10725736587`；run `35802015923` / job `106994266165` = source clean 合并门禁在构建前 failure、无 Artifact；run `35803383243` / job `106998595821` = subst 路径别名触发 top-level 固定门禁、构建前 failure、无 Artifact；run `35804632918` / job `107002547301` = beta.2 Portable core probe failure，failure Artifact `10727636644`；Runtime run `35804632969` / job `107002547427` = 文档隐私门禁 25/26 suites；第五次 Runtime run `35807722187` 与 Portable run `35807722105` = success，Setup run `35807722197` / job `107012151593` = preflight failure，failure Artifact `10728312842`；第六次 Runtime run `35810440373` = success，Setup run `35810440453` / job `107020593126` = same-version registration reason failure，failure Artifact `10729513518`；第七次 Setup run `35812914595` / job `107028173471` = reinstall fixture contamination failure，failure Artifact `10730302530`；第八次 Runtime/Launcher/Portable = success，Setup run `35814718991` / job `107033683886` = installer-owned state cleanup failure，failure Artifact `10731770877`；第九次 Runtime/Launcher/Portable = success，Setup run `35818266796` / job `107044402164` = 可见向导同步消息导致 COM input-synchronous fail-closed，failure Artifact `10732089023`；第十次 Runtime/Launcher/Portable = success，Setup run `35820908729` / job `107052341541` = fresh Setup PASS、升级 U01 PASS 后 beta.1 core probe 无安全明细失败，failure Artifact `10733961699`；第十一次 Setup run `35823498989` / job `107060182123` = U01 PASS 后 `CORE_PROBE_NO_SAFE_DIAGNOSTIC`，failure Artifact `10734241975`；第十二次 Setup run `35826316453` / job `107068715241` = U01 PASS 后 probe 路径不存在，failure Artifact `10735128742`；第十三次 Runtime `35828307756`、Launcher `35828307745`、Portable `35828307748` = success，Setup run `35828307741` / job `107074848326` = U01/U02/U15/U16/U17 PASS 后 U18 缺少空间标识，failure Artifact `10736682800`、digest `sha256:eb3f2330a88505353cd8c896cc5a555f96053d34e777bb7a6d36765e1d1c99d0`；第十四次 Setup run `35831228916` / job `107084053271` = 同五项 PASS 后 U18 `observedFixedMarkers=NONE`，failure Artifact `10738100665`、digest `sha256:1a92df013e620858fe444877dd55b42492040ecbf79a67b11bca04d974801401`。Inno 退出状态诊断后的复跑 pending，执行任务禁止 push。
+- Actions：run `35800072543` / job `106988166109` = 历史 GUI failure，Artifact `10725736587`；run `35802015923` / job `106994266165` = source clean 合并门禁在构建前 failure、无 Artifact；run `35803383243` / job `106998595821` = subst 路径别名触发 top-level 固定门禁、构建前 failure、无 Artifact；run `35804632918` / job `107002547301` = beta.2 Portable core probe failure，failure Artifact `10727636644`；Runtime run `35804632969` / job `107002547427` = 文档隐私门禁 25/26 suites；第五次 Runtime run `35807722187` 与 Portable run `35807722105` = success，Setup run `35807722197` / job `107012151593` = preflight failure，failure Artifact `10728312842`；第六次 Runtime run `35810440373` = success，Setup run `35810440453` / job `107020593126` = same-version registration reason failure，failure Artifact `10729513518`；第七次 Setup run `35812914595` / job `107028173471` = reinstall fixture contamination failure，failure Artifact `10730302530`；第八次 Runtime/Launcher/Portable = success，Setup run `35814718991` / job `107033683886` = installer-owned state cleanup failure，failure Artifact `10731770877`；第九次 Runtime/Launcher/Portable = success，Setup run `35818266796` / job `107044402164` = 可见向导同步消息导致 COM input-synchronous fail-closed，failure Artifact `10732089023`；第十次 Runtime/Launcher/Portable = success，Setup run `35820908729` / job `107052341541` = fresh Setup PASS、升级 U01 PASS 后 beta.1 core probe 无安全明细失败，failure Artifact `10733961699`；第十一次 Setup run `35823498989` / job `107060182123` = U01 PASS 后 `CORE_PROBE_NO_SAFE_DIAGNOSTIC`，failure Artifact `10734241975`；第十二次 Setup run `35826316453` / job `107068715241` = U01 PASS 后 probe 路径不存在，failure Artifact `10735128742`；第十三次 Runtime `35828307756`、Launcher `35828307745`、Portable `35828307748` = success，Setup run `35828307741` / job `107074848326` = U01/U02/U15/U16/U17 PASS 后 U18 缺少空间标识，failure Artifact `10736682800`、digest `sha256:eb3f2330a88505353cd8c896cc5a555f96053d34e777bb7a6d36765e1d1c99d0`；第十四次 Setup run `35831228916` / job `107084053271` = 同五项 PASS 后 U18 `observedFixedMarkers=NONE`，failure Artifact `10738100665`、digest `sha256:1a92df013e620858fe444877dd55b42492040ecbf79a67b11bca04d974801401`；第十五次 Setup run `35833689471` / job `107092001596` = 同五项 PASS 后 U18 exit 7/Prepare rejected 且 markers NONE，failure Artifact `10738927441`、digest `sha256:d47bde04e5dca95e682ab50de8657c6bb87631d21ed40fa6617f3346b5760088`。固定分支 marker 后的复跑 pending，执行任务禁止 push。
 - 本任务测试工具 ZIP 仅用于本地编译；未加入 Git。清理命令被本机安全策略拒绝，缓存仍在未跟踪 `.test-work`；主控整合时不得加入提交。
 
 ## 修改文件
@@ -132,7 +135,7 @@ U01、U02、U15、U16、U17 已在第十三次 hosted 真实 PASS；U18 为 **FA
 
 ## 风险与主控处理
 
-1. U18 的 Inno 退出阶段仍是本任务结论的硬阻塞。主控应先 Review/整合本 commit，仅 push `codex/windows-installer-v1.1`，重新执行 setup workflow；依据下一次 `innoExitCode/innoExitStatus/elapsedMilliseconds` 判断是初始化、Prepare 阶段还是其他异常。不得隐藏既有失败、自动重跑或把 Runtime/Launcher/Portable、`TestSetup` 及五个 U 项的局部成功写成完整成功。
+1. U18 的具体 pre-space 拒绝条件仍是本任务结论的硬阻塞。主控应先 Review/整合本 commit，仅 push `codex/windows-installer-v1.1`，重新执行 setup workflow；下一次必须出现 root mismatch、running、instance lock 或原预期 space marker 之一。不得隐藏既有失败、自动重跑或把 Runtime/Launcher/Portable、`TestSetup` 及五个 U 项的局部成功写成完整成功。
 2. 下一次真实运行仍可能暴露 build-only 闭包、Inno 生命周期次序、完整 registry values 恢复、ACL 继承或取消时机问题。任何新失败应保留首次 failure Artifact 并退回本任务修复。
 3. `U03/U04` 成功升级链不会使用伪造 registry；负例由既有 exact T1 gate 与真实 Portable-running Setup gate组成。若 QA 要求 v1.0.0 实物安装负例，需要新的受信任旧发行身份，不能在本任务伪造。
 4. 当前工作树因本任务生成的未跟踪 `.test-work/` 与 `node_modules/` 不 clean；它们不得提交。tracked 变更只限上列文件。
