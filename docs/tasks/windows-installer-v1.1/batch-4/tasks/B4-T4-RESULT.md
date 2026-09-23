@@ -26,6 +26,7 @@
 - Run `35800072543` / job `106988166109`：failure；failure Artifact `10725736587` 已由主控保留。
 - 失败约发生于日志 `00:06:11`：exact e9417f0 原 `ci.ps1` 自带可见向导 `TestSetup` 在 READY/输入同步阶段发生 COM timeout。此前 beta.1 Runtime、Launcher、Portable、candidate Setup 已实际生成，I01—I31/D01—D13 中大量门禁已执行；但整个历史 GUI 回归没有通过，不能写成 PASS。
 - 该 run 未进入 `fresh-identity.cjs`、beta.2 build 或 U01—U30。当前 build-only 路径是对此已保存阻塞的最小工程绕行，不删除、不重跑或隐藏首次失败；真实 beta.1→beta.2 生命周期仍由新版测试承担。
+- Build-only 修正后的第一次 run `35802015923` / job `106994266165` 在约 1 秒内失败，没有 failure Artifact，尚未开始任何构建。精确公开错误为 `rebuild-beta1.ps1:16 Exact clean beta.1 checkout required`；原合并条件无法区分 top-level、HEAD、tree 或 clean。当前修正把四项及关键 blob 分开为固定错误码，所有 Git 读取均显式使用 `-c core.autocrlf=false`，不删除 tracked-clean 门禁。
 
 ## U01—U30 状态
 
@@ -67,7 +68,7 @@
 ## 本地测试与首次失败
 
 - 首次 `npm test`：26 suites 中 1 FAIL，原因是本工作树未安装锁文件依赖 `write-excel-file/node`；不是产品断言失败。执行 `npm ci --omit=optional --ignore-scripts --no-audit --no-fund` 后完整重跑：`Public test files: 26; failed: 0`。本机 hosted-only suites 仍按原策略 SKIP，因此不得写成 Actions 的 742/fail0/skip0。
-- T4 lifecycle/fresh identity + T3 transaction：build-only 修正后 21 PASS / 0 FAIL / 0 SKIP；包含合成 build 闭包/Setup 篡改失败、新增 U21 接线及 U24/U25 断言先后契约。
+- T4 lifecycle/fresh identity + T3 transaction：source-check 修正后 22 PASS / 0 FAIL / 0 SKIP；新增合成 Git 路径/commit/tree/tracked-dirty/CRLF 门禁。
 - T1/T1A/T2 联合复跑：135 tests，134 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。workflow 已把该情况提升为硬失败，但尚未实跑。
 - installer contract：`INSTALLER CONTRACT PASS`；`R2 DATA LOCATION CONTRACT PASS`。
 - PowerShell AST：PASS；修改/新增 CJS `node --check`：PASS。
@@ -80,13 +81,13 @@
 - historical beta.1：沿用已审查 run `35781214911` / job `106927326670` / evidence Artifact `10718411569`；profile exact anchors 由 checked-in evidence 提供。本任务未重新下载历史发行包。
 - fresh beta.1 rebuild identity：N/A；首次 run 在生成 bundle 前被历史 GUI timeout 阻断，build-only 修正尚未 hosted 运行。
 - beta.2 build identity：N/A（未运行）。
-- Actions：首次 run `35800072543` / job `106988166109` = failure；failure Artifact `10725736587`。修正后复跑仍 pending，执行任务禁止 push。
+- Actions：run `35800072543` / job `106988166109` = 历史 GUI failure，Artifact `10725736587`；run `35802015923` / job `106994266165` = source clean 合并门禁在构建前 failure、无 Artifact。source-check 修正后复跑仍 pending，执行任务禁止 push。
 - 本任务测试工具 ZIP 仅用于本地编译；未加入 Git。清理命令被本机安全策略拒绝，缓存仍在未跟踪 `.test-work`；主控整合时不得加入提交。
 
 ## 修改文件
 
 - `.github/workflows/setup-v3.yml`
-- `tools/windows-installer/{build.cjs,ci.ps1,offline-ci.ps1,setup.iss,verify-artifact.cjs,fresh-identity.cjs,rebuild-beta1.ps1,verify-beta1-build.cjs}`
+- `tools/windows-installer/{build.cjs,ci.ps1,offline-ci.ps1,setup.iss,verify-artifact.cjs,fresh-identity.cjs,rebuild-beta1.ps1,verify-beta1-source.cjs,verify-beta1-build.cjs}`
 - `tools/tests/windows-installer/{fresh-identity.test.cjs,upgrade-lifecycle/contract.test.cjs,upgrade-preflight/preflight.test.cjs}`
 - `tools/windows-launcher/{setup_windows_test.go,upgrade_windows_test.go}`
 - `tools/tests/windows-portable/core-client.cjs`
