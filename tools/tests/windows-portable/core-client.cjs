@@ -45,9 +45,13 @@ async function call(p,body,token){const res=await fetch(url+p,{method:body===und
  const el=await call('/api/login',{username:employee,password:id.password});assert.equal(el.status,200);
  const bytes=pdf(['SYNTHETIC UPLOAD 12345.67']),form=new FormData();form.set('file',new Blob([bytes],{type:'application/pdf'}),'合成中文附件.pdf');
  if(mode!=='initial'){
-  assert.equal(typeof id.attachment,'string');const prior=fs.readFileSync(path.join(instance,'attachments',id.attachment));
-  const download=await fetch(url+'/attachments/'+encodeURIComponent(id.attachment),{headers:{Authorization:'Bearer '+el.data.token}});
-  assert.equal(download.status,200);assert.deepEqual(Buffer.from(await download.arrayBuffer()),prior);
+   assert.equal(typeof id.attachment,'string');const prior=fs.readFileSync(path.join(instance,'attachments',id.attachment));
+   const attachmentUrl=url+'/attachments/'+encodeURIComponent(id.attachment);
+   const employeeDownload=await fetch(attachmentUrl,{headers:{Authorization:'Bearer '+el.data.token}});
+   assert.equal(employeeDownload.status,403,'UNATTACHED_UPLOAD_EMPLOYEE_ACCESS_MUST_EXPIRE_AFTER_RESTART');
+   const adminDownload=await fetch(attachmentUrl,{headers:{Authorization:'Bearer '+token}});
+   assert.equal(adminDownload.status,200,'PERSISTED_ATTACHMENT_ADMIN_DOWNLOAD_FAILED');
+   assert.deepEqual(Buffer.from(await adminDownload.arrayBuffer()),prior);
  }
  const up=await fetch(url+'/api/upload',{method:'POST',headers:{Origin:url,Authorization:'Bearer '+el.data.token},body:form});assert.equal(up.status,200);const u=await up.json();assert.equal(u.originalName,'合成中文附件.pdf');assert.equal(path.basename(u.filename),u.filename);assert.equal(sha(fs.readFileSync(path.join(instance,'attachments',u.filename))),sha(bytes));
  if(mode==='initial'){id.attachment=u.filename;fs.writeFileSync(identityFile,JSON.stringify(id,null,2)+'\n',{mode:0o600});}

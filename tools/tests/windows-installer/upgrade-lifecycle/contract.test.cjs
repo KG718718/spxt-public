@@ -18,10 +18,11 @@ test('workflow rebuilds exact beta.1 and supplies a closed fresh plus historical
 });
 
 test('hosted gate makes file-symlink coverage mandatory and runs both real lifecycles offline',()=>{
- const ci=read('tools/windows-installer/ci.ps1'),offline=read('tools/windows-installer/offline-ci.ps1');
+ const ci=read('tools/windows-installer/ci.ps1'),offline=read('tools/windows-installer/offline-ci.ps1'),setup=read('.github/workflows/setup-v3.yml'),portable=read('.github/workflows/portable-v2b.yml'),hosted=read('tools/tests/windows-runtime/hosted-gate.cjs');
  assert.match(ci,/KSESSION_REQUIRE_FILE_SYMLINK='1'/);assert.match(ci,/upgrade-preflight\/preflight\.test\.cjs/);
  assert.match(offline,/\^TestSetup\$/);assert.match(offline,/\^TestUpgradeLifecycle\$/);
  assert.match(offline,/taskTick -lt 600/);
+ assert.match(setup,/testTotal -ne 742/);assert.match(portable,/testTotal -ne 742/);assert.match(hosted,/testTotal:suites\.reduce/);
 });
 
 test('real lifecycle has U01-U30 and all five required recoverable failure fixtures',()=>{
@@ -45,4 +46,10 @@ test('successful upgrade asserts real shortcut targets, arguments, and normalize
 test('artifact allowlist requires the closed thirty-check upgrade report',()=>{
  const verify=read('tools/windows-installer/verify-artifact.cjs');
  assert.match(verify,/UPGRADE-TEST-REPORT\.json/);assert.match(verify,/Object\.keys\(upgrade\.checks\)\.length,30/);
+});
+
+test('portable restart expires temporary attachment ownership while admin verifies persisted bytes',()=>{
+ const core=read('tools/tests/windows-portable/core-client.cjs');
+ for(const marker of ['UNATTACHED_UPLOAD_EMPLOYEE_ACCESS_MUST_EXPIRE_AFTER_RESTART','PERSISTED_ATTACHMENT_ADMIN_DOWNLOAD_FAILED','employeeDownload.status,403','adminDownload.status,200','Buffer.from(await adminDownload.arrayBuffer()),prior'])assert.match(core,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.ok(core.indexOf('employeeDownload.status,403')<core.indexOf('adminDownload.status,200'));
 });

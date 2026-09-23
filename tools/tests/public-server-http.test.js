@@ -92,7 +92,13 @@ try{
         }
     });
     let employee=await login(f,'test-employee');const approver=await login(f,'test-approver');
-    await check('employee cannot save system configuration; bytes unchanged',async()=>{
+    const restartAttachmentBytes=Buffer.from('%PDF-1.4\nSYNTHETIC RESTART ATTACHMENT\n%%EOF\n');let restartAttachmentName='';
+    await check('employee temporary attachment works before restart and configuration remains forbidden',async()=>{
+        const form=new FormData();form.set('file',new Blob([restartAttachmentBytes],{type:'application/pdf'}),'合成重启附件.pdf');
+        const uploaded=await fetch('http://127.0.0.1:'+f.port+'/api/upload',{method:'POST',headers:{Origin:'http://127.0.0.1:'+f.port,Authorization:'Bearer '+employee},body:form});
+        assert.equal(uploaded.status,200);const result=await uploaded.json();restartAttachmentName=result.filename;assert.equal(result.originalName,'合成重启附件.pdf');
+        const downloaded=await fetch('http://127.0.0.1:'+f.port+'/attachments/'+encodeURIComponent(restartAttachmentName),{headers:{Authorization:'Bearer '+employee}});
+        assert.equal(downloaded.status,200);assert.deepEqual(Buffer.from(await downloaded.arrayBuffer()),restartAttachmentBytes);
         const before=saved(f);assert.equal((await f.call('/api/config',{method:'PUT',token:employee,body:{expectedVersion:0,taxRate:0.02}})).status,403);
         assert.equal(saved(f),before);assert.equal(fs.existsSync(path.join(f.directory,'config.json')),false);
     });
@@ -144,6 +150,10 @@ try{
         assert.ok(f.port,f.output);assert.equal(saved(f),beforeRestart);
         assert.equal((await f.call('/api/data',{token:admin})).status,401);
         const token=await login(f,'test-admin');const r=await f.call('/api/config',{token});assert.equal(r.data.taxRate,0.02);assert.equal(r.data.configVersion,1);
+        const restartedEmployee=await login(f,'test-employee'),attachmentPath='/attachments/'+encodeURIComponent(restartAttachmentName);
+        assert.equal((await f.call(attachmentPath,{token:restartedEmployee})).status,403);
+        const downloaded=await fetch('http://127.0.0.1:'+f.port+attachmentPath,{headers:{Authorization:'Bearer '+token}});
+        assert.equal(downloaded.status,200);assert.deepEqual(Buffer.from(await downloaded.arrayBuffer()),restartAttachmentBytes);
     });
     await f.stop();f=null;
     for(const kind of ['attachments','backups','mail','corrupt-data','corrupt-config']){
