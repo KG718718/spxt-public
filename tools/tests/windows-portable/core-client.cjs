@@ -4,6 +4,14 @@ const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_pro
 const {sha,writeJSON}=require('../../windows-runtime/common.cjs');
 const [root,instance,portArg,evidence,mode]=process.argv.slice(2),port=Number(portArg),url='http://127.0.0.1:'+port;
 const app=path.join(root,'app'),load=createRequire(path.join(app,'package.json'));
+let coreStage='BOOT';
+function failureKind(e){
+ if(e?.code==='ERR_ASSERTION')return'ASSERTION';
+ if(e?.name==='TimeoutError'||e?.name==='AbortError')return'TIMEOUT';
+ if(e?.code==='ENOENT')return'MISSING_FILE';
+ if(e?.code==='EACCES'||e?.code==='EPERM')return'ACCESS_DENIED';
+ return'UNEXPECTED';
+}
 function pdf(lines,unicode=false){
  const objs=['',''],pageIds=[];
  const add=s=>{objs.push(s);return objs.length;};
@@ -28,23 +36,33 @@ async function call(p,body,token){const res=await fetch(url+p,{method:body===und
 (async()=>{
  const identityFile=path.join(instance,'.portable-test-identity.json');let id;
  if(mode==='initial'){
+  coreStage='SETUP_STATUS';
   assert.equal((await call('/api/setup')).data.initializationRequired,true);
+  coreStage='SETUP_INITIALIZE';
   id={username:'portable-synthetic-admin',password:'Synthetic-'+crypto.randomBytes(24).toString('hex')};
   assert.equal((await call('/api/setup',id)).status,201);writeJSON(identityFile,id);
+  coreStage='ZERO_DATA';
   const d=JSON.parse(fs.readFileSync(path.join(instance,'data.json')));assert.equal(d.users.length,1);for(const k of ['applications','payments','debts','clients','suppliers','invoices'])assert.deepEqual(d[k],[]);
- }else{id=JSON.parse(fs.readFileSync(identityFile));assert.equal((await call('/api/setup')).data.initializationRequired,false);}
+ }else{coreStage='EXISTING_IDENTITY';id=JSON.parse(fs.readFileSync(identityFile));assert.equal((await call('/api/setup')).data.initializationRequired,false);}
+ coreStage='ADMIN_LOGIN';
  const login=await call('/api/login',id);assert.equal(login.status,200);const token=login.data.token;assert.ok(token);
+ coreStage='PDF_FIXTURES';
  const samples=[{file:'english.pdf',lines:['SYNTHETIC 12345.67']},{file:'chinese.pdf',lines:['合成中文测试金额12345.67'],unicode:true},{file:'multipage.pdf',lines:['SYNTHETIC PAGE ONE 100.00','SYNTHETIC PAGE TWO 200.00','SYNTHETIC PAGE THREE 300.00']}];
  fs.mkdirSync(evidence,{recursive:true});for(const sample of samples)fs.writeFileSync(path.join(evidence,sample.file),pdf(sample.lines,sample.unicode));
+ coreStage='PDF_PROBE';
  const probe=path.join(__dirname,'pdf-probe.cjs'), node=path.join(root,'runtime/node.exe');
  const result=JSON.parse(cp.execFileSync(node,['--no-addons',probe,app,evidence],{windowsHide:true,timeout:60000,maxBuffer:2e6}).toString());assert.equal(result.status,'PASS');
+ coreStage='XLSX_EXPORT';
  const x=await fetch(url+'/api/exports?module=admin&format=xlsx&scope=all',{headers:{Authorization:'Bearer '+token}});assert.equal(x.status,200);
  const entries=load('fflate').unzipSync(new Uint8Array(await x.arrayBuffer()));assert.ok(entries['xl/workbook.xml']);
  const employee='portable-synthetic-employee';
+ coreStage='EMPLOYEE_CREATE';
  if(mode==='initial')assert.equal((await call('/api/users',{username:employee,password:id.password,role:'user'},token)).status,200);
+ coreStage='EMPLOYEE_LOGIN';
  const el=await call('/api/login',{username:employee,password:id.password});assert.equal(el.status,200);
  const bytes=pdf(['SYNTHETIC UPLOAD 12345.67']),form=new FormData();form.set('file',new Blob([bytes],{type:'application/pdf'}),'合成中文附件.pdf');
  if(mode!=='initial'){
+   coreStage='PERSISTED_ATTACHMENT';
    assert.equal(typeof id.attachment,'string');const prior=fs.readFileSync(path.join(instance,'attachments',id.attachment));
    const attachmentUrl=url+'/attachments/'+encodeURIComponent(id.attachment);
    const employeeDownload=await fetch(attachmentUrl,{headers:{Authorization:'Bearer '+el.data.token}});
@@ -53,9 +71,12 @@ async function call(p,body,token){const res=await fetch(url+p,{method:body===und
    assert.equal(adminDownload.status,200,'PERSISTED_ATTACHMENT_ADMIN_DOWNLOAD_FAILED');
    assert.deepEqual(Buffer.from(await adminDownload.arrayBuffer()),prior);
  }
+ coreStage='UPLOAD';
  const up=await fetch(url+'/api/upload',{method:'POST',headers:{Origin:url,Authorization:'Bearer '+el.data.token},body:form});assert.equal(up.status,200);const u=await up.json();assert.equal(u.originalName,'合成中文附件.pdf');assert.equal(path.basename(u.filename),u.filename);assert.equal(sha(fs.readFileSync(path.join(instance,'attachments',u.filename))),sha(bytes));
  if(mode==='initial'){id.attachment=u.filename;fs.writeFileSync(identityFile,JSON.stringify(id,null,2)+'\n',{mode:0o600});}
+ coreStage='BACKUP';
  const backup=await call('/api/backups',{},token);assert.equal(backup.status,200);assert.equal(backup.data.success,true);assert.equal(path.basename(backup.data.fileName),backup.data.fileName);
  assert.equal(sha(fs.readFileSync(path.join(instance,'backups',backup.data.fileName))),backup.data.sha256);
+ coreStage='COMPLETE';
  console.log(JSON.stringify({status:'PASS',mode,checks:['admin','login','english-pdf','chinese-pdf','multipage-pdf','xlsx','chinese-upload','structured-backup'],pdf:result}));
-})().catch(e=>{console.error('CORE_TEST_FAILED',e.message);process.exitCode=1;});
+})().catch(e=>{process.stderr.write('KSESSION_CORE_PROBE_DIAGNOSTIC '+JSON.stringify({code:'CORE_PROBE_FAILED',stage:coreStage,kind:failureKind(e)})+'\n');process.exitCode=1;});

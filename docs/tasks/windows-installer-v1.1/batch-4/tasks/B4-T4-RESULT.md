@@ -1,6 +1,6 @@
 # B4-T4 Result — Upgrade Lifecycle / CI / Fault Injection
 
-状态：**BLOCKED — 第九次 GitHub hosted Windows 运行已通过父目录 junction 拒绝、精确状态文件删除、正常重装及其后全部 fresh lifecycle 检查，但最终可见向导 harness 以同步跨进程消息触发安装，导致 WMI/COM 在 input-synchronous 上下文按 fail-closed 拒绝。** 尚未生成 U01—U30 的真实 PASS 证据。本执行任务无 push 权限；下述 `NOT RUN` 不得改写成 PASS，主控整合并 push 后应以修正后的下一次运行结果为准。
+状态：**BLOCKED — 第十次 GitHub hosted Windows 运行已证明可见向导异步修复真实通过，并进入 beta.1→beta.2 生命周期；U01 PASS 后的 beta.1 initial core probe 失败，但旧 harness 丢弃了 CombinedOutput，现有证据不足以确定内部失败阶段。** U02—U30 尚未生成真实 PASS 证据。本执行任务无 push 权限；下述 `NOT RUN` 不得改写成 PASS，主控整合并 push 后应以诊断增强后的下一次运行结果为准。
 
 ## Preflight
 
@@ -13,6 +13,7 @@
 - 第七次失败恢复轮核对指定主控 baseline `ed449ea08a2e4b0f8714a1a405a98f1be484fb6b` 已包含前两轮等价修复；它与本任务上一 local commit 的代码相同，仅增加主控编排记录。tracked 状态 clean 后使用 `reset --keep` 安全同步，未跟踪缓存保持原样。
 - 第八次失败恢复轮同样核对指定主控 baseline `8913b1ca900288c8cc229e5afd4be100720167aa` 已包含上轮等价修复 `6cb7769`，与本任务上一 local commit 仅有主控编排记录差异；tracked 状态 clean 后安全同步，未跟踪缓存保持原样。
 - 第九次失败恢复轮核对指定主控 baseline `add27a49fd15c2711151c787a58fdc3d3fcff5c0` 已包含上一轮等价修复 `61de717`；它与本任务上一 local commit 的产品、测试和结果文档内容相同，仅增加主控编排记录。tracked 状态 clean 后安全同步，未跟踪缓存保持原样。
+- 第十次失败恢复轮核对指定主控 baseline `ca579e42ce97e38e825cefcaaa6c7b1ad2bcabd1` 已包含上一轮等价修复 `2a03c20`；它与本任务上一 local commit 的产品、测试和结果文档内容相同，仅增加主控编排记录。tracked 状态 clean 后安全同步，未跟踪缓存保持原样。
 
 ## 已完成实现
 
@@ -45,14 +46,16 @@
 - 主控 Review 进一步发现，仅检查最终文件属性不能阻止父目录 junction 将删除重定向到安装根外。修正现先校验 `{app}\uninstall` 到卷根的完整既有目录链，任何 reparse 或非目录组件均固定拒绝，再检查并删除精确普通文件；该父链校验不读取 instance 绑定。hosted 生命周期测试新增真实 junction 反例：临时把 `uninstall` 目录移到合成目标并在原位置建立 junction，卸载必须以 `KSESSION_UNINSTALL_STATE_REJECTED` 失败，目标 `install-state.json` 保持逐字节不变，程序、登记和卸载器仍存在；测试随后只移除该精确 junction 并恢复目录，不使用递归删除。
 - 第九次候选 commit `add27a49fd15c2711151c787a58fdc3d3fcff5c0` 的 Runtime run `35818266817`、Launcher run `35818267029`、Portable run `35818266814` 均 success；Setup run `35818266796` / job `107044402164` failure，failure Artifact `10732089023`，digest `sha256:51ab60711af11e70614b4d1ba378b88fa424eaf0fd71923e59d42d5108bc76cc`。本次已实际证明 Inno 6.7.3 编译、父目录 junction 以 `KSESSION_UNINSTALL_STATE_REJECTED` 拒绝、正常卸载以 `KSESSION_UNINSTALL_STATE_REMOVED` 精确删除状态文件、正常重装以及 D07、I18、I30、I31、D13、I25、I20、I03 等后续检查通过；失败发生在最后的可见 GUI 向导自动化，尚未进入 U01—U30。
 - 可见向导日志依次到达 page1/page4/page100/page11；harness 通过跨进程 `SendMessageTimeoutW(WM_COMMAND)` 同步触发 Install 后，`PrepareToInstall` 中未修改的 `RunningProduct` 调用 WMI，COM 明确返回 `An outgoing call cannot be made since the application is dispatching an input-synchronous call`。产品正确记录 `KSESSION_PROCESS_INSPECTION_UNAVAILABLE`、保持 fail-closed 并停留 page11。修正只把同一真实、可见、启用按钮及其实际 parent/control ID 的标准通知改为 `PostMessageW` 异步排队，使向导从正常 UI 消息泵处理；每个预期按钮标签最多排队一次，避免轮询重复点击跨页。未改 WMI、`RunningProduct`、向导页、完成页 `[Run]`、timeout 或验收断言。
+- 第十次候选 commit `ca579e42ce97e38e825cefcaaa6c7b1ad2bcabd1` 的 Runtime run `35820908796`、Portable run `35820908704`、Launcher run `35820908664` 均 success；Setup run `35820908729` / job `107052341541` failure，failure Artifact `10733961699`，digest `sha256:f4b65ce960f7720c19d4b11e1414e27624f441e05d62ae548cec2b238cfdb0ae`。本次可见向导真实记录 Next、Install、Finish 均 queued，D10 PASS，`TestSetup` 104.34 秒 PASS；父目录 junction 拒绝、正常状态文件删除、卸载保留、重装恢复及 D07/I18/I30/I31/D13/I25/I20/I03 继续通过。随后 `TestUpgradeLifecycle` 完成 fresh rebuilt beta.1 安装及真实 registration/binding，U01 PASS。
+- 唯一新失败发生在 beta.1 Launcher 已 READY 后，以 beta.1 私有 Node 执行当前 `core-client.cjs` 的 initial probe；旧 `cmdOut` 只报告 `tool node.exe failed`，丢弃了 CombinedOutput，机器报告因此只有 U01 PASS，U02—U30 未执行。静态比较 exact beta.1 与当前 probe：原有 setup/login/PDF/XLSX/upload/backup 断言和 `pdf-probe.cjs` 相同；当前新增代码只影响 existing 模式及 initial 上传成功后的附件名保存，无法从现有证据推出具体失败断言。本轮不猜测改变期望，只为每个 probe 阶段输出固定 `CORE_PROBE_FAILED`、白名单 stage/kind；Go harness 仅从 CombinedOutput 接受该严格、短小的 JSON 行，日志另记 output 字节数和 SHA256，其他原始内容一律不输出。若 marker 缺失则只报 `CORE_PROBE_NO_SAFE_DIAGNOSTIC`、字节数和哈希。
 
 ## U01—U30 状态
 
-以下均为 **NOT RUN — 等待主控整合后 GitHub hosted Windows 执行**；括号内是已经落地的真实测试路径，不是通过结论。
+除 U01 外均为 **NOT RUN — 等待主控整合后 GitHub hosted Windows 执行**；括号内是已经落地的真实测试路径，不是通过结论。
 
 | ID | 状态 / 预期证据 |
 | --- | --- |
-| U01 | NOT RUN；fresh e9417f0 Setup 实装、唯一登记与 binding |
+| U01 | PASS；第十次 hosted 已完成 fresh e9417f0 Setup 实装、真实登记与 binding |
 | U02 | NOT RUN；beta.1 Launcher/私有 Node 运行时真实拒绝且进程仍存活 |
 | U03 | NOT RUN；beta.2 fresh 测试中的未登记 Portable 运行拒绝 + T1 exact gate |
 | U04 | NOT RUN；T1 legacy v1.0.0 exact-version 拒绝，不能作为成功升级来源 |
@@ -86,7 +89,7 @@
 ## 本地测试与首次失败
 
 - 首次 `npm test`：26 suites 中 1 FAIL，原因是本工作树未安装锁文件依赖 `write-excel-file/node`；不是产品断言失败。执行 `npm ci --omit=optional --ignore-scripts --no-audit --no-fund` 后完整重跑：`Public test files: 26; failed: 0`。本机 hosted-only suites 仍按原策略 SKIP，因此不得写成 Actions 的 742/fail0/skip0。
-- T4 lifecycle/fresh identity + T3 transaction：25 PASS / 0 FAIL / 0 SKIP；锁定卸载器仅在完整父目录链无 reparse 后删除精确普通 `install-state.json`，禁止枚举/递归；第九次 hosted 已实际通过 junction 拒绝和正常精确删除。静态契约另锁定可见向导只对真实可见、启用的预期按钮使用异步 `PostMessageW`，点击路径禁止同步 `SendMessageTimeoutW` 和 sleep；修正后的可见向导仍须下一次 hosted 复验。
+- T4 lifecycle/fresh identity + T3 transaction：25 PASS / 0 FAIL / 0 SKIP；第十次 hosted 已证明 junction 拒绝、正常精确删除及可见向导异步 Next→Install→Finish。静态契约新增固定 core stage marker、严格诊断白名单、输出字节数/SHA256 与三处生命周期 probe wrapper；未改任何 core 断言。
 - upgrade-preflight 直接复跑：21 tests，20 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。新增 `subst` 正例及错误根、overlap、junction 负例均 PASS。
 - T1/T1A/T2 联合复跑：136 tests，135 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。workflow 已把该情况提升为硬失败，但修正后尚未 hosted 实跑。
 - installer contract：`INSTALLER CONTRACT PASS`；`R2 DATA LOCATION CONTRACT PASS`。
@@ -101,8 +104,8 @@
 
 - historical beta.1：沿用已审查 run `35781214911` / job `106927326670` / evidence Artifact `10718411569`；profile exact anchors 由 checked-in evidence 提供。本任务未重新下载历史发行包。
 - fresh beta.1 rebuild identity：run `35804632918` 已通过 build-only verifier 并生成通过 T1 `validateBundle` 的 fresh identity；该局部证据不等于 beta.2 生命周期通过。
-- beta.2 build identity：第九次 Runtime、Launcher 与 Portable job 已通过，Setup 已真实编译并完成除最终可见向导外的 fresh lifecycle；但完整 Setup 回归仍失败，没有成功发行 Artifact，完整身份结论仍为 N/A。
-- Actions：run `35800072543` / job `106988166109` = 历史 GUI failure，Artifact `10725736587`；run `35802015923` / job `106994266165` = source clean 合并门禁在构建前 failure、无 Artifact；run `35803383243` / job `106998595821` = subst 路径别名触发 top-level 固定门禁、构建前 failure、无 Artifact；run `35804632918` / job `107002547301` = beta.2 Portable core probe failure，failure Artifact `10727636644`；Runtime run `35804632969` / job `107002547427` = 文档隐私门禁 25/26 suites；第五次 Runtime run `35807722187` 与 Portable run `35807722105` = success，Setup run `35807722197` / job `107012151593` = preflight failure，failure Artifact `10728312842`；第六次 Runtime run `35810440373` = success，Setup run `35810440453` / job `107020593126` = same-version registration reason failure，failure Artifact `10729513518`；第七次 Setup run `35812914595` / job `107028173471` = reinstall fixture contamination failure，failure Artifact `10730302530`；第八次 Runtime/Launcher/Portable = success，Setup run `35814718991` / job `107033683886` = installer-owned state cleanup failure，failure Artifact `10731770877`；第九次 Runtime/Launcher/Portable = success，Setup run `35818266796` / job `107044402164` = 可见向导同步消息导致 COM input-synchronous fail-closed，failure Artifact `10732089023`。异步 harness 修正后的复跑 pending，执行任务禁止 push。
+- beta.2 build identity：第十次 Runtime、Launcher 与 Portable job 已通过，Setup 已真实编译，完整 fresh lifecycle 和可见向导已通过；升级生命周期只完成 U01，完整身份结论仍为 N/A。
+- Actions：run `35800072543` / job `106988166109` = 历史 GUI failure，Artifact `10725736587`；run `35802015923` / job `106994266165` = source clean 合并门禁在构建前 failure、无 Artifact；run `35803383243` / job `106998595821` = subst 路径别名触发 top-level 固定门禁、构建前 failure、无 Artifact；run `35804632918` / job `107002547301` = beta.2 Portable core probe failure，failure Artifact `10727636644`；Runtime run `35804632969` / job `107002547427` = 文档隐私门禁 25/26 suites；第五次 Runtime run `35807722187` 与 Portable run `35807722105` = success，Setup run `35807722197` / job `107012151593` = preflight failure，failure Artifact `10728312842`；第六次 Runtime run `35810440373` = success，Setup run `35810440453` / job `107020593126` = same-version registration reason failure，failure Artifact `10729513518`；第七次 Setup run `35812914595` / job `107028173471` = reinstall fixture contamination failure，failure Artifact `10730302530`；第八次 Runtime/Launcher/Portable = success，Setup run `35814718991` / job `107033683886` = installer-owned state cleanup failure，failure Artifact `10731770877`；第九次 Runtime/Launcher/Portable = success，Setup run `35818266796` / job `107044402164` = 可见向导同步消息导致 COM input-synchronous fail-closed，failure Artifact `10732089023`；第十次 Runtime/Launcher/Portable = success，Setup run `35820908729` / job `107052341541` = fresh Setup PASS、升级 U01 PASS 后 beta.1 core probe 无安全明细失败，failure Artifact `10733961699`。诊断增强后的复跑 pending，执行任务禁止 push。
 - 本任务测试工具 ZIP 仅用于本地编译；未加入 Git。清理命令被本机安全策略拒绝，缓存仍在未跟踪 `.test-work`；主控整合时不得加入提交。
 
 ## 修改文件

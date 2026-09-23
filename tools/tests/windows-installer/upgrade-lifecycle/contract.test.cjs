@@ -52,6 +52,11 @@ test('portable restart expires temporary attachment ownership while admin verifi
  const core=read('tools/tests/windows-portable/core-client.cjs');
  for(const marker of ['UNATTACHED_UPLOAD_EMPLOYEE_ACCESS_MUST_EXPIRE_AFTER_RESTART','PERSISTED_ATTACHMENT_ADMIN_DOWNLOAD_FAILED','employeeDownload.status,403','adminDownload.status,200','Buffer.from(await adminDownload.arrayBuffer()),prior'])assert.match(core,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.ok(core.indexOf('employeeDownload.status,403')<core.indexOf('adminDownload.status,200'));
+ for(const marker of ['KSESSION_CORE_PROBE_DIAGNOSTIC','CORE_PROBE_FAILED','stage:coreStage','kind:failureKind(e)','SETUP_STATUS','PDF_PROBE','XLSX_EXPORT','UPLOAD','BACKUP'])assert.match(core,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.doesNotMatch(core,/CORE_TEST_FAILED|console\.error\([^\n]*e\.message/);
+ const upgrade=read('tools/windows-launcher/upgrade_windows_test.go');
+ for(const marker of ['safeCoreProbeFailure(output)','CORE_PROBE_NO_SAFE_DIAGNOSTIC','outputBytes=%d','outputSHA256=%s','coreProbe("BETA1_INITIAL"','coreProbe("BETA2_EXISTING"','coreProbe("REINSTALL_EXISTING"'])assert.match(upgrade,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.doesNotMatch(upgrade,/core probe phase=%s failed: %s[^\n]*string\(output\)/);
 });
 
 test('uninstaller removes only its exact ordinary state file before the fixture removes verified-empty shells',()=>{

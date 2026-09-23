@@ -15,6 +15,35 @@ import (
 	"testing"
 )
 
+type coreProbeDiagnostic struct {
+	Code  string `json:"code"`
+	Stage string `json:"stage"`
+	Kind  string `json:"kind"`
+}
+
+func safeCoreProbeFailure(output []byte) string {
+	allowedStages := map[string]bool{
+		"BOOT": true, "SETUP_STATUS": true, "SETUP_INITIALIZE": true, "ZERO_DATA": true,
+		"EXISTING_IDENTITY": true, "ADMIN_LOGIN": true, "PDF_FIXTURES": true, "PDF_PROBE": true,
+		"XLSX_EXPORT": true, "EMPLOYEE_CREATE": true, "EMPLOYEE_LOGIN": true,
+		"PERSISTED_ATTACHMENT": true, "UPLOAD": true, "BACKUP": true, "COMPLETE": true,
+	}
+	allowedKinds := map[string]bool{"ASSERTION": true, "TIMEOUT": true, "MISSING_FILE": true, "ACCESS_DENIED": true, "UNEXPECTED": true}
+	const prefix = "KSESSION_CORE_PROBE_DIAGNOSTIC "
+	for _, line := range strings.Split(string(output), "\n") {
+		line = strings.TrimSuffix(line, "\r")
+		if !strings.HasPrefix(line, prefix) || len(line) > len(prefix)+256 {
+			continue
+		}
+		var diagnostic coreProbeDiagnostic
+		if json.Unmarshal([]byte(strings.TrimPrefix(line, prefix)), &diagnostic) == nil &&
+			diagnostic.Code == "CORE_PROBE_FAILED" && allowedStages[diagnostic.Stage] && allowedKinds[diagnostic.Kind] {
+			return fmt.Sprintf("code=%s stage=%s kind=%s outputBytes=%d outputSHA256=%s", diagnostic.Code, diagnostic.Stage, diagnostic.Kind, len(output), digest(output))
+		}
+	}
+	return fmt.Sprintf("code=CORE_PROBE_NO_SAFE_DIAGNOSTIC outputBytes=%d outputSHA256=%s", len(output), digest(output))
+}
+
 // TestUpgradeLifecycle is intentionally separate from TestSetup: the former proves a real
 // beta.1 -> beta.2 transition while the latter keeps the beta.2 fresh-install regression.
 func TestUpgradeLifecycle(t *testing.T) {
@@ -55,6 +84,15 @@ func TestUpgradeLifecycle(t *testing.T) {
 			t.Fatalf("tool %s failed", filepath.Base(exe))
 		}
 		return b
+	}
+	coreProbe := func(phase, exe string, args ...string) {
+		t.Helper()
+		c := exec.Command(exe, args...)
+		c.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		output, err := c.CombinedOutput()
+		if err != nil {
+			t.Fatalf("core probe phase=%s failed: %s", phase, safeCoreProbeFailure(output))
+		}
 	}
 	folders := cmdOut(ps, "-NoProfile", "-NonInteractive", "-Command", "$j=@{desktop=[Environment]::GetFolderPath('Desktop','DoNotVerify');programs=[Environment]::GetFolderPath('Programs','DoNotVerify')}|ConvertTo-Json -Compress;[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($j))")
 	folderBytes, e := base64.StdEncoding.DecodeString(strings.TrimSpace(string(folders)))
@@ -237,7 +275,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 	pid := uint32(ready["pid"].(float64))
 	port := int(ready["port"].(float64))
 	node := filepath.Join(root, "runtime", "node.exe")
-	cmdOut(node, filepath.Join(repo, "tools/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-beta1"), "initial")
+	coreProbe("BETA1_INITIAL", node, filepath.Join(repo, "tools/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-beta1"), "initial")
 	runningLog := runSetup(beta2, false)
 	assertLog(runningLog, "KSESSION_REJECT_RUNNING")
 	if !alivePID(pid) || !alivePID(uint32(app.Process.Pid)) {
@@ -350,7 +388,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 	ready = lastEvent(instance, "READY")
 	pid = uint32(ready["pid"].(float64))
 	port = int(ready["port"].(float64))
-	cmdOut(filepath.Join(root, "runtime", "node.exe"), filepath.Join(repo, "tools/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-beta2"), "existing")
+	coreProbe("BETA2_EXISTING", filepath.Join(root, "runtime", "node.exe"), filepath.Join(repo, "tools/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-beta2"), "existing")
 	record("U12", "original synthetic Admin login through upgraded program")
 	record("U13", "original synthetic attachment plus download/upload core checks through upgraded program")
 	if !dispatchExisting(cls, launcher, true) {
@@ -392,7 +430,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 	ready = lastEvent(instance, "READY")
 	pid = uint32(ready["pid"].(float64))
 	port = int(ready["port"].(float64))
-	cmdOut(filepath.Join(target, "program", "runtime", "node.exe"), filepath.Join(repo, "tools/windows-portable/core-client.cjs"), filepath.Join(target, "program"), instance, fmt.Sprint(port), filepath.Join(base, "core-reinstall"), "existing")
+	coreProbe("REINSTALL_EXISTING", filepath.Join(target, "program", "runtime", "node.exe"), filepath.Join(repo, "tools/windows-portable/core-client.cjs"), filepath.Join(target, "program"), instance, fmt.Sprint(port), filepath.Join(base, "core-reinstall"), "existing")
 	record("U28", "original synthetic Admin and attachment accessible after uninstall/fresh reinstall")
 	if !dispatchExisting(cls, launcher, true) {
 		t.Fatal("stop reinstall failed")
@@ -410,5 +448,24 @@ func TestUpgradeLifecycle(t *testing.T) {
 	sort.Strings(ids)
 	if len(ids) != 30 || ids[0] != "U01" || ids[29] != "U30" {
 		t.Fatalf("U coverage incomplete: %v", ids)
+	}
+}
+
+func TestSafeCoreProbeFailure(t *testing.T) {
+	output := []byte("password=Synthetic-secret\nKSESSION_CORE_PROBE_DIAGNOSTIC {\"code\":\"CORE_PROBE_FAILED\",\"stage\":\"PDF_PROBE\",\"kind\":\"ASSERTION\"}\nCookie: secret\n")
+	summary := safeCoreProbeFailure(output)
+	for _, marker := range []string{"code=CORE_PROBE_FAILED", "stage=PDF_PROBE", "kind=ASSERTION", "outputBytes=", "outputSHA256="} {
+		if !strings.Contains(summary, marker) {
+			t.Fatalf("missing safe diagnostic field %s", marker)
+		}
+	}
+	for _, forbidden := range []string{"Synthetic-secret", "Cookie", "password"} {
+		if strings.Contains(summary, forbidden) {
+			t.Fatal("unsafe command output escaped diagnostic filter")
+		}
+	}
+	fallback := safeCoreProbeFailure([]byte("token=private"))
+	if !strings.Contains(fallback, "code=CORE_PROBE_NO_SAFE_DIAGNOSTIC") || strings.Contains(fallback, "private") {
+		t.Fatal("unsafe fallback diagnostic")
 	}
 }
