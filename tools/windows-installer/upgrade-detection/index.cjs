@@ -129,6 +129,13 @@ function within(parent, child) {
   return c === p || c.startsWith(p + '\\');
 }
 
+function volumeNormalizedPath(value) {
+  const normalized = path.normalize(value);
+  const volumeRoot = path.parse(normalized).root;
+  const physicalRoot = fs.realpathSync.native(volumeRoot);
+  return path.resolve(physicalRoot, path.relative(volumeRoot, normalized));
+}
+
 function ensureNoReparse(realPath) {
   let current = path.resolve(realPath);
   for (;;) {
@@ -145,14 +152,17 @@ function ensureNoReparse(realPath) {
   }
   if (fs.existsSync(realPath)) {
     const resolved = fs.realpathSync.native(realPath);
-    if (path.resolve(resolved).toLowerCase() !== path.resolve(realPath).toLowerCase()) {
+    if (path.resolve(resolved).toLowerCase() !== volumeNormalizedPath(realPath).toLowerCase()) {
       reject(24, 'PATH_REPARSE', '目录链包含重解析点。');
     }
   }
 }
 
 function validatePaths(root, instance) {
-  if (within(root, instance) || within(instance, root)) reject(24, 'PATH_OVERLAP', '程序目录与实例目录交叠。');
+  let physicalRoot, physicalInstance;
+  try { physicalRoot = volumeNormalizedPath(root); physicalInstance = volumeNormalizedPath(instance); }
+  catch { reject(24, 'PATH_UNSAFE', '无法确认程序目录与实例目录的本地卷身份。'); }
+  if (within(physicalRoot, physicalInstance) || within(physicalInstance, physicalRoot)) reject(24, 'PATH_OVERLAP', '程序目录与实例目录交叠。');
   const actual = {root, instance};
   ensureNoReparse(actual.root);
   ensureNoReparse(actual.instance);

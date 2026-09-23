@@ -1,6 +1,6 @@
 # B4-T4 Result — Upgrade Lifecycle / CI / Fault Injection
 
-状态：**BLOCKED — 第十九次 GitHub hosted Windows 仍真实完成 U01、U02、U15—U18；U20 在复制/取消前固定命中 `KSESSION_UPGRADE_GATE_IDENTITY_REJECTED`。** U18 在 identity gate 之前因空间门禁退出，既有证据不能证明是 U18 污染，也不能区分 registration/binding/path/manifest/program/build/runtime/launcher。经用户批准进入 Identity Gate Stop-Loss：只增加不改变接受条件的固定阶段诊断及独立 hosted 最小复现路径；取得唯一阶段码前不猜修生产身份规则。
+状态：**BLOCKED — Identity Gate Stop-Loss 第一轮已把 U20 前置拒绝唯一定位为 `IDENTITY_PATH`；最小生产修正及本地回归已完成，等待主控整合后使用保留的第二轮 hosted identity-only 额度验证。** 第十九次 GitHub hosted Windows 仍真实完成 U01、U02、U15—U18；U20 尚未进入复制/取消，不能写成 PASS。修正只允许 Windows `subst` 卷根表示映射到同一物理卷；仍逐级拒绝安装根/实例路径内部 junction/reparse、8.3 内部别名、不同目录及物理重叠。
 
 ## Preflight
 
@@ -23,6 +23,7 @@
 - 第十七次失败恢复轮复核同一 worktree/origin；GitHub API 返回远端开发分支 HEAD 精确为 `88fa2f5d269d1906953588fb296f9fd7d4b7e21a`，与用户指定 main/dev HEAD 一致。本地安全 rebase 到该 baseline，上一轮等价提交被跳过，未跟踪缓存未修改。
 - 第十八次失败恢复轮从用户指定且本地可验证的 baseline `eaa2435f6eef158e9f049b36026aa00ef61613ba` 继续；安全 rebase 跳过已等价整合的上一 local commit，HEAD 精确同步到该 commit。网络 fetch 尝试因连接 GitHub 超时失败，因此不宣称本轮独立远端复核；未跟踪缓存保持原样。
 - 第十九次失败恢复轮核对 worktree/origin 正确，并安全 rebase 到用户指定 baseline `3f35d5155a5d5af7194e2ad16f0437b2a9afb206`；上一 local commit 被识别为已等价整合。现有八个阶段诊断文件在该 baseline 上继续，未跟踪缓存不纳入提交。
+- Stop-Loss 修复轮核对同一 worktree/origin，并安全 rebase 到用户指定且本地存在的公开 baseline `8e2cad06100269bc272c9903012a70d313f0215d`；上一 local commit 已被主控等价整合并由 rebase 跳过。未跟踪 `.test-work/`、`node_modules/` 保持原样且不纳入提交。
 
 ## 已完成实现
 
@@ -115,10 +116,12 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 
 - 首次 `npm test`：26 suites 中 1 FAIL，原因是本工作树未安装锁文件依赖 `write-excel-file/node`；不是产品断言失败。执行 `npm ci --omit=optional --ignore-scripts --no-audit --no-fund` 后完整重跑：`Public test files: 26; failed: 0`。本机 hosted-only suites 仍按原策略 SKIP，因此不得写成 Actions 的 742/fail0/skip0。
 - T4 lifecycle/fresh identity + T3 transaction：第十九次 hosted 真实证明 U01/U02/U15—U18；U20 仍 FAIL。本轮 identity 阶段分类、Stop-Loss workflow 边界、gate/CLI/Inno marker、反泄露及既有 detection/lifecycle/transaction 联合 74 PASS；upgrade-preflight 20 PASS / 0 FAIL / 1 privilege SKIP，PowerShell AST、Go 反泄露、静态 installer/data-location contract 均 PASS。完整本地门禁见本轮最终回单。
+- Stop-Loss `IDENTITY_PATH` 修复后，upgrade-detection 聚焦回归 49 tests：48 PASS / 0 FAIL / 1 SKIP；联合 fresh identity、detection、lifecycle、transaction 回归 78 tests：77 PASS / 0 FAIL / 1 SKIP。唯一 SKIP 是本机卷未提供可用 8.3 alias；该负例在能取得且实际存在的 8.3 表示时强制期待 `PATH_REPARSE`。真实 `subst` 卷根正例、跨别名物理 overlap、不同登记根及内部 junction 负例均执行并 PASS。修复后 upgrade-preflight 21 tests：20 PASS / 0 FAIL / 1 本机 file-symlink privilege SKIP；installer/data-location contract 均 PASS。
 - upgrade-preflight 直接复跑：21 tests，20 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。新增 `subst` 正例及错误根、overlap、junction 负例均 PASS。
 - T1/T1A/T2 联合复跑：136 tests，135 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。workflow 已把该情况提升为硬失败，但修正后尚未 hosted 实跑。
 - installer contract：`INSTALLER CONTRACT PASS`；`R2 DATA LOCATION CONTRACT PASS`。
 - 本轮本机公开测试入口：26 test files / failed 0（hosted-only 项仍按原策略 SKIP）；`public-product-docs.test.js` 单独复跑 8 PASS，既有隐私断言未修改。另以 `GITHUB_ACTIONS=true` 独立运行真实 server HTTP 专项 25 PASS；上传/同进程读取已合并进原员工权限 check，重启后员工 403、Admin 下载 200 及字节不变已合并进原 restart check，reportedChecks 净变化为 0。两个 workflow 继续硬锁 26 suites / 742 tests，不修改门禁。
+- 当前修复再次运行 `npm test`：`Public test files: 26; failed: 0`；hosted-only 项仍按既定策略 SKIP，不能冒充 hosted 结果。两个修改 CJS 的 `node --check` 及 `git diff --check` 均 PASS。
 - PowerShell AST：PASS；修改/新增 CJS `node --check`：PASS。
 - 仓库固定 Go 1.27.1 ZIP SHA256 `a3911b5e0e1b1053f25ed0675f4c1c6aad1e2bfcf253df2b9be4caabd2edd95d` 核对通过；`gofmt` 完成；`go test -run '^$' .` 编译整个 `windows-launcher` 测试包 PASS（无真实测试执行）。首次 `Invoke-WebRequest` 因 EOF 未产生 ZIP；固定 hash 门禁停止，随后 `curl` 受限重试成功。
 - `git diff --check`：PASS（仅现有 LF→CRLF checkout warning）。
@@ -135,6 +138,7 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - 第十七次补充 Actions：Setup run `35841262430` / job `107116614557` = U18 PASS 后 U20 在 copy/cancel 前被 upgrade preflight rejection 截断；failure Artifact `10742285228`，digest `sha256:101e3c8910f8b2ee9972330cd1118f166cdc3595dbf7e2579076d67c8b7f65d0`。内部 request/plan 根目录表示修正后的复跑 pending，执行任务禁止 push。
 - 第十八次补充 Actions：Setup run `35843571342` / job `107124188994` = U01/U02/U15—U18 PASS，U20 仍为 `observedFixedMarkers=KSESSION_UPGRADE_PREFLIGHT_REJECTED innoExitCode=7 innoExitStatus=INNO_EXIT_PREPARE_REJECTED elapsedMilliseconds=3896 logBytes=5346 logSHA256=bd6e9fb8abec2ce1349518351ea4490b37ac9a1e31f3b8b8b85821aa30d2f7c3`；failure Artifact `10742583830`，digest `sha256:a13c74df6cd36659c8b885ec3f02020c56197cfbf69c104ebe1de4d6923d47af`。主控保存的 Artifact 只含封闭报告与编译证据，没有可安全证明内部字段的运行日志；固定 reason marker 后复跑 pending。
 - 第十九次补充 Actions：Setup run `35846952206` / job `107135286484` 的 U01/U02/U15—U18 PASS，U20 固定为 identity rejected；failure Artifact `10744014234`。独立新 workflow 因不在默认分支登记而被 GitHub dispatch API 404 拒绝，未产生 run、不计两轮诊断；现将 Stop-Loss 作为已登记 `setup-v3.yml` 的严格互斥 identity job，只执行 exact fresh beta.1 rebuild/install、真实 HKCU64 registration/binding 快照和当前 detection/gate identity 调用。
+- Stop-Loss 第一轮：`setup-v3.yml` workflow_dispatch run `35860479890` / identity job `107179191714`，HEAD `8e2cad06100269bc272c9903012a70d313f0215d`；setup 与 historical jobs 均为 skipped，identity-only 路径在约 3 分 27 秒后唯一返回 `IDENTITY_PATH`。Artifact `10750690652` 只有封闭 JSON `{"schema":1,"status":"REJECT","reason":"IDENTITY_PATH"}`，未泄露路径或身份细节。源码对比确认 `upgrade-detection` 直接比较物理 `realpath` 与原始 `E:` 路径，把 hosted runner 的 `subst` 卷根误判为内部重解析；同仓库 `upgrade-preflight` 已采用“仅物理化卷根、保留相对路径”的安全边界。当前修正同步该边界，并以物理卷表示做 overlap 检查；逐级逻辑路径 reparse 检查不变。
 
 ## 修改文件
 
@@ -152,7 +156,7 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 
 ## 风险与主控处理
 
-1. U20 identity 拒绝的具体阶段仍未知，是本任务结论的硬阻塞。主控整合后应对已登记 `setup-v3.yml` 做无 input dispatch（安全默认 identity），最多两轮；取得唯一 `IDENTITY_*` 阶段码后再退回本任务做有证据的最小修复，不得选择 `full`。最终仍必须到达真实 Inno copy progress 取消 marker，并通过 rollback 后完整状态相等。
+1. Stop-Loss 两轮额度已使用一轮；第一轮唯一定位 `IDENTITY_PATH`，当前本地修正尚无 hosted PASS。主控整合后只可使用保留的第二轮运行已登记 `setup-v3.yml` 的 identity-only 默认路径，不得选择 `full` 或增加第三轮诊断。只有该轮返回 `IDENTITY_ACCEPTED` 才能解除本层阻塞；真实 U20 复制进度取消及 rollback 完整状态相等仍需后续完整 hosted 生命周期证明。
 2. 下一次真实运行仍可能暴露 build-only 闭包、Inno 生命周期次序、完整 registry values 恢复、ACL 继承或取消时机问题。任何新失败应保留首次 failure Artifact 并退回本任务修复。
 3. `U03/U04` 成功升级链不会使用伪造 registry；负例由既有 exact T1 gate 与真实 Portable-running Setup gate组成。若 QA 要求 v1.0.0 实物安装负例，需要新的受信任旧发行身份，不能在本任务伪造。
 4. 当前工作树因本任务生成的未跟踪 `.test-work/` 与 `node_modules/` 不 clean；它们不得提交。tracked 变更只限上列文件。

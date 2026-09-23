@@ -69,6 +69,21 @@ function cleanup(f) {
   fs.rmSync(f.temporary, {recursive: true, force: true});
   try { fs.rmdirSync(path.dirname(f.temporary)); } catch {}
 }
+function substFixture(t, target) {
+  assert.equal(process.platform, 'win32');
+  const subst = path.join(process.env.SystemRoot, 'System32', 'subst.exe');
+  const letter = 'ZYXWVUTSRQP'.split('').find(candidate => !fs.existsSync(candidate + ':\\'));
+  assert.ok(letter, 'no unused drive letter for synthetic subst alias');
+  const drive = letter + ':';
+  assert.equal(cp.spawnSync(subst, [drive, target], {encoding: 'utf8', windowsHide: true}).status, 0);
+  t.after(() => assert.equal(cp.spawnSync(subst, [drive, '/D'], {encoding: 'utf8', windowsHide: true}).status, 0));
+  return drive + '\\';
+}
+function shortPath(target) {
+  const command = `for %I in ("${target}") do @echo %~sI`;
+  const result = cp.spawnSync(process.env.ComSpec, ['/d', '/s', '/c', command], {encoding: 'utf8', windowsHide: true});
+  return result.status === 0 ? result.stdout.trim() : '';
+}
 function expectCode(f, code) {
   assert.throws(() => validate(f.snapshot, f.policy), error => error instanceof Rejection && error.code === code);
 }
@@ -181,6 +196,44 @@ test('path overlap and reparse/junction roots are rejected', async t => {
       f.snapshot.registrations[0].installLocation = link;
       f.snapshot.registrations[0].uninstallString = `"${link}\\uninstall\\unins000.exe"`;
       f.snapshot.bindings[0].installRoot = link;
+      expectCode(f, 'PATH_REPARSE');
+    } finally { cleanup(f); }
+  });
+});
+
+test('volume-root alias is accepted while cross-alias overlap and internal aliases stay rejected', async t => {
+  await t.test('subst volume root preserves the exact installed identity', t => {
+    const f = fixture('SUBST-ROOT');
+    try {
+      const alias = substFixture(t, f.temporary), root = path.join(alias, 'installed'), instance = path.join(alias, 'instance');
+      f.snapshot.registrations[0].installLocation = root; f.snapshot.registrations[0].uninstallString = `"${root}\\uninstall\\unins000.exe"`;
+      f.snapshot.bindings[0].installRoot = root; f.snapshot.bindings[0].instance = instance;
+      writeBinding(path.join(f.uninstall, 'instance-binding.ini'), root, instance);
+      assert.equal(validate(f.snapshot, f.policy).code, 'ELIGIBLE_BETA1');
+    } finally { cleanup(f); }
+  });
+  await t.test('overlap remains rejected when only one side uses the volume alias', t => {
+    const f = fixture('SUBST-OVERLAP');
+    try {
+      const alias = substFixture(t, f.temporary), root = path.join(alias, 'installed'), overlap = path.join(f.actualRoot, 'nested-instance');
+      fs.mkdirSync(overlap); f.snapshot.registrations[0].installLocation = root;
+      f.snapshot.registrations[0].uninstallString = `"${root}\\uninstall\\unins000.exe"`;
+      f.snapshot.bindings[0].installRoot = root; f.snapshot.bindings[0].instance = overlap;
+      expectCode(f, 'PATH_OVERLAP');
+    } finally { cleanup(f); }
+  });
+  await t.test('8.3 internal path alias is not treated as a volume-root alias', t => {
+    const f = fixture('SHORT-PATH');
+    try {
+      const short = shortPath(f.actualRoot);
+      if (!short || short.toLowerCase() === f.actualRoot.toLowerCase() || !fs.existsSync(short)) {
+        t.skip('usable 8.3 alias unavailable');
+        return;
+      }
+      f.snapshot.registrations[0].installLocation = short;
+      f.snapshot.registrations[0].uninstallString = `"${short}\\uninstall\\unins000.exe"`;
+      f.snapshot.bindings[0].installRoot = short;
+      writeBinding(path.join(f.uninstall, 'instance-binding.ini'), short, f.winInstance);
       expectCode(f, 'PATH_REPARSE');
     } finally { cleanup(f); }
   });
