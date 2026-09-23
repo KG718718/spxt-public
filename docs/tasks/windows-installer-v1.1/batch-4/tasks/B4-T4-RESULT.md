@@ -1,6 +1,6 @@
 # B4-T4 Result — Upgrade Lifecycle / CI / Fault Injection
 
-状态：**BLOCKED — 第十六次 GitHub hosted Windows 仍真实完成 U01、U02、U15、U16、U17；U18 固定命中 `KSESSION_UPGRADE_ROOT_MISMATCH`。** 根因已确认：Inno Setup 6.7.3 自动登记 `InstallLocation` 时给 `WizardDirValue` 增加尾反斜杠，而 `{app}`/harness `/DIR` 使用无尾反斜杠形式；产品用原始字符串比较，把同一真实目录误判为不同安装根。已做仅忽略尾分隔符的最小比较修正，不接受不同目录、subst 别名或重解析路径。U03—U14、U18—U30 尚未生成真实 PASS 证据，修正后 hosted 复验仍是硬门禁。
+状态：**BLOCKED — 第十七次 GitHub hosted Windows 已真实完成 U01、U02、U15—U18；U20 fault-cancel 随后在复制/取消前被 `KSESSION_UPGRADE_PREFLIGHT_REJECTED` 截断。** 根因是内部升级 request 的路径表示不一致：identity helper 返回去尾分隔符的 install root，而 request preflight 仍携带 Inno 自动登记的尾反斜杠，cross-helper 精确一致性检查必然失败。已只规范化内部 preflight request 与 transaction plan 的已登记根目录；真实登记快照、升级 preflight、跨 helper 检查、取消/rollback 预期和业务逻辑均未放宽。U20 修正后 hosted 复验仍是硬门禁。
 
 ## Preflight
 
@@ -20,6 +20,7 @@
 - 第十四次失败恢复轮核对指定主控 baseline `f8d51b736da2dcd95ccf0ceb391934ee7c389d6f` 已等价包含上一轮安全 marker 诊断，与本任务上一 local commit 相比仅增加主控编排记录；`git rebase` 安全跳过已应用提交并精确同步到该 baseline。未跟踪 `.test-work/`、`node_modules/` 保持原样且不纳入提交。
 - 第十五次失败恢复轮核对 worktree `E:/CodexWorkspace/CodexWorktrees/f8bd/public-source`、origin `https://github.com/KG718718/spxt-public.git` 正确；GitHub API 返回远端开发分支 HEAD 精确为 `9f90a8b99c533b3d7e9bdb72bd1edcec142cc313`。本地与该 commit 仅有主控编排差异，rebase 安全跳过已等价应用提交并同步到精确 baseline；未跟踪缓存保持原样。
 - 第十六次失败恢复轮复核同一 worktree/origin；GitHub API 返回远端开发分支 HEAD 精确为 `16c87d5e086a805520cea6a14c852a5aa2f66ff5`，与用户指定 main/dev HEAD 一致。本地安全 rebase 到该 baseline，上一轮等价提交被跳过，未跟踪 `.test-work/`、`node_modules/` 未修改。
+- 第十七次失败恢复轮复核同一 worktree/origin；GitHub API 返回远端开发分支 HEAD 精确为 `88fa2f5d269d1906953588fb296f9fd7d4b7e21a`，与用户指定 main/dev HEAD 一致。本地安全 rebase 到该 baseline，上一轮等价提交被跳过，未跟踪缓存未修改。
 
 ## 已完成实现
 
@@ -67,10 +68,12 @@
 - 第十六次 Setup run `35837361953` / job `107103915266` failure；failure Artifact `10739829655`，digest `sha256:ace48d0320140dee5d7c3ae42216a526b37390442c89ee57e950c33e27591166`。U01/U02/U15/U16/U17 再次 PASS；U18 为 `observedFixedMarkers=KSESSION_UPGRADE_ROOT_MISMATCH innoExitCode=7 innoExitStatus=INNO_EXIT_PREPARE_REJECTED elapsedMilliseconds=363 logBytes=3325 logSHA256=6911acc1bd6a37401f1ef68000208ded16fcba7b97b2ede4db2e9080defaa118`。
 - Inno Setup 6.7.3 固定 tag `is-6_7_3` 的 `Setup.Install.pas` 明确以 `AddBackslash(WizardDirValue)` 写自动卸载登记 `InstallLocation`；harness 的 `target` 来自 `filepath.Join` 且每次以同一 `/DIR=target` 安装/升级，`{app}` 为无尾分隔符形式。现用 `SameInstallRoot` 对两侧仅执行 `RemoveBackslashUnlessRoot` 后再做原有不区分大小写比较；`SafePath` 及 reparse/overlap 检查保持在前，不做 `ExpandFileName`、subst 或文件系统别名折叠。相同规范化同步用于成功升级后的最终登记核验，避免同一 Inno 自动登记再次被误拒绝。
 - harness 将登记校验泛化为期望版本参数，并在 U01 记录前新增 beta.1 `InstallLocation`、binding install root、instance 的 `os.SameFile` 身份断言；这能证明历史登记与 `/DIR` 指向同一实际目录而不输出路径。beta.2 的既有登记核验继续保留。
+- 第十七次 Setup run `35841262430` / job `107116614557` failure；failure Artifact `10742285228`，digest `sha256:101e3c8910f8b2ee9972330cd1118f166cdc3595dbf7e2579076d67c8b7f65d0`。U18 首次真实 PASS，证明 fault-space 命中真实 Inno 空间不足并恢复 program、metadata、registration、binding、shortcuts 与 byte-identical instance。下一项是 fixtures 列表中的 U20 fault-cancel，不是稍后独立执行的 U19 permission；其安全摘要为 `observedFixedMarkers=KSESSION_UPGRADE_PREFLIGHT_REJECTED innoExitCode=7 innoExitStatus=INNO_EXIT_PREPARE_REJECTED elapsedMilliseconds=4478 logBytes=5346 logSHA256=8d238ced25b017f6fa8b6757b9d46ed78d0a8b77af9af1bb43fca6b36eaf79b4`。
+- 根因由代码契约闭合：`upgrade-detection.normalizeLocal` 去除尾分隔符并返回 `identity.installRoot`；`WriteUpgradeRequest` 原样把带尾分隔符的 `PriorInstallRoot` 写入 `preflight.installRoot`；两个 helper 后的 `upgrade-gate` 保留严格 `identity.installRoot !== request.preflight.installRoot` 检查，因此即使各自门禁通过也会固定产生 contract mismatch，外层只记录统一 preflight rejection。本轮在写 request 和 transaction plan 时用 `RemoveBackslashUnlessRoot(PriorInstallRoot)` 生成内部 install root；snapshot 中实际登记值保持原样，gate/preflight 未改，binding/instance、reparse 与数据校验未改。
 
 ## U01—U30 状态
 
-U01、U02、U15、U16、U17 已在第十六次 hosted 再次真实 PASS；U18 为 **FAIL**；U03—U14、U19—U30 为 **NOT RUN — 等待主控整合后 GitHub hosted Windows 执行**。括号内是已经落地的真实测试路径，不是通过结论。
+U01、U02、U15—U18 已在第十七次 hosted 真实 PASS；U20 为 **FAIL**；U03—U14、U19、U21—U30 为 **NOT RUN — 等待主控整合后 GitHub hosted Windows 执行**。括号内是已经落地的真实测试路径，不是通过结论。
 
 | ID | 状态 / 预期证据 |
 | --- | --- |
@@ -91,9 +94,9 @@ U01、U02、U15、U16、U17 已在第十六次 hosted 再次真实 PASS；U18 �
 | U15 | PASS；第十三次 hosted 的损坏 data 被拒绝，夹具恢复原字节后 instance/owned state 精确相等 |
 | U16 | PASS；第十三次 hosted 的 binding 暂时缺失被拒绝，夹具恢复后 instance/owned state 精确相等 |
 | U17 | PASS；第十三次 hosted 的 program tamper 被拒绝，夹具恢复原字节后 instance/owned state 精确相等 |
-| U18 | FAIL；第十六次 hosted 固定命中 upgrade root mismatch；尾分隔符比较修正后尚待 hosted 复验预期空间 marker 与旧版状态相等 |
+| U18 | PASS；第十七次 hosted 真实空间不足夹具完成，program/metadata/registration/binding/shortcuts 与完整 instance 均恢复相等 |
 | U19 | NOT RUN；真实 `icacls` deny-write，旧版完整状态相等 |
-| U20 | NOT RUN；真实 Inno copy progress 取消，事务 rollback 后完整状态相等 |
+| U20 | FAIL；第十七次 fault-cancel 在复制/取消前被内部 request 根目录表示差异导致的 upgrade preflight contract mismatch 截断 |
 | U21 | NOT RUN；upgrade staging 文件项实际调用 `BeforeUpgradeCopy`，真实 Inno copy 前受控异常后完整状态相等 |
 | U22 | NOT RUN；target manifest hash 冲突在事务 prepare 阶段、program 改写前拒绝，旧状态保持 |
 | U23 | NOT RUN；program swap 后 post-copy verify failure，rollback 后完整状态相等 |
@@ -108,7 +111,7 @@ U01、U02、U15、U16、U17 已在第十六次 hosted 再次真实 PASS；U18 �
 ## 本地测试与首次失败
 
 - 首次 `npm test`：26 suites 中 1 FAIL，原因是本工作树未安装锁文件依赖 `write-excel-file/node`；不是产品断言失败。执行 `npm ci --omit=optional --ignore-scripts --no-audit --no-fund` 后完整重跑：`Public test files: 26; failed: 0`。本机 hosted-only suites 仍按原策略 SKIP，因此不得写成 Actions 的 742/fail0/skip0。
-- T4 lifecycle/fresh identity + T3 transaction：25 PASS / 0 FAIL / 0 SKIP；第十六次 hosted 仍真实证明 U01/U02/U15/U16/U17。静态契约要求安装根比较仅移除尾分隔符、禁止旧原始字符串比较，并要求 U01 前核验 beta.1 登记实际文件身份、成功升级后继续核验 beta.2；Go 专项与整个 Windows launcher 测试包编译 PASS。
+- T4 lifecycle/fresh identity + T3 transaction：25 PASS / 0 FAIL / 0 SKIP；第十七次 hosted 真实证明 U01/U02/U15—U18。静态契约要求 request/plan 内部 install root 均由已登记根目录仅去尾分隔符生成，snapshot 仍保留原登记值，并禁止 preflight 继续直接使用未规范化值；升级 gate、preflight 与 transaction 专项保持 PASS。
 - upgrade-preflight 直接复跑：21 tests，20 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。新增 `subst` 正例及错误根、overlap、junction 负例均 PASS。
 - T1/T1A/T2 联合复跑：136 tests，135 PASS / 0 FAIL / 1 SKIP；唯一 SKIP 是本机 file-symlink privilege。workflow 已把该情况提升为硬失败，但修正后尚未 hosted 实跑。
 - installer contract：`INSTALLER CONTRACT PASS`；`R2 DATA LOCATION CONTRACT PASS`。
@@ -126,6 +129,7 @@ U01、U02、U15、U16、U17 已在第十六次 hosted 再次真实 PASS；U18 �
 - beta.2 build identity：第十三次 Runtime、Launcher 与 Portable job 均通过，Setup 已真实编译且 `TestSetup` 完整 PASS；升级生命周期完成 U01/U02/U15/U16/U17 后在 U18 停止，完整身份结论仍为 N/A。
 - Actions：run `35800072543` / job `106988166109` = 历史 GUI failure，Artifact `10725736587`；run `35802015923` / job `106994266165` = source clean 合并门禁在构建前 failure、无 Artifact；run `35803383243` / job `106998595821` = subst 路径别名触发 top-level 固定门禁、构建前 failure、无 Artifact；run `35804632918` / job `107002547301` = beta.2 Portable core probe failure，failure Artifact `10727636644`；Runtime run `35804632969` / job `107002547427` = 文档隐私门禁 25/26 suites；第五次 Runtime run `35807722187` 与 Portable run `35807722105` = success，Setup run `35807722197` / job `107012151593` = preflight failure，failure Artifact `10728312842`；第六次 Runtime run `35810440373` = success，Setup run `35810440453` / job `107020593126` = same-version registration reason failure，failure Artifact `10729513518`；第七次 Setup run `35812914595` / job `107028173471` = reinstall fixture contamination failure，failure Artifact `10730302530`；第八次 Runtime/Launcher/Portable = success，Setup run `35814718991` / job `107033683886` = installer-owned state cleanup failure，failure Artifact `10731770877`；第九次 Runtime/Launcher/Portable = success，Setup run `35818266796` / job `107044402164` = 可见向导同步消息导致 COM input-synchronous fail-closed，failure Artifact `10732089023`；第十次 Runtime/Launcher/Portable = success，Setup run `35820908729` / job `107052341541` = fresh Setup PASS、升级 U01 PASS 后 beta.1 core probe 无安全明细失败，failure Artifact `10733961699`；第十一次 Setup run `35823498989` / job `107060182123` = U01 PASS 后 `CORE_PROBE_NO_SAFE_DIAGNOSTIC`，failure Artifact `10734241975`；第十二次 Setup run `35826316453` / job `107068715241` = U01 PASS 后 probe 路径不存在，failure Artifact `10735128742`；第十三次 Runtime `35828307756`、Launcher `35828307745`、Portable `35828307748` = success，Setup run `35828307741` / job `107074848326` = U01/U02/U15/U16/U17 PASS 后 U18 缺少空间标识，failure Artifact `10736682800`、digest `sha256:eb3f2330a88505353cd8c896cc5a555f96053d34e777bb7a6d36765e1d1c99d0`；第十四次 Setup run `35831228916` / job `107084053271` = 同五项 PASS 后 U18 `observedFixedMarkers=NONE`，failure Artifact `10738100665`、digest `sha256:1a92df013e620858fe444877dd55b42492040ecbf79a67b11bca04d974801401`；第十五次 Setup run `35833689471` / job `107092001596` = 同五项 PASS 后 U18 exit 7/Prepare rejected 且 markers NONE，failure Artifact `10738927441`、digest `sha256:d47bde04e5dca95e682ab50de8657c6bb87631d21ed40fa6617f3346b5760088`；第十六次 Setup run `35837361953` / job `107103915266` = 同五项 PASS 后 U18 固定 root mismatch，failure Artifact `10739829655`、digest `sha256:ace48d0320140dee5d7c3ae42216a526b37390442c89ee57e950c33e27591166`。尾分隔符比较修正后的复跑 pending，执行任务禁止 push。
 - 本任务测试工具 ZIP 仅用于本地编译；未加入 Git。清理命令被本机安全策略拒绝，缓存仍在未跟踪 `.test-work`；主控整合时不得加入提交。
+- 第十七次补充 Actions：Setup run `35841262430` / job `107116614557` = U18 PASS 后 U20 在 copy/cancel 前被 upgrade preflight rejection 截断；failure Artifact `10742285228`，digest `sha256:101e3c8910f8b2ee9972330cd1118f166cdc3595dbf7e2579076d67c8b7f65d0`。内部 request/plan 根目录表示修正后的复跑 pending，执行任务禁止 push。
 
 ## 修改文件
 
@@ -139,7 +143,7 @@ U01、U02、U15、U16、U17 已在第十六次 hosted 再次真实 PASS；U18 �
 
 ## 风险与主控处理
 
-1. 尾分隔符比较修正后的真实 U18 仍是本任务结论的硬阻塞。主控应 Review/整合本 commit，仅 push `codex/windows-installer-v1.1` 并重新执行 setup workflow；必须实际命中 `KSESSION_REJECT_SPACE` 且通过失败前后完整状态相等，不能仅凭根因明确宣称 U18 PASS。
+1. 内部 request/plan 规范化后的真实 U20 仍是本任务结论的硬阻塞。主控应 Review/整合本 commit，仅 push `codex/windows-installer-v1.1` 并重新执行 setup workflow；必须实际到达真实 Inno copy progress 取消 marker，并通过 rollback 后完整状态相等，不能仅凭根因明确宣称 U20 PASS。
 2. 下一次真实运行仍可能暴露 build-only 闭包、Inno 生命周期次序、完整 registry values 恢复、ACL 继承或取消时机问题。任何新失败应保留首次 failure Artifact 并退回本任务修复。
 3. `U03/U04` 成功升级链不会使用伪造 registry；负例由既有 exact T1 gate 与真实 Portable-running Setup gate组成。若 QA 要求 v1.0.0 实物安装负例，需要新的受信任旧发行身份，不能在本任务伪造。
 4. 当前工作树因本任务生成的未跟踪 `.test-work/` 与 `node_modules/` 不 clean；它们不得提交。tracked 变更只限上列文件。

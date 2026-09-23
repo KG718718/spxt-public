@@ -385,25 +385,27 @@ begin
 end;
 
 function WriteUpgradeRequest: Boolean;
-var S: String;
+var S, R: String;
 begin
   UpgradeRequest := ExpandConstant('{tmp}\ksession-upgrade-request.json');
+  R := RemoveBackslashUnlessRoot(PriorInstallRoot);
   S := '{"schema":1,"snapshot":{"registrations":[{"view":"64","key":"' + JsonEscape(ProductKey) +
     '","displayName":"' + JsonEscape(PriorDisplayName) + '","displayVersion":"' + JsonEscape(PriorDisplayVersion) +
     '","installLocation":"' + JsonEscape(PriorInstallRoot) + '","uninstallString":"' + JsonEscape(PriorUninstallString) +
     '"}],"bindings":[{"view":"64","key":"' + JsonEscape(BindingKey) + '","installRoot":"' + JsonEscape(PriorBindingRoot) +
-    '","instance":"' + JsonEscape(PriorBindingInstance) + '"}]},"preflight":{"installRoot":"' + JsonEscape(PriorInstallRoot) +
-    '","instancePath":"' + JsonEscape(PriorBindingInstance) + '","bindingFile":"' + JsonEscape(AddBackslash(PriorInstallRoot) + 'uninstall\instance-binding.ini') +
+    '","instance":"' + JsonEscape(PriorBindingInstance) + '"}]},"preflight":{"installRoot":"' + JsonEscape(R) +
+    '","instancePath":"' + JsonEscape(PriorBindingInstance) + '","bindingFile":"' + JsonEscape(AddBackslash(R) + 'uninstall\instance-binding.ini') +
     '","registeredInstallRoot":"' + JsonEscape(PriorBindingRoot) + '","registeredInstance":"' + JsonEscape(PriorBindingInstance) +
     '","dataContractVersion":"1","appRoot":"' + JsonEscape(ExpandConstant('{tmp}')) + '"}}';
   Result := SaveStringToFile(UpgradeRequest, S, False);
 end;
 
 function WriteUpgradePlan: Boolean;
-var S: String;
+var S, R: String;
 begin
   UpgradePlan := ExpandConstant('{tmp}\ksession-upgrade-plan.json');
-  S := '{"schema":1,"installRoot":"' + JsonEscape(PriorInstallRoot) + '","instancePath":"' + JsonEscape(PriorBindingInstance) +
+  R := RemoveBackslashUnlessRoot(PriorInstallRoot);
+  S := '{"schema":1,"installRoot":"' + JsonEscape(R) + '","instancePath":"' + JsonEscape(PriorBindingInstance) +
     '","stagedProgram":"' + JsonEscape(ExpandConstant('{tmp}\ksession-upgrade-v1\program')) +
     '","stagedMetadata":"' + JsonEscape(ExpandConstant('{tmp}\ksession-upgrade-v1\metadata')) +
     '","desktopShortcut":"' + JsonEscape(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) +

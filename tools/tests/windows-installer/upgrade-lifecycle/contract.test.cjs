@@ -37,6 +37,14 @@ test('real lifecycle has U01-U30 and all five required recoverable failure fixtu
  assert.match(iss,/if not SameInstallRoot\(P, PriorInstallRoot\) then begin Log\('KSESSION_UPGRADE_ROOT_MISMATCH'\)/);
  assert.match(iss,/not SameInstallRoot\(R, ExpandConstant\('\{app\}'\)\)/);
  assert.doesNotMatch(iss,/CompareText\(P, PriorInstallRoot\)/);
+ const request=iss.slice(iss.indexOf('function WriteUpgradeRequest'),iss.indexOf('function WriteUpgradePlan'));
+ const plan=iss.slice(iss.indexOf('function WriteUpgradePlan'),iss.indexOf('function RunUpgradeGate'));
+ for(const block of [request,plan]){
+  assert.match(block,/R := RemoveBackslashUnlessRoot\(PriorInstallRoot\)/);
+  assert.match(block,/JsonEscape\(R\)/);
+ }
+ assert.match(request,/"installLocation":"' \+ JsonEscape\(PriorInstallRoot\)/);
+ assert.doesNotMatch(request,/"preflight":\{"installRoot":"' \+ JsonEscape\(PriorInstallRoot\)/);
  assert.match(go,/fault-payload-hash", "KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED"/);
  assert.match(go,/instanceStable/);assert.match(go,/ownedStable/);assert.match(go,/core-beta1/);assert.match(go,/core-beta2/);assert.match(go,/core-reinstall/);
 });
