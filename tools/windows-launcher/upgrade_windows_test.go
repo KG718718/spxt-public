@@ -285,7 +285,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 	pid := uint32(ready["pid"].(float64))
 	port := int(ready["port"].(float64))
 	node := filepath.Join(root, "runtime", "node.exe")
-	coreProbe("BETA1_INITIAL", node, filepath.Join(repo, "tools/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-beta1"), "initial")
+	coreProbe("BETA1_INITIAL", node, filepath.Join(repo, "tools/tests/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-beta1"), "initial")
 	runningLog := runSetup(beta2, false)
 	assertLog(runningLog, "KSESSION_REJECT_RUNNING")
 	if !alivePID(pid) || !alivePID(uint32(app.Process.Pid)) {
@@ -398,7 +398,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 	ready = lastEvent(instance, "READY")
 	pid = uint32(ready["pid"].(float64))
 	port = int(ready["port"].(float64))
-	coreProbe("BETA2_EXISTING", filepath.Join(root, "runtime", "node.exe"), filepath.Join(repo, "tools/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-beta2"), "existing")
+	coreProbe("BETA2_EXISTING", filepath.Join(root, "runtime", "node.exe"), filepath.Join(repo, "tools/tests/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-beta2"), "existing")
 	record("U12", "original synthetic Admin login through upgraded program")
 	record("U13", "original synthetic attachment plus download/upload core checks through upgraded program")
 	if !dispatchExisting(cls, launcher, true) {
@@ -440,7 +440,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 	ready = lastEvent(instance, "READY")
 	pid = uint32(ready["pid"].(float64))
 	port = int(ready["port"].(float64))
-	coreProbe("REINSTALL_EXISTING", filepath.Join(target, "program", "runtime", "node.exe"), filepath.Join(repo, "tools/windows-portable/core-client.cjs"), filepath.Join(target, "program"), instance, fmt.Sprint(port), filepath.Join(base, "core-reinstall"), "existing")
+	coreProbe("REINSTALL_EXISTING", filepath.Join(target, "program", "runtime", "node.exe"), filepath.Join(repo, "tools/tests/windows-portable/core-client.cjs"), filepath.Join(target, "program"), instance, fmt.Sprint(port), filepath.Join(base, "core-reinstall"), "existing")
 	record("U28", "original synthetic Admin and attachment accessible after uninstall/fresh reinstall")
 	if !dispatchExisting(cls, launcher, true) {
 		t.Fatal("stop reinstall failed")
