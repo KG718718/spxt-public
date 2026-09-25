@@ -79,6 +79,16 @@ T1 返工复核：主控复跑43/43。bundle固定自身SHA，字段及批准来
 
 2026-09-23 T4 Identity Gate Stop-Loss：第十九次 Setup run 35846952206 / job 107135286484 取得 U01、U02、U15—U18 PASS，U20 在复制前固定命中 `KSESSION_UPGRADE_GATE_IDENTITY_REJECTED`；failure Artifact 10744014234 已保留。用户批准停止用完整 Runtime→Launcher→Portable→Setup→Regression 流水线取单个诊断码。原 T4 worktree 保留，任务提交 16af55d 经主控只读 Review 及 identity/detection/gate/lifecycle 契约 60/60 复跑后整合为 f288376：新增固定 `IDENTITY_*` 阶段码和手动最小 Hosted Identity Diagnostic，只重建/实装 exact fresh beta.1 并调用当前 detection/gate identity 部分；Artifact 仅含 schema/status/reason，临时 request 与安装日志不上传。最多允许两轮最小 Hosted 诊断；取得唯一阶段、完成最小修复且最小诊断 PASS 前，禁止再次运行完整 Batch 4。
 
+2026-09-23 T4 Identity Stop-Loss 结果：第一轮最小 Hosted 诊断 run 35860479890 固定命中 `IDENTITY_PATH`；确认 GitHub Runner 的 `E:` 为 subst 卷别名，路径身份比较误拒绝合法卷根。最小修复后，第二轮且最后一轮最小诊断 run 35862632387 返回 `IDENTITY_ACCEPTED`，未放宽目录内部 reparse、短路径、不同目录或hash门禁。随后按批准流程仅运行一次完整 Setup run 35863240935：U01、U02、U15—U18 PASS，U20 在复制前固定命中新的 `KSESSION_UPGRADE_GATE_IDENTITY_REGISTRATION`；完整回归、Artifact隐私门禁和最终Setup Artifact均未执行。两轮通用身份诊断额度与一次完整复验均已用完；当前停止 Actions 循环，不启动B4-QA，不猜测修改登记规则，等待是否批准“U15—U18→U20最小序列登记诊断”的上级决定。
+
+2026-09-25 用户选择继续公开版 Batch 4，批准且仅批准“U15—U18→U20 最小序列登记身份诊断”。复用原 B4-T4 执行任务和 f8bd 工作树，不新建任务/工作树；先在隔离合成环境复现 U15—U18 对登记/绑定的影响，再调用 U20 复制前身份门禁，仅输出固定白名单阶段码与不含路径、正文、hash原值或凭据的摘要。此专项不再运行完整 Runtime→Launcher→Portable→Setup→Regression 流水线，不修改身份接受条件、业务规则、真实数据、main、v1.0.0 或 Release。主控 Review 执行改动和本地专项测试后，至多启动一次该最小 Hosted 序列诊断；若仍无法定位唯一原因，停止并回报，不循环重跑。诊断结果不得冒充 U20 或 Batch 4 PASS；是否实施修复及何时复跑完整门禁，依据诊断证据另行判断，涉及产品/数据生命周期决定时交回上级。
+
+2026-09-25 B4-T4 首轮回单未自动送达主控；主控从原执行任务及 f8bd 工作树核得 local commit `e5f8c7184c4b83a4f9da35847a4a4c20b5d31799`，仅为最小序列诊断工具的本地实现，Hosted 未运行。主控只读 Review 发现 `sequence-diagnostic.ps1` 的 E 盘路径正则末尾为孤立反斜杠；以合法 E 盘路径运行该表达式可复现 PowerShell `Invalid pattern`。已退回原 B4-T4 执行任务做最小修正及可执行正反例测试；修正验收前禁止推送或触发一次性 Hosted 诊断。此项不是 U20 或 Batch 4 PASS。
+
+2026-09-25 回单补救：本次主控 thread ID 为 `019fa7e9-f46b-7192-9052-cd0aac7c2cc5`，原 B4-T4 thread ID 为 `01a0cb6a-67cc-7c03-a68b-2727af8fce6e`。已向原任务补派精确主控 ID，要求结束前主动发送结构化回单并核验送达；失败则在任务 RESULT 与最终回复明确标记“主控未收到／待主控读取”。公开仓库 AGENTS.md 已固定为后续派单规则。执行任务结束或 UI 显示完成本身不自动构成主控验收，也不得据此自动继续 Hosted、合并或发布。
+
+随后主控实际收到 B4-T4 结构化回单：路径门禁返工 local commit `3e059b813022be2b8bba5156d4db7c328cc27e44`，执行任务报告本地专项通过、Hosted 未运行、未 push。主控尚未 Review 此提交，回单送达只恢复交接，不构成代码验收或授权启动诊断。
+
 用户报告工作树自动回收开启、限制20。不得主动触发删除；记录任务 commit 和路径，未整合结果不得清理，派单前检查现存公开 worktree。若发现路径/结果被回收，停止，不伪造恢复。
 
 最终门禁见 ACCEPTANCE.md。未获人工验收不得最终 PASS；不进入下一 Batch。所有产品/UX/schema/重大架构决策使用五字段卡交回网页版。

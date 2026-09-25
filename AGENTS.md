@@ -58,6 +58,9 @@
 
 Execution Thread只回传主控以下字段，详细证据留任务文档/测试结果，不生成完整网页版交接卡：
 
+- 派单必须写明**准确的主控 thread ID**，不能只写“回报主控”。Execution Thread 结束前须先用 `send_message_to_thread` 向该 ID 发送下列结构化回单，并核验工具返回的目标 thread ID；仅在自己的最终回复中写回单，不算送达主控。
+- 送达失败或接口不可用时，不得声称“已反馈主控”或“交接完成”；将完整回单及失败原因写入本任务 RESULT 和 ORCHESTRATION，并在最终回复明确标记“主控未收到／待主控读取”。主控下一轮先核对该记录再推进，不把执行任务的完成状态等同 Batch 验收。
+
 【TASK ID】
 【状态 PASS / FAIL / BLOCKED；规格冲突注明BLOCKED / NEED PARENT DECISION】
 【完成内容】
