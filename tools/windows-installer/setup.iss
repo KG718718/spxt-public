@@ -61,6 +61,9 @@ Source: "{#Generated}\upgrade-detection.cjs"; Flags: dontcopy
 Source: "{#Generated}\upgrade-preflight.cjs"; Flags: dontcopy
 Source: "{#Generated}\upgrade-gate.cjs"; Flags: dontcopy
 Source: "{#Generated}\upgrade-gate-cli.cjs"; Flags: dontcopy
+#ifdef SequenceDiagnostic
+Source: "{#Generated}\sequence-identity.cjs"; Flags: dontcopy
+#endif
 Source: "{#Generated}\upgrade-transaction.cjs"; Flags: dontcopy
 Source: "{#Generated}\upgrade-transaction-cli.cjs"; Flags: dontcopy
 Source: "{#Generated}\runtime-common.cjs"; Flags: dontcopy
@@ -366,6 +369,9 @@ begin
   ExtractTemporaryFile('upgrade-preflight.cjs');
   ExtractTemporaryFile('upgrade-gate.cjs');
   ExtractTemporaryFile('upgrade-gate-cli.cjs');
+#ifdef SequenceDiagnostic
+  ExtractTemporaryFile('sequence-identity.cjs');
+#endif
   ExtractTemporaryFile('upgrade-transaction.cjs');
   ExtractTemporaryFile('upgrade-transaction-cli.cjs');
   ExtractTemporaryFile('runtime-common.cjs');
@@ -414,6 +420,28 @@ begin
   Result := SaveStringToFile(UpgradePlan, S, False);
 end;
 
+#ifdef SequenceDiagnostic
+procedure LogSequenceRegistrationDetail;
+var DetailCode: Integer;
+begin
+  if not Exec(ExpandConstant('{tmp}\ksession-beta2-node.exe'), '"' + ExpandConstant('{tmp}\sequence-identity.cjs') + '" "' +
+    UpgradeRequest + '" "' + ExpandConstant('{tmp}\approved-identity-bundle.json') + '"',
+    ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, DetailCode) then begin
+    Log('KSESSION_SEQUENCE_REGISTRATION_AMBIGUOUS'); exit;
+  end;
+  case DetailCode of
+    60: Log('KSESSION_SEQUENCE_REGISTRATION_COUNT');
+    61: Log('KSESSION_SEQUENCE_REGISTRATION_VERSION');
+    62: Log('KSESSION_SEQUENCE_REGISTRATION_SNAPSHOT');
+    63: Log('KSESSION_SEQUENCE_REGISTRATION_CONFLICT');
+    64: Log('KSESSION_SEQUENCE_REGISTRATION_UNINSTALL');
+    66: Log('KSESSION_SEQUENCE_REGISTRATION_INCONSISTENT');
+  else
+    Log('KSESSION_SEQUENCE_REGISTRATION_AMBIGUOUS');
+  end;
+end;
+#endif
+
 function RunUpgradeGate: Boolean;
 var Code: Integer;
 begin
@@ -425,6 +453,9 @@ begin
     ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, Code) then begin
     Log('KSESSION_UPGRADE_GATE_PROCESS_START_FAILED'); exit;
   end;
+#ifdef SequenceDiagnostic
+  if Code = 50 then LogSequenceRegistrationDetail;
+#endif
   case Code of
     10: Log('KSESSION_UPGRADE_GATE_ARGUMENT_INVALID');
     11: Log('KSESSION_UPGRADE_GATE_REQUEST_INVALID');
@@ -561,6 +592,11 @@ begin
   CloseHandle(H);
   if UpgradeMode then begin
     if not RunUpgradeGate then begin Log('KSESSION_UPGRADE_PREFLIGHT_REJECTED'); Result := '现有安装、数据绑定或业务实例未通过安全升级检查；未修改现有程序或数据。'; exit; end;
+#ifdef SequenceDiagnostic
+    Log('KSESSION_SEQUENCE_IDENTITY_ACCEPTED');
+    Result := '专项诊断已在升级事务和文件复制前停止。';
+    exit;
+#endif
     if not PrepareUpgradeTransaction then begin Log('KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED'); Result := '无法建立可恢复升级事务；未修改现有程序或数据。'; exit; end;
   end;
   Log('KSESSION_PREINSTALL_READY');

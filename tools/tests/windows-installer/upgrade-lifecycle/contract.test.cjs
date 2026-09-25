@@ -1,5 +1,5 @@
 'use strict';
-const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const test=require('node:test'),assert=require('node:assert/strict'),cp=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
 const repo=path.resolve(__dirname,'../../../..');
 const read=p=>fs.readFileSync(path.join(repo,p),'utf8');
 
@@ -28,9 +28,9 @@ test('hosted gate makes file-symlink coverage mandatory and runs both real lifec
 test('identity stop-loss workflow runs only the exact beta1 identity diagnostic',()=>{
  const workflow=read('.github/workflows/setup-v3.yml'),script=read('tools/windows-installer/identity-diagnostic.ps1'),helper=read('tools/windows-installer/identity-diagnostic.cjs');
  const setup=workflow.slice(workflow.indexOf('  setup:'),workflow.indexOf('  identity:'));
- const identity=workflow.slice(workflow.indexOf('  identity:'),workflow.indexOf('  historical-identity:'));
- assert.match(workflow,/workflow_dispatch:[\s\S]*mode:[\s\S]*required: false[\s\S]*default: identity[\s\S]*options:[\s\S]*- identity[\s\S]*- full/);
- assert.match(setup,/github\.event_name == 'push'[\s\S]*\[identity-diagnostic\][\s\S]*github\.event_name == 'workflow_dispatch' && inputs\.mode == 'full'/);
+ const identity=workflow.slice(workflow.indexOf('  identity:'),workflow.indexOf('  sequence:'));
+ assert.match(workflow,/workflow_dispatch:[\s\S]*mode:[\s\S]*required: false[\s\S]*default: identity[\s\S]*options:[\s\S]*- identity[\s\S]*- sequence[\s\S]*- full/);
+ assert.match(setup,/github\.event_name == 'push'[\s\S]*\[identity-diagnostic\][\s\S]*\[sequence-diagnostic\][\s\S]*github\.event_name == 'workflow_dispatch' && inputs\.mode == 'full'/);
  assert.match(identity,/github\.event_name == 'workflow_dispatch' && \(inputs\.mode == '' \|\| inputs\.mode == 'identity'\)/);
  assert.match(workflow,/historical-identity:[\s\S]*if: github\.event_name == 'workflow_dispatch' && inputs\.mode == 'full'/);
  for(const marker of ['workflow_dispatch','persist-credentials: false','rebuild-beta1.ps1','e9417f036d0cdf736ff84682556a994040f0de0b','5da66cb9b73dfa307948634634bfab2cfaaead12','fresh-identity.cjs','identity-diagnostic.ps1','IDENTITY-DIAGNOSTIC.json','Fixed summary only'])assert.match(workflow,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
@@ -41,6 +41,57 @@ test('identity stop-loss workflow runs only the exact beta1 identity diagnostic'
  assert.doesNotMatch(script,/Write-Output \$taskSnapshot|Write-Output \$taskRequest|Get-Content -LiteralPath \$taskLog/);
  for(const marker of ['safeIdentityReason','IDENTITY_ACCEPTED','IDENTITY_INTERNAL','flag: \'wx\'','PREFLIGHT_OK'])assert.match(helper,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.doesNotMatch(helper,/console\.error|error\.message|error\.stack|JSON\.stringify\(request/);
+});
+
+test('U15-U20 sequence diagnostic is manual, pre-transaction, closed, and does not build current portable or run regression',()=>{
+ const workflow=read('.github/workflows/setup-v3.yml'),script=read('tools/windows-installer/sequence-diagnostic.ps1'),pathHelper=read('tools/windows-installer/sequence-diagnostic-path.ps1'),helper=read('tools/windows-installer/sequence-identity.cjs'),build=read('tools/windows-installer/build.cjs'),iss=read('tools/windows-installer/setup.iss'),go=read('tools/windows-launcher/upgrade_windows_test.go');
+ const sequence=workflow.slice(workflow.indexOf('  sequence:'),workflow.indexOf('  historical-identity:'));
+ assert.match(sequence,/github\.event_name == 'workflow_dispatch' && inputs\.mode == 'sequence'/);
+ for(const marker of ['rebuild-beta1.ps1','sequence-diagnostic.ps1','SEQUENCE-DIAGNOSTIC.json','upgrade-sequence-diagnostic-','Fixed sequence summary only','persist-credentials: false'])assert.match(sequence,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const forbidden of ['windows-installer/ci.ps1','windows-portable/ci.ps1','npm test','hosted-gate.cjs','inputs.mode == \'full\'','testTotal','742'])assert.doesNotMatch(sequence,new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const marker of ['HOSTED_SEQUENCE_DIAGNOSTIC_REQUIRED','sequence-gate','sequence-space','KSESSION_UPGRADE_SEQUENCE_DIAGNOSTIC','SEQUENCE-DIAGNOSTIC.json','SEQUENCE_REPORT_UNSAFE'])assert.match(script,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.match(script,/& \$taskGo test[^\n]*\*> \$null/);
+ assert.doesNotMatch(script,/Write-Output|Write-Host|Get-Content[^\n]*(private-request|private-setup|\.log)/i);
+ assert.match(script,/sequence-diagnostic-path\.ps1/);assert.match(script,/Test-KSessionFixedEPath/);
+ assert.match(pathHelper,/IsPathFullyQualified/);assert.match(pathHelper,/GetPathRoot/);assert.doesNotMatch(pathHelper,/-match|-notmatch/);
+ assert.match(build,/payloadCommit=sequenceDiagnostic\?'e9417f036d0cdf736ff84682556a994040f0de0b':commit/);
+ assert.match(build,/SEQUENCE DIAGNOSTIC - NEVER DISTRIBUTE OR INSTALL OUTSIDE DISPOSABLE HOST/);
+ for(const marker of ['REGISTRATION_COUNT','VERSION_UNSUPPORTED','SNAPSHOT_INVALID','REGISTRATION_CONFLICT','UNINSTALL_METADATA_INVALID','IDENTITY_REGISTRATION_AMBIGUOUS','IDENTITY_REGISTRATION_INCONSISTENT'])assert.match(helper,new RegExp(marker));
+ assert.doesNotMatch(helper,/console\.|error\.message|error\.stack|process\.stdout|process\.stderr/);
+ const gateStop=iss.indexOf("Log('KSESSION_SEQUENCE_IDENTITY_ACCEPTED')"),transaction=iss.indexOf('if not PrepareUpgradeTransaction');
+ assert.ok(gateStop>iss.indexOf('if not RunUpgradeGate')&&transaction>gateStop);
+ for(const marker of ['KSESSION_SEQUENCE_REGISTRATION_COUNT','KSESSION_SEQUENCE_REGISTRATION_VERSION','KSESSION_SEQUENCE_REGISTRATION_SNAPSHOT','KSESSION_SEQUENCE_REGISTRATION_CONFLICT','KSESSION_SEQUENCE_REGISTRATION_UNINSTALL','KSESSION_SEQUENCE_REGISTRATION_AMBIGUOUS','KSESSION_SEQUENCE_REGISTRATION_INCONSISTENT'])assert.match(iss,new RegExp(marker));
+ for(const marker of ['BASELINE','"AFTER_" + probe.id','U20_PRECOPY','sequencePhases','CONTROLLED_MUTATION'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.match(go,/if sequenceDiagnostic \{\s*fixtures = fixtures\[:1\]/);
+});
+
+test('sequence diagnostic executes the fixed E-volume path boundary',()=>{
+ const helper=path.join(repo,'tools/windows-installer/sequence-diagnostic-path.ps1').replaceAll("'","''");
+ const command=String.raw`. '${helper}';$cases=@(
+  @{value='E:\synthetic';want=$true},@{value='E:/synthetic';want=$true},
+  @{value='C:\synthetic';want=$false},@{value='E:relative';want=$false},
+  @{value='EE:\synthetic';want=$false},@{value='\\server\share';want=$false},
+  @{value='\\?\E:\synthetic';want=$false}
+ );foreach($case in $cases){if((Test-KSessionFixedEPath $case.value)-ne $case.want){exit 7}};'PATH_CONTRACT_PASS'`;
+ const result=cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command',command],{encoding:'utf8',windowsHide:true});
+ assert.equal(result.status,0,result.stderr);assert.equal(result.stdout.trim(),'PATH_CONTRACT_PASS');assert.equal(result.stderr,'');
+});
+
+test('sequence diagnostic entry accepts E paths and rejects other drive prefixes before writes',()=>{
+ const script=path.join(repo,'tools/windows-installer/sequence-diagnostic.ps1');
+ const env={...process.env,GITHUB_ACTIONS:'true',RUNNER_ENVIRONMENT:'github-hosted',GITHUB_REPOSITORY:'KG718718/spxt-public'};
+ const run=values=>cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-File',script,'-Work',values[0],'-Beta1Build',values[1],'-Bundle',values[2],'-Node',values[3],'-Commit','0'.repeat(40)],{encoding:'utf8',windowsHide:true,env});
+ const accepted=run([String.raw`E:\sequence-contract-work`,String.raw`E:\sequence-contract-beta1`,String.raw`E:\sequence-contract-bundle.json`,String.raw`E:\sequence-contract-node.exe`]);
+ assert.notEqual(accepted.status,0);assert.match(accepted.stderr,/SEQUENCE_DIAGNOSTIC_INPUT_INVALID/);
+ for(const values of [
+  [String.raw`C:\sequence-contract-work`,String.raw`E:\beta1`,String.raw`E:\bundle`,String.raw`E:\node`],
+  [String.raw`EE:\sequence-contract-work`,String.raw`E:\beta1`,String.raw`E:\bundle`,String.raw`E:\node`],
+  ['E:relative',String.raw`E:\beta1`,String.raw`E:\bundle`,String.raw`E:\node`]
+ ]){
+  const rejected=run(values);assert.notEqual(rejected.status,0);assert.match(rejected.stderr,/FIXED_E_VOLUME_REQUIRED/);
+  assert.doesNotMatch(rejected.stderr,/Invalid pattern|Illegal backslash/i);
+ }
+ assert.doesNotMatch(accepted.stderr,/Invalid pattern|Illegal backslash/i);
 });
 
 test('real lifecycle has U01-U30 and all five required recoverable failure fixtures',()=>{

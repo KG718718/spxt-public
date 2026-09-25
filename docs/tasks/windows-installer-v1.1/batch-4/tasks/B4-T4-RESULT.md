@@ -1,6 +1,6 @@
 # B4-T4 Result — Upgrade Lifecycle / CI / Fault Injection
 
-状态：**BLOCKED — Identity Gate Stop-Loss 第一轮已把 U20 前置拒绝唯一定位为 `IDENTITY_PATH`；最小生产修正及本地回归已完成，等待主控整合后使用保留的第二轮 hosted identity-only 额度验证。** 第十九次 GitHub hosted Windows 仍真实完成 U01、U02、U15—U18；U20 尚未进入复制/取消，不能写成 PASS。修正只允许 Windows `subst` 卷根表示映射到同一物理卷；仍逐级拒绝安装根/实例路径内部 junction/reparse、8.3 内部别名、不同目录及物理重叠。
+状态：**BLOCKED — 独立 identity-only 已接受修正后的 beta.1，但 Setup run `35863240935` 在真实 U15—U18 序列后、U20 复制前固定命中 `KSESSION_UPGRADE_GATE_IDENTITY_REGISTRATION`。已构建仅手动触发的最小序列诊断，等待主控 Review、整合和一次 hosted 实测。** U01、U02、U15—U18 保持 hosted PASS；U20 尚未进入复制/取消，不能写成 PASS。诊断不改变身份接受条件，不生成当前 beta.2 Runtime/Launcher/Portable，不进入升级事务或文件复制。
 
 ## Preflight
 
@@ -24,6 +24,7 @@
 - 第十八次失败恢复轮从用户指定且本地可验证的 baseline `eaa2435f6eef158e9f049b36026aa00ef61613ba` 继续；安全 rebase 跳过已等价整合的上一 local commit，HEAD 精确同步到该 commit。网络 fetch 尝试因连接 GitHub 超时失败，因此不宣称本轮独立远端复核；未跟踪缓存保持原样。
 - 第十九次失败恢复轮核对 worktree/origin 正确，并安全 rebase 到用户指定 baseline `3f35d5155a5d5af7194e2ad16f0437b2a9afb206`；上一 local commit 被识别为已等价整合。现有八个阶段诊断文件在该 baseline 上继续，未跟踪缓存不纳入提交。
 - Stop-Loss 修复轮核对同一 worktree/origin，并安全 rebase 到用户指定且本地存在的公开 baseline `8e2cad06100269bc272c9903012a70d313f0215d`；上一 local commit 已被主控等价整合并由 rebase 跳过。未跟踪 `.test-work/`、`node_modules/` 保持原样且不纳入提交。
+- 2026-09-25 续行核对 worktree、origin、分支及 HEAD 精确为 `E:/CodexWorkspace/CodexWorktrees/f8bd/public-source`、`KG718718/spxt-public`、`codex/b4-t4-upgrade-lifecycle`、`fa149ed71eae33f9be9208d31e1b694ea4decdc3`；tracked clean，仅有既知未跟踪缓存。主控开发分支 `ebc78a527781f9c452e171b6bd051effee64c1b0` 与该任务 commit Git tree 等价的事实由派单提供，本任务未自行 fetch/push。
 
 ## 已完成实现
 
@@ -122,6 +123,8 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - installer contract：`INSTALLER CONTRACT PASS`；`R2 DATA LOCATION CONTRACT PASS`。
 - 本轮本机公开测试入口：26 test files / failed 0（hosted-only 项仍按原策略 SKIP）；`public-product-docs.test.js` 单独复跑 8 PASS，既有隐私断言未修改。另以 `GITHUB_ACTIONS=true` 独立运行真实 server HTTP 专项 25 PASS；上传/同进程读取已合并进原员工权限 check，重启后员工 403、Admin 下载 200 及字节不变已合并进原 restart check，reportedChecks 净变化为 0。两个 workflow 继续硬锁 26 suites / 742 tests，不修改门禁。
 - 当前修复再次运行 `npm test`：`Public test files: 26; failed: 0`；hosted-only 项仍按既定策略 SKIP，不能冒充 hosted 结果。两个修改 CJS 的 `node --check` 及 `git diff --check` 均 PASS。
+- 2026-09-25 最小序列诊断本地验证：返工后新增/相关 Node 契约 19 PASS；fresh identity、detection、lifecycle、gate、transaction 联合 82 tests：81 PASS / 0 FAIL / 1 本机 8.3 alias SKIP；preflight 21 tests：20 PASS / 0 FAIL / 1 本机 file-symlink privilege SKIP；installer/data-location contract PASS；PowerShell AST、修改 CJS `node --check`、`git diff --check` PASS；`npm test` 为 26 files / failed 0。YAML parser 本机不可用，workflow 由静态契约覆盖。
+- 本机无系统 Go；尝试按仓库固定 URL 下载 Go 1.27.1，在 10 秒连接超时前未收到字节，因此未取得可核 hash 的工具，未运行 `gofmt` 或 Go compile-only。专用缓存留在未跟踪 `.test-work/`；主控或 hosted 必须用固定 Go 1.27.1 完成格式/编译验证后才能触发序列诊断。
 - PowerShell AST：PASS；修改/新增 CJS `node --check`：PASS。
 - 仓库固定 Go 1.27.1 ZIP SHA256 `a3911b5e0e1b1053f25ed0675f4c1c6aad1e2bfcf253df2b9be4caabd2edd95d` 核对通过；`gofmt` 完成；`go test -run '^$' .` 编译整个 `windows-launcher` 测试包 PASS（无真实测试执行）。首次 `Invoke-WebRequest` 因 EOF 未产生 ZIP；固定 hash 门禁停止，随后 `curl` 受限重试成功。
 - `git diff --check`：PASS（仅现有 LF→CRLF checkout warning）。
@@ -139,24 +142,35 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - 第十八次补充 Actions：Setup run `35843571342` / job `107124188994` = U01/U02/U15—U18 PASS，U20 仍为 `observedFixedMarkers=KSESSION_UPGRADE_PREFLIGHT_REJECTED innoExitCode=7 innoExitStatus=INNO_EXIT_PREPARE_REJECTED elapsedMilliseconds=3896 logBytes=5346 logSHA256=bd6e9fb8abec2ce1349518351ea4490b37ac9a1e31f3b8b8b85821aa30d2f7c3`；failure Artifact `10742583830`，digest `sha256:a13c74df6cd36659c8b885ec3f02020c56197cfbf69c104ebe1de4d6923d47af`。主控保存的 Artifact 只含封闭报告与编译证据，没有可安全证明内部字段的运行日志；固定 reason marker 后复跑 pending。
 - 第十九次补充 Actions：Setup run `35846952206` / job `107135286484` 的 U01/U02/U15—U18 PASS，U20 固定为 identity rejected；failure Artifact `10744014234`。独立新 workflow 因不在默认分支登记而被 GitHub dispatch API 404 拒绝，未产生 run、不计两轮诊断；现将 Stop-Loss 作为已登记 `setup-v3.yml` 的严格互斥 identity job，只执行 exact fresh beta.1 rebuild/install、真实 HKCU64 registration/binding 快照和当前 detection/gate identity 调用。
 - Stop-Loss 第一轮：`setup-v3.yml` workflow_dispatch run `35860479890` / identity job `107179191714`，HEAD `8e2cad06100269bc272c9903012a70d313f0215d`；setup 与 historical jobs 均为 skipped，identity-only 路径在约 3 分 27 秒后唯一返回 `IDENTITY_PATH`。Artifact `10750690652` 只有封闭 JSON `{"schema":1,"status":"REJECT","reason":"IDENTITY_PATH"}`，未泄露路径或身份细节。源码对比确认 `upgrade-detection` 直接比较物理 `realpath` 与原始 `E:` 路径，把 hosted runner 的 `subst` 卷根误判为内部重解析；同仓库 `upgrade-preflight` 已采用“仅物理化卷根、保留相对路径”的安全边界。当前修正同步该边界，并以物理卷表示做 overlap 检查；逐级逻辑路径 reparse 检查不变。
+- 后续独立 identity-only 已得到 `IDENTITY_ACCEPTED`（run/job/Artifact 未在本次派单提供，记 N/A）；但 Setup run `35863240935` 在 U15—U18 全部 PASS 后、U20 复制前返回 `KSESSION_UPGRADE_GATE_IDENTITY_REGISTRATION`。这证明单次安装后的静态身份已可接受，但不能证明经历真实故障/恢复序列后的 Inno 登记快照仍相同；继续从完整流水线猜字段没有证据。
+
+## U15—U20 最小序列诊断
+
+- `workflow_dispatch mode=sequence` 与 full/identity 严格互斥；push commit 含 `[sequence-diagnostic]` 时完整 Setup job 跳过。该 job 只重建 exact beta.1、生成已批准身份 bundle，并调用专项脚本；不运行 `ci.ps1`、当前 `windows-portable/ci.ps1`、26/742 回归或完整离线门禁。
+- 复用 exact beta.1 已验证的 Node、Go、Inno 工具链和 Portable payload，只编译 `sequence-gate`、`sequence-space` 两个明确标记 `SEQUENCE DIAGNOSTIC - NEVER DISTRIBUTE OR INSTALL OUTSIDE DISPOSABLE HOST` 的壳。`sequence-gate` 在真实 gate 接受后立即记录固定码并于 transaction prepare / `[Files]` copy 之前返回；`sequence-space` 只命中真实空间门禁。
+- Go 生命周期沿用真实 beta.1 安装、Launcher、合成 Admin/数据、U15 数据损坏、U16 binding 缺失、U17 program tamper 及 U18 空间不足路径。每次受控恢复后重新运行当前 gate，并比较 program/metadata、registration、binding、shortcuts 与完整 instance 的既有 hash map，仅把 `UNCHANGED/CONTROLLED_MUTATION` 布尔结论写入报告，不输出哈希值。
+- 登记组失败时，序列壳对同一私有 request 仅映射固定子原因：count、version、snapshot、conflict、uninstall、ambiguous、inconsistent；不输出 request、路径、登记值、bundle、日志、anchor、stdout/stderr 或错误正文。
+- 唯一上传文件为 `E:/sequence-diagnostic/SEQUENCE-DIAGNOSTIC.json`，Artifact 名 `upgrade-sequence-diagnostic-<run_id>-<run_attempt>`；schema 仅 `schema/status/phases`，phase 仅九个固定 ID，每项仅 `phase/result/state`。诊断 Setup、私有 request、注册表快照、日志、构建目录、账号、附件和 instance 均不上传。
+- 主控 Review 发现首版 `sequence-diagnostic.ps1` 的 E 盘检查在 PowerShell 运行时形成尾部反斜杠非法正则，AST 与原静态契约未捕获。返工移除该正则，改为共享 `Test-KSessionFixedEPath`：先要求 `IsPathFullyQualified`，再比较 `GetFullPath` 的 `GetPathRoot` 是否严格等于 `E:\`。可执行测试直接调用 helper，并以伪 hosted 环境运行诊断入口：合法 `E:\...`/`E:/...` 已越过卷门禁到达输入门禁；`C:\...`、`EE:\...`、`E:relative`、UNC 与设备路径均固定拒绝，且不再出现旧正则异常。
 
 ## 修改文件
 
-- `.github/workflows/setup-v3.yml`（内置 identity/full dispatch 互斥及 push marker）
+- `.github/workflows/setup-v3.yml`（identity/sequence/full dispatch 互斥及 push marker）
 - `tools/windows-installer/{build.cjs,ci.ps1,offline-ci.ps1,setup.iss,verify-artifact.cjs,fresh-identity.cjs,rebuild-beta1.ps1,verify-beta1-source.cjs,verify-beta1-build.cjs}`
 - `tools/tests/windows-installer/{fresh-identity.test.cjs,upgrade-lifecycle/contract.test.cjs,upgrade-preflight/preflight.test.cjs}`
-- `tools/tests/windows-installer/upgrade-transaction/contract.test.cjs`
+- `tools/tests/windows-installer/upgrade-transaction/{contract.test.cjs,gate.test.cjs}`
 - `tools/windows-installer/upgrade-gate/{index.cjs,cli.cjs}`
 - `tools/windows-installer/upgrade-detection/index.cjs`
 - `tools/tests/windows-installer/upgrade-detection/upgrade-detection.test.cjs`
 - `tools/windows-installer/{identity-diagnostic.cjs,identity-diagnostic.ps1}`
+- `tools/windows-installer/{sequence-diagnostic.ps1,sequence-diagnostic-path.ps1,sequence-identity.cjs}`
 - `tools/windows-launcher/{setup_windows_test.go,setup_wizard_windows_test.go,upgrade_windows_test.go}`
 - `tools/tests/windows-portable/core-client.cjs`
 - `docs/tasks/windows-installer-v1.1/batch-4/tasks/B4-T4-RESULT.md`
 
 ## 风险与主控处理
 
-1. Stop-Loss 两轮额度已使用一轮；第一轮唯一定位 `IDENTITY_PATH`，当前本地修正尚无 hosted PASS。主控整合后只可使用保留的第二轮运行已登记 `setup-v3.yml` 的 identity-only 默认路径，不得选择 `full` 或增加第三轮诊断。只有该轮返回 `IDENTITY_ACCEPTED` 才能解除本层阻塞；真实 U20 复制进度取消及 rollback 完整状态相等仍需后续完整 hosted 生命周期证明。
+1. 当前最小序列诊断仅完成本地静态/合成验证，尚未 hosted 编译或执行。主控 Review 整合时 commit message 必须包含 `[sequence-diagnostic]`，避免 push 自动运行 full；之后至多手动运行一次 `setup-v3.yml mode=sequence`。不得运行 `full`，也不得把诊断壳作为发行 Artifact。
 2. 下一次真实运行仍可能暴露 build-only 闭包、Inno 生命周期次序、完整 registry values 恢复、ACL 继承或取消时机问题。任何新失败应保留首次 failure Artifact 并退回本任务修复。
 3. `U03/U04` 成功升级链不会使用伪造 registry；负例由既有 exact T1 gate 与真实 Portable-running Setup gate组成。若 QA 要求 v1.0.0 实物安装负例，需要新的受信任旧发行身份，不能在本任务伪造。
 4. 当前工作树因本任务生成的未跟踪 `.test-work/` 与 `node_modules/` 不 clean；它们不得提交。tracked 变更只限上列文件。

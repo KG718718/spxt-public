@@ -10,12 +10,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Run the identity stop-loss diagnostic or the full Setup workflow
+        description: Run an identity, U15-U20 sequence, or full Setup workflow
         required: false
         default: identity
         type: choice
         options:
           - identity
+          - sequence
           - full
 permissions:
   contents: read
@@ -24,7 +25,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   setup:
-    if: github.ref == 'refs/heads/codex/windows-installer-v1.1' && ((github.event_name == 'push' && !contains(github.event.head_commit.message, '[identity-diagnostic]')) || (github.event_name == 'workflow_dispatch' && inputs.mode == 'full'))
+    if: github.ref == 'refs/heads/codex/windows-installer-v1.1' && ((github.event_name == 'push' && !contains(github.event.head_commit.message, '[identity-diagnostic]') && !contains(github.event.head_commit.message, '[sequence-diagnostic]')) || (github.event_name == 'workflow_dispatch' && inputs.mode == 'full'))
     runs-on: windows-2025
     timeout-minutes: 120
     steps:
@@ -167,6 +168,61 @@ jobs:
           $taskReport=Get-Content -LiteralPath E:/identity-diagnostic/IDENTITY-DIAGNOSTIC.json -Raw|ConvertFrom-Json
           if($taskReport.reason -notmatch '^IDENTITY_(ACCEPTED|REGISTRATION|BINDING|PATH|MANIFEST|PROGRAM|BUILD|RUNTIME|LAUNCHER|INTERNAL)$'){throw 'Unsafe identity diagnostic reason'}
           "Identity diagnostic: $($taskReport.reason)" >> $env:GITHUB_STEP_SUMMARY
+  sequence:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1' && github.event_name == 'workflow_dispatch' && inputs.mode == 'sequence'
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Exact public Git bytes
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Exact beta.1 U15-U20 registration sequence only
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD) -ne '${{ github.sha }}') { throw 'Tested commit mismatch' }
+          if (!(Test-Path E:/)) {
+            $taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-sequence-e'
+            New-Item -ItemType Directory -Path $taskDrive|Out-Null
+            subst E: $taskDrive
+            if ($LASTEXITCODE -ne 0) { throw 'E isolation unavailable' }
+          }
+          git clone --no-hardlinks --no-checkout . E:/beta1-source *> $null
+          if ($LASTEXITCODE -ne 0) { throw 'Isolated beta.1 source clone failed' }
+          git -C E:/beta1-source -c core.autocrlf=false checkout --detach e9417f036d0cdf736ff84682556a994040f0de0b *> $null
+          if ($LASTEXITCODE -ne 0 -or (git -C E:/beta1-source rev-parse HEAD) -ne 'e9417f036d0cdf736ff84682556a994040f0de0b' -or
+              (git -C E:/beta1-source rev-parse 'HEAD^{tree}') -ne '5da66cb9b73dfa307948634634bfab2cfaaead12') { throw 'beta.1 source identity mismatch' }
+          & ./tools/windows-installer/rebuild-beta1.ps1 -Source E:/beta1-source -Work E:/beta1-build *> $null
+          if ($LASTEXITCODE -ne 0) { throw 'Exact beta.1 build-only failed' }
+          $taskNode='E:/beta1-build/portable/node-tool/node-v24.21.0-win-x64/node.exe'
+          $taskBundle='E:/fresh-beta1-approved-identity-bundle.json'
+          & $taskNode ./tools/windows-installer/fresh-identity.cjs E:/beta1-build ./tools/windows-installer/historical-identity/historical-run-35514357007-evidence.json $taskBundle *> $null
+          if ($LASTEXITCODE -ne 0) { throw 'Approved identity bundle generation failed' }
+          & ./tools/windows-installer/sequence-diagnostic.ps1 -Work E:/sequence-diagnostic -Beta1Build E:/beta1-build -Bundle $taskBundle -Node $taskNode -Commit '${{ github.sha }}'
+          if ($LASTEXITCODE -ne 0) { throw 'Sequence diagnostic failed' }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: upgrade-sequence-diagnostic-${{ github.run_id }}-${{ github.run_attempt }}
+          path: E:/sequence-diagnostic/SEQUENCE-DIAGNOSTIC.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Fixed sequence summary only
+        if: always()
+        shell: pwsh
+        run: |
+          $taskReport=Get-Content -LiteralPath E:/sequence-diagnostic/SEQUENCE-DIAGNOSTIC.json -Raw|ConvertFrom-Json
+          if($taskReport.status -notin @('PASS','FAIL') -or @($taskReport.phases).Count -gt 9 -or ($taskReport.status -eq 'PASS' -and @($taskReport.phases).Count -ne 9)){throw 'Unsafe sequence diagnostic summary'}
+          "Sequence diagnostic: $($taskReport.status)" >> $env:GITHUB_STEP_SUMMARY
+          foreach($taskPhase in $taskReport.phases){
+            if($taskPhase.phase -notmatch '^(BASELINE|U15|AFTER_U15|U16|AFTER_U16|U17|AFTER_U17|U18|U20_PRECOPY)$' -or
+               $taskPhase.result -notmatch '^(IDENTITY_(ACCEPTED|REGISTRATION(_(COUNT|VERSION|SNAPSHOT|CONFLICT|UNINSTALL|AMBIGUOUS|INCONSISTENT))?|BINDING|PATH|MANIFEST|PROGRAM|BUILD|RUNTIME|LAUNCHER|INTERNAL)|PREFLIGHT_REJECTED|SPACE_REJECTED)$' -or
+               $taskPhase.state -notmatch '^(UNCHANGED|CONTROLLED_MUTATION)$'){throw 'Unsafe sequence diagnostic phase'}
+            "- $($taskPhase.phase): $($taskPhase.result) / $($taskPhase.state)" >> $env:GITHUB_STEP_SUMMARY
+          }
   historical-identity:
     if: github.event_name == 'workflow_dispatch' && inputs.mode == 'full' && github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1'
     permissions:

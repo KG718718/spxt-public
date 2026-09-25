@@ -5,6 +5,7 @@ const path = require('node:path');
 const test = require('node:test');
 const { GateError, runGate, sha } = require('../../../windows-installer/upgrade-gate/index.cjs');
 const {safeIdentityReason} = require('../../../windows-installer/identity-diagnostic.cjs');
+const {classifyCodes} = require('../../../windows-installer/sequence-identity.cjs');
 const bundleBytes = Buffer.from('{"schema":1,"profiles":[]}\n');
 const request = { schema: 1, snapshot: { registrations: [], bindings: [] }, preflight: { installRoot: 'C:\\Install', instancePath: 'D:\\Instance' } };
 const good = {
@@ -65,4 +66,12 @@ test('hosted identity diagnostic accepts only fixed reasons', () => {
   for (const error of [Error('path=C:\\private token=secret'), new GateError('GATE_IDENTITY_REJECTED', 'IDENTITY_PRIVATE_HASH')]) {
     assert.equal(safeIdentityReason(error), 'IDENTITY_INTERNAL');
   }
+});
+test('sequence registration diagnostic exposes only a closed fixed subreason', () => {
+  for (const code of ['REGISTRATION_COUNT', 'VERSION_UNSUPPORTED', 'SNAPSHOT_INVALID', 'REGISTRATION_CONFLICT', 'UNINSTALL_METADATA_INVALID']) {
+    assert.equal(classifyCodes([code, code]), code);
+  }
+  assert.equal(classifyCodes(['REGISTRATION_COUNT', 'VERSION_UNSUPPORTED']), 'IDENTITY_REGISTRATION_AMBIGUOUS');
+  assert.equal(classifyCodes(['path=C:\\private token=secret']), 'IDENTITY_REGISTRATION_AMBIGUOUS');
+  assert.equal(classifyCodes(['REGISTRATION_COUNT'], true), 'IDENTITY_REGISTRATION_INCONSISTENT');
 });
