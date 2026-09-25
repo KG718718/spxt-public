@@ -70,6 +70,16 @@ Execution Thread只回传主控以下字段，详细证据留任务文档/测试
 【已知风险】
 【需要主控处理】
 
+### Execution Return Handshake / 主控回单兜底（2026-09-25用户补充）
+
+- 适用于此后所有 Execution / QA Thread。主控派单时在 ORCHESTRATION.md 登记 TASK ID、执行/QA thread ID、准确主控 thread ID、worktree、local branch、baseline 和当前状态；状态主线为 `DISPATCHED → RUNNING → RETURNED → REVIEWED → INTEGRATED`。任务完成或 UI 显示结束不自动改变状态。
+- Execution / QA 完成前须完成任务卡要求的本地测试或审查、保留 local commit、形成上述结构化回单，并用 `send_message_to_thread` 向准确主控 thread ID 主动发送；核验返回的目标 thread ID 后，才可标记 `RETURNED`。QA 的 local commit 只提交审查/测试结果，不修改生产代码；若某只读 QA 无法安全生成提交，须标记 BLOCKED 并由主控核实，不能伪造 commit。
+- 若发送失败、接口不可用或返回目标不匹配，执行/QA 不得声称已交接，须把完整回单与失败原因写入本任务 RESULT，保留 local commit 和 worktree，最终标记 `BLOCKED — RETURN DELIVERY FAILED`、`主控未收到／待主控读取`。不得删除工作树。
+- 主控对每个自建执行/QA任务承担 watchdog：任务完成、`wait_threads` 返回结束、长期无活动、主控恢复会话或客户端重启后，核查结构化回单；未收到则 `read_thread`；读取异常则读任务 RESULT，并核对 worktree、local commit、测试证据及任务身份。主动发送失败后由主控实际取得并核实结果的，登记 `DELIVERY_RECOVERED（主控恢复接收；非主动 RETURNED）` 作为例外接收证据，再进入 Review；不得伪称主动发送成功，也不得永久等待。
+- 下游任务和整合不得仅凭 UI 完成启动；必须取得主动 `RETURNED` 或经核实的 `DELIVERY_RECOVERED`，由主控检查测试、diff 范围与 local commit，标记 `REVIEWED` 后才可整合或派依赖任务。`INTEGRATED` 仅在实际整合且身份核对后记录；QA 报告整合不等于生产实现验收。
+- PASS 且没有产品决策点、测试符合任务卡、diff 范围正确、local commit 存在时，主控在已批准 Batch 和权限范围内自动 Review、必要复测、Integration 并推进下一依赖任务，无须为常规工程续行反复询问。FAIL 退回原执行任务；BLOCKED / NEED PARENT DECISION 先判断是否真涉及产品/架构，纯工程阻塞按既有任务范围处理。
+- 这项自动续行不扩大 Batch 范围，不代替安全门禁、用户已设诊断次数或 Hosted 运行授权，不允许自动创建 Release、合并 main 或进入下一 Batch。除用户明确暂停外，整个 Batch 仅因产品决策、安全无法恢复或工程预算耗尽而停下等待网页版；已批准运行额度耗尽属于工程预算边界。本规则不追认 Batch 4 失败诊断，也不授权第三次 `mode=sequence` 或完整流水线。
+
 ### QA与任务索引
 
 - 集成后主控按风险判断是否创建独立<Batch>-QA对话，并记录依据。QA读取批准规格、最终整合diff，执行验收，检查边界、测试是否被削弱、数据保护及Git/Artifact身份。

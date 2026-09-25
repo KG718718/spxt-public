@@ -3,6 +3,7 @@
 授权：用户正式 Batch 4 任务书及本次启动指令；L2 / ENGINEERING ORCHESTRATOR。一层独立 Codex task threads，禁止普通 sub-agent。仅 KG718718/spxt-public。
 
 主控：019fa7e9-f46b-7192-9052-cd0aac7c2cc5。集成分支 codex/windows-installer-v1.1。
+2026-09-25 回单规则补充：后续每次派单按AGENTS.md登记 TASK ID、执行/QA thread ID、主控 thread ID、worktree、local branch、baseline、状态；主动送达并核验后为 RETURNED，送达失败则 BLOCKED — RETURN DELIVERY FAILED，由主控 watchdog 从 thread/RESULT/worktree 恢复为 DELIVERY_RECOVERED 后再 Review。只有 REVIEWED 可整合或启动依赖任务。既有 B4-T4 最小诊断已由主控取得并审查，当前 Batch 4 因诊断额度用完仍 BLOCKED；本条不触发第三次 Hosted、完整流水线或新任务。
 Preflight：公开仓库/正确分支/干净；本地与 GitHub API 远端均为 2839ba62220e53d126e9fb00757cd89ff89a1b83。首次 git ls-remote 连接重置，API 复核成功；不是身份不一致。
 
 | Task | 职责 / 独占文件 | 依赖 | Thread / Worktree / commit | 状态 |

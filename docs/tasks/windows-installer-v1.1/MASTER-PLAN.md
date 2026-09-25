@@ -1,5 +1,9 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## Execution Return Handshake / 主控回单兜底｜2026-09-25
+
+此后所有 Execution / QA 任务按 `AGENTS.md` 执行主动送达加主控 watchdog 的双通道回单，并在 `ORCHESTRATION.md` 登记任务身份、工作树、分支、基线及状态。主动发送失败不得伪称 `RETURNED`；主控从 thread、RESULT 和 worktree 取得并核实结果后记录 `DELIVERY_RECOVERED`，再 Review。仅已获批 Batch 内的工程依赖可在 `REVIEWED` 后自动续行；不覆盖产品决策、安全门禁、托管运行次数或发布授权。Batch 4 目前仍 BLOCKED，未授权第三次最小诊断或完整流水线。
+
 ## 网页版决策层 / ENGINEERING ORCHESTRATOR｜2026-09-22
 
 按用户补充原则：网页版承担产品策划、架构分析、方案比较研究、Batch范围批准和最终验收；Codex主控只负责已批准方案内工程编排，不是产品决策者。THREAD ORCHESTRATOR仍是执行方式，不等于产品授权。
