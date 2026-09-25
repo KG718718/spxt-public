@@ -152,6 +152,7 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - 登记组失败时，序列壳对同一私有 request 仅映射固定子原因：count、version、snapshot、conflict、uninstall、ambiguous、inconsistent；不输出 request、路径、登记值、bundle、日志、anchor、stdout/stderr 或错误正文。
 - 唯一上传文件为 `E:/sequence-diagnostic/SEQUENCE-DIAGNOSTIC.json`，Artifact 名 `upgrade-sequence-diagnostic-<run_id>-<run_attempt>`；schema 仅 `schema/status/phases`，phase 仅九个固定 ID，每项仅 `phase/result/state`。诊断 Setup、私有 request、注册表快照、日志、构建目录、账号、附件和 instance 均不上传。
 - 主控 Review 发现首版 `sequence-diagnostic.ps1` 的 E 盘检查在 PowerShell 运行时形成尾部反斜杠非法正则，AST 与原静态契约未捕获。返工移除该正则，改为共享 `Test-KSessionFixedEPath`：先要求 `IsPathFullyQualified`，再比较 `GetFullPath` 的 `GetPathRoot` 是否严格等于 `E:\`。可执行测试直接调用 helper，并以伪 hosted 环境运行诊断入口：合法 `E:\...`/`E:/...` 已越过卷门禁到达输入门禁；`C:\...`、`EE:\...`、`E:relative`、UNC 与设备路径均固定拒绝，且不再出现旧正则异常。
+- 主控整合路径修正后的唯一获批 sequence run `36141099074` 在 `sequence-gate` build 固定失败为 `SEQUENCE_GATE_BUILD_FAILED`，未生成 `SEQUENCE-DIAGNOSTIC.json`，U15—U20 均未开始；该次一次性 hosted 额度已消耗，禁止自行重跑。静态执行顺序确认：`portable-test-report.sourceCommit` 与解包 `verify().sourceCommit` 已正确比较 beta.1 `payloadCommit`，但紧接着 `zip-identity.sourceCommit` 仍误与当前诊断源码 `commit` 比较；exact beta.1 Portable 的 ZIP 身份必为 `e9417f0`，因此断言必然失败。修正保留 ZIP SHA 与 source identity 校验，只把 ZIP source 比较统一为 `payloadCommit`。普通 candidate/fault 模式的 `payloadCommit=commit` 仍要求当前 commit；sequence 模式要求 beta.1 payload commit；诊断 `build-info` 与 target manifest 的 `sourceCommit` 继续记录当前诊断源码 commit，禁止发行标记不变。
 
 ## 修改文件
 
@@ -170,7 +171,7 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 
 ## 风险与主控处理
 
-1. 当前最小序列诊断仅完成本地静态/合成验证，尚未 hosted 编译或执行。主控 Review 整合时 commit message 必须包含 `[sequence-diagnostic]`，避免 push 自动运行 full；之后至多手动运行一次 `setup-v3.yml mode=sequence`。不得运行 `full`，也不得把诊断壳作为发行 Artifact。
+1. Sequence run `36141099074` 已消耗本次一次性 hosted 额度且在 build 阶段失败；当前修正仍只有本地静态/合成证据。主控 Review 整合时 commit message 必须包含 `[sequence-diagnostic]`，避免 push 自动运行 full。任何第二次 `mode=sequence` 必须先取得上级明确允许；执行任务不得自行重跑，也不得运行 `full` 或把诊断壳作为发行 Artifact。
 2. 下一次真实运行仍可能暴露 build-only 闭包、Inno 生命周期次序、完整 registry values 恢复、ACL 继承或取消时机问题。任何新失败应保留首次 failure Artifact 并退回本任务修复。
 3. `U03/U04` 成功升级链不会使用伪造 registry；负例由既有 exact T1 gate 与真实 Portable-running Setup gate组成。若 QA 要求 v1.0.0 实物安装负例，需要新的受信任旧发行身份，不能在本任务伪造。
 4. 当前工作树因本任务生成的未跟踪 `.test-work/` 与 `node_modules/` 不 clean；它们不得提交。tracked 变更只限上列文件。

@@ -20,7 +20,7 @@ assert.equal(pr.staging.status,'PASS');assert.equal(pr.extracted.status,'PASS');
 const build=JSON.parse(fs.readFileSync(path.join(root,'build-info.json')));
 const zip=path.join(portable,'artifact/K-SESSION-portable-beta-win-x64.zip');
 const zi=JSON.parse(fs.readFileSync(path.join(portable,'artifact/zip-identity.json')));
-assert.equal(sha(fs.readFileSync(zip)),zi.zipSha256);assert.equal(zi.sourceCommit,commit);
+assert.equal(sha(fs.readFileSync(zip)),zi.zipSha256);assert.equal(zi.sourceCommit,payloadCommit);
 const files=inventory(root),gen=path.join(out,'generated'),artifact=path.join(out,'artifact');
 fs.mkdirSync(gen,{recursive:true});fs.mkdirSync(artifact);
 const pkg=JSON.parse(fs.readFileSync(path.join(root,'app/package.json')));

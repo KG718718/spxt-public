@@ -55,6 +55,14 @@ test('U15-U20 sequence diagnostic is manual, pre-transaction, closed, and does n
  assert.match(script,/sequence-diagnostic-path\.ps1/);assert.match(script,/Test-KSessionFixedEPath/);
  assert.match(pathHelper,/IsPathFullyQualified/);assert.match(pathHelper,/GetPathRoot/);assert.doesNotMatch(pathHelper,/-match|-notmatch/);
  assert.match(build,/payloadCommit=sequenceDiagnostic\?'e9417f036d0cdf736ff84682556a994040f0de0b':commit/);
+ assert.match(build,/assert\.equal\(zi\.sourceCommit,payloadCommit\)/);
+ assert.doesNotMatch(build,/assert\.equal\(zi\.sourceCommit,commit\)/);
+ const current='412f4cafb6d13372bdec84161cc17b3eca30e891',beta1='e9417f036d0cdf736ff84682556a994040f0de0b';
+ const expectedPayloadCommit=mode=>['sequence-gate','sequence-space'].includes(mode)?beta1:current;
+ assert.equal(expectedPayloadCommit('candidate'),current);assert.equal(expectedPayloadCommit('fault-space'),current);
+ assert.equal(expectedPayloadCommit('sequence-gate'),beta1);assert.equal(expectedPayloadCommit('sequence-space'),beta1);
+ assert.match(build,/sourceCommit:commit,sourceTree:build\.sourceTree/);
+ assert.match(build,/manifest=\{schema:1,sourceCommit:commit/);
  assert.match(build,/SEQUENCE DIAGNOSTIC - NEVER DISTRIBUTE OR INSTALL OUTSIDE DISPOSABLE HOST/);
  for(const marker of ['REGISTRATION_COUNT','VERSION_UNSUPPORTED','SNAPSHOT_INVALID','REGISTRATION_CONFLICT','UNINSTALL_METADATA_INVALID','IDENTITY_REGISTRATION_AMBIGUOUS','IDENTITY_REGISTRATION_INCONSISTENT'])assert.match(helper,new RegExp(marker));
  assert.doesNotMatch(helper,/console\.|error\.message|error\.stack|process\.stdout|process\.stderr/);
