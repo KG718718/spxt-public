@@ -89,6 +89,8 @@ T1 返工复核：主控复跑43/43。bundle固定自身SHA，字段及批准来
 
 随后主控实际收到 B4-T4 结构化回单：路径门禁返工 local commit `3e059b813022be2b8bba5156d4db7c328cc27e44`，执行任务报告本地专项通过、Hosted 未运行、未 push。主控尚未 Review 此提交，回单送达只恢复交接，不构成代码验收或授权启动诊断。
 
+2026-09-25 主控随后完成只读 Review、专项 19/19 复跑、Go 1.27.1 格式与 compile-only 验证，将执行提交整合到公开开发分支 `412f4cafb6d13372bdec84161cc17b3eca30e891` 并推送；提交尾部 `[skip ci]`，未自动启动完整流水线。手动唯一一次 `setup-v3.yml mode=sequence` run `36141099074` / sequence job `108090866148` 在 `SEQUENCE_GATE_BUILD_FAILED` 停止，Setup/full/identity/historical jobs 全部 skipped；无 `SEQUENCE-DIAGNOSTIC.json`，未进入 U15—U20，也未取得登记身份子原因。主控静态 Review 发现 `build.cjs` 序列模式已把 `pr/pv.sourceCommit` 比较 beta.1 payloadCommit，却仍把 beta.1 `zip-identity.sourceCommit` 比较当前诊断 commit；这是可复核的构建身份冲突，但因 build stdout/stderr 被抑制，尚非运行日志确认的唯一根因。已退回原 B4-T4 做最小修正和本地反例；本次一次性 Hosted 额度已使用，不自行发起第二次，等待后续决定。U20、完整回归、Batch 4 均未 PASS。
+
 用户报告工作树自动回收开启、限制20。不得主动触发删除；记录任务 commit 和路径，未整合结果不得清理，派单前检查现存公开 worktree。若发现路径/结果被回收，停止，不伪造恢复。
 
 最终门禁见 ACCEPTANCE.md。未获人工验收不得最终 PASS；不进入下一 Batch。所有产品/UX/schema/重大架构决策使用五字段卡交回网页版。
