@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 4 最新状态｜2026-09-25
+
+公开开发分支 `codex/windows-installer-v1.1` 的受测提交为 `3ae73b7e4c37c1615c4867345883432d58150fbc`。经用户批准的第二次且仅 `mode=sequence` Hosted 诊断 run `36145933140` 已结束：完整 Setup 等其他作业均跳过，sequence 作业在生命周期测试的首个 `BASELINE` 阶段码之前失败；封闭 Artifact `10869846376` 只有 `status=FAIL, phases=[]`，未取得 U20 登记身份子原因。此前第一次 sequence run `36141099074` 则在诊断壳构建阶段失败，已本地修正并通过第二次构建。两次授权额度均已使用，禁止自行第三次运行或启动完整流水线。Batch 4 仍为 **BLOCKED / 未验收**；下一步须先解决 pre-baseline 安全诊断缺口并由用户另行批准 Hosted 验证。主控和执行任务的自动结构化回单规则已写入 AGENTS.md，执行任务的结束不自动等于 Batch 通过。详细证据见 `docs/tasks/windows-installer-v1.1/batch-4/ORCHESTRATION.md`。main、v1.0.0、Release、其他用途版本和真实数据未动。
+
 ## Batch 4 正式启动 / 编排阶段
 
 用户批准 Safe Upgrade / Rollback / Data Lifecycle，限 beta.1→beta.2；公开仓库已设为当前项目主要目录，Preflight 起点 2839ba62220e53d126e9fb00757cd89ff89a1b83 与 GitHub 开发分支一致且干净。首次 Git 连接重置后经 GitHub API 核实。

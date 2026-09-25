@@ -93,6 +93,8 @@ T1 返工复核：主控复跑43/43。bundle固定自身SHA，字段及批准来
 
 原 B4-T4 已将返工提交 `25b7f3c106dd96a2ecbe737afbbbf3f136fe0c2b` 主动回单至主控：仅把序列模式的 ZIP sourceCommit 比较改为 `payloadCommit`，保留 ZIP SHA 校验；普通 candidate/fault 仍以当前 commit 比较。主控逐行 Review，并复跑生命周期/门禁专项 19/19、Node syntax 与 diff-check，均通过；该修正只说明本地构建身份断言已收口，未经过第二次 Hosted 证实。第二次手动诊断须取得上级明确允许，不能因本地修复自行重试。
 
+2026-09-25 用户明确批准第二次且仅 `mode=sequence` 最小 Hosted 诊断。主控核对公开开发分支本地与远端同为 `3ae73b7e4c37c1615c4867345883432d58150fbc` 后，手动触发 run `36145933140` / sequence job `108106992593`；setup、identity、historical-identity 均 skipped。exact beta.1 重建后，两个专项诊断壳构建已越过前次 ZIP 身份断言；生命周期测试最终以固定 `SEQUENCE_LIFECYCLE_FAILED` 退出。唯一上传的 Artifact `10869846376`（`upgrade-sequence-diagnostic-36145933140-1`，209 字节）解包后仅有 `{"phases":[],"schema":1,"status":"FAIL"}`。由此只可确认失败在首个 `BASELINE` 阶段记录之前；不能确认真实 beta.1 安装、U15—U18 序列或 U20 identity 已执行，更不能推断登记身份子原因。两次获批的 sequence run 均已用完，停止所有自动重试和完整流水线；若后续需继续，应先设计不泄露路径/日志/身份值的 pre-baseline 固定阶段诊断，并取得新的 Hosted 运行授权。Batch 4 仍 BLOCKED / 未验收。
+
 用户报告工作树自动回收开启、限制20。不得主动触发删除；记录任务 commit 和路径，未整合结果不得清理，派单前检查现存公开 worktree。若发现路径/结果被回收，停止，不伪造恢复。
 
 最终门禁见 ACCEPTANCE.md。未获人工验收不得最终 PASS；不进入下一 Batch。所有产品/UX/schema/重大架构决策使用五字段卡交回网页版。
