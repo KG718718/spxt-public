@@ -2,6 +2,8 @@
 
 ## 当前执行授权｜2026-09-26
 
+当前：原T4第三轮2ed43cc及增量c717d8c主动RETURNED→REVIEWED→INTEGRATED，开发分支e6ae80d→b3ab597；主控中文路径14/14专项、纯Go两项、PS AST通过，生产身份/数据规则不变。D3 run36212532363@b3ab5978ca90be3fa5d3c5f793735fc42879ffc6已显式启动mode=sequence，19阶段含U21/U23；local/origin/API核验一致。预算剩诊断1、完整Setup1、QA2，先取D3证据再决定最后full；下方REWORK状态为历史。尚无最终安装包或QA PASS。
+
 最新工程断点：F1 run36210201290@6fdb7ed1在U21失败，fault-copy意外success；fresh Setup、D13/13及U01/U02/U15—U18/U20已通过，后续未执行，网络恢复true。失败Artifact10895856282已核实；原T4第三轮B4-T4-COPY-FAULT-20260926-03已REWORK/DISPATCHED，继续4918e5b，不另建任务。预算剩诊断2、完整Setup1、QA2；先固定copy/post-copy故障证据和最小修复，禁止无修改retry。下文F1 RUNNING为派单时历史状态。
 
 最新：D1 run36208733404@4319e086 FAIL；原T4第二轮4918e5b→9e070de4已主动RETURNED→REVIEWED→INTEGRATED，三处UTF8写入及固定诊断，生产身份门禁未改，主控22/22专项通过。D2 run36209825354@9e070de4已PASS，17阶段及封闭Artifact10895610527隐私校验通过。随后文档措辞修正通过主控npm26 files/failed0。F1完整Setup run36210201290@6fdb7ed1 RUNNING；诊断剩2/4，Full剩1/2，QA2/2未用。尚无完整Batch4或QA PASS结论。

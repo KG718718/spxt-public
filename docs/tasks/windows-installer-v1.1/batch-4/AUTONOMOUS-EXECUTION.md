@@ -18,7 +18,7 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 
 | 类别 | 上限 | 已用 | 剩余 |
 | --- | --- | --- | --- |
-| 最小诊断 Hosted | 4 | 2 | 2 |
+| 最小诊断 Hosted | 4 | 3 | 1 |
 | 完整 Batch 4 Setup Hosted | 2 | 1 | 1 |
 | QA相关 Hosted | 2 | 0 | 2 |
 
@@ -27,12 +27,17 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 | D1 | 最小诊断 | 4319e08694b6660477397102af20d95eb25062b4 | 36208733404 | 17阶段闭合报告、sequence专属夹具父目录；主控六文件Review及13/13契约、三份PS AST PASS | FAIL；八个PRE阶段完成，BASELINE=IDENTITY_REGISTRATION_VERSION/UNCHANGED；已扣1次 |
 | D2 | 最小诊断 | 9e070de4efa7bc10118a7942c33d24b51cb326d0 | 36209825354 | 三处JSON显式UTF8、固定name/version/both原因；主控八文件Review、独立22/22专项PASS，生产detection/gate未改；local/origin/API同SHA | PASS；17阶段完整，BASELINE及U15/16/17恢复后与U20_PRECOPY均IDENTITY_ACCEPTED/UNCHANGED |
 | F1 | 完整Setup | 6fdb7ed19467ac64a80c2f4824b4dfe0431fc62d | 36210201290 | D2专项PASS；实现与D2一致，后续仅治理文档和公开措辞修正；主控npm26 files/failed0；local/origin/API同SHA | FAIL于U21：fault-copy success=true want=false；fresh Setup及U01/U02/U15—U18/U20通过，742及最终privacy未运行 |
+| D3 | 最小诊断 | b3ab5978ca90be3fa5d3c5f793735fc42879ffc6 | 36212532363 | 第三轮copy原生失败、post-install退出/启动保护，19阶段包含U21/U23；增量中文路径修复；主控14/14契约、2项纯Go、3份PS AST PASS；local/origin/API一致 | RUNNING；显式mode=sequence，已扣第3次 |
 
 所有工程push带[skip ci]，用明确workflow_dispatch及mode扣减预算；不允许push隐式启动完整流水线。Full Setup本身同commit构建Runtime/Launcher/Portable/Setup和742门禁，无须为了名字另外触发重复流水线。每轮首失败证据保留，闭合Artifact不含原始日志/路径/凭据/业务内容。
 
 D2等待期间主控整合目录补跑npm：首次26 files/failed1，定位为新任务卡的一处来源措辞触发既有公开文档门禁；只改为“仅阅读指定公开仓库材料”，范围约束不变，未修改测试。修正后26 files/failed0；本机hosted-only SKIP照常，不冒充742结果。D2不运行公开回归；Full必须使用含此文档修正的后续HEAD。
 
 ## 当前任务
+
+第三轮增量c717d8c1e976679dec99dc67018e4db41bbb13be主动RETURNED→REVIEWED→INTEGRATED为b3ab5978ca90be3fa5d3c5f793735fc42879ffc6。主控含中文工作目录实际14/14契约PASS、0fail/skip；同批validator反例主动覆盖合成中文目录，公开文档8/8 PASS。实现与任务树逐字一致。D3仅诊断故障停止及旧状态不变；exact beta.1 payload不作为当前beta.2升级成功或发行物证据。
+
+第三轮主动RETURNED：task2ed43cc18d3b38b7f2eac28cf683982157844b7d已Review并整合为e6ae80dd088bd04fb9589f41fd885cdc0dff1ee0；固定copy真实失败、post-install非零退出及失败禁止启动、19阶段封闭诊断。主控纯Go隔离/marker两项和PS AST通过，但生命周期契约在含中文的主控路径13 PASS/1 FAIL：pwsh stdin中的Unicode helper路径无法加载。已退回原T4补编码边界修复及中文/ASCII实际反例；尚未push该整合提交或dispatch D3，不消耗Hosted额度。生产身份门禁与原回滚策略未改。
 
 B4-T4 / B4-T4-COPY-FAULT-20260926-03：REWORK / DISPATCHED，原thread/worktree/branch@4918e5b，return target不变。F1 Artifact10895856282（digest4ec029dc062e530f8d6bc26f88e04c42dc0c7674cc2e5747f11b58a0a19765af）确认Installer29自动PASS/3人工PENDING、D13/13 PASS、Upgrade7项PASS后U21退出码预期不符；U21状态恢复比较未执行，不宣称已恢复。offline证据externalDuring=false/restored=true。原T4先调查copy hook、增加固定失败诊断及同源post-copy异常传播审查，必要最小诊断由主控Review后使用剩余2次额度；不直接重跑最后一次full。完整卡见tasks/B4-T4-COPY-FAULT-20260926.md。QA尚未开始，无最终Setup Artifact。
 
