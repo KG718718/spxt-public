@@ -1,5 +1,7 @@
 # Batch 4 编排索引
 
+当前：**QA门禁修复已整合 / 独立复审中**。原T4 local88ae624c4b315ea960c354286873326102143d43 → 主控b7704ab74fb19d270fc4711169aecdc3e5497bb7，主控共用static gate真实PASS、lifecycle15/15、文档8/8、diffcheck及产品等价检查PASS；相对F3仅5个CI/静态测试非文档文件变化。QA首轮36fbb7b已整合df948956并保留FAIL历史；确认QA idle/clean后主控把同一QA分支安全同步到b7704ab，现同一thread复审。QA Hosted仍0/2，只有收到HOSTED_READY后才显式运行qa-static。F3最终Artifact完整ZIP及EXE实际哈希均核验PASS，详情ARTIFACT-VERIFICATION.md；不会伪称其来源为修复commit。
+
 当前QA发现：historical-identity静态测试旧workflow路由断言本地确定失败，历史job连续原生命令未逐条检查退出码，存在被后续成功掩盖风险；不能以F3绿色直接认定QA PASS。原T4已返工B4-T4-QA-GATE-20260926-06，从2b14985仅修CI静态门禁/契约，产品及生命周期全部冻结，禁止Hosted；卡tasks/B4-T4-QA-GATE-20260926.md。同一B4-QA继续独立审查与首失败证据核验。任何专用QA静态Hosted先Review，D5/F3预算不增加，不得用QA重跑Full。
 
 当前：**F3 WORKFLOW PASS / B4-QA RUNNING**。F3 run36246132535@c8886e6b6d413c2fd73d6716621d07a80b337e58所有job/gate通过，setup11m44s；最终Artifact10907910968，SHA256 e6b01fe7c4499526eb99a837892a0c0641ad2232c84981b191b2ac6f7c18f3c6，主控独立内容核验进行中。B4-QA thread `01a0de04-719c-7691-8b04-33d9d53596a0`，managed worktree `E:/CodexWorkspace/CodexWorktrees/b4-qa/public-source`，branch `codex/b4-qa`，baseline c8886e6；gpt-5.6-sol/medium，生产只读、仅报告可local commit，return target新主控。卡tasks/B4-QA.md；QA Hosted0/2，无额外run。原T4冻结2b14985；不清理任何旧工作树。
