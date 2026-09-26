@@ -2,6 +2,16 @@
 
 本仓库维护面向广告公司的 OA、财务核对和数据统计系统。
 
+## 当前唯一工程主控｜2026-09-26 迁移决定
+
+- 唯一活动主控及 Execution / QA 回单目标：`01a0db0e-c950-79e0-8e11-07155e0742f2`。
+- 旧主控 `019fa7e9-f46b-7192-9052-cd0aac7c2cc5` 为 **RETIRED — AUTH FAILURE**，仅供历史读取；认证恢复不恢复派单权。历史任务卡、回单及报告中的旧 ID 只保留追溯意义，不是活动授权。
+- 此后只有新主控可在用户授权范围内派单、Review、Integration、Actions、QA 和 Handoff。执行任务收到旧主控的新派单须停止执行并回报新主控，不允许双 Master 并行控制。
+- 本次 Phase 2 只迁移控制职责和回单路由。Batch 4 生产开发、诊断实现、Hosted 运行及 QA 启动保持暂停；接管完成不自动恢复开发，不重开已有任务。
+- TASK ID、任务工作树、local branch、原 baseline 和 scope 均保持不变。已完成组件不因迁移重新激活；现有未关闭任务只确认新回单目标。
+- 主控恢复会话时先检查所有非 COMPLETE 任务；主动回单核验失败时从 thread、RESULT、worktree 和 local commit 恢复，并明确记录 DELIVERY_RECOVERED，不能假称主动送达。状态为 DISPATCHED / RUNNING / RETURNED / REVIEWING / REWORK / REVIEWED / INTEGRATED / QA / COMPLETE / BLOCKED；任务状态与整个 Batch 的验收结论分开记录。
+- 当前迁移事实和回执见 `docs/tasks/windows-installer-v1.1/batch-4/MASTER-MIGRATION.md`。本节优先于下文及历史任务卡的旧主控登记；产品、安全、数据保护和发布门禁不变。
+
 - 文档、源码、测试结果和交付物以本仓库、GitHub Actions及Releases为事实来源。禁止另建完整clone或在开发机保存发行包；已批准的THREAD ORCHESTRATION Batch可按下述规则建立临时Git worktree，不复制其他用途版本。
 - 发布前审查实际文件及Git来源，不导入未经审查的代码、提交历史、真实业务数据、身份、附件、凭据、网络地址、设备路径或含真实信息的媒体。
 - 测试仅使用明确合成的数据和身份；不连接实际业务部署、不发送真实邮件。

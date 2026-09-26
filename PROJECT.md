@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## 唯一工程主控迁移｜2026-09-26
+
+用户批准 Phase 2 控制职责接管：唯一活动主控及回单目标为 `01a0db0e-c950-79e0-8e11-07155e0742f2`；旧主控 `019fa7e9-f46b-7192-9052-cd0aac7c2cc5` 标记 **RETIRED — AUTH FAILURE**，仅保留历史读取用途。当前主要目录继续使用本公开仓库；本轮仅治理文档及回单握手，不恢复 Batch 4 生产开发、Hosted 或 QA。
+
+Batch 4 仍为 **BLOCKED / 未验收**，断点为第二次 sequence run `36145933140` 的 pre-baseline 固定阶段诊断缺口。B4-T1/T1A/T2/T3 已整合；B4-T4 局部返工已整合但生命周期未通过；B4-QA 尚未创建。迁移回执和独立接管验收见 [MASTER-MIGRATION.md](docs/tasks/windows-installer-v1.1/batch-4/MASTER-MIGRATION.md)，不把迁移通过写成 Batch 4 PASS。
+
 ## Batch 4 最新状态｜2026-09-25
 
 公开开发分支 `codex/windows-installer-v1.1` 的受测提交为 `3ae73b7e4c37c1615c4867345883432d58150fbc`。经用户批准的第二次且仅 `mode=sequence` Hosted 诊断 run `36145933140` 已结束：完整 Setup 等其他作业均跳过，sequence 作业在生命周期测试的首个 `BASELINE` 阶段码之前失败；封闭 Artifact `10869846376` 只有 `status=FAIL, phases=[]`，未取得 U20 登记身份子原因。此前第一次 sequence run `36141099074` 则在诊断壳构建阶段失败，已本地修正并通过第二次构建。两次授权额度均已使用，禁止自行第三次运行或启动完整流水线。Batch 4 仍为 **BLOCKED / 未验收**；下一步须先解决 pre-baseline 安全诊断缺口并由用户另行批准 Hosted 验证。2026-09-25 用户补充 Execution / QA 双通道回单及主控 watchdog，已写入 AGENTS.md 与 MASTER-PLAN.md；执行任务的结束不自动等于主控收到回单或 Batch 通过，回单治理更新不授权继续托管诊断。详细证据见 `docs/tasks/windows-installer-v1.1/batch-4/ORCHESTRATION.md`。main、v1.0.0、Release、其他用途版本和真实数据未动。

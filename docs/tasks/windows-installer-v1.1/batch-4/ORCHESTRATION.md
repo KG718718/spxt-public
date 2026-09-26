@@ -2,7 +2,17 @@
 
 授权：用户正式 Batch 4 任务书及本次启动指令；L2 / ENGINEERING ORCHESTRATOR。一层独立 Codex task threads，禁止普通 sub-agent。仅 KG718718/spxt-public。
 
-主控：019fa7e9-f46b-7192-9052-cd0aac7c2cc5。集成分支 codex/windows-installer-v1.1。
+当前唯一主控及回单目标：01a0db0e-c950-79e0-8e11-07155e0742f2。集成分支 codex/windows-installer-v1.1。
+旧主控：019fa7e9-f46b-7192-9052-cd0aac7c2cc5，RETIRED — AUTH FAILURE，仅历史读取；下文旧 ID 不再作为活动回单或派单目标。
+
+## 2026-09-26 Phase 2 当前控制状态
+
+只执行主控迁移；Batch 4 生产开发、Hosted 及 QA 启动暂停。B4-T1/T1A/T2/T3 已整合，不重开；B4-T4 仍是唯一未关闭的既有执行任务，最新局部返工 `25b7f3c106dd96a2ecbe737afbbbf3f136fe0c2b` 对应实现已整合，整个生命周期仍 BLOCKED。第二次 sequence run `36145933140` 在首个 BASELINE 记录前失败，下一技术断点不变。B4-QA 尚未创建。
+
+回单迁移与握手结果登记在 [MASTER-MIGRATION.md](MASTER-MIGRATION.md)。通知 `MASTER-MIGRATION-20260926-B4-T4-01` 已由原执行主动回单并被新主控实际接收，迁移握手 RETURNED / PASS；旧主控已明确确认退役。此结果不恢复 Batch 4 开发。本节优先于下列历史编排表及阶段记录，但不倒填或更改历史测试结论。
+
+## 历史编排与证据
+
 2026-09-25 回单规则补充：后续每次派单按AGENTS.md登记 TASK ID、执行/QA thread ID、主控 thread ID、worktree、local branch、baseline、状态；主动送达并核验后为 RETURNED，送达失败则 BLOCKED — RETURN DELIVERY FAILED，由主控 watchdog 从 thread/RESULT/worktree 恢复为 DELIVERY_RECOVERED 后再 Review。只有 REVIEWED 可整合或启动依赖任务。既有 B4-T4 最小诊断已由主控取得并审查，当前 Batch 4 因诊断额度用完仍 BLOCKED；本条不触发第三次 Hosted、完整流水线或新任务。
 Preflight：公开仓库/正确分支/干净；本地与 GitHub API 远端均为 2839ba62220e53d126e9fb00757cd89ff89a1b83。首次 git ls-remote 连接重置，API 复核成功；不是身份不一致。
 
