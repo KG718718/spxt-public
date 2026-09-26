@@ -1,0 +1,25 @@
+# Batch 4.5 Master Review Log
+
+当前均为实施中的提前Review，未形成最终验收。
+
+## T1 网络/config/port
+- 默认网关不能硬性要求；有效connected/on-link Private LAN应保留，多NIC不猜选。Execution已接受。
+- GUID canonical小写无括号8-4-4-4-12 hex，不能任意限制UUID version/variant位，拒绝全零；T1/T4已同步。
+- 修正JS有符号bitwise导致172/192 RFC1918判断错误；生产port入口禁止0.0.0.0/Public/越界端口，归一化后去重。Execution测试收口中。
+- Node exclusive参数是cluster handle语义；要求.NET ReuseAddress对抗与原生Windows独占检查。允许仅新增Launcher lan_port_windows.go及测试，用现有Go工具链做SO_EXCLUSIVEADDRUSE实际探测；不修改core/main。需明确探测后正式Node bind的竞态失败处理，不谎称OS socket传递。
+- Config固定instance/lan-deployment.json，仅schema1/port/adapterPreference，不存IP；同adapter多IPv4不得取第一项。
+
+## T4 防火墙
+- 仅闭合action/port/GUID输入，程序固定私有Node，安装信任需编译锚和binding。
+- 提权System32定位不能依赖继承SystemRoot；用可信WindowsAPI，固定系统PowerShell/module路径，拒绝用户模块自动加载。
+- CIDR全范围必须在相应RFC1918 block，不仅检查host地址；适配器语义与T1一致。
+- 自有rule更新需先禁用、逐项收紧、核验再启用；未知rule不碰，正常启动/status只读。
+- ALLOWED须有效ActiveStore和Private policy，不能仅存在PersistentStore规则。
+
+## T5 取证
+- 原historical job放末尾的既有71项测试语义保留，新job插入其前，不改旧测试强行过关。
+- 静态门禁前纯PS预置固定FAIL report/env，保证最早失败仍有封闭阶段；invoke严格验证唯一预置报告。
+- 下载固定Artifact校验后，启动受验Setup等产品进程前剥离认证环境；只停止精确路径且证明属于本任务的进程。
+- Artifact只上传固定安全报告及成功时evidence，原始路径/log/registry/data不上传。
+
+预检工作树lan-server已建，尚未派T2；待T1正式Review/整合后精确更新baseline。所有Hosted预算仍0/4、0/2、0/2。
