@@ -2,6 +2,8 @@
 
 const net = require('node:net');
 const os = require('node:os');
+const fsDefault = require('node:fs');
+const path = require('node:path');
 const {spawnSync} = require('node:child_process');
 
 const PORT_MIN = 8080;
@@ -148,12 +150,47 @@ function parsePowerShellRecords(stdout) {
   return Array.isArray(value) ? value : [value];
 }
 
+function sameWindowsPath(left, right) {
+  return path.win32.normalize(left).toLowerCase() === path.win32.normalize(right).toLowerCase();
+}
+
+function resolveSystemPowerShell(options = {}) {
+  const fs = options.fs || fsDefault;
+  const supplied = options.systemRoot ?? process.env.SystemRoot;
+  if (typeof supplied !== 'string' || !/^[a-z]:\\windows\\?$/i.test(supplied)) {
+    fail('NETWORK_SYSTEM_RUNTIME_INVALID', 'Windows 系统运行时路径无法确认，LAN 已保持关闭。');
+  }
+  const systemRoot = path.win32.normalize(supplied).replace(/[\\/]$/, '');
+  const executable = path.win32.join(systemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+  try {
+    const rootStat = fs.lstatSync(systemRoot);
+    const executableStat = fs.lstatSync(executable);
+    if (!rootStat.isDirectory() || rootStat.isSymbolicLink() || !executableStat.isFile() || executableStat.isSymbolicLink()) throw Error('unsafe');
+    const realRoot = fs.realpathSync.native ? fs.realpathSync.native(systemRoot) : fs.realpathSync(systemRoot);
+    const realExecutable = fs.realpathSync.native ? fs.realpathSync.native(executable) : fs.realpathSync(executable);
+    if (!sameWindowsPath(realRoot, systemRoot) || !sameWindowsPath(realExecutable, executable)) throw Error('redirected');
+  } catch {
+    fail('NETWORK_SYSTEM_RUNTIME_INVALID', 'Windows 系统 PowerShell 无法安全确认，LAN 已保持关闭。');
+  }
+  return Object.freeze({
+    systemRoot, executable,
+    environment: Object.freeze({
+      SystemRoot: systemRoot,
+      WINDIR: systemRoot,
+      PATH: path.win32.join(systemRoot, 'System32'),
+      PSModulePath: path.win32.join(systemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'Modules')
+    })
+  });
+}
+
 function runWindowsDiscovery(options = {}) {
   if ((options.platform || process.platform) !== 'win32') fail('NETWORK_PLATFORM_UNSUPPORTED', 'LAN Host 网络发现仅支持 Windows。');
+  const runtime = resolveSystemPowerShell(options);
   const encoded = Buffer.from(WINDOWS_DISCOVERY_SCRIPT, 'utf16le').toString('base64');
   const run = options.spawnSync || spawnSync;
-  const result = run('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-EncodedCommand', encoded], {
-    encoding: 'utf8', windowsHide: true, timeout: 15000, maxBuffer: 1024 * 1024
+  const result = run(runtime.executable, ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-EncodedCommand', encoded], {
+    encoding: 'utf8', windowsHide: true, timeout: 15000, maxBuffer: 1024 * 1024,
+    cwd: path.win32.join(runtime.systemRoot, 'System32'), env: runtime.environment
   });
   if (!result || result.error || result.status !== 0 || result.signal || String(result.stderr || '').trim()) {
     fail('NETWORK_DISCOVERY_FAILED', 'Windows 网络状态无法确认，LAN 已保持关闭。');
@@ -237,7 +274,7 @@ function publicDiscoveryView(result) {
 module.exports = {
   PORT_MIN, PORT_MAX, WINDOWS_DISCOVERY_SCRIPT, LanNetworkError,
   normalizeIPv4, ipv4Number, privateBlock, prefixMask, subnetFor, isAddressInSubnet,
-  adapterId, classifyAdapter, selectLanAdapter, parsePowerShellRecords,
+  adapterId, classifyAdapter, selectLanAdapter, parsePowerShellRecords, resolveSystemPowerShell,
   runWindowsDiscovery, discoverWindowsLan, reservePort, findAndReservePort,
   reservePersistedPort, publicDiscoveryView
 };

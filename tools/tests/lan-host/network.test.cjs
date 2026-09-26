@@ -19,6 +19,20 @@ function adapter(overrides = {}) {
     HasDefaultRoute: true, OnLinkPrefixes: ['192.168.10.0/24'], RouteMetric: 20, ...overrides};
 }
 
+function systemRuntimeFs(overrides = {}) {
+  const realpathSync = value => overrides.realPath || value;
+  realpathSync.native = realpathSync;
+  return {
+    lstatSync(value) {
+      if (overrides.missing) { const error = new Error('missing'); error.code = 'ENOENT'; throw error; }
+      const executable = /powershell\.exe$/i.test(value);
+      return {isDirectory: () => !executable, isFile: () => executable,
+        isSymbolicLink: () => Boolean(overrides.link && executable)};
+    },
+    realpathSync
+  };
+}
+
 test('strict IPv4 normalization and RFC1918 subnet boundaries', () => {
   assert.equal(network.normalizeIPv4('::ffff:192.168.1.2'), '192.168.1.2');
   assert.equal(network.normalizeIPv4('::FFFF:10.1.2.3'), '10.1.2.3');
@@ -77,20 +91,39 @@ test('selection never guesses among multiple LANs and preserves adapter identity
 
 test('PowerShell discovery is fixed, hidden, non-interactive and returns only parsed records', () => {
   let invocation;
-  const records = network.runWindowsDiscovery({platform: 'win32', spawnSync(file, args, options) {
+  const records = network.runWindowsDiscovery({platform: 'win32', systemRoot: 'C:\\Windows', fs: systemRuntimeFs(), spawnSync(file, args, options) {
     invocation = {file, args, options}; return {status: 0, signal: null, stderr: '', stdout: JSON.stringify(adapter())};
   }});
   assert.equal(records.length, 1); assert.equal(records[0].Address, '192.168.10.23');
-  assert.equal(invocation.file, 'powershell.exe');
+  assert.equal(invocation.file, 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe');
   assert.deepEqual(invocation.args.slice(0, 7), ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden']);
   assert.equal(invocation.args[7], '-EncodedCommand'); assert.match(invocation.args[8], /^[A-Za-z0-9+/=]+$/);
   assert.equal(invocation.options.windowsHide, true); assert.equal(invocation.options.timeout, 15000);
-  assert.throws(() => network.runWindowsDiscovery({platform: 'win32', spawnSync: () => ({status: 1, stderr: 'private path'})}),
+  assert.equal(invocation.options.cwd, 'C:\\Windows\\System32');
+  assert.deepEqual(invocation.options.env, {SystemRoot: 'C:\\Windows', WINDIR: 'C:\\Windows',
+    PATH: 'C:\\Windows\\System32', PSModulePath: 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\Modules'});
+  assert.throws(() => network.runWindowsDiscovery({platform: 'win32', systemRoot: 'C:\\Windows', fs: systemRuntimeFs(),
+    spawnSync: () => ({status: 1, stderr: 'private path'})}),
     error => error.code === 'NETWORK_DISCOVERY_FAILED' && !error.message.includes('private path'));
   assert.throws(() => network.parsePowerShellRecords('not json'), {code: 'NETWORK_DISCOVERY_FAILED'});
   const view = network.publicDiscoveryView(network.selectLanAdapter([adapter()]));
   assert.deepEqual(Object.keys(view).sort(), ['candidates', 'hostName', 'schema', 'selected', 'status']);
   assert.deepEqual(Object.keys(view.selected).sort(), ['adapterId', 'address', 'name', 'prefixLength', 'subnet']);
+});
+
+test('system PowerShell resolution rejects empty, forged, missing and redirected roots', () => {
+  const resolved = network.resolveSystemPowerShell({systemRoot: 'D:\\Windows', fs: systemRuntimeFs()});
+  assert.equal(resolved.executable, 'D:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe');
+  assert.equal(resolved.environment.PATH, 'D:\\Windows\\System32');
+  for (const systemRoot of ['', 'powershell.exe', 'C:\\Users\\Public\\Windows', '\\\\server\\Windows', 'C:\\Windows\\..\\evil']) {
+    assert.throws(() => network.resolveSystemPowerShell({systemRoot, fs: systemRuntimeFs()}), {code: 'NETWORK_SYSTEM_RUNTIME_INVALID'});
+  }
+  assert.throws(() => network.resolveSystemPowerShell({systemRoot: 'C:\\Windows', fs: systemRuntimeFs({missing: true})}),
+    {code: 'NETWORK_SYSTEM_RUNTIME_INVALID'});
+  assert.throws(() => network.resolveSystemPowerShell({systemRoot: 'C:\\Windows', fs: systemRuntimeFs({link: true})}),
+    {code: 'NETWORK_SYSTEM_RUNTIME_INVALID'});
+  assert.throws(() => network.resolveSystemPowerShell({systemRoot: 'C:\\Windows', fs: systemRuntimeFs({realPath: 'C:\\Other'})}),
+    {code: 'NETWORK_SYSTEM_RUNTIME_INVALID'});
 });
 
 test('fixed Windows discovery script passes the PowerShell parser without executing discovery', () => {
