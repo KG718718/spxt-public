@@ -1,5 +1,9 @@
 # Batch 4 编排索引
 
+## 当前U22返工｜DISPATCHED
+
+用户批准方案B，派单B4-T4-U22-20260926-05已发送原thread01a0cb6a-67cc-7c03-a68b-2727af8fce6e，return target01a0db0e-c950-79e0-8e11-07155e0742f2。继续原f8bd/public-source、codex/b4-t4-upgrade-lifecycle@58898b2，baseline a3c206c不变；主控Preflight a035cfc local/origin/API一致、两边tracked clean，仅既有未跟踪缓存。新增D5最小诊断1次/F3完整1次，QA既有2次不变。先本地反例/原因码/精确状态断言→主动回单或watchdog恢复→Review→整合→Hosted；尚未dispatch D5。下方冻结状态为历史，不重开T1/T1A/T2/T3/T4、不另建执行任务或工作树。
+
 ## 当前停点｜BLOCKED — HOSTED BUDGET EXHAUSTED
 
 F2 run36214270618@23ab36b在U22固定marker断言失败；安全报告及Artifact10897445184已由主控核实，诊断4/4、Full2/2用尽。QA0/2不可替用，未创建QA。原B4-T4已向新主控主动确认停止，保持原thread/worktree/branch和local58898b2，不继续实现、测试、commit或Hosted。第四轮成果已Review/整合d7ef396；这不等于任务全生命周期或Batch验收完成。唯一ACTIVE Master仍01a0db0e-c950-79e0-8e11-07155e0742f2，旧Master只读历史。最新决定入口B4-STOPLOSS-DECISION-20260926.md；下文RUNNING/准入为历史。

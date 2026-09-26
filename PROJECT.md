@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前U22恢复｜2026-09-26
+
+用户已批准方案B，原B4-T4从58898b2继续，唯一新主控/原f8bd/开发分支不变。产品要求是错误hash在实际旧program替换前拒绝并精确保持或恢复全部旧状态，不要求旧PrepareToInstall marker。新增有界额度：最小诊断1、Full1，QA原2次未用；历史4次诊断和2次Full保留。先反例与安全固定诊断，Review后Hosted；当前未取得U22 PASS。下文预算BLOCKED为已由本次明确授权覆盖的历史。实时记录见[AUTONOMOUS-EXECUTION.md](docs/tasks/windows-installer-v1.1/batch-4/AUTONOMOUS-EXECUTION.md)。
+
 ## Batch4 最新止损状态｜2026-09-26
 
 **BLOCKED — HOSTED BUDGET EXHAUSTED**。D4 run36213904038@d7ef396全部19阶段PASS，U21/U23实际故障与恢复通过；F2 run36214270618@23ab36b在U22期望prepare-failure marker处停止，未完成U22状态对比。fresh Setup29自动PASS/3人工PENDING、D13/13、8个U项通过；26/742/最终Artifact privacy/独立QA尚未取得，最终beta.2 Setup Artifact未生成。诊断4/4、Full2/2预算耗尽，QA0/2不能挪用；原T4冻结，已提交[止损决策卡](docs/tasks/windows-installer-v1.1/batch-4/B4-STOPLOSS-DECISION-20260926.md)。新主控唯一ACTIVE，旧主控永久退役；Primary仍为public-source，原始工作区状态未整理。下文pre-baseline与自动续行描述为历史。

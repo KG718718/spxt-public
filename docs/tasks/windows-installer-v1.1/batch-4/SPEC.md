@@ -15,6 +15,7 @@ Fresh install 保留 Batch3-R2 数据位置选择。Upgrade 不再选择位置�
 未知非空/不可写/系统/相交/危险重解析路径仍保持原门禁，不删除目录内容。
 
 ## 安装事务
+2026-09-26用户明确U22：错误payload/program manifest hash必须在实际旧program被替换之前拒绝；故障结束后旧program、installer metadata、registration、binding、shortcuts及business instance精确保持或恢复。允许Gate→Prepare快照→Inno staging copy→commit/validate hash→拒绝→rollback（如需）→exact state顺序；不要求PrepareToInstall失败或旧prepare-failure marker。这是原验收目标的阶段澄清，不放宽hash/身份/数据要求。
 仅修改安装器拥有的 program、uninstall/installer metadata、shortcuts、registration。先全量只读 preflight，再进入可恢复事务，payload/post-copy 完整校验与安装状态验证成功才提交。
 提交前取消、copy、payload hash、post-copy verify、磁盘/权限等失败必须恢复旧 program、可启动 Launcher、原登记、binding、shortcuts；无混合版本、半升级、双登记。
 临时恢复副本只能包含 program/installer metadata，不复制业务 instance 为长期备份。已成功升级后不提供产品级回退/Repair。

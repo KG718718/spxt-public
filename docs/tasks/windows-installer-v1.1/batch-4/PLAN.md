@@ -1,4 +1,5 @@
 # Batch 4 工程执行计划
+当前U22专项续行：用户2026-09-26批准方案B。继续原T4，先以stage在prepare后才生成的本地反例验证错误hash在实际program替换前拒绝，固定安全事务原因/阶段并比较完整旧状态；不把旧prepare marker当产品要求。主控Review后使用新增D5最小诊断一次，PASS再F3完整一次；原QA2次只用于完整候选之后。预算耗尽停止，其他原边界和验收保留。
 L2；产品 Intent/Spec 由正式任务书及启动指令批准。主控批准下述范围内工程拆分；未定行为不得由执行线程自行扩展。
 
 1. Preflight 核对公开 repo、dev branch、干净、远端同 HEAD。已完成，详 ORCHESTRATION。

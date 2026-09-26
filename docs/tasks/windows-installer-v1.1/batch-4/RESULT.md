@@ -1,4 +1,5 @@
 # Batch 4 当前结果
+当前：U22方案B已由用户批准，原T4有界续行中；新增最小诊断1/Full1，QA沿用2。U22目标保持错误hash在实际program替换前拒绝及完整旧状态精确一致，不再绑定PrepareToInstall marker。下文为F2结束时真实止损证据，尚未有新增Hosted或U22 PASS。
 状态：**BLOCKED — HOSTED BUDGET EXHAUSTED**。D4已PASS，最后F2在U22失败；不是AUTOMATION PASS / QA PASS / HUMAN PENDING。
 
 2026-09-26 唯一工程主控01a0db0e-c950-79e0-8e11-07155e0742f2已接管；旧主控019fa7e9-f46b-7192-9052-cd0aac7c2cc5永久RETIRED — READ ONLY HISTORY。治理提交已Review并仅同步开发分支；Primary保持public-source。原B4-T4和f8bd工作树复用，T1/T1A/T2/T3未重开。

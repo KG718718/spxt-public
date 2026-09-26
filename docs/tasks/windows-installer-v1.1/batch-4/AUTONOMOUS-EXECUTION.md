@@ -1,6 +1,18 @@
 # Batch 4 自主工程续行与 Hosted 预算
 
-当前状态：**BLOCKED — HOSTED BUDGET EXHAUSTED**。F2失败后按用户止损规则冻结工程续行；不是AUTOMATION/QA PASS，也未到HUMAN PENDING终点。原T4已确认保持58898b2及原worktree，不继续实现/测试/提交/Hosted。新主控唯一ACTIVE，等待新的预算及范围决定。
+当前状态：**U22 BOUNDED CONTINUATION APPROVED / DISPATCHED**。用户已批准方案B并明确U22产品目标不绑定旧prepare marker；原T4从58898b2继续，唯一新主控不变。F2预算止损记录保留，但当前由此明确新授权恢复。U22尚未PASS。
+
+## U22方案B新增预算｜2026-09-26
+
+按用户“批准方案B”及该方案有界建议登记：最小U22诊断最多1次、Full最多1次；未动用的QA原2次继续保留，不新增QA额度。原D1—D4/F1—F2不重算、不重试，新增轮次D5/F3；失败/取消已创建run仍扣额。任何进一步额度须重新授权。
+
+| 类别 | 本轮上限 | 本轮已用 | 本轮剩余 |
+| --- | --- | --- | --- |
+| U22最小诊断 | 1 | 0 | 1 |
+| 完整Setup | 1 | 0 | 1 |
+| QA（沿用） | 2 | 0 | 2 |
+
+用户确认真实顺序：Gate→Prepare/旧状态快照→Inno staging copy→commit/validate hash→错误hash在旧program替换前拒绝→安全rollback（如需）→exact old state。无须PrepareToInstall失败或KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED，但必须有可靠原因/阶段证据和program/metadata/registration/binding/shortcuts/instance完整状态比较。卡见tasks/B4-T4-U22-20260926.md；不得用任意失败或rollback marker替代验收。
 
 授权日期：2026-09-26；用户 MASTER MIGRATION FINALIZE + RESUME BATCH 4。唯一ACTIVE ENGINEERING MASTER：01a0db0e-c950-79e0-8e11-07155e0742f2。旧主控019fa7e9-f46b-7192-9052-cd0aac7c2cc5为RETIRED — READ ONLY HISTORY，无派单/Review/Integration/Push/Actions/QA权。
 
@@ -14,7 +26,7 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 
 终点：U01—U30 PASS；Runtime/Launcher/Portable/Setup PASS；26/26 suites、742 checks、fail0、skip0；Artifact privacy PASS；B4-QA PASS；同受测身份beta.2最终Setup Artifact。随后BLOCKED — AUTOMATION PASS / QA PASS / HUMAN PENDING，等待Win10人工，不进入Batch4.5/main/tag/Release。
 
-## 本授权剩余预算台账
+## 首次恢复预算台账（历史，已用尽）
 
 本表仅统计本次新批准预算，历史run36145933140等不重复扣减。每次显式dispatch前记录目的与受测commit，拿到run ID后扣减；禁止同失败无修改retry，禁止把失败归为QA以规避分类预算。API未创建run需证据确认才不计；失败/取消的已创建run仍计一次。
 
@@ -37,7 +49,7 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 
 D2等待期间主控整合目录补跑npm：首次26 files/failed1，定位为新任务卡的一处来源措辞触发既有公开文档门禁；只改为“仅阅读指定公开仓库材料”，范围约束不变，未修改测试。修正后26 files/failed0；本机hosted-only SKIP照常，不冒充742结果。D2不运行公开回归；Full必须使用含此文档修正的后续HEAD。
 
-## 当前任务
+## 前轮任务与证据（历史）
 
 F2 job108326997302失败Artifact10897445184（setup-failure-evidence-23ab36bff1e953e14fd5a213d1c9fb759997ee9c-1，digestc6f01ed8ef890629feef8724ffbf9f04ef012e28f6168416ba94aa2792190bdb）已读取安全报告。fresh Setup29自动PASS/3人工PENDING、D13/13，U01/U02/U15/U16/U17/U18/U20/U21八项PASS。U22缺少KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED，实际有GATE_ACCEPTED/TRANSACTION_PREPARED/NATIVE_COPY_COMPLETE/POSTINSTALL_FAILED/TRANSACTION_ROLLED_BACK，exit4；marker断言先于exact state对比，不能称U22恢复验证通过。offline externalDuring=false/restored=true；742/最终privacy/Setup上传均未执行。原T4已主动确认停止，QA未创建；决策见B4-STOPLOSS-DECISION-20260926.md。下文F2准入/等待均为历史记录。
 

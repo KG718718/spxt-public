@@ -1,5 +1,9 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## 当前批准U22方案B｜2026-09-26
+
+用户已明确恢复原T4有界续行；U22验收不绑定Inno PrepareToInstall或旧prepare-failure marker，仍必须在旧program替换前拒绝错误hash并证明故障后全部旧状态精确一致。新增最小诊断1/Full1，原QA2次未用不变；执行顺序、止损及最终HUMAN PENDING按[台账](batch-4/AUTONOMOUS-EXECUTION.md)。下方停止状态为历史；此授权不重开其他T任务，不改变产品安全规则。
+
 ## 2026-09-26 当前预算止损
 
 Batch4 **BLOCKED — HOSTED BUDGET EXHAUSTED**：D4十九阶段通过；最后F2 run36214270618@23ab36b在U22的固定marker断言失败，U22恢复对比未运行，后续全门禁/QA/最终产物未完成。诊断4/4、Full2/2已用，QA0/2不可替用。原T4已确认冻结；唯一新主控保留控制权，但工程续行等待新的明确授权。详见[决策卡](batch-4/B4-STOPLOSS-DECISION-20260926.md)。下方恢复授权不能覆盖其自身预算耗尽条件，不进入Batch4.5/main/tag/Release。

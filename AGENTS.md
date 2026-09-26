@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前U22有界续行授权｜2026-09-26
+
+用户明确批准方案B，继续唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2、原B4-T4/f8bd及原分支，覆盖下方预算停止令的当前效力。U22目标是错误payload/program manifest hash在实际旧program替换前拒绝，故障后program、installer metadata、registration、binding、shortcuts和business instance精确保持/恢复；不要求PrepareToInstall失败或旧prepare marker。按已批准方案B新增最小U22诊断1次、Full1次，原QA剩2次不变，分轮记录且不挪用、不无修改retry。先本地反例→Review→最小诊断→通过后Full→独立QA→最终Artifact，所有原安全/产品边界及HUMAN PENDING终点保留，不进入Batch4.5/main/tag/Release。任务卡和预算见docs/tasks/windows-installer-v1.1/batch-4/。下方BLOCKED为历史止损记录，不是本次停止指令。
+
 ## 当前止损停点｜2026-09-26
 
 Batch4为 **BLOCKED — HOSTED BUDGET EXHAUSTED**。本次恢复诊断4/4、完整Setup2/2已用，F2 run36214270618在U22预期marker断言失败，742/最终Artifact privacy/独立QA未运行；QA剩2次不能替代诊断或Full。原B4-T4已确认停止并冻结58898b2，原worktree保留。只有新主控01a0db0e-c950-79e0-8e11-07155e0742f2保持ACTIVE，但不得凭下文历史自主授权继续返工或Hosted；等待网页版/用户新的明确预算和范围授权。详见batch4/AUTONOMOUS-EXECUTION.md与B4-STOPLOSS-DECISION-20260926.md（均在docs/tasks/windows-installer-v1.1/下）。本节是用户预算止损规则的执行结果，不撤销主控迁移；旧主控永久只读历史。

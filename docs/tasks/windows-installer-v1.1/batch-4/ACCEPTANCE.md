@@ -23,7 +23,7 @@ U 系列单独计数，不改变历史 26 suites / 742 checks 语义。所有项
 | U19 | 权限不足旧版保持 |
 | U20 | 用户取消旧版保持 |
 | U21 | copy 故障恢复旧版 |
-| U22 | payload hash 故障恢复旧版 |
+| U22 | 错误payload/program manifest hash在实际旧program替换前拒绝，故障后program/installer metadata/registration/binding/shortcuts/business instance精确保持或恢复；不绑定PrepareToInstall或旧prepare marker |
 | U23 | post-copy verify 故障恢复旧版 |
 | U24 | 快捷方式指向正确 Launcher/instance |
 | U25 | Windows 安装登记唯一 |
