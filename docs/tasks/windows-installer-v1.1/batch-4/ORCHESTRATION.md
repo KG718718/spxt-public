@@ -1,5 +1,7 @@
 # Batch 4 编排索引
 
+当前：**F3 WORKFLOW PASS / B4-QA RUNNING**。F3 run36246132535@c8886e6b6d413c2fd73d6716621d07a80b337e58所有job/gate通过，setup11m44s；最终Artifact10907910968，SHA256 e6b01fe7c4499526eb99a837892a0c0641ad2232c84981b191b2ac6f7c18f3c6，主控独立内容核验进行中。B4-QA thread `01a0de04-719c-7691-8b04-33d9d53596a0`，managed worktree `E:/CodexWorkspace/CodexWorktrees/b4-qa/public-source`，branch `codex/b4-qa`，baseline c8886e6；gpt-5.6-sol/medium，生产只读、仅报告可local commit，return target新主控。卡tasks/B4-QA.md；QA Hosted0/2，无额外run。原T4冻结2b14985；不清理任何旧工作树。
+
 当前：**F3 RUNNING**，run36246132535@c8886e6b6d413c2fd73d6716621d07a80b337e58；主控三方HEAD/同D5实现核验完成。新增D5/F3预算各1/1已用；QA0/2未启动，等待Full实际报告。T4保持2b14985冻结。
 
 当前：D5 run36245606056@22bacc5完整18阶段PASS，U22=PAYLOAD_HASH_REJECTED/UNCHANGED；Artifact10907850207白名单/hash/严格报告PASS。原T4已冻结2b14985；F3准备以同实现（仅后续治理文档）的开发分支精确HEAD显式运行Full。QA尚未创建；下方状态为历史。
