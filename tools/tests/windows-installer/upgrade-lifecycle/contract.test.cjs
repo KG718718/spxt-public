@@ -78,7 +78,7 @@ test('closed upgrade-fault sequence is manual, bounded, and does not build curre
  const gateStop=iss.indexOf("Log('KSESSION_SEQUENCE_IDENTITY_ACCEPTED')"),transaction=iss.indexOf('if not PrepareUpgradeTransaction');
  assert.ok(gateStop>iss.indexOf('if not RunUpgradeGate')&&transaction>gateStop);
  for(const marker of ['KSESSION_SEQUENCE_REGISTRATION_COUNT','KSESSION_SEQUENCE_REGISTRATION_NAME','KSESSION_SEQUENCE_REGISTRATION_VERSION','KSESSION_SEQUENCE_REGISTRATION_NAME_VERSION','KSESSION_SEQUENCE_REGISTRATION_SNAPSHOT','KSESSION_SEQUENCE_REGISTRATION_CONFLICT','KSESSION_SEQUENCE_REGISTRATION_UNINSTALL','KSESSION_SEQUENCE_REGISTRATION_AMBIGUOUS','KSESSION_SEQUENCE_REGISTRATION_INCONSISTENT'])assert.match(iss,new RegExp(marker));
- for(const marker of ['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','"AFTER_" + probe.id','U20_PRECOPY','COPY_FAILED','POST_COPY_VERIFY_FAILED','COPY_INJECTION_PREPARE_FAILED','COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','COPY_UNEXPECTED_SUCCESS_MARKER_MISSING','COPY_MARKER_MISSING','COPY_STATE_CHANGED','POST_COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','POST_COPY_UNEXPECTED_SUCCESS_MARKER_MISSING','POST_COPY_MARKER_MISSING','POST_COPY_STATE_CHANGED','closed upgrade fault diagnostic failed','sequencePhases','CONTROLLED_MUTATION','STAGE_FAILED','STOPPED','panicked := recover()','panic(panicked)'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const marker of ['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','"AFTER_" + probe.id','U20_PRECOPY','COPY_FAILED','POST_COPY_VERIFY_FAILED','COPY_INJECTION_PREPARE_FAILED','COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','COPY_UNEXPECTED_SUCCESS_MARKER_MISSING','COPY_MARKER_MISSING','COPY_STATE_CHANGED','POST_COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','POST_COPY_UNEXPECTED_SUCCESS_MARKER_MISSING','POST_COPY_GATE_NOT_ACCEPTED','POST_COPY_PREPARE_FAILED','POST_COPY_NATIVE_COPY_NOT_REACHED','POST_COPY_COMMIT_FAILED','POST_COPY_INSTALL_VERIFY_FAILED','POST_COPY_MARKER_MISSING','POST_COPY_FAILURE_HANDLER_MISSING','POST_COPY_ROLLBACK_FAILED','POST_COPY_ROLLBACK_MARKER_MISSING','POST_COPY_UNEXPECTED_FINALIZE','POST_COPY_STATE_CHANGED','closed upgrade fault diagnostic failed','sequencePhases','CONTROLLED_MUTATION','STAGE_FAILED','STOPPED','panicked := recover()','panic(panicked)'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.match(go,/if sequenceDiagnostic \{\s*fixtures = fixtures\[:1\]/);
 });
 
@@ -122,10 +122,12 @@ test('sequence report validator accepts only ordered closed stage evidence and r
  const faultFailures=[];
  for(const [phase,results] of [
   ['U21',['COPY_INJECTION_PREPARE_FAILED','COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','COPY_UNEXPECTED_SUCCESS_MARKER_MISSING','COPY_MARKER_MISSING','COPY_STATE_CHANGED']],
-  ['U23',['POST_COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','POST_COPY_UNEXPECTED_SUCCESS_MARKER_MISSING','POST_COPY_MARKER_MISSING','POST_COPY_STATE_CHANGED']]
+  ['U23',['POST_COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','POST_COPY_UNEXPECTED_SUCCESS_MARKER_MISSING','POST_COPY_GATE_NOT_ACCEPTED','POST_COPY_PREPARE_FAILED','POST_COPY_NATIVE_COPY_NOT_REACHED','POST_COPY_COMMIT_FAILED','POST_COPY_INSTALL_VERIFY_FAILED','POST_COPY_MARKER_MISSING','POST_COPY_FAILURE_HANDLER_MISSING','POST_COPY_ROLLBACK_FAILED','POST_COPY_ROLLBACK_MARKER_MISSING','POST_COPY_UNEXPECTED_FINALIZE','POST_COPY_STATE_CHANGED']]
  ])for(const result of results){const index=expected.indexOf(phase),report={schema:1,status:'FAIL',phases:expected.slice(0,index+1).map(success)};report.phases[index]={phase,result,state:result.endsWith('STATE_CHANGED')?'CHANGED':'UNCHANGED'};faultFailures.push(report);}
  const injectedFault=structuredClone(faultFailures[0]);injectedFault.phases.at(-1).result='COPY_MARKER_MISSING_path=E:\\private';reject.push(injectedFault);
  const wrongFaultPhase=structuredClone(faultFailures[0]);wrongFaultPhase.phases.at(-1).phase='U23';reject.push(wrongFaultPhase);
+ const u23Failure=faultFailures.find(report=>report.phases.at(-1).result==='POST_COPY_COMMIT_FAILED');
+ for(const value of ['post_copy_commit_failed','POST_COPY_UNKNOWN',7,true]){const invalid=structuredClone(u23Failure);invalid.phases.at(-1).result=value;reject.push(invalid);}
  const cases=[pass,stopped,identityFailure,...identityDetails,...faultFailures].map(report=>({json:JSON.stringify(report),accept:true}));
  for(const report of reject)cases.push({json:JSON.stringify(report),accept:false});
  cases.push({json:'{"schema":1.0,"status":"FAIL","phases":[{"phase":"PRE_ENV_READY","result":"STAGE_FAILED","state":"STOPPED"}]}',accept:false});
@@ -197,11 +199,13 @@ test('sequence diagnostic entry accepts E paths and rejects other drive prefixes
 });
 
 test('real lifecycle has U01-U30 and all five required recoverable failure fixtures',()=>{
- const go=read('tools/windows-launcher/upgrade_windows_test.go'),build=read('tools/windows-installer/build.cjs'),iss=read('tools/windows-installer/setup.iss'),gate=read('tools/windows-installer/upgrade-gate/index.cjs'),cli=read('tools/windows-installer/upgrade-gate/cli.cjs');
+ const go=read('tools/windows-launcher/upgrade_windows_test.go'),build=read('tools/windows-installer/build.cjs'),transaction=read('tools/windows-installer/upgrade-transaction/index.cjs'),iss=read('tools/windows-installer/setup.iss'),gate=read('tools/windows-installer/upgrade-gate/index.cjs'),cli=read('tools/windows-installer/upgrade-gate/cli.cjs');
  for(let n=1;n<=30;n++)assert.match(go,new RegExp(`U${String(n).padStart(2,'0')}`));
  for(const mode of ['fault-space','fault-permission','fault-cancel','fault-copy','fault-payload-hash','fault-post-copy'])assert.match(build,new RegExp(mode));
  assert.match(build,/Check: IsUpgradeInstall; BeforeInstall: BeforeUpgradeCopy/);
  assert.match(iss,/procedure BeforeUpgradeCopy\(Rel: String\)/);assert.match(iss,/KSESSION_FIXTURE_COPY_FAILURE/);assert.match(iss,/KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE/);
+ assert.match(build,/info\.programManifestHash=sha\(manifestBytes\)/);assert.match(transaction,/build\.programManifestHash !== plan\.programManifestHash/);assert.doesNotMatch(transaction,/build\.programManifestSha256/);
+ for(const marker of ['KSESSION_UPGRADE_GATE_ACCEPTED','KSESSION_UPGRADE_TRANSACTION_PREPARED','KSESSION_UPGRADE_NATIVE_COPY_COMPLETE','KSESSION_UPGRADE_TRANSACTION_SWAPPED','KSESSION_UPGRADE_INSTALLED_VERIFIED','KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE','KSESSION_UPGRADE_POSTINSTALL_FAILED','KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK'])assert.match(iss,new RegExp(marker));
  const copyHook=iss.slice(iss.indexOf('procedure BeforeUpgradeCopy'),iss.indexOf('procedure VerifyInstalled'));
  assert.match(copyHook,/FaultPath := ExpandConstant\('\{tmp\}\\ksession-upgrade-v1\\program\\'\) \+ Rel/);
  assert.match(copyHook,/ForceDirectories\(FaultPath\)/);assert.doesNotMatch(copyHook,/RaiseException\('受控复制故障/);

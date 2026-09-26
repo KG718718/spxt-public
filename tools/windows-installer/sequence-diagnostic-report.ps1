@@ -71,7 +71,10 @@ function Test-KSessionSequenceReport {
         'COPY_MARKER_MISSING','COPY_STATE_CHANGED') -ccontains $taskPhase.result) -or
       ($taskExpectedPhase -ceq 'U23' -and @(
         'POST_COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','POST_COPY_UNEXPECTED_SUCCESS_MARKER_MISSING',
-        'POST_COPY_MARKER_MISSING','POST_COPY_STATE_CHANGED') -ccontains $taskPhase.result)
+        'POST_COPY_GATE_NOT_ACCEPTED','POST_COPY_PREPARE_FAILED','POST_COPY_NATIVE_COPY_NOT_REACHED',
+        'POST_COPY_COMMIT_FAILED','POST_COPY_INSTALL_VERIFY_FAILED','POST_COPY_MARKER_MISSING',
+        'POST_COPY_FAILURE_HANDLER_MISSING','POST_COPY_ROLLBACK_FAILED','POST_COPY_ROLLBACK_MARKER_MISSING','POST_COPY_UNEXPECTED_FINALIZE',
+        'POST_COPY_STATE_CHANGED') -ccontains $taskPhase.result)
     ) -and (@('UNCHANGED','CHANGED') -ccontains $taskPhase.state) -and -not $taskSuccess
     $taskLast=($taskIndex -eq $taskPhases.Count-1)
 

@@ -594,12 +594,14 @@ begin
   CloseHandle(H);
   if UpgradeMode then begin
     if not RunUpgradeGate then begin Log('KSESSION_UPGRADE_PREFLIGHT_REJECTED'); Result := '现有安装、数据绑定或业务实例未通过安全升级检查；未修改现有程序或数据。'; exit; end;
+    Log('KSESSION_UPGRADE_GATE_ACCEPTED');
 #ifdef SequenceDiagnostic
     Log('KSESSION_SEQUENCE_IDENTITY_ACCEPTED');
     Result := '专项诊断已在升级事务和文件复制前停止。';
     exit;
 #endif
     if not PrepareUpgradeTransaction then begin Log('KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED'); Result := '无法建立可恢复升级事务；未修改现有程序或数据。'; exit; end;
+    Log('KSESSION_UPGRADE_TRANSACTION_PREPARED');
   end;
   Log('KSESSION_PREINSTALL_READY');
 end;
@@ -636,11 +638,14 @@ begin
   if CurStep = ssPostInstall then begin
     try
       if UpgradeMode then begin
+        Log('KSESSION_UPGRADE_NATIVE_COPY_COMPLETE');
         if not RunNode('upgrade-transaction-cli.cjs', 'commit "' + UpgradePlan + '"') then
           RaiseException('升级提交失败；旧程序恢复结果请查看安装日志。');
         TransactionSwapped := True;
+        Log('KSESSION_UPGRADE_TRANSACTION_SWAPPED');
       end;
       VerifyInstalled;
+      if UpgradeMode then Log('KSESSION_UPGRADE_INSTALLED_VERIFIED');
 #ifdef FaultPostCopy
       if UpgradeMode then begin
         Log('KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE');

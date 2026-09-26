@@ -38,7 +38,7 @@ function fixture() {
   put(path.join(stagedMetadata, 'installer-manifest.json'), manifestBytes);
   put(path.join(stagedMetadata, 'build-info.json'), JSON.stringify({ installerVersion: tx.INSTALLER_VERSION,
     appVersion: tx.APP_VERSION, dataContractVersion: 1, sourceCommit,
-    runtimeManifestSha256: sha(runtime), launcherSha256: sha(launcher), programManifestSha256: sha(manifestBytes),
+    runtimeManifestSha256: sha(runtime), launcherSha256: sha(launcher), programManifestHash: sha(manifestBytes),
     instanceBindingSchema: 1 }, null, 2) + '\n');
   const desktopShortcut = path.join(root, 'desktop', 'K-SESSION.lnk'), startMenuShortcut = path.join(root, 'start', 'K-SESSION.lnk');
   put(desktopShortcut, 'old-desktop'); put(startMenuShortcut, 'old-start');
@@ -85,12 +85,33 @@ test('prepare rejects staged payload tampering before recovery is created', () =
     assert.equal(fs.readFileSync(path.join(f.plan.installRoot, 'program', 'old.txt'), 'utf8'), 'old-program');
   } finally { cleanup(f); }
 });
+test('prepare rejects the obsolete handcrafted manifest hash alias', () => {
+  const f = fixture();
+  try {
+    const file = path.join(f.plan.stagedMetadata, 'build-info.json');
+    const build = JSON.parse(fs.readFileSync(file, 'utf8'));
+    build.programManifestSha256 = build.programManifestHash;
+    delete build.programManifestHash;
+    fs.writeFileSync(file, JSON.stringify(build, null, 2) + '\n');
+    assert.throws(() => tx.prepare(f.plan), error => error.code === 'STAGE_IDENTITY');
+    assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.RECOVERY_NAME)), false);
+  } finally { cleanup(f); }
+});
 test('prepare rejects unknown uninstall entries instead of copying untrusted metadata', () => {
   const f = fixture();
   try {
     put(path.join(f.plan.installRoot, 'uninstall', 'unknown.bin'), 'untrusted');
     assert.throws(() => tx.prepare(f.plan), error => error.code === 'OLD_METADATA_INVALID');
     assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.RECOVERY_NAME)), false);
+  } finally { cleanup(f); }
+});
+test('prepare rejects an unexpected old install state before the new state create-only write', () => {
+  const f = fixture();
+  try {
+    put(path.join(f.plan.installRoot, 'uninstall', 'install-state.json'), '{"unexpected":true}\n');
+    assert.throws(() => tx.prepare(f.plan), error => error.code === 'OLD_METADATA_INVALID');
+    assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.RECOVERY_NAME)), false);
+    assert.equal(fs.readFileSync(path.join(f.plan.installRoot, 'program', 'old.txt'), 'utf8'), 'old-program');
   } finally { cleanup(f); }
 });
 test('plan cannot include business instance in install or stage scope', () => {

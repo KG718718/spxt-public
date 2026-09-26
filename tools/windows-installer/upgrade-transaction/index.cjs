@@ -116,7 +116,7 @@ function validateStaged(plan) {
   if (build.installerVersion !== INSTALLER_VERSION || build.appVersion !== APP_VERSION ||
       build.dataContractVersion !== DATA_CONTRACT_VERSION || build.sourceCommit !== plan.sourceCommit ||
       build.runtimeManifestSha256 !== plan.runtimeManifestHash || build.launcherSha256 !== plan.launcherHash ||
-      build.programManifestSha256 !== plan.programManifestHash || build.instanceBindingSchema !== 1) fail('STAGE_IDENTITY', 'build identity mismatch');
+      build.programManifestHash !== plan.programManifestHash || build.instanceBindingSchema !== 1) fail('STAGE_IDENTITY', 'build identity mismatch');
   const runtime = path.join(plan.stagedProgram, 'manifest', 'runtime-manifest.json');
   const launcher = path.join(plan.stagedProgram, 'K-SESSION.exe');
   regular(runtime, 'STAGE_INVALID'); regular(launcher, 'STAGE_INVALID');

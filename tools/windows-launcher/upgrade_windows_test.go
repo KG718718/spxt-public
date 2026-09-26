@@ -66,8 +66,9 @@ func safeInstallerMarkers(logText string) string {
 		"KSESSION_UPGRADE_GATE_IDENTITY_REGISTRATION", "KSESSION_UPGRADE_GATE_IDENTITY_BINDING", "KSESSION_UPGRADE_GATE_IDENTITY_PATH",
 		"KSESSION_UPGRADE_GATE_IDENTITY_MANIFEST", "KSESSION_UPGRADE_GATE_IDENTITY_PROGRAM", "KSESSION_UPGRADE_GATE_IDENTITY_BUILD",
 		"KSESSION_UPGRADE_GATE_IDENTITY_RUNTIME", "KSESSION_UPGRADE_GATE_IDENTITY_LAUNCHER", "KSESSION_UPGRADE_GATE_IDENTITY_INTERNAL",
-		"KSESSION_UPGRADE_REGISTRATION_REJECTED", "KSESSION_UPGRADE_ROLLBACK_FAILED", "KSESSION_UPGRADE_ROOT_MISMATCH",
-		"KSESSION_UPGRADE_POSTINSTALL_FAILED", "KSESSION_UPGRADE_TRANSACTION_COMMITTED", "KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK",
+		"KSESSION_UPGRADE_GATE_ACCEPTED", "KSESSION_UPGRADE_REGISTRATION_REJECTED", "KSESSION_UPGRADE_ROLLBACK_FAILED", "KSESSION_UPGRADE_ROOT_MISMATCH",
+		"KSESSION_UPGRADE_INSTALLED_VERIFIED", "KSESSION_UPGRADE_NATIVE_COPY_COMPLETE", "KSESSION_UPGRADE_POSTINSTALL_FAILED",
+		"KSESSION_UPGRADE_TRANSACTION_COMMITTED", "KSESSION_UPGRADE_TRANSACTION_PREPARED", "KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK", "KSESSION_UPGRADE_TRANSACTION_SWAPPED",
 		"KSESSION_SEQUENCE_IDENTITY_ACCEPTED",
 		"KSESSION_SEQUENCE_REGISTRATION_COUNT", "KSESSION_SEQUENCE_REGISTRATION_NAME", "KSESSION_SEQUENCE_REGISTRATION_VERSION", "KSESSION_SEQUENCE_REGISTRATION_NAME_VERSION", "KSESSION_SEQUENCE_REGISTRATION_SNAPSHOT",
 		"KSESSION_SEQUENCE_REGISTRATION_CONFLICT", "KSESSION_SEQUENCE_REGISTRATION_UNINSTALL",
@@ -118,6 +119,30 @@ func hasInstallerMarker(markers, expected string) bool {
 		}
 	}
 	return false
+}
+
+func postCopyDiagnosticFailure(markers string) string {
+	if hasInstallerMarker(markers, "KSESSION_UPGRADE_TRANSACTION_COMMITTED") {
+		return "POST_COPY_UNEXPECTED_FINALIZE"
+	}
+	if hasInstallerMarker(markers, "KSESSION_UPGRADE_ROLLBACK_FAILED") {
+		return "POST_COPY_ROLLBACK_FAILED"
+	}
+	for _, stage := range []struct{ marker, failure string }{
+		{"KSESSION_UPGRADE_GATE_ACCEPTED", "POST_COPY_GATE_NOT_ACCEPTED"},
+		{"KSESSION_UPGRADE_TRANSACTION_PREPARED", "POST_COPY_PREPARE_FAILED"},
+		{"KSESSION_UPGRADE_NATIVE_COPY_COMPLETE", "POST_COPY_NATIVE_COPY_NOT_REACHED"},
+		{"KSESSION_UPGRADE_TRANSACTION_SWAPPED", "POST_COPY_COMMIT_FAILED"},
+		{"KSESSION_UPGRADE_INSTALLED_VERIFIED", "POST_COPY_INSTALL_VERIFY_FAILED"},
+		{"KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE", "POST_COPY_MARKER_MISSING"},
+		{"KSESSION_UPGRADE_POSTINSTALL_FAILED", "POST_COPY_FAILURE_HANDLER_MISSING"},
+		{"KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK", "POST_COPY_ROLLBACK_MARKER_MISSING"},
+	} {
+		if !hasInstallerMarker(markers, stage.marker) {
+			return stage.failure
+		}
+	}
+	return ""
 }
 
 type setupRunResult struct {
@@ -659,9 +684,14 @@ func TestUpgradeLifecycle(t *testing.T) {
 				}
 			} else if f.id == "U21" && hasInstallerMarker(markers, "KSESSION_FIXTURE_COPY_INJECTION_PREPARE_FAILED") {
 				failure = "COPY_INJECTION_PREPARE_FAILED"
+			} else if f.id == "U23" {
+				failure = postCopyDiagnosticFailure(markers)
 			} else if !markerPresent {
-				failure = map[string]string{"U21": "COPY_MARKER_MISSING", "U23": "POST_COPY_MARKER_MISSING"}[f.id]
+				failure = "COPY_MARKER_MISSING"
 			} else if state == "CHANGED" {
+				failure = map[string]string{"U21": "COPY_STATE_CHANGED", "U23": "POST_COPY_STATE_CHANGED"}[f.id]
+			}
+			if failure == "" && state == "CHANGED" {
 				failure = map[string]string{"U21": "COPY_STATE_CHANGED", "U23": "POST_COPY_STATE_CHANGED"}[f.id]
 			}
 			if failure != "" {
@@ -814,6 +844,36 @@ func TestSafeCoreProbeFailure(t *testing.T) {
 	copyPrepare := safeInstallerMarkers("KSESSION_FIXTURE_COPY_INJECTION_PREPARE_FAILED")
 	if !hasInstallerMarker(copyPrepare, "KSESSION_FIXTURE_COPY_INJECTION_PREPARE_FAILED") || hasInstallerMarker(copyPrepare, "KSESSION_FIXTURE_COPY_FAILURE") {
 		t.Fatal("copy injection preparation failure was confused with a real native copy failure")
+	}
+	postCopyStages := []string{
+		"KSESSION_UPGRADE_GATE_ACCEPTED", "KSESSION_UPGRADE_TRANSACTION_PREPARED", "KSESSION_UPGRADE_NATIVE_COPY_COMPLETE",
+		"KSESSION_UPGRADE_TRANSACTION_SWAPPED", "KSESSION_UPGRADE_INSTALLED_VERIFIED", "KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE",
+		"KSESSION_UPGRADE_POSTINSTALL_FAILED", "KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK",
+	}
+	postCopyMarkers := safeInstallerMarkers(strings.Join(postCopyStages, " "))
+	if postCopyDiagnosticFailure(postCopyMarkers) != "" {
+		t.Fatal("complete post-copy diagnostic stages were rejected")
+	}
+	postCopyFailures := []string{
+		"POST_COPY_GATE_NOT_ACCEPTED", "POST_COPY_PREPARE_FAILED", "POST_COPY_NATIVE_COPY_NOT_REACHED", "POST_COPY_COMMIT_FAILED",
+		"POST_COPY_INSTALL_VERIFY_FAILED", "POST_COPY_MARKER_MISSING", "POST_COPY_FAILURE_HANDLER_MISSING", "POST_COPY_ROLLBACK_MARKER_MISSING",
+	}
+	for i, want := range postCopyFailures {
+		markers := append([]string{}, postCopyStages[:i]...)
+		markers = append(markers, postCopyStages[i+1:]...)
+		if got := postCopyDiagnosticFailure(strings.Join(markers, ",")); got != want {
+			t.Fatalf("post-copy diagnostic first-stage counterexample=%s want=%s", got, want)
+		}
+	}
+	withFinalize := safeInstallerMarkers(strings.Join(append(postCopyStages, "KSESSION_UPGRADE_TRANSACTION_COMMITTED"), " "))
+	if got := postCopyDiagnosticFailure(withFinalize); got != "POST_COPY_UNEXPECTED_FINALIZE" {
+		t.Fatalf("post-copy diagnostic finalize counterexample=%s", got)
+	}
+	rollbackStages := append([]string{}, postCopyStages[:len(postCopyStages)-1]...)
+	rollbackStages = append(rollbackStages, "KSESSION_UPGRADE_ROLLBACK_FAILED")
+	rollbackFailed := safeInstallerMarkers(strings.Join(rollbackStages, " "))
+	if got := postCopyDiagnosticFailure(rollbackFailed); got != "POST_COPY_ROLLBACK_FAILED" {
+		t.Fatalf("post-copy diagnostic rollback counterexample=%s", got)
 	}
 	if safeInstallerMarkers("KSESSION_UPGRADE_ROOT_MISMATCH KSESSION_REJECT_INSTANCE_LOCK") != "KSESSION_REJECT_INSTANCE_LOCK,KSESSION_UPGRADE_ROOT_MISMATCH" {
 		t.Fatal("installer marker diagnostic omitted a fixed pre-space rejection")

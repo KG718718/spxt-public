@@ -1,6 +1,6 @@
 # B4-T4 Result — Upgrade Lifecycle / CI / Fault Injection
 
-状态：**BLOCKED — 独立 identity-only 已接受修正后的 beta.1，但 Setup run `35863240935` 在真实 U15—U18 序列后、U20 复制前固定命中 `KSESSION_UPGRADE_GATE_IDENTITY_REGISTRATION`。已构建仅手动触发的最小序列诊断，等待主控 Review、整合和一次 hosted 实测。** U01、U02、U15—U18 保持 hosted PASS；U20 尚未进入复制/取消，不能写成 PASS。诊断不改变身份接受条件，不生成当前 beta.2 Runtime/Launcher/Portable，不进入升级事务或文件复制。
+状态：**REWORK — D3 已证明前 17 阶段及 U21 PASS，但 U23 仅为 `POST_COPY_MARKER_MISSING/UNCHANGED`；本地已定位真实 build-info producer 与事务 consumer 字段不一致并完成最小修复及固定阶段诊断，等待主控 Review、整合和最后一次 D4 hosted 复验。** D3 未证明到达 post-copy fixture；不得直接进入最后一次 full。诊断不改变身份接受条件，不生成当前 beta.2 Runtime/Launcher/Portable，也不上传安装器或私有日志。
 
 ## Preflight
 
@@ -131,6 +131,7 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - 2026-09-26 登记编码返工：修复前以本机 code page 936 的合成生产者/Node UTF-8 消费者可执行反例确认 Unicode 名称和路径损坏、ASCII 版本不变；修复后固定 1252/936/65001 回归纳入生命周期契约。fresh identity/detection/lifecycle/transaction 联合专项 84 tests：83 PASS / 0 FAIL / 1 本机 8.3 alias SKIP；聚焦的 detection/lifecycle/gate 为 73 tests：72 PASS / 0 FAIL / 1 同类 SKIP；preflight 21 tests：20 PASS / 0 FAIL / 1 本机 file-symlink privilege SKIP。固定 Go 1.27.1 的 `TestUpgradeLifecycleInstanceIsolation` 与 compile-only 均 PASS，已执行 `gofmt`；公开 `npm test` 为 26 files / failed 0。PowerShell 报告脚本 AST、修改 CJS `node --check`、`git diff --check` 均 PASS。未运行真实 `TestUpgradeLifecycle`、Inno 编译或 Hosted 安装。
 - 2026-09-26 U21 copy 故障返工：固定 Go 1.27.1 的隔离/诊断纯测试及 compile-only PASS，`gofmt` 完成；fresh identity/detection/lifecycle/transaction 联合专项 84 tests：83 PASS / 0 FAIL / 1 本机 8.3 alias SKIP；preflight 21 tests：20 PASS / 0 FAIL / 1 本机 file-symlink privilege SKIP；公开 `npm test` 为 26 files / failed 0；三份 sequence PowerShell AST、修改 CJS `node --check`、`git diff --check` PASS。闭合报告 validator 可执行正反例覆盖 U21/U23 成功及意外成功、注入准备失败、marker 缺失和状态变化枚举；本机未运行 Inno 编译、真实安装或 Hosted D3。
 - 主控在含中文路径复测发现 validator 批次旧测试把 Unicode helper 绝对路径写入 `pwsh -Command -` stdin，PowerShell 错误解码后无法 dot-source；这不是产品 validator 失败。返工将短固定 bootstrap 留在命令参数，以宽字符环境变量传 helper 路径，stdin 只传 ASCII Base64；生命周期契约在原 ASCII worktree 路径及主动复制的合成中文路径各执行同一批 19 阶段正反例，实际 14/14 PASS 且两次均固定仅输出 `BATCH_VALIDATION_PASS`。公开 `npm test` 26 files / failed 0，修改 CJS `node --check` 与 `git diff --check` PASS。
+- 2026-09-26 U23 返工：真实 producer shape 反例在修复前事务专项 8 项中 6 项固定 `STAGE_IDENTITY` FAIL；最小修复后事务专项 9/9 PASS。fresh identity / detection / lifecycle / transaction 联合专项 89 tests：88 PASS / 0 FAIL / 1 本机 8.3 alias SKIP；preflight 21 tests：20 PASS / 0 FAIL / 1 本机 file-symlink privilege SKIP；固定 Go 1.27.1 的 `TestSafeCoreProbeFailure`、`TestUpgradeLifecycleInstanceIsolation` 及 compile-only PASS，已对修改文件执行 `gofmt`；公开 `npm test` 26 files / failed 0。三份 sequence PowerShell AST、修改 CJS `node --check`、`git diff --check` PASS。本机未运行 Inno 编译、真实安装、登记/快捷方式写入、断网或 Hosted D4。
 - `git diff --check`：PASS（仅现有 LF→CRLF checkout warning）。
 - 本轮本地完整 Portable 脚本未进入实际 Portable 测试：首次输出误置源码树内，被 `Unsafe source/output` 门禁拒绝；改用源码树外隔离输出后，Runtime 闭包因本地 checkout 的 `archive.cjs` 原始 CRLF 字节不等于 commit blob 而正确失败关闭。未修改或绕过 source-byte 门禁；实际 Portable 仍须由 `core.autocrlf=false` 的 hosted checkout 复验。
 - 本机未运行 Inno 6.7.3 编译、真实注册表/快捷方式/安装/卸载或全网卡隔离。首次 Actions 的历史 GUI 失败见上，不冒充修正后 hosted 已完成。
@@ -165,14 +166,19 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - D2 run `36209825354` / source `9e070de4efa7bc10118a7942c33d24b51cb326d0` / Artifact `10895610527` 已由主控确认 17 阶段完整 PASS；`BASELINE`、U15/U16/U17 恢复后及 `U20_PRECOPY` 均为 `IDENTITY_ACCEPTED/UNCHANGED`。这证明编码修复在真实 Inno 序列中越过原登记门禁，不证明 Hosted 实际 code page。
 - F1 full run `36210201290` / setup job `108314941067` / tested `6fdb7ed19467ac64a80c2f4824b4dfe0431fc62d` / failure Artifact `10895856282`（SHA256 `4ec029dc062e530f8d6bc26f88e04c42dc0c7674cc2e5747f11b58a0a19765af`）已真实通过 TestSetup、D01—D13、U01/U02/U15—U18/U20；随后 U21 的 `fault-copy` 进程以 success 返回，测试在 marker 和恢复状态断言前停止，U22 以后未运行。该证据不能证明原 `BeforeUpgradeCopy` 钩子是否执行。
 - 固定 Inno 6.7.3 官方源码确认：`NotifyInstallEntry` 捕获所有 `BeforeInstall/AfterInstall` 异常并交给 `Application.HandleException`，不会向安装循环传播；`SetStep(ssPostInstall, True)` 同样捕获 `CurStepChanged(ssPostInstall)` 异常并继续。因此旧 `BeforeUpgradeCopy` 的 `RaiseException` 不能制造真实 copy 失败，旧 post-copy/生产 post-install 异常也可能已恢复旧版却返回成功。U21 最小修复不再抛脚本异常，而在首个暂存目标文件位置建立同名目录，使 Inno 原生文件复制实际失败；准备失败使用独立固定 marker，不能冒充注入成功。post-install 捕获块记录固定失败、保持 `DeinitializeSetup` 回滚，`GetCustomSetupExitCode` 返回非零；`[Run]` 另由 `CanLaunchInstalled` 约束为无 post-install 失败且升级事务已 finalize，禁止失败时提前启动新程序。
-- D3 最小诊断仍使用 exact beta.1 payload，只新增 `sequence-copy` / `sequence-post-copy` 故障壳；不构建当前 Portable、不运行公开回归、不上传 Setup 或日志，唯一 Artifact 仍为严格 `SEQUENCE-DIAGNOSTIC.json`。新增 U21/U23 仅证明故障注入、非零停止及旧 program/metadata/登记/binding/shortcuts/instance 完整恢复；不得作为真实 beta.1→beta.2 成功升级、当前 payload 或发行物证据。实际 D3 尚未由主控 dispatch。
+- D3 最小诊断仍使用 exact beta.1 payload，只新增 `sequence-copy` / `sequence-post-copy` 故障壳；不构建当前 Portable、不运行公开回归、不上传 Setup 或日志，唯一 Artifact 仍为严格 `SEQUENCE-DIAGNOSTIC.json`。U21/U23 诊断只用于证明故障注入、非零停止及旧 program/metadata/登记/binding/shortcuts/instance 完整恢复；不得作为真实 beta.1→beta.2 成功升级、当前 payload 或发行物证据。
+- D3 run `36212532363` / job `108321923428` / source `b3ab5978ca90be3fa5d3c5f793735fc42879ffc6` / Artifact `10896127812`（SHA256 `35a94f85980a2ef99460af04fc4a99ce5449f1036802b74f61976ee2c875b1ff`）的 19 阶段闭合 validator 已通过：前 17 阶段及 `U21=COPY_FAILED/UNCHANGED`，`U23=POST_COPY_MARKER_MISSING/UNCHANGED`。这确认 U21 原生 copy 故障和恢复；U23 只确认非零退出、owned/instance 不变且未见 fixture marker，不证明进入 post-copy 注入点。
+- 已确认代码事实：`build.cjs` 生成真实 `build-info.json` 字段 `programManifestHash=sha(manifestBytes)`，但事务 `validateStaged` 读取手造测试才有的 `programManifestSha256`。将事务 fixture 改为真实 producer shape 后，修复前 8 项中 6 项固定以 `STAGE_IDENTITY` 失败；消费者最小改为严格比较 `build.programManifestHash === plan.programManifestHash` 后 8/8 PASS，旧 `programManifestSha256` 别名仍固定拒绝。结合 D3 的非零、fixture marker 缺失和完整恢复，**基于证据推测**该字段差异是 U23 在 commit 验证阶段停止的首个原因；最终仍须 D4 stage marker 实测确认。
+- D4 安全诊断新增固定 marker/枚举，按顺序区分 gate accepted、transaction prepared、native copy complete、transaction swapped、installed verified、fixture injected、post-install failure handler、意外 finalize、rollback；只进入既有 marker allowlist，报告仍仅 `phase/result/state`。unknown、大小写、类型及注入枚举继续 fail closed，ASCII 与合成中文路径执行相同 19 阶段正反例。预期 D4 为前 18 阶段既有 PASS、`U23=POST_COPY_VERIFY_FAILED/UNCHANGED`；否则 U23 只允许固定的 `POST_COPY_*` 首个阶段失败枚举。
+- `install-state.json` 的 create-only `wx` 未修改：批准的 beta.1 恢复 metadata 精确 allowlist 不含该文件，升级 `[Files]` 只将新 build-info/manifest 写到 `{tmp}` staging；合成反例在旧 uninstall 中放置 `install-state.json` 时已在 prepare 固定 `OLD_METADATA_INVALID` 并清除 recovery、旧 program 不变。因此没有证据支持为本次 U23 首个阻塞，不能为求通过改成覆盖写。
 
 ## 修改文件
 
 - `.github/workflows/setup-v3.yml`（identity/sequence/full dispatch 互斥及 push marker）
 - `tools/windows-installer/{build.cjs,ci.ps1,offline-ci.ps1,setup.iss,verify-artifact.cjs,fresh-identity.cjs,rebuild-beta1.ps1,verify-beta1-source.cjs,verify-beta1-build.cjs}`
 - `tools/tests/windows-installer/{fresh-identity.test.cjs,upgrade-lifecycle/contract.test.cjs,upgrade-preflight/preflight.test.cjs}`
-- `tools/tests/windows-installer/upgrade-transaction/{contract.test.cjs,gate.test.cjs}`
+- `tools/windows-installer/upgrade-transaction/index.cjs`
+- `tools/tests/windows-installer/upgrade-transaction/{contract.test.cjs,gate.test.cjs,transaction.test.cjs}`
 - `tools/windows-installer/upgrade-gate/{index.cjs,cli.cjs}`
 - `tools/windows-installer/upgrade-detection/index.cjs`
 - `tools/tests/windows-installer/upgrade-detection/upgrade-detection.test.cjs`
