@@ -2,6 +2,8 @@
 
 ## 当前执行授权｜2026-09-26
 
+当前：第四轮task58898b2主动RETURNED→REVIEWED→INTEGRATED为d7ef3964b8fdbf1979dc527e0b65fa202c398ab0；主控23/23契约、两项纯Go、PS AST及实现一致性通过。D4 run36213904038已显式mode=sequence启动，local/origin/API三方同SHA。诊断4/4已用，Full1/2已用，QA0/2；D4若仍FAIL则停止并交网页版，不绕用Full/QA。D4尚不能写PASS，历史REWORK见下。
+
 最新断点：D3 run36212532363结束FAIL，Artifact10896127812严格JSON通过；前17阶段+U21通过，U23固定POST_COPY_MARKER_MISSING/UNCHANGED，未证明post-copy注入。已向原B4-T4发送完整B4-T4-POSTCOPY-20260926-04卡，REWORK/DISPATCHED，从c717d8c继续；return target新主控不变。诊断剩1、Full剩1、QA剩2；禁止用full规避U23未定位问题。下方D3 RUNNING为启动历史。
 
 当前：原T4第三轮2ed43cc及增量c717d8c主动RETURNED→REVIEWED→INTEGRATED，开发分支e6ae80d→b3ab597；主控中文路径14/14专项、纯Go两项、PS AST通过，生产身份/数据规则不变。D3 run36212532363@b3ab5978ca90be3fa5d3c5f793735fc42879ffc6已显式启动mode=sequence，19阶段含U21/U23；local/origin/API核验一致。预算剩诊断1、完整Setup1、QA2，先取D3证据再决定最后full；下方REWORK状态为历史。尚无最终安装包或QA PASS。
