@@ -1,5 +1,5 @@
-# Batch 4 Acceptance — 未执行
-U 系列单独计数，不改变历史 26 suites / 742 checks 语义。所有项目目前 NOT RUN。
+# Batch 4 Acceptance — 验收标准与结果入口
+U系列单独计数，不改变26 suites /742 checks语义。F3原始报告U01—U30全部PASS；整体独立QA首轮FAIL（CI静态门禁假绿），正在原T4返工；不得将产品自动报告当作整体QA通过。详见RESULT.md、ARTIFACT-VERIFICATION.md与tasks/B4-QA-RESULT.md。下表保留逐项标准，Win10人工尚未执行。
 | ID | 必须证明 |
 | --- | --- |
 | U01 | beta.1 合法安装识别 |
