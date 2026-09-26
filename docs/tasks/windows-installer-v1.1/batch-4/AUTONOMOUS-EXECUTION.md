@@ -18,19 +18,20 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 
 | 类别 | 上限 | 已用 | 剩余 |
 | --- | --- | --- | --- |
-| 最小诊断 Hosted | 4 | 1 | 3 |
+| 最小诊断 Hosted | 4 | 2 | 2 |
 | 完整 Batch 4 Setup Hosted | 2 | 0 | 2 |
 | QA相关 Hosted | 2 | 0 | 2 |
 
 | 轮次 | 类别 | 受测commit | run ID | 目的/变化/Review | 结果 |
 | --- | --- | --- | --- | --- | --- |
 | D1 | 最小诊断 | 4319e08694b6660477397102af20d95eb25062b4 | 36208733404 | 17阶段闭合报告、sequence专属夹具父目录；主控六文件Review及13/13契约、三份PS AST PASS | FAIL；八个PRE阶段完成，BASELINE=IDENTITY_REGISTRATION_VERSION/UNCHANGED；已扣1次 |
+| D2 | 最小诊断 | 9e070de4efa7bc10118a7942c33d24b51cb326d0 | 36209825354 | 三处JSON显式UTF8、固定name/version/both原因；主控八文件Review、独立22/22专项PASS，生产detection/gate未改；local/origin/API同SHA | RUNNING；已扣1次 |
 
 所有工程push带[skip ci]，用明确workflow_dispatch及mode扣减预算；不允许push隐式启动完整流水线。Full Setup本身同commit构建Runtime/Launcher/Portable/Setup和742门禁，无须为了名字另外触发重复流水线。每轮首失败证据保留，闭合Artifact不含原始日志/路径/凭据/业务内容。
 
 ## 当前任务
 
-B4-T4 / B4-T4-REGISTRATION-ENCODING-20260926-02：REWORK / DISPATCHED，继续原thread/worktree/branch@867cc752，return target不变。D1 Artifact10895175510（upgrade-sequence-diagnostic-36208733404-1，digest f91d0d0f8b9f5cb06281fc48511f704158f6128ead1b4c1bfcc9c2956509e881）只有闭合JSON，主控严格validator通过。本轮确已越过空phases断点；U15以后未运行。VERSION原因同时覆盖产品名和版本；内部JSON的Unicode→AnsiString写入是待证线索，未定为Hosted根因。返原T4做合成字节反例、更深固定name/version诊断及最小UTF8序列化修复，不改变信任或产品。完整任务卡见tasks/B4-T4-REGISTRATION-ENCODING-20260926.md。
+B4-T4 / B4-T4-REGISTRATION-ENCODING-20260926-02：主动RETURNED → REVIEWED → INTEGRATED；task4918e5b49de3747e756fa05c9ef2b264c99214cf → integrated9e070de4efa7bc10118a7942c33d24b51cb326d0，原thread/worktree/branch及return target不变。固定1252/936合成反例证明旧编码损坏，65001边界旧/新保持；不是Hosted实际代码页取证。主控八文件Review、独立22/22专项通过，生产detection/gate未改；修正三处JSON编码并细分固定诊断，等待D2。D1 Artifact10895175510（upgrade-sequence-diagnostic-36208733404-1，digest f91d0d0f8b9f5cb06281fc48511f704158f6128ead1b4c1bfcc9c2956509e881）闭合validator通过；U15以后该轮未运行。完整任务卡见tasks/B4-T4-REGISTRATION-ENCODING-20260926.md。
 
 B4-T4 / B4-T4-PRE-BASELINE-20260926-01：RETURNED → REVIEWED → INTEGRATED。主动回单已送达新主控；task commit 867cc752af00246c92a1f96b1916c576df7de0d5，整合commit 4319e08694b6660477397102af20d95eb25062b4。原thread 01a0cb6a-67cc-7c03-a68b-2727af8fce6e、原f8bd工作树、codex/b4-t4-upgrade-lifecycle及原始baseline不变。主控确认六文件完整diff、无产品/信任变化；独立复测13/13契约及三份PS AST PASS，整合实现与task commit一致。执行本地83 PASS/1 alias SKIP、preflight20 PASS/1权限SKIP、npm26 files/failed0、固定Go纯测试/编译通过；不等同Hosted742 PASS。QA未创建，等待完整候选。
 
