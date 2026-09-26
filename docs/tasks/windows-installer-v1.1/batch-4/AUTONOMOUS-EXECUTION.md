@@ -19,7 +19,7 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 | 类别 | 上限 | 已用 | 剩余 |
 | --- | --- | --- | --- |
 | 最小诊断 Hosted | 4 | 4 | 0 |
-| 完整 Batch 4 Setup Hosted | 2 | 1 | 1 |
+| 完整 Batch 4 Setup Hosted | 2 | 2 | 0 |
 | QA相关 Hosted | 2 | 0 | 2 |
 
 | 轮次 | 类别 | 受测commit | run ID | 目的/变化/Review | 结果 |
@@ -29,6 +29,7 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 | F1 | 完整Setup | 6fdb7ed19467ac64a80c2f4824b4dfe0431fc62d | 36210201290 | D2专项PASS；实现与D2一致，后续仅治理文档和公开措辞修正；主控npm26 files/failed0；local/origin/API同SHA | FAIL于U21：fault-copy success=true want=false；fresh Setup及U01/U02/U15—U18/U20通过，742及最终privacy未运行 |
 | D3 | 最小诊断 | b3ab5978ca90be3fa5d3c5f793735fc42879ffc6 | 36212532363 | 第三轮copy原生失败、post-install退出/启动保护，19阶段包含U21/U23；增量中文路径修复；主控14/14契约、2项纯Go、3份PS AST PASS；local/origin/API一致 | FAIL；前17阶段和U21 PASS，U23=POST_COPY_MARKER_MISSING/UNCHANGED；已扣第3次 |
 | D4 | 最小诊断 | d7ef3964b8fdbf1979dc527e0b65fa202c398ab0 | 36213904038 | 事务consumer严格读取既有programManifestHash，固定八节点及异常finalize/rollback诊断；主控23/23专项、纯Go两项、PS AST PASS；local/origin/API一致 | PASS；19阶段，U21=COPY_FAILED/UNCHANGED、U23=POST_COPY_VERIFY_FAILED/UNCHANGED；诊断4/4已用 |
+| F2 | 完整Setup | 23ab36bff1e953e14fd5a213d1c9fb759997ee9c | 36214270618 | D4全19阶段PASS；实现与D4相同，后续仅治理/结果文档；主控23/23、纯Go/AST、公开文档8/8 PASS；local/origin/API一致 | RUNNING；显式mode=full，完整Setup2/2已用 |
 
 所有工程push带[skip ci]，用明确workflow_dispatch及mode扣减预算；不允许push隐式启动完整流水线。Full Setup本身同commit构建Runtime/Launcher/Portable/Setup和742门禁，无须为了名字另外触发重复流水线。每轮首失败证据保留，闭合Artifact不含原始日志/路径/凭据/业务内容。
 

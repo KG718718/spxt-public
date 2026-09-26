@@ -2,6 +2,8 @@
 
 ## 当前执行授权｜2026-09-26
 
+当前F2 RUNNING：run36214270618/source23ab36bff1e953e14fd5a213d1c9fb759997ee9c，D4后的实现未变，只增加治理文档，dispatch前local/origin/API一致。显式mode=full；诊断4/4、完整Setup2/2均已用，QA0/2。F2若失败则停止交网页版，不能用QA预算重跑full。QA尚未创建，待真实完整候选。
+
 最新：D4 run36213904038@d7ef396已PASS，19阶段和唯一JSON Artifact10896079310严格验证；U21/U23均真实故障且UNCHANGED。获准进入剩余F2完整Setup；诊断4/4结束，Full尚1/2、QA0/2。下文D4 RUNNING为启动历史；尚无Full/QA/最终发行Artifact PASS。
 
 当前：第四轮task58898b2主动RETURNED→REVIEWED→INTEGRATED为d7ef3964b8fdbf1979dc527e0b65fa202c398ab0；主控23/23契约、两项纯Go、PS AST及实现一致性通过。D4 run36213904038已显式mode=sequence启动，local/origin/API三方同SHA。诊断4/4已用，Full1/2已用，QA0/2；D4若仍FAIL则停止并交网页版，不绕用Full/QA。D4尚不能写PASS，历史REWORK见下。
