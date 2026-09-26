@@ -2,7 +2,7 @@
 
 ## 当前执行授权｜2026-09-26
 
-用户已恢复Batch4。唯一ACTIVE ENGINEERING MASTER及return target为01a0db0e-c950-79e0-8e11-07155e0742f2；旧主控保持RETIRED — READ ONLY HISTORY。治理提交已推并核验159ee4163dd52c08584856521463a793eb6e5c7a。当前续派原B4-T4：B4-T4-PRE-BASELINE-20260926-01 / DISPATCHED，先pre-baseline固定阶段诊断及可复现夹具最小修复。任务卡见tasks/B4-T4-PRE-BASELINE-20260926.md，Hosted预算及逐轮结果见AUTONOMOUS-EXECUTION.md。本节覆盖下文历史暂停，不改变历史测试结果。
+用户已恢复Batch4。唯一ACTIVE ENGINEERING MASTER及return target为01a0db0e-c950-79e0-8e11-07155e0742f2；旧主控保持RETIRED — READ ONLY HISTORY。治理提交已推并核验159ee4163dd52c08584856521463a793eb6e5c7a。原B4-T4：B4-T4-PRE-BASELINE-20260926-01 已主动RETURNED、主控REVIEWED并INTEGRATED；task 867cc752 → integrated 4319e086。六文件闭合阶段诊断及夹具最小修复、主控13/13专项和PS AST通过，尚待Hosted，不代表Batch4通过。任务卡见tasks/B4-T4-PRE-BASELINE-20260926.md，Hosted预算及逐轮结果见AUTONOMOUS-EXECUTION.md。本节覆盖下文历史暂停，不改变历史测试结果。
 
 授权：用户正式 Batch 4 任务书及本次启动指令；L2 / ENGINEERING ORCHESTRATOR。一层独立 Codex task threads，禁止普通 sub-agent。仅 KG718718/spxt-public。
 
