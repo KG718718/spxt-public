@@ -2,6 +2,8 @@
 
 ## 当前执行授权｜2026-09-26
 
+最新：D4 run36213904038@d7ef396已PASS，19阶段和唯一JSON Artifact10896079310严格验证；U21/U23均真实故障且UNCHANGED。获准进入剩余F2完整Setup；诊断4/4结束，Full尚1/2、QA0/2。下文D4 RUNNING为启动历史；尚无Full/QA/最终发行Artifact PASS。
+
 当前：第四轮task58898b2主动RETURNED→REVIEWED→INTEGRATED为d7ef3964b8fdbf1979dc527e0b65fa202c398ab0；主控23/23契约、两项纯Go、PS AST及实现一致性通过。D4 run36213904038已显式mode=sequence启动，local/origin/API三方同SHA。诊断4/4已用，Full1/2已用，QA0/2；D4若仍FAIL则停止并交网页版，不绕用Full/QA。D4尚不能写PASS，历史REWORK见下。
 
 最新断点：D3 run36212532363结束FAIL，Artifact10896127812严格JSON通过；前17阶段+U21通过，U23固定POST_COPY_MARKER_MISSING/UNCHANGED，未证明post-copy注入。已向原B4-T4发送完整B4-T4-POSTCOPY-20260926-04卡，REWORK/DISPATCHED，从c717d8c继续；return target新主控不变。诊断剩1、Full剩1、QA剩2；禁止用full规避U23未定位问题。下方D3 RUNNING为启动历史。
