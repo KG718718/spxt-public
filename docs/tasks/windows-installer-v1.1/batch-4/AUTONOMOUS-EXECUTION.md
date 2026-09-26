@@ -19,19 +19,22 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 | 类别 | 上限 | 已用 | 剩余 |
 | --- | --- | --- | --- |
 | 最小诊断 Hosted | 4 | 2 | 2 |
-| 完整 Batch 4 Setup Hosted | 2 | 0 | 2 |
+| 完整 Batch 4 Setup Hosted | 2 | 1 | 1 |
 | QA相关 Hosted | 2 | 0 | 2 |
 
 | 轮次 | 类别 | 受测commit | run ID | 目的/变化/Review | 结果 |
 | --- | --- | --- | --- | --- | --- |
 | D1 | 最小诊断 | 4319e08694b6660477397102af20d95eb25062b4 | 36208733404 | 17阶段闭合报告、sequence专属夹具父目录；主控六文件Review及13/13契约、三份PS AST PASS | FAIL；八个PRE阶段完成，BASELINE=IDENTITY_REGISTRATION_VERSION/UNCHANGED；已扣1次 |
-| D2 | 最小诊断 | 9e070de4efa7bc10118a7942c33d24b51cb326d0 | 36209825354 | 三处JSON显式UTF8、固定name/version/both原因；主控八文件Review、独立22/22专项PASS，生产detection/gate未改；local/origin/API同SHA | RUNNING；已扣1次 |
+| D2 | 最小诊断 | 9e070de4efa7bc10118a7942c33d24b51cb326d0 | 36209825354 | 三处JSON显式UTF8、固定name/version/both原因；主控八文件Review、独立22/22专项PASS，生产detection/gate未改；local/origin/API同SHA | PASS；17阶段完整，BASELINE及U15/16/17恢复后与U20_PRECOPY均IDENTITY_ACCEPTED/UNCHANGED |
+| F1 | 完整Setup | 6fdb7ed19467ac64a80c2f4824b4dfe0431fc62d | 36210201290 | D2专项PASS；实现与D2一致，后续仅治理文档和公开措辞修正；主控npm26 files/failed0；local/origin/API同SHA | RUNNING；已扣1次 |
 
 所有工程push带[skip ci]，用明确workflow_dispatch及mode扣减预算；不允许push隐式启动完整流水线。Full Setup本身同commit构建Runtime/Launcher/Portable/Setup和742门禁，无须为了名字另外触发重复流水线。每轮首失败证据保留，闭合Artifact不含原始日志/路径/凭据/业务内容。
 
 D2等待期间主控整合目录补跑npm：首次26 files/failed1，定位为新任务卡的一处来源措辞触发既有公开文档门禁；只改为“仅阅读指定公开仓库材料”，范围约束不变，未修改测试。修正后26 files/failed0；本机hosted-only SKIP照常，不冒充742结果。D2不运行公开回归；Full必须使用含此文档修正的后续HEAD。
 
 ## 当前任务
+
+D2专项及报告privacy PASS：Artifact10895610527（upgrade-sequence-diagnostic-36209825354-1，digest9faa9d454eb7d797a757f5416ab983f5a0259f0ef2cd9420c608354661545f8e），仅SEQUENCE-DIAGNOSTIC.json，17阶段顺序/结果严格validator通过。编码修复后真实Inno已通过D1失败门禁和后续受控序列，但没有测量Hosted代码页，不把合成编码测试描述成宿主配置取证。已满足首次Full准入；这不是U01—U30或整个Batch4 PASS。
 
 B4-T4 / B4-T4-REGISTRATION-ENCODING-20260926-02：主动RETURNED → REVIEWED → INTEGRATED；task4918e5b49de3747e756fa05c9ef2b264c99214cf → integrated9e070de4efa7bc10118a7942c33d24b51cb326d0，原thread/worktree/branch及return target不变。固定1252/936合成反例证明旧编码损坏，65001边界旧/新保持；不是Hosted实际代码页取证。主控八文件Review、独立22/22专项通过，生产detection/gate未改；修正三处JSON编码并细分固定诊断，等待D2。D1 Artifact10895175510（upgrade-sequence-diagnostic-36208733404-1，digest f91d0d0f8b9f5cb06281fc48511f704158f6128ead1b4c1bfcc9c2956509e881）闭合validator通过；U15以后该轮未运行。完整任务卡见tasks/B4-T4-REGISTRATION-ENCODING-20260926.md。
 

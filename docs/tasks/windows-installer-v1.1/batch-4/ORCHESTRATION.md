@@ -2,7 +2,7 @@
 
 ## 当前执行授权｜2026-09-26
 
-最新：D1 run36208733404@4319e086 FAIL；八个PRE阶段完成，BASELINE=IDENTITY_REGISTRATION_VERSION/UNCHANGED，Artifact10895175510闭合校验通过。原T4第二轮返工已主动RETURNED→REVIEWED→INTEGRATED，4918e5b→9e070de4；三处UTF8写入及固定name/version/both诊断，生产detection/gate未改，主控22/22专项通过。D2 run36209825354@9e070de4 RUNNING；诊断剩2/4，Full2/2、QA2/2未用。当前未满足Full/QA准入。
+最新：D1 run36208733404@4319e086 FAIL；原T4第二轮4918e5b→9e070de4已主动RETURNED→REVIEWED→INTEGRATED，三处UTF8写入及固定诊断，生产身份门禁未改，主控22/22专项通过。D2 run36209825354@9e070de4已PASS，17阶段及封闭Artifact10895610527隐私校验通过。随后文档措辞修正通过主控npm26 files/failed0。F1完整Setup run36210201290@6fdb7ed1 RUNNING；诊断剩2/4，Full剩1/2，QA2/2未用。尚无完整Batch4或QA PASS结论。
 
 用户已恢复Batch4。唯一ACTIVE ENGINEERING MASTER及return target为01a0db0e-c950-79e0-8e11-07155e0742f2；旧主控保持RETIRED — READ ONLY HISTORY。治理提交已推并核验159ee4163dd52c08584856521463a793eb6e5c7a。原B4-T4：B4-T4-PRE-BASELINE-20260926-01 已主动RETURNED、主控REVIEWED并INTEGRATED；task 867cc752 → integrated 4319e086。六文件闭合阶段诊断及夹具最小修复、主控13/13专项和PS AST通过，尚待Hosted，不代表Batch4通过。任务卡见tasks/B4-T4-PRE-BASELINE-20260926.md，Hosted预算及逐轮结果见AUTONOMOUS-EXECUTION.md。本节覆盖下文历史暂停，不改变历史测试结果。
 
