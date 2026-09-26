@@ -1,5 +1,12 @@
 # Batch 4 编排索引
 
+## 当前验收结论｜2026-09-27
+
+**Batch 4 PASS — Windows 10 x64 Beta Upgrade Track**。用户明确报告 Win10 x64 人工第1—10步全部 PASS；I01/I02/I09人工门禁据用户反馈闭合。这是用户实机验收记录，不是本轮自动复测。受验 source `c8886e6b6d413c2fd73d6716621d07a80b337e58`、Run `36246132535`、Artifact `10907910968` 永久保持历史身份，未修改或覆盖。此前QA首轮FAIL及QA1补证链保留。
+
+用户现已正式批准 Batch 4.5 LAN Host Deployment 完整1—38节；唯一集成分支将从本次治理收尾后已核验HEAD建立 `codex/lan-host-v1.1`。Primary保持public-source。唯一ACTIVE Master为 `01a0db0e-c950-79e0-8e11-07155e0742f2`；旧 `019fa7e9-f46b-7192-9052-cd0aac7c2cc5` 永久RETIRED — READ ONLY HISTORY。下方HUMAN PENDING及不得进入Batch4.5是已被本次明确验收和授权取代的历史状态；main/tag/Release禁令继续有效。
+
+
 ## 当前最终编排状态
 
 **BLOCKED — AUTOMATION PASS / QA PASS / HUMAN PENDING**。唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2；旧Master永久只读。所有本轮自动任务停止，原T4与QA工作树保留，不创建新任务、不清理工作树、不进入Batch4.5。

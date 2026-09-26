@@ -1,5 +1,12 @@
 # K⁺-SESSION｜项目状态
 
+## 当前验收结论｜2026-09-27
+
+**Batch 4 PASS — Windows 10 x64 Beta Upgrade Track**。用户明确报告 Win10 x64 人工第1—10步全部 PASS；I01/I02/I09人工门禁据用户反馈闭合。这是用户实机验收记录，不是本轮自动复测。受验 source `c8886e6b6d413c2fd73d6716621d07a80b337e58`、Run `36246132535`、Artifact `10907910968` 永久保持历史身份，未修改或覆盖。此前QA首轮FAIL及QA1补证链保留。
+
+用户现已正式批准 Batch 4.5 LAN Host Deployment 完整1—38节；唯一集成分支将从本次治理收尾后已核验HEAD建立 `codex/lan-host-v1.1`。Primary保持public-source。唯一ACTIVE Master为 `01a0db0e-c950-79e0-8e11-07155e0742f2`；旧 `019fa7e9-f46b-7192-9052-cd0aac7c2cc5` 永久RETIRED — READ ONLY HISTORY。下方HUMAN PENDING及不得进入Batch4.5是已被本次明确验收和授权取代的历史状态；main/tag/Release禁令继续有效。
+
+
 ## 当前最终停点｜2026-09-26
 
 **BLOCKED — AUTOMATION PASS / QA PASS / HUMAN PENDING**。U01—U30、Runtime/Launcher/Portable/Setup、26/26 suites、742 checks、fail0、skip0、Artifact privacy及独立B4-QA均已闭合。仅Win10人工I01/I02/I09及十步升级验收待用户执行。自动工程在此停止，不再派开发任务或追加Hosted，不进入Batch4.5/main/tag/Release。
