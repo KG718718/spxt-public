@@ -6,7 +6,7 @@ TASK ID：B4-T4；派单编号 B4-T4-REGISTRATION-ENCODING-20260926-02。你是�
 
 仓库 KG718718/spxt-public；原 WORKDIR E:/CodexWorkspace/CodexWorktrees/f8bd/public-source；原分支 codex/b4-t4-upgrade-lifecycle；当前继续点867cc752af00246c92a1f96b1916c576df7de0d5，原baseline不变，不fetch/rebase或切换工作树。该提交已Review并整合为4319e08694b6660477397102af20d95eb25062b4。唯一主控及主动return target：01a0db0e-c950-79e0-8e11-07155e0742f2。旧主控永久RETIRED — READ ONLY HISTORY。
 
-先读主控公开目录最新AGENTS/PROJECT、Batch4 SPEC/PLAN/ACCEPTANCE和AUTONOMOUS-EXECUTION.md；旧任务历史暂停/额度限制被本次用户恢复授权覆盖。继续同一T4，不重做T1/T1A/T2/T3，不创建任务/worktree/Agent，不读私有仓库。
+先读主控公开目录最新AGENTS/PROJECT、Batch4 SPEC/PLAN/ACCEPTANCE和AUTONOMOUS-EXECUTION.md；旧任务历史暂停/额度限制被本次用户恢复授权覆盖。继续同一T4，不重做T1/T1A/T2/T3，不创建任务/worktree/Agent，仅阅读指定公开仓库材料。
 
 ## 已确认事实
 
@@ -32,4 +32,3 @@ https://jrsoftware.org/ishelp/topic_isxfunc_utf8encode.htm
 只local commit，信息含[sequence-diagnostic] [skip ci]；禁止push/Actions/main/tag/Release。已用最小诊断1/4，剩3；Full0/2、QA0/2，只有主控可扣预算显式dispatch；不得同失败无修改retry。
 完成主动send_message_to_thread到上述新主控，核验目标ID；回单字段TASK/派单编号、PASS/FAIL/BLOCKED、已证实与推测、文件、失败→通过测试、local commit、风险、主控后续。送达失败写RESULT，由主控watchdog接管，不停在未回单。
 产品/UX/schema/migration/生命周期/信任或安全放宽/路线/平台改变、预算耗尽或无法安全恢复才上报决策；普通工程问题本卡自动处理。最终门禁仍U01—U30、Runtime/Launcher/Portable/Setup、26/742 fail0 skip0、privacy/QA/最终beta2 Artifact；然后HUMAN PENDING，不进入Batch4.5。
-

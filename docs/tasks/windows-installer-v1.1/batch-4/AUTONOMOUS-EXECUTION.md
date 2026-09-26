@@ -29,6 +29,8 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 
 所有工程push带[skip ci]，用明确workflow_dispatch及mode扣减预算；不允许push隐式启动完整流水线。Full Setup本身同commit构建Runtime/Launcher/Portable/Setup和742门禁，无须为了名字另外触发重复流水线。每轮首失败证据保留，闭合Artifact不含原始日志/路径/凭据/业务内容。
 
+D2等待期间主控整合目录补跑npm：首次26 files/failed1，定位为新任务卡的一处来源措辞触发既有公开文档门禁；只改为“仅阅读指定公开仓库材料”，范围约束不变，未修改测试。修正后26 files/failed0；本机hosted-only SKIP照常，不冒充742结果。D2不运行公开回归；Full必须使用含此文档修正的后续HEAD。
+
 ## 当前任务
 
 B4-T4 / B4-T4-REGISTRATION-ENCODING-20260926-02：主动RETURNED → REVIEWED → INTEGRATED；task4918e5b49de3747e756fa05c9ef2b264c99214cf → integrated9e070de4efa7bc10118a7942c33d24b51cb326d0，原thread/worktree/branch及return target不变。固定1252/936合成反例证明旧编码损坏，65001边界旧/新保持；不是Hosted实际代码页取证。主控八文件Review、独立22/22专项通过，生产detection/gate未改；修正三处JSON编码并细分固定诊断，等待D2。D1 Artifact10895175510（upgrade-sequence-diagnostic-36208733404-1，digest f91d0d0f8b9f5cb06281fc48511f704158f6128ead1b4c1bfcc9c2956509e881）闭合validator通过；U15以后该轮未运行。完整任务卡见tasks/B4-T4-REGISTRATION-ENCODING-20260926.md。
