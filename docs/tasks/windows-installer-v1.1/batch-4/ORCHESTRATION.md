@@ -2,6 +2,8 @@
 
 ## 当前执行授权｜2026-09-26
 
+最新：D1 run36208733404@4319e086 FAIL；八个PRE阶段完成，BASELINE=IDENTITY_REGISTRATION_VERSION/UNCHANGED，Artifact10895175510闭合校验通过。诊断剩3/4，Full2/2、QA2/2未用。原T4第二轮返工B4-T4-REGISTRATION-ENCODING-20260926-02已DISPATCHED，继续867cc752；要求先编码反例和更深固定name/version诊断，不改信任/产品。当前未满足Full/QA准入。
+
 用户已恢复Batch4。唯一ACTIVE ENGINEERING MASTER及return target为01a0db0e-c950-79e0-8e11-07155e0742f2；旧主控保持RETIRED — READ ONLY HISTORY。治理提交已推并核验159ee4163dd52c08584856521463a793eb6e5c7a。原B4-T4：B4-T4-PRE-BASELINE-20260926-01 已主动RETURNED、主控REVIEWED并INTEGRATED；task 867cc752 → integrated 4319e086。六文件闭合阶段诊断及夹具最小修复、主控13/13专项和PS AST通过，尚待Hosted，不代表Batch4通过。任务卡见tasks/B4-T4-PRE-BASELINE-20260926.md，Hosted预算及逐轮结果见AUTONOMOUS-EXECUTION.md。本节覆盖下文历史暂停，不改变历史测试结果。
 
 授权：用户正式 Batch 4 任务书及本次启动指令；L2 / ENGINEERING ORCHESTRATOR。一层独立 Codex task threads，禁止普通 sub-agent。仅 KG718718/spxt-public。
