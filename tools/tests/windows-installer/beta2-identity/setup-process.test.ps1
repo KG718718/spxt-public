@@ -12,8 +12,43 @@ $functions=@($ast.FindAll({param($node)$node-is[Management.Automation.Language.F
 if($functions.Count-ne 2){throw 'PROCESS_HELPER_MISSING'}
 $functions|Sort-Object{$_.Extent.StartOffset}|ForEach-Object{Invoke-Expression $_.Extent.Text}
 
-$temporary=Join-Path $env:TEMP ('KSESSION-B45-ID-PROCESS-'+[Guid]::NewGuid().ToString('N'))
-if($temporary-cnotmatch '^[A-Za-z]:\\[A-Za-z0-9._\\-]+$'){throw 'TEMP_PATH_UNSAFE'}
+function New-SafeHarnessTemporaryPath([string]$Root,[AllowNull()][string]$RunnerTemp){
+  if($Root-cnotmatch '^[A-Za-z]:\\'){throw 'REPOSITORY_PATH_UNSAFE'}
+  $repository=[IO.Path]::GetFullPath($Root)
+  $parents=@()
+  if(![string]::IsNullOrWhiteSpace($RunnerTemp)){
+    try{$runner=[IO.Path]::GetFullPath($RunnerTemp)}catch{$runner=$null}
+    if($runner -and $runner.Equals($RunnerTemp,[StringComparison]::Ordinal) -and
+       $runner -cmatch '^[A-Za-z]:\\[A-Za-z0-9._\\-]+$' -and
+       (Test-Path -LiteralPath $runner -PathType Container)){$parents+=,$runner.TrimEnd('\\')}
+  }
+  $drive=[IO.Path]::GetPathRoot($repository)
+  if($drive -cnotmatch '^[A-Za-z]:\\$'){throw 'REPOSITORY_DRIVE_UNSAFE'}
+  $parents+=,$drive
+  foreach($parent in $parents){
+    $candidate=[IO.Path]::GetFullPath((Join-Path $parent ('KSESSION-B45-ID-PROCESS-'+[Guid]::NewGuid().ToString('N'))))
+    if($candidate -cmatch '^[A-Za-z]:\\[A-Za-z0-9._\\-]+$'){return $candidate}
+  }
+  throw 'TEMP_PATH_UNSAFE'
+}
+
+$unsafeEnvironmentRoots=@(
+  @{value='C:\RUNNER~1\Temp';category='SHORT_NAME'},
+  @{value='C:\unsafe path\Temp';category='SPACE'},
+  @{value='C:\临时\Temp';category='NON_ASCII'}
+)
+foreach($unsafeRoot in $unsafeEnvironmentRoots){
+  $selected=New-SafeHarnessTemporaryPath -Root $RepositoryRoot -RunnerTemp $unsafeRoot.value
+  if($selected-cnotmatch '^[A-Za-z]:\\KSESSION-B45-ID-PROCESS-[a-f0-9]{32}$' -or
+     $selected.StartsWith($unsafeRoot.value,[StringComparison]::OrdinalIgnoreCase)){
+    throw ('TEMP_FALLBACK_'+$unsafeRoot.category)
+  }
+}
+$workspaceFallback=New-SafeHarnessTemporaryPath -Root 'C:\工作 区\repository' -RunnerTemp 'C:\RUNNER~1\Temp'
+if($workspaceFallback-cnotmatch '^C:\\KSESSION-B45-ID-PROCESS-[a-f0-9]{32}$'){
+  throw 'TEMP_FALLBACK_WORKSPACE_UNICODE_SPACE'
+}
+$temporary=New-SafeHarnessTemporaryPath -Root $RepositoryRoot -RunnerTemp $env:RUNNER_TEMP
 [IO.Directory]::CreateDirectory($temporary)|Out-Null
 try{
   $source=Join-Path $temporary 'helper.cs';$helper=Join-Path $temporary 'helper.exe';$log=Join-Path $temporary 'setup.log'

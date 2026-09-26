@@ -99,3 +99,13 @@ b45-beta2-identity-<tested-commit>-<run-attempt>
 - 实际F3 build-info若与仓库当前构建器推导的封闭字段集合不一致，将在 `INSTALLED_FOOTPRINT` fail closed；先审查实际非敏感差异，再最小修复，不无修改retry。
 - Windows runner对 `Win32_Process.ExecutablePath` 的可见性、uninstaller自删除时序和HKCU shared view仍需真实Hosted验证。
 - 主控Review本commit后，若无问题，整合并仅在 `codex/lan-host-v1.1` dispatch `mode=lan-identity`，计入专项Hosted 1/4。取得并审查evidence之前，不应进入beta.3运行时信任bundle/升级生产路径。
+
+## R1｜Hosted测试harness路径修复
+
+- 专项1 Run `36280286553` / job `108510690830` / tested source `bb497a8f7ddbbd9e581db25b3f7c503270a9279f` 在静态门禁阻断；安全报告为 `STATIC_GATE/BLOCKED_STATIC_GATE`，产品安装未运行，其余job均skip。
+- Artifact `10918207525`，SHA-256 `21b1c2d82eaa974d96d5a6fb0d105c86394957711d957f1831a59fcaa97c2964`。该失败已由主控核验，本任务未自行下载Artifact或重跑Hosted。
+- 已确认根因是 `setup-process.test.ps1` 直接使用系统 `TEMP`，同时要求最终路径满足比Windows合法临时路径更窄的ASCII白名单，导致测试harness环境假设不兼容。Hosted日志只确认第16行抛出 `TEMP_PATH_UNSAFE`，没有记录实际TEMP值；“runner TEMP含8.3短名 `~`”是基于runner环境的高可能解释，不冒充已观测事实。这不是F3身份或安装失败。
+- 本地先以合成 `TEMP/TMP=C:\RUNNER~1\Temp` 复现旧测试失败；另确认空格和非ASCII候选也不满足旧白名单。修复后harness只优先采用存在、规范化且满足原ASCII安全字符集的 `RUNNER_TEMP`；否则仅从仓库所在盘符根派生GUID命名的owned隔离目录。`SHORT_NAME`、`SPACE`、`NON_ASCII` 三类临时根以及含空格/中文的合成工作区反例均验证会回退到受限目录，失败诊断只暴露固定类别、不输出原路径。
+- 兼容审查实际发现 Windows PowerShell 5 的 .NET Framework不提供 `Path.IsPathFullyQualified`；harness改用pwsh 7与Windows PowerShell 5均支持的盘符绝对路径检查，避免同类第二次Hosted失败。
+- R1本地复测：合成短名TEMP下 pwsh 7 PASS、Windows PowerShell 5 PASS；受限且存在的 `RUNNER_TEMP` 分支在pwsh 7 PASS；新beta2 identity Node测试9/9 PASS；`git diff --check` PASS。
+- 没有修改生产取证脚本、Setup参数、真实取证路径验证、新beta.2 identity schema、旧beta.1语义或workflow调度条件；禁止自行Hosted保持不变。
