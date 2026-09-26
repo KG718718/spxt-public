@@ -1,5 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
+const cp = require('node:child_process');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -48,6 +49,8 @@ function fixture() {
   return { root, plan, business: inventory(instancePath), desktopShortcut, startMenuShortcut };
 }
 function cleanup(f) { fs.rmSync(f.root, { recursive: true, force: true }); }
+const cli = path.resolve(__dirname, '../../../windows-installer/upgrade-transaction/cli.cjs');
+function runCli(args) { return cp.spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8', windowsHide: true }); }
 for (const fault of ['after-old-program', 'after-new-program', 'after-metadata']) {
   test('fault '+fault+' restores old owned state and leaves instance byte-identical', () => {
     const f = fixture();
@@ -119,4 +122,55 @@ test('plan cannot include business instance in install or stage scope', () => {
   try {
     assert.throws(() => tx.prepare({ ...f.plan, instancePath: path.join(f.plan.installRoot, 'instance') }), error => error.code === 'INSTANCE_SCOPE');
   } finally { cleanup(f); }
+});
+
+test('U22 deferred bad manifest hash is a fixed CLI rejection before old program swap', () => {
+  const f = fixture();
+  try {
+    const beforeInstall = inventory(f.plan.installRoot), beforeBusiness = inventory(f.plan.instancePath);
+    const beforeDesktop = fs.readFileSync(f.desktopShortcut), beforeStart = fs.readFileSync(f.startMenuShortcut);
+    const stage = path.dirname(f.plan.stagedProgram), deferred = path.join(f.root, 'deferred-stage');
+    fs.renameSync(stage, deferred);
+    const badPlan = { ...f.plan, programManifestHash: '0'.repeat(64) };
+    tx.prepare(badPlan);
+    fs.renameSync(deferred, stage);
+    const planFile = path.join(f.root, 'bad-plan.json');
+    fs.writeFileSync(planFile, JSON.stringify(badPlan));
+    const result = runCli(['commit', planFile]);
+    assert.equal(result.status, 61);
+    assert.equal(result.stdout, '{"ok":false,"code":"STAGE_MANIFEST_HASH"}\n');
+    assert.equal(result.stderr, '');
+    assert.deepEqual(inventory(f.plan.installRoot).filter(x => !x.path.startsWith(tx.RECOVERY_NAME + '/')), beforeInstall);
+    assert.equal(fs.existsSync(tx.locations(badPlan).oldProgram), false);
+    assert.deepEqual(inventory(f.plan.instancePath), beforeBusiness);
+    assert.deepEqual(fs.readFileSync(f.desktopShortcut), beforeDesktop);
+    assert.deepEqual(fs.readFileSync(f.startMenuShortcut), beforeStart);
+    tx.rollback(badPlan);
+    assert.deepEqual(inventory(f.plan.installRoot), beforeInstall);
+  } finally { cleanup(f); }
+});
+
+test('deferred valid stage still follows the normal swap and finalize path', () => {
+  const f = fixture();
+  try {
+    const stage = path.dirname(f.plan.stagedProgram), deferred = path.join(f.root, 'deferred-stage');
+    fs.renameSync(stage, deferred);
+    tx.prepare(f.plan);
+    fs.renameSync(deferred, stage);
+    assert.equal(tx.commit(f.plan).code, 'TRANSACTION_SWAPPED');
+    assert.equal(tx.finalize(f.plan).code, 'TRANSACTION_COMMITTED');
+    assert.deepEqual(inventory(f.plan.instancePath), f.business);
+  } finally { cleanup(f); }
+});
+
+test('transaction CLI emits only fixed safe diagnostics for invalid and internal failures', () => {
+  const invalid = runCli([]);
+  assert.equal(invalid.status, 60);
+  assert.equal(invalid.stdout, '{"ok":false,"code":"ARGUMENT_INVALID"}\n');
+  assert.equal(invalid.stderr, '');
+  const internal = runCli(['commit', path.join(os.tmpdir(), 'missing-ksession-plan.json')]);
+  assert.equal(internal.status, 79);
+  assert.equal(internal.stdout, '{"ok":false,"code":"TRANSACTION_INTERNAL"}\n');
+  assert.equal(internal.stderr, '');
+  assert.doesNotMatch(internal.stdout, /[A-Z]:\\|stack|ENOENT/i);
 });

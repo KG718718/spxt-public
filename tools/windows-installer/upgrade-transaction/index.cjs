@@ -107,7 +107,7 @@ function validateStaged(plan) {
   const buildFile = path.join(plan.stagedMetadata, 'build-info.json');
   regular(manifestFile, 'STAGE_INVALID'); regular(buildFile, 'STAGE_INVALID');
   const manifestBytes = fs.readFileSync(manifestFile);
-  if (sha(manifestBytes) !== plan.programManifestHash) fail('STAGE_IDENTITY', 'program manifest hash mismatch');
+  if (sha(manifestBytes) !== plan.programManifestHash) fail('STAGE_MANIFEST_HASH', 'program manifest hash mismatch');
   const manifest = JSON.parse(manifestBytes.toString('utf8'));
   const build = readJson(buildFile);
   if (manifest.schema !== 1 || manifest.version !== INSTALLER_VERSION || manifest.sourceCommit !== plan.sourceCommit ||

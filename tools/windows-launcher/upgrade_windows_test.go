@@ -67,6 +67,7 @@ func safeInstallerMarkers(logText string) string {
 		"KSESSION_UPGRADE_GATE_IDENTITY_MANIFEST", "KSESSION_UPGRADE_GATE_IDENTITY_PROGRAM", "KSESSION_UPGRADE_GATE_IDENTITY_BUILD",
 		"KSESSION_UPGRADE_GATE_IDENTITY_RUNTIME", "KSESSION_UPGRADE_GATE_IDENTITY_LAUNCHER", "KSESSION_UPGRADE_GATE_IDENTITY_INTERNAL",
 		"KSESSION_UPGRADE_GATE_ACCEPTED", "KSESSION_UPGRADE_REGISTRATION_REJECTED", "KSESSION_UPGRADE_ROLLBACK_FAILED", "KSESSION_UPGRADE_ROOT_MISMATCH",
+		"KSESSION_UPGRADE_COMMIT_MANIFEST_HASH_REJECTED", "KSESSION_UPGRADE_COMMIT_UNKNOWN",
 		"KSESSION_UPGRADE_INSTALLED_VERIFIED", "KSESSION_UPGRADE_NATIVE_COPY_COMPLETE", "KSESSION_UPGRADE_POSTINSTALL_FAILED",
 		"KSESSION_UPGRADE_TRANSACTION_COMMITTED", "KSESSION_UPGRADE_TRANSACTION_PREPARED", "KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK", "KSESSION_UPGRADE_TRANSACTION_SWAPPED",
 		"KSESSION_SEQUENCE_IDENTITY_ACCEPTED",
@@ -141,6 +142,39 @@ func postCopyDiagnosticFailure(markers string) string {
 		if !hasInstallerMarker(markers, stage.marker) {
 			return stage.failure
 		}
+	}
+	return ""
+}
+
+func payloadHashDiagnosticFailure(markers string) string {
+	if hasInstallerMarker(markers, "KSESSION_UPGRADE_COMMIT_UNKNOWN") {
+		return "PAYLOAD_HASH_REASON_CONFLICT"
+	}
+	for _, unexpected := range []struct{ marker, failure string }{
+		{"KSESSION_UPGRADE_TRANSACTION_COMMITTED", "PAYLOAD_HASH_UNEXPECTED_FINALIZE"},
+		{"KSESSION_UPGRADE_INSTALLED_VERIFIED", "PAYLOAD_HASH_UNEXPECTED_VERIFY"},
+		{"KSESSION_UPGRADE_TRANSACTION_SWAPPED", "PAYLOAD_HASH_UNEXPECTED_SWAP"},
+	} {
+		if hasInstallerMarker(markers, unexpected.marker) {
+			return unexpected.failure
+		}
+	}
+	for _, required := range []struct{ marker, failure string }{
+		{"KSESSION_UPGRADE_GATE_ACCEPTED", "PAYLOAD_HASH_GATE_NOT_ACCEPTED"},
+		{"KSESSION_UPGRADE_TRANSACTION_PREPARED", "PAYLOAD_HASH_PREPARE_NOT_REACHED"},
+		{"KSESSION_UPGRADE_NATIVE_COPY_COMPLETE", "PAYLOAD_HASH_NATIVE_COPY_NOT_REACHED"},
+		{"KSESSION_UPGRADE_COMMIT_MANIFEST_HASH_REJECTED", "PAYLOAD_HASH_REASON_MISSING"},
+		{"KSESSION_UPGRADE_POSTINSTALL_FAILED", "PAYLOAD_HASH_FAILURE_HANDLER_MISSING"},
+	} {
+		if !hasInstallerMarker(markers, required.marker) {
+			return required.failure
+		}
+	}
+	if hasInstallerMarker(markers, "KSESSION_UPGRADE_ROLLBACK_FAILED") {
+		return "PAYLOAD_HASH_ROLLBACK_FAILED"
+	}
+	if !hasInstallerMarker(markers, "KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK") {
+		return "PAYLOAD_HASH_ROLLBACK_MARKER_MISSING"
 	}
 	return ""
 }
@@ -639,7 +673,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 		}
 	}
 
-	fixtures := []struct{ id, dir, marker string }{{"U18", "fault-space", "KSESSION_REJECT_SPACE"}, {"U20", "fault-cancel", "KSESSION_FIXTURE_CANCEL_DURING_COPY"}, {"U21", "fault-copy", "KSESSION_FIXTURE_COPY_FAILURE"}, {"U22", "fault-payload-hash", "KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED"}, {"U23", "fault-post-copy", "KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE"}}
+	fixtures := []struct{ id, dir, marker string }{{"U18", "fault-space", "KSESSION_REJECT_SPACE"}, {"U20", "fault-cancel", "KSESSION_FIXTURE_CANCEL_DURING_COPY"}, {"U21", "fault-copy", "KSESSION_FIXTURE_COPY_FAILURE"}, {"U22", "fault-payload-hash", "KSESSION_UPGRADE_COMMIT_MANIFEST_HASH_REJECTED"}, {"U23", "fault-post-copy", "KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE"}}
 	if sequenceDiagnostic {
 		fixtures = fixtures[:1]
 	}
@@ -647,12 +681,26 @@ func TestUpgradeLifecycle(t *testing.T) {
 		startSequencePhase(f.id)
 		binary := filepath.Join(build, f.dir, "artifact", "K-SESSION-Setup-1.1.0-beta.2.exe")
 		result := runSetupRaw(binary)
-		if result.exitCode == 0 {
-			t.Fatal(safeSetupFailure(f.marker, result))
+		markers := safeInstallerMarkers(result.logText)
+		failure := ""
+		if f.id == "U22" {
+			failure = payloadHashDiagnosticFailure(markers)
+		} else if !hasInstallerMarker(markers, f.marker) {
+			failure = "FIXTURE_MARKER_MISSING"
 		}
-		assertLog(result, f.marker)
+		state := "UNCHANGED"
 		if !equalMaps(instanceStable, walkHash(instance)) || !equalMaps(ownedStable, owned()) {
-			t.Fatalf("%s did not restore exact state", f.id)
+			state = "CHANGED"
+		}
+		if result.exitCode == 0 {
+			if f.id == "U22" {
+				failure = "PAYLOAD_HASH_UNEXPECTED_SUCCESS"
+			} else {
+				failure = "FIXTURE_UNEXPECTED_SUCCESS"
+			}
+		}
+		if failure != "" || state != "UNCHANGED" {
+			t.Fatalf("%s diagnostic=%s state=%s %s", f.id, failure, state, safeSetupFailure(f.marker, result))
 		}
 		method := "real Inno fault fixture restored program, metadata, registration, binding, shortcuts and byte-identical instance"
 		if f.id == "U22" {
@@ -663,43 +711,24 @@ func TestUpgradeLifecycle(t *testing.T) {
 	}
 	if sequenceDiagnostic {
 		probeSequenceIdentity("U20_PRECOPY")
-		for _, f := range []struct{ id, dir, marker, result string }{
-			{"U21", "fault-copy", "KSESSION_FIXTURE_COPY_FAILURE", "COPY_FAILED"},
-			{"U23", "fault-post-copy", "KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE", "POST_COPY_VERIFY_FAILED"},
-		} {
-			startSequencePhase(f.id)
-			result := runSetupRaw(filepath.Join(build, f.dir, "artifact", "K-SESSION-Setup-1.1.0-beta.2.exe"))
-			markers := safeInstallerMarkers(result.logText)
-			markerPresent := hasInstallerMarker(markers, f.marker)
-			state := "UNCHANGED"
-			if !equalMaps(instanceStable, walkHash(instance)) || !equalMaps(ownedStable, owned()) {
-				state = "CHANGED"
-			}
-			failure := ""
-			if result.exitCode == 0 {
-				if markerPresent {
-					failure = map[string]string{"U21": "COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT", "U23": "POST_COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT"}[f.id]
-				} else {
-					failure = map[string]string{"U21": "COPY_UNEXPECTED_SUCCESS_MARKER_MISSING", "U23": "POST_COPY_UNEXPECTED_SUCCESS_MARKER_MISSING"}[f.id]
-				}
-			} else if f.id == "U21" && hasInstallerMarker(markers, "KSESSION_FIXTURE_COPY_INJECTION_PREPARE_FAILED") {
-				failure = "COPY_INJECTION_PREPARE_FAILED"
-			} else if f.id == "U23" {
-				failure = postCopyDiagnosticFailure(markers)
-			} else if !markerPresent {
-				failure = "COPY_MARKER_MISSING"
-			} else if state == "CHANGED" {
-				failure = map[string]string{"U21": "COPY_STATE_CHANGED", "U23": "POST_COPY_STATE_CHANGED"}[f.id]
-			}
-			if failure == "" && state == "CHANGED" {
-				failure = map[string]string{"U21": "COPY_STATE_CHANGED", "U23": "POST_COPY_STATE_CHANGED"}[f.id]
-			}
-			if failure != "" {
-				completeSequencePhase(f.id, failure, state)
-				t.Fatal("closed upgrade fault diagnostic failed")
-			}
-			completeSequencePhase(f.id, f.result, "UNCHANGED")
+		startSequencePhase("U22")
+		result := runSetupRaw(filepath.Join(build, "fault-payload-hash", "artifact", "K-SESSION-Setup-1.1.0-beta.2.exe"))
+		markers := safeInstallerMarkers(result.logText)
+		state := "UNCHANGED"
+		if !equalMaps(instanceStable, walkHash(instance)) || !equalMaps(ownedStable, owned()) {
+			state = "CHANGED"
 		}
+		failure := payloadHashDiagnosticFailure(markers)
+		if result.exitCode == 0 {
+			failure = "PAYLOAD_HASH_UNEXPECTED_SUCCESS"
+		} else if state == "CHANGED" {
+			failure = "PAYLOAD_HASH_STATE_CHANGED"
+		}
+		if failure != "" {
+			completeSequencePhase("U22", failure, state)
+			t.Fatal("closed payload hash diagnostic failed")
+		}
+		completeSequencePhase("U22", "PAYLOAD_HASH_REJECTED", "UNCHANGED")
 		return
 	}
 	// Permission failure uses the normal payload under a real deny-write ACL; no product test switch is involved.
@@ -874,6 +903,17 @@ func TestSafeCoreProbeFailure(t *testing.T) {
 	rollbackFailed := safeInstallerMarkers(strings.Join(rollbackStages, " "))
 	if got := postCopyDiagnosticFailure(rollbackFailed); got != "POST_COPY_ROLLBACK_FAILED" {
 		t.Fatalf("post-copy diagnostic rollback counterexample=%s", got)
+	}
+	payloadStages := []string{
+		"KSESSION_UPGRADE_GATE_ACCEPTED", "KSESSION_UPGRADE_TRANSACTION_PREPARED", "KSESSION_UPGRADE_NATIVE_COPY_COMPLETE",
+		"KSESSION_UPGRADE_COMMIT_MANIFEST_HASH_REJECTED", "KSESSION_UPGRADE_POSTINSTALL_FAILED", "KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK",
+	}
+	if got := payloadHashDiagnosticFailure(safeInstallerMarkers(strings.Join(payloadStages, " "))); got != "" {
+		t.Fatalf("complete payload-hash diagnostic rejected=%s", got)
+	}
+	conflictingPayload := safeInstallerMarkers(strings.Join(append(payloadStages, "KSESSION_UPGRADE_COMMIT_UNKNOWN"), " "))
+	if got := payloadHashDiagnosticFailure(conflictingPayload); got != "PAYLOAD_HASH_REASON_CONFLICT" {
+		t.Fatalf("payload-hash conflicting reason counterexample=%s", got)
 	}
 	if safeInstallerMarkers("KSESSION_UPGRADE_ROOT_MISMATCH KSESSION_REJECT_INSTANCE_LOCK") != "KSESSION_REJECT_INSTANCE_LOCK,KSESSION_UPGRADE_ROOT_MISMATCH" {
 		t.Fatal("installer marker diagnostic omitted a fixed pre-space rejection")

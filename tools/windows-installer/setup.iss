@@ -420,6 +420,20 @@ begin
   Result := SaveStringToFile(UpgradePlan, Utf8Encode(S), False);
 end;
 
+function CommitUpgradeTransaction: Boolean;
+var Code: Integer; Started: Boolean;
+begin
+  Code := 79;
+  Started := Exec(ExpandConstant('{tmp}\ksession-beta2-node.exe'),
+    '"' + ExpandConstant('{tmp}\upgrade-transaction-cli.cjs') + '" commit "' + UpgradePlan + '"',
+    ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, Code);
+  Result := Started and (Code = 0);
+  if not Result then begin
+    if Started and (Code = 61) then Log('KSESSION_UPGRADE_COMMIT_MANIFEST_HASH_REJECTED')
+    else Log('KSESSION_UPGRADE_COMMIT_UNKNOWN');
+  end;
+end;
+
 #ifdef SequenceDiagnostic
 procedure LogSequenceRegistrationDetail;
 var DetailCode: Integer;
@@ -639,7 +653,7 @@ begin
     try
       if UpgradeMode then begin
         Log('KSESSION_UPGRADE_NATIVE_COPY_COMPLETE');
-        if not RunNode('upgrade-transaction-cli.cjs', 'commit "' + UpgradePlan + '"') then
+        if not CommitUpgradeTransaction then
           RaiseException('升级提交失败；旧程序恢复结果请查看安装日志。');
         TransactionSwapped := True;
         Log('KSESSION_UPGRADE_TRANSACTION_SWAPPED');

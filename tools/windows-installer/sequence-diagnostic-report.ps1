@@ -16,8 +16,7 @@ $script:KSessionSequenceExpectedPhases=@(
   'AFTER_U17',
   'U18',
   'U20_PRECOPY',
-  'U21',
-  'U23'
+  'U22'
 )
 
 function Test-KSessionSequenceReport {
@@ -56,8 +55,7 @@ function Test-KSessionSequenceReport {
       'U16' {$taskExpectedResult='IDENTITY_BINDING';$taskExpectedState='CONTROLLED_MUTATION';break}
       'U17' {$taskExpectedResult='IDENTITY_PROGRAM';$taskExpectedState='CONTROLLED_MUTATION';break}
       'U18' {$taskExpectedResult='SPACE_REJECTED';$taskExpectedState='UNCHANGED';break}
-      'U21' {$taskExpectedResult='COPY_FAILED';$taskExpectedState='UNCHANGED';break}
-      'U23' {$taskExpectedResult='POST_COPY_VERIFY_FAILED';$taskExpectedState='UNCHANGED';break}
+      'U22' {$taskExpectedResult='PAYLOAD_HASH_REJECTED';$taskExpectedState='UNCHANGED';break}
     }
 
     $taskSuccess=($taskPhase.result -ceq $taskExpectedResult -and $taskPhase.state -ceq $taskExpectedState)
@@ -66,15 +64,11 @@ function Test-KSessionSequenceReport {
       $taskPhase.result -cmatch '^(IDENTITY_(ACCEPTED|REGISTRATION(_(COUNT|NAME|VERSION|NAME_VERSION|SNAPSHOT|CONFLICT|UNINSTALL|AMBIGUOUS|INCONSISTENT))?|BINDING|PATH|MANIFEST|PROGRAM|BUILD|RUNTIME|LAUNCHER|INTERNAL))$' -and
       @('UNCHANGED','CHANGED') -ccontains $taskPhase.state -and -not $taskSuccess)
     $taskFaultFailure=(
-      ($taskExpectedPhase -ceq 'U21' -and @(
-        'COPY_INJECTION_PREPARE_FAILED','COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','COPY_UNEXPECTED_SUCCESS_MARKER_MISSING',
-        'COPY_MARKER_MISSING','COPY_STATE_CHANGED') -ccontains $taskPhase.result) -or
-      ($taskExpectedPhase -ceq 'U23' -and @(
-        'POST_COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','POST_COPY_UNEXPECTED_SUCCESS_MARKER_MISSING',
-        'POST_COPY_GATE_NOT_ACCEPTED','POST_COPY_PREPARE_FAILED','POST_COPY_NATIVE_COPY_NOT_REACHED',
-        'POST_COPY_COMMIT_FAILED','POST_COPY_INSTALL_VERIFY_FAILED','POST_COPY_MARKER_MISSING',
-        'POST_COPY_FAILURE_HANDLER_MISSING','POST_COPY_ROLLBACK_FAILED','POST_COPY_ROLLBACK_MARKER_MISSING','POST_COPY_UNEXPECTED_FINALIZE',
-        'POST_COPY_STATE_CHANGED') -ccontains $taskPhase.result)
+      ($taskExpectedPhase -ceq 'U22' -and @(
+        'PAYLOAD_HASH_UNEXPECTED_SUCCESS','PAYLOAD_HASH_GATE_NOT_ACCEPTED','PAYLOAD_HASH_PREPARE_NOT_REACHED',
+        'PAYLOAD_HASH_NATIVE_COPY_NOT_REACHED','PAYLOAD_HASH_UNEXPECTED_SWAP','PAYLOAD_HASH_UNEXPECTED_VERIFY',
+        'PAYLOAD_HASH_UNEXPECTED_FINALIZE','PAYLOAD_HASH_REASON_MISSING','PAYLOAD_HASH_FAILURE_HANDLER_MISSING',
+        'PAYLOAD_HASH_REASON_CONFLICT','PAYLOAD_HASH_ROLLBACK_FAILED','PAYLOAD_HASH_ROLLBACK_MARKER_MISSING','PAYLOAD_HASH_STATE_CHANGED') -ccontains $taskPhase.result)
     ) -and (@('UNCHANGED','CHANGED') -ccontains $taskPhase.state) -and -not $taskSuccess
     $taskLast=($taskIndex -eq $taskPhases.Count-1)
 

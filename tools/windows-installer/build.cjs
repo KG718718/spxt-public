@@ -7,13 +7,13 @@ const [portable,compiler,outArg,commit,mode='candidate',bundleArg]=process.argv.
 const repo=path.resolve(__dirname,'../..'),out=path.resolve(outArg),pin=JSON.parse(fs.readFileSync(path.join(__dirname,'toolchain.json')));
 assert.ok(/^E:\\/i.test(out)&&!fs.existsSync(out));assert.match(commit,/^[a-f0-9]{40}$/);
 assert.ok(['candidate','fault-space','fault-permission','fault-cancel','fault-copy','fault-payload-hash','fault-post-copy',
-  'sequence-gate','sequence-space','sequence-copy','sequence-post-copy'].includes(mode));
+  'sequence-gate','sequence-space','sequence-copy','sequence-post-copy','sequence-payload-hash'].includes(mode));
 assert.ok(bundleArg,'approved beta.1 identity bundle required');
 const bundlePath=path.resolve(bundleArg),bundleBytes=fs.readFileSync(bundlePath),bundle=JSON.parse(bundleBytes.toString('utf8'));
 validateBundle(bundle);
 const root=path.join(portable,'解包程序 中文 with spaces','K-SESSION'),pv=verify(root);
 const pr=JSON.parse(fs.readFileSync(path.join(portable,'artifact/portable-test-report.json')));
-const sequenceDiagnostic=['sequence-gate','sequence-space','sequence-copy','sequence-post-copy'].includes(mode);
+const sequenceDiagnostic=['sequence-gate','sequence-space','sequence-copy','sequence-post-copy','sequence-payload-hash'].includes(mode);
 const payloadCommit=sequenceDiagnostic?'e9417f036d0cdf736ff84682556a994040f0de0b':commit;
 assert.equal(pr.sourceCommit,payloadCommit);assert.equal(pr.status,'PASS');assert.equal(pv.sourceCommit,payloadCommit);
 assert.equal(pr.staging.status,'PASS');assert.equal(pr.extracted.status,'PASS');
@@ -51,7 +51,7 @@ copyRuntime(path.join(__dirname,'upgrade-transaction/cli.cjs'),'upgrade-transact
 copyRuntime(path.join(repo,'tools/windows-runtime/common.cjs'),'runtime-common.cjs');
 for(const name of ['public-startup.js','public-config-store.js','tax-config.js','invoice-access-policy.js','service-fee-config.js','bonus-config.js']) copyRuntime(path.join(repo,name),name);
 writeNew(path.join(gen,'instance-binding.ini'),Buffer.concat([Buffer.from([0xff,0xfe]),Buffer.from('[Installation]\r\nSchema=1\r\n','utf16le')]));
-const programManifestDefine=mode==='fault-payload-hash'?'0'.repeat(64):info.programManifestHash;
+const programManifestDefine=['fault-payload-hash','sequence-payload-hash'].includes(mode)?'0'.repeat(64):info.programManifestHash;
 writeNew(path.join(gen,'identity.iss'),'#define RequiredBytes '+(['fault-space','sequence-space'].includes(mode)?'9000000000000000':String(info.installedProgramBytes+512*1024*1024))+'\n'+
   '#define IdentityBundleSha256 "'+sha(bundleBytes)+'"\n#define ProgramManifestSha256 "'+programManifestDefine+'"\n'+
   '#define RuntimeManifestSha256 "'+info.runtimeManifestSha256+'"\n#define LauncherSha256 "'+info.launcherSha256+'"\n'+

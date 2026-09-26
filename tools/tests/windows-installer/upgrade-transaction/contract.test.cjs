@@ -40,7 +40,7 @@ test('U11/U14/U18-U25 transaction stages program and metadata, rolls back before
   assert.match(build, /DestDir: "\{tmp\}\\\\ksession-upgrade-v1\\\\program/);
   assert.match(iss, /DestDir: "\{tmp\}\\ksession-upgrade-v1\\metadata"/);
   assert.match(iss, /DeinitializeSetup[\s\S]*rollback[\s\S]*RestoreUpgradeRegistration/);
-  assert.match(iss, /CurStep = ssPostInstall[\s\S]*commit[\s\S]*VerifyInstalled[\s\S]*finalize/);
+  assert.match(iss, /CurStep = ssPostInstall[\s\S]*CommitUpgradeTransaction[\s\S]*VerifyInstalled[\s\S]*finalize/);
   assert.match(iss, /VerifyFinalRegistration[\s\S]*DisplayVersion[\s\S]*1\.1\.0-beta\.2[\s\S]*instance-binding\.ini/);
   for (const field of ['installerVersion','appVersion','dataContractVersion','sourceCommit','runtimeManifestHash','launcherHash',
     'programManifestHash','instanceBindingSchema','installRoot','instancePath','upgradeFrom','upgradeTo']) assert.ok(iss.includes('"'+field+'"') || build.includes(field), field);

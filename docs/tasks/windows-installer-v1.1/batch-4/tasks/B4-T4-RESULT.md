@@ -103,7 +103,7 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 | U19 | NOT RUN；真实 `icacls` deny-write，旧版完整状态相等 |
 | U20 | FAIL；第十八次 fault-cancel 仍在复制/取消前被统一 upgrade preflight rejection 截断；现有证据不足以认定具体内部字段，等待固定 reason marker |
 | U21 | NOT RUN；upgrade staging 文件项实际调用 `BeforeUpgradeCopy`，真实 Inno copy 前受控异常后完整状态相等 |
-| U22 | NOT RUN；target manifest hash 冲突在事务 prepare 阶段、program 改写前拒绝，旧状态保持 |
+| U22 | FAIL；F2 已进入 post-install transaction commit 并非零回滚，但旧夹具先断言错误的 prepare marker，未采集 exact state，不能认定恢复通过 |
 | U23 | NOT RUN；program swap 后 post-copy verify failure，rollback 后完整状态相等 |
 | U24 | NOT RUN；成功升级后真实读取两个 `.lnk`，断言 target 为升级后 Launcher、arguments 精确绑定原 instance |
 | U25 | NOT RUN；成功升级后核验 beta.2 DisplayVersion/InstallLocation/binding/HKLM 空；HKCU 32/64 仅字段完全一致时折叠为唯一登记 |
@@ -172,12 +172,22 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - D4 安全诊断新增固定 marker/枚举，按顺序区分 gate accepted、transaction prepared、native copy complete、transaction swapped、installed verified、fixture injected、post-install failure handler、意外 finalize、rollback；只进入既有 marker allowlist，报告仍仅 `phase/result/state`。unknown、大小写、类型及注入枚举继续 fail closed，ASCII 与合成中文路径执行相同 19 阶段正反例。预期 D4 为前 18 阶段既有 PASS、`U23=POST_COPY_VERIFY_FAILED/UNCHANGED`；否则 U23 只允许固定的 `POST_COPY_*` 首个阶段失败枚举。
 - `install-state.json` 的 create-only `wx` 未修改：批准的 beta.1 恢复 metadata 精确 allowlist 不含该文件，升级 `[Files]` 只将新 build-info/manifest 写到 `{tmp}` staging；合成反例在旧 uninstall 中放置 `install-state.json` 时已在 prepare 固定 `OLD_METADATA_INVALID` 并清除 recovery、旧 program 不变。因此没有证据支持为本次 U23 首个阻塞，不能为求通过改成覆盖写。
 
+## U22 manifest hash 最小修复与 D5 准备
+
+- F2 run `36214270618` / job `108326997302` / source `23ab36bff1e953e14fd5a213d1c9fb759997ee9c` / Artifact `10897445184`（digest `c6f01ed8...`）的已确认 marker 为 `GATE_ACCEPTED → TRANSACTION_PREPARED → NATIVE_COPY_COMPLETE → POSTINSTALL_FAILED → TRANSACTION_ROLLED_BACK`，exit 4；未出现 swap/finalize。旧 U22 仍期待 `KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED`，因此在 exact owned/instance 比较前停止。该 run 只能确认事务失败处理与 rollback marker，不能确认六类状态精确不变，U22 仍为 FAIL。
+- 本轮保留并核实 `commit()` 的安全次序：journal 必须为 `PREPARED` 后先执行 `validateStaged(plan)`，通过后才 `renameSync(old program)`。把 manifest bytes hash 不一致从宽泛 `STAGE_IDENTITY` 分离为专用 `STAGE_MANIFEST_HASH`；CLI 仅该真实 `TransactionError` 返回 61，其他身份错误为 77、内部/未知为 79，并且 stdout 只含固定 JSON。
+- Inno 的 commit 包装器区分“进程启动成功”与退出码；只有 `Started=true && Code=61` 才记录 `KSESSION_UPGRADE_COMMIT_MANIFEST_HASH_REJECTED`，启动失败、未知、其他身份错误统一记录 `KSESSION_UPGRADE_COMMIT_UNKNOWN`。U22 classifier 要求 gate/prepare/native-copy/专用 hash 原因/post-install failure/rollback 完整出现，拒绝 swap、installed verified、finalize、rollback failure、缺失阶段及 hash/unknown 矛盾证据。
+- 本地可执行反例模拟真实顺序：prepare 时 stage 尚不存在，随后恢复 stage 并以错误 manifest hash 调用真实 transaction CLI；固定得到 exit 61 与 `STAGE_MANIFEST_HASH`，旧 program、metadata、shortcuts、完整合成业务 instance 不变，`oldProgram` 未创建；rollback 后完整 install inventory 等于原快照。相同 deferred stage 使用正确 hash 仍正常 swap/finalize，证明没有把成功路径关闭。
+- D5 最小诊断缩为前 17 个已验证阶段加 `U22`，共 18 个固定 phase；只构建 exact beta.1 payload 的 `sequence-gate`、`sequence-space`、`sequence-payload-hash`。PASS 终态只能是 `U22=PAYLOAD_HASH_REJECTED/UNCHANGED`；失败仍先采集完整 owned/instance 状态，再输出固定 `PAYLOAD_HASH_*` 原因与 `UNCHANGED/CHANGED`。D4 的 19 阶段 U21/U23 历史证据保持原 commit/Artifact 结论，不被新诊断结构追溯改写。
+- 本轮本地验证：transaction/lifecycle/contract 聚焦 30/30 PASS；preflight 21 项为 20 PASS / 0 FAIL / 1 本机 file-symlink privilege SKIP；固定 Go 1.27.1 的 `TestSafeCoreProbeFailure`、`TestUpgradeLifecycleInstanceIsolation` 及 compile-only PASS，并已 `gofmt`；`npm test` 为 26 files / failed 0；PowerShell AST、修改 CJS `node --check`、`git diff --check` PASS。一次全 installer 并行汇总得到 178 PASS / 3 FAIL / 2 SKIP，其中 historical workflow 旧断言与当前既有 `inputs.mode == 'full'` 不符，另有并行 `subst` 卷正例冲突；聚焦单独 preflight/subst 已 PASS，未为这两个非本轮产品失败改代码。
+- 本机未运行 Inno 编译、真实安装/注册表/快捷方式、断网或 Hosted D5/F3；因此当前结论只是本地修复候选，不能写 U22、Batch 4 或 Automation PASS。D5、F3、QA 仍仅由主控按预算显式调度。
+
 ## 修改文件
 
 - `.github/workflows/setup-v3.yml`（identity/sequence/full dispatch 互斥及 push marker）
 - `tools/windows-installer/{build.cjs,ci.ps1,offline-ci.ps1,setup.iss,verify-artifact.cjs,fresh-identity.cjs,rebuild-beta1.ps1,verify-beta1-source.cjs,verify-beta1-build.cjs}`
 - `tools/tests/windows-installer/{fresh-identity.test.cjs,upgrade-lifecycle/contract.test.cjs,upgrade-preflight/preflight.test.cjs}`
-- `tools/windows-installer/upgrade-transaction/index.cjs`
+- `tools/windows-installer/upgrade-transaction/{index.cjs,cli.cjs}`
 - `tools/tests/windows-installer/upgrade-transaction/{contract.test.cjs,gate.test.cjs,transaction.test.cjs}`
 - `tools/windows-installer/upgrade-gate/{index.cjs,cli.cjs}`
 - `tools/windows-installer/upgrade-detection/index.cjs`

@@ -49,14 +49,14 @@ test('closed upgrade-fault sequence is manual, bounded, and does not build curre
  assert.match(sequence,/github\.event_name == 'workflow_dispatch' && inputs\.mode == 'sequence'/);
  for(const marker of ['rebuild-beta1.ps1','sequence-diagnostic.ps1','SEQUENCE-DIAGNOSTIC.json','upgrade-sequence-diagnostic-','Fixed sequence summary only','persist-credentials: false'])assert.match(sequence,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  for(const forbidden of ['windows-installer/ci.ps1','windows-portable/ci.ps1','npm test','hosted-gate.cjs','inputs.mode == \'full\'','testTotal','742'])assert.doesNotMatch(sequence,new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
- for(const marker of ['HOSTED_SEQUENCE_DIAGNOSTIC_REQUIRED','sequence-gate','sequence-space','sequence-copy','sequence-post-copy','KSESSION_UPGRADE_SEQUENCE_DIAGNOSTIC','SEQUENCE-DIAGNOSTIC.json'])assert.match(script,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const marker of ['HOSTED_SEQUENCE_DIAGNOSTIC_REQUIRED','sequence-gate','sequence-space','sequence-payload-hash','KSESSION_UPGRADE_SEQUENCE_DIAGNOSTIC','SEQUENCE-DIAGNOSTIC.json'])assert.match(script,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.match(reportHelper,/SEQUENCE_REPORT_UNSAFE/);
  assert.match(script,/& \$taskGo test[^\n]*\*> \$null/);
  assert.doesNotMatch(script,/Write-Output|Write-Host|Get-Content[^\n]*(private-request|private-setup|\.log)/i);
  assert.match(script,/sequence-diagnostic-path\.ps1/);assert.match(script,/Test-KSessionFixedEPath/);
  assert.match(script,/sequence-diagnostic-report\.ps1/);assert.match(script,/Test-KSessionSequenceReport/);
  assert.match(pathHelper,/IsPathFullyQualified/);assert.match(pathHelper,/GetPathRoot/);assert.doesNotMatch(pathHelper,/-match|-notmatch/);
- for(const phase of ['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','U20_PRECOPY','U21','U23'])assert.match(reportHelper,new RegExp(phase));
+ for(const phase of ['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','U20_PRECOPY','U22'])assert.match(reportHelper,new RegExp(phase));
  assert.match(workflow,/sequence-diagnostic-report\.ps1[\s\S]*Test-KSessionSequenceReport/);
  assert.match(sequence,/uses: actions\/upload-artifact@[\s\S]*if: always\(\)[\s\S]*SEQUENCE-DIAGNOSTIC\.json/);
  assert.ok(script.indexOf('Test-KSessionSequenceReport')<script.indexOf('Copy-Item -LiteralPath $taskSource'));
@@ -65,11 +65,12 @@ test('closed upgrade-fault sequence is manual, bounded, and does not build curre
  assert.match(build,/assert\.equal\(zi\.sourceCommit,payloadCommit\)/);
  assert.doesNotMatch(build,/assert\.equal\(zi\.sourceCommit,commit\)/);
  const current='412f4cafb6d13372bdec84161cc17b3eca30e891',beta1='e9417f036d0cdf736ff84682556a994040f0de0b';
- const expectedPayloadCommit=mode=>['sequence-gate','sequence-space','sequence-copy','sequence-post-copy'].includes(mode)?beta1:current;
+ const expectedPayloadCommit=mode=>['sequence-gate','sequence-space','sequence-copy','sequence-post-copy','sequence-payload-hash'].includes(mode)?beta1:current;
  assert.equal(expectedPayloadCommit('candidate'),current);assert.equal(expectedPayloadCommit('fault-space'),current);
  assert.equal(expectedPayloadCommit('sequence-gate'),beta1);assert.equal(expectedPayloadCommit('sequence-space'),beta1);
  assert.equal(expectedPayloadCommit('sequence-copy'),beta1);assert.equal(expectedPayloadCommit('sequence-post-copy'),beta1);
- assert.match(build,/sequenceDiagnostic=\['sequence-gate','sequence-space','sequence-copy','sequence-post-copy'\]\.includes\(mode\)/);
+ assert.equal(expectedPayloadCommit('sequence-payload-hash'),beta1);
+ assert.match(build,/sequenceDiagnostic=\['sequence-gate','sequence-space','sequence-copy','sequence-post-copy','sequence-payload-hash'\]\.includes\(mode\)/);
  assert.match(build,/sourceCommit:commit,sourceTree:build\.sourceTree/);
  assert.match(build,/manifest=\{schema:1,sourceCommit:commit/);
  assert.match(build,/SEQUENCE DIAGNOSTIC - NEVER DISTRIBUTE OR INSTALL OUTSIDE DISPOSABLE HOST/);
@@ -78,21 +79,20 @@ test('closed upgrade-fault sequence is manual, bounded, and does not build curre
  const gateStop=iss.indexOf("Log('KSESSION_SEQUENCE_IDENTITY_ACCEPTED')"),transaction=iss.indexOf('if not PrepareUpgradeTransaction');
  assert.ok(gateStop>iss.indexOf('if not RunUpgradeGate')&&transaction>gateStop);
  for(const marker of ['KSESSION_SEQUENCE_REGISTRATION_COUNT','KSESSION_SEQUENCE_REGISTRATION_NAME','KSESSION_SEQUENCE_REGISTRATION_VERSION','KSESSION_SEQUENCE_REGISTRATION_NAME_VERSION','KSESSION_SEQUENCE_REGISTRATION_SNAPSHOT','KSESSION_SEQUENCE_REGISTRATION_CONFLICT','KSESSION_SEQUENCE_REGISTRATION_UNINSTALL','KSESSION_SEQUENCE_REGISTRATION_AMBIGUOUS','KSESSION_SEQUENCE_REGISTRATION_INCONSISTENT'])assert.match(iss,new RegExp(marker));
- for(const marker of ['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','"AFTER_" + probe.id','U20_PRECOPY','COPY_FAILED','POST_COPY_VERIFY_FAILED','COPY_INJECTION_PREPARE_FAILED','COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','COPY_UNEXPECTED_SUCCESS_MARKER_MISSING','COPY_MARKER_MISSING','COPY_STATE_CHANGED','POST_COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','POST_COPY_UNEXPECTED_SUCCESS_MARKER_MISSING','POST_COPY_GATE_NOT_ACCEPTED','POST_COPY_PREPARE_FAILED','POST_COPY_NATIVE_COPY_NOT_REACHED','POST_COPY_COMMIT_FAILED','POST_COPY_INSTALL_VERIFY_FAILED','POST_COPY_MARKER_MISSING','POST_COPY_FAILURE_HANDLER_MISSING','POST_COPY_ROLLBACK_FAILED','POST_COPY_ROLLBACK_MARKER_MISSING','POST_COPY_UNEXPECTED_FINALIZE','POST_COPY_STATE_CHANGED','closed upgrade fault diagnostic failed','sequencePhases','CONTROLLED_MUTATION','STAGE_FAILED','STOPPED','panicked := recover()','panic(panicked)'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const marker of ['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','"AFTER_" + probe.id','U20_PRECOPY','PAYLOAD_HASH_REJECTED','PAYLOAD_HASH_UNEXPECTED_SUCCESS','PAYLOAD_HASH_GATE_NOT_ACCEPTED','PAYLOAD_HASH_PREPARE_NOT_REACHED','PAYLOAD_HASH_NATIVE_COPY_NOT_REACHED','PAYLOAD_HASH_UNEXPECTED_SWAP','PAYLOAD_HASH_UNEXPECTED_VERIFY','PAYLOAD_HASH_UNEXPECTED_FINALIZE','PAYLOAD_HASH_REASON_MISSING','PAYLOAD_HASH_REASON_CONFLICT','PAYLOAD_HASH_FAILURE_HANDLER_MISSING','PAYLOAD_HASH_ROLLBACK_FAILED','PAYLOAD_HASH_ROLLBACK_MARKER_MISSING','PAYLOAD_HASH_STATE_CHANGED','closed payload hash diagnostic failed','sequencePhases','CONTROLLED_MUTATION','STAGE_FAILED','STOPPED','panicked := recover()','panic(panicked)'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.match(go,/if sequenceDiagnostic \{\s*fixtures = fixtures\[:1\]/);
 });
 
 test('sequence report validator accepts only ordered closed stage evidence and rejects injected details',()=>{
  const helper=path.join(repo,'tools/windows-installer/sequence-diagnostic-report.ps1');
- const expected=['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','U15','AFTER_U15','U16','AFTER_U16','U17','AFTER_U17','U18','U20_PRECOPY','U21','U23'];
+ const expected=['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','U15','AFTER_U15','U16','AFTER_U16','U17','AFTER_U17','U18','U20_PRECOPY','U22'];
  const success=phase=>{
   if(['BASELINE','AFTER_U15','AFTER_U16','AFTER_U17','U20_PRECOPY'].includes(phase))return {phase,result:'IDENTITY_ACCEPTED',state:'UNCHANGED'};
   if(phase==='U15')return {phase,result:'PREFLIGHT_REJECTED',state:'CONTROLLED_MUTATION'};
   if(phase==='U16')return {phase,result:'IDENTITY_BINDING',state:'CONTROLLED_MUTATION'};
   if(phase==='U17')return {phase,result:'IDENTITY_PROGRAM',state:'CONTROLLED_MUTATION'};
   if(phase==='U18')return {phase,result:'SPACE_REJECTED',state:'UNCHANGED'};
-  if(phase==='U21')return {phase,result:'COPY_FAILED',state:'UNCHANGED'};
-  if(phase==='U23')return {phase,result:'POST_COPY_VERIFY_FAILED',state:'UNCHANGED'};
+  if(phase==='U22')return {phase,result:'PAYLOAD_HASH_REJECTED',state:'UNCHANGED'};
   return {phase,result:'STAGE_COMPLETE',state:'COMPLETE'};
  };
  const pass={schema:1,status:'PASS',phases:expected.map(success)};
@@ -121,13 +121,12 @@ test('sequence report validator accepts only ordered closed stage evidence and r
  const identityDetails=['NAME','VERSION','NAME_VERSION'].map(detail=>{const report=structuredClone(identityFailure);report.phases[8].result=`IDENTITY_REGISTRATION_${detail}`;return report;});
  const faultFailures=[];
  for(const [phase,results] of [
-  ['U21',['COPY_INJECTION_PREPARE_FAILED','COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','COPY_UNEXPECTED_SUCCESS_MARKER_MISSING','COPY_MARKER_MISSING','COPY_STATE_CHANGED']],
-  ['U23',['POST_COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','POST_COPY_UNEXPECTED_SUCCESS_MARKER_MISSING','POST_COPY_GATE_NOT_ACCEPTED','POST_COPY_PREPARE_FAILED','POST_COPY_NATIVE_COPY_NOT_REACHED','POST_COPY_COMMIT_FAILED','POST_COPY_INSTALL_VERIFY_FAILED','POST_COPY_MARKER_MISSING','POST_COPY_FAILURE_HANDLER_MISSING','POST_COPY_ROLLBACK_FAILED','POST_COPY_ROLLBACK_MARKER_MISSING','POST_COPY_UNEXPECTED_FINALIZE','POST_COPY_STATE_CHANGED']]
+  ['U22',['PAYLOAD_HASH_UNEXPECTED_SUCCESS','PAYLOAD_HASH_GATE_NOT_ACCEPTED','PAYLOAD_HASH_PREPARE_NOT_REACHED','PAYLOAD_HASH_NATIVE_COPY_NOT_REACHED','PAYLOAD_HASH_UNEXPECTED_SWAP','PAYLOAD_HASH_UNEXPECTED_VERIFY','PAYLOAD_HASH_UNEXPECTED_FINALIZE','PAYLOAD_HASH_REASON_MISSING','PAYLOAD_HASH_REASON_CONFLICT','PAYLOAD_HASH_FAILURE_HANDLER_MISSING','PAYLOAD_HASH_ROLLBACK_FAILED','PAYLOAD_HASH_ROLLBACK_MARKER_MISSING','PAYLOAD_HASH_STATE_CHANGED']]
  ])for(const result of results){const index=expected.indexOf(phase),report={schema:1,status:'FAIL',phases:expected.slice(0,index+1).map(success)};report.phases[index]={phase,result,state:result.endsWith('STATE_CHANGED')?'CHANGED':'UNCHANGED'};faultFailures.push(report);}
- const injectedFault=structuredClone(faultFailures[0]);injectedFault.phases.at(-1).result='COPY_MARKER_MISSING_path=E:\\private';reject.push(injectedFault);
- const wrongFaultPhase=structuredClone(faultFailures[0]);wrongFaultPhase.phases.at(-1).phase='U23';reject.push(wrongFaultPhase);
- const u23Failure=faultFailures.find(report=>report.phases.at(-1).result==='POST_COPY_COMMIT_FAILED');
- for(const value of ['post_copy_commit_failed','POST_COPY_UNKNOWN',7,true]){const invalid=structuredClone(u23Failure);invalid.phases.at(-1).result=value;reject.push(invalid);}
+ const injectedFault=structuredClone(faultFailures[0]);injectedFault.phases.at(-1).result='PAYLOAD_HASH_REASON_MISSING_path=E:\\private';reject.push(injectedFault);
+ const wrongFaultPhase=structuredClone(faultFailures[0]);wrongFaultPhase.phases.at(-1).phase='U21';reject.push(wrongFaultPhase);
+ const u22Failure=faultFailures.find(report=>report.phases.at(-1).result==='PAYLOAD_HASH_REASON_MISSING');
+ for(const value of ['payload_hash_reason_missing','PAYLOAD_HASH_UNKNOWN',7,true]){const invalid=structuredClone(u22Failure);invalid.phases.at(-1).result=value;reject.push(invalid);}
  const cases=[pass,stopped,identityFailure,...identityDetails,...faultFailures].map(report=>({json:JSON.stringify(report),accept:true}));
  for(const report of reject)cases.push({json:JSON.stringify(report),accept:false});
  cases.push({json:'{"schema":1.0,"status":"FAIL","phases":[{"phase":"PRE_ENV_READY","result":"STAGE_FAILED","state":"STOPPED"}]}',accept:false});
@@ -214,7 +213,7 @@ test('real lifecycle has U01-U30 and all five required recoverable failure fixtu
  assert.ok(postInstall.indexOf('PostInstallFailed := True')>postInstall.indexOf('KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE'));
  assert.match(iss,/\[Run\][\s\S]*Flags: nowait postinstall skipifsilent; Check: CanLaunchInstalled/);
  assert.match(postInstall,/function CanLaunchInstalled: Boolean;[\s\S]*Result := not PostInstallFailed and \(\(not UpgradeMode\) or TransactionFinalized\)/);
- assert.match(go,/result := runSetupRaw\(binary\)[\s\S]*result\.exitCode == 0[\s\S]*safeSetupFailure\(f\.marker, result\)[\s\S]*assertLog\(result, f\.marker\)[\s\S]*equalMaps\(instanceStable, walkHash\(instance\)\)/);
+ assert.match(go,/result := runSetupRaw\(binary\)[\s\S]*result\.exitCode == 0[\s\S]*safeSetupFailure\(f\.marker, result\)[\s\S]*safeInstallerMarkers\(result\.logText\)[\s\S]*payloadHashDiagnosticFailure\(markers\)[\s\S]*equalMaps\(instanceStable, walkHash\(instance\)\)/);
  for(const marker of ['KSESSION_UPGRADE_ROOT_MISMATCH','KSESSION_REJECT_INSTANCE_LOCK'])assert.match(iss,new RegExp(`Log\\('${marker}'\\)`));
  assert.match(iss,/if RunningProduct then begin Log\('KSESSION_REJECT_RUNNING'\); Result := RunningMessage; exit; end;/);
  assert.match(iss,/function SameInstallRoot\(A, B: String\): Boolean;[\s\S]*Result := CompareText\(RemoveBackslashUnlessRoot\(A\), RemoveBackslashUnlessRoot\(B\)\) = 0;/);
@@ -240,7 +239,7 @@ test('real lifecycle has U01-U30 and all five required recoverable failure fixtu
  }
  assert.match(cli,/error instanceof GateError \? \(exits\[error\.reason\] \|\| 49\) : 49/);
  assert.doesNotMatch(iss,/error\.message|process\.stdout|raw-json/);
- assert.match(go,/fault-payload-hash", "KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED"/);
+ assert.match(go,/fault-payload-hash", "KSESSION_UPGRADE_COMMIT_MANIFEST_HASH_REJECTED"/);
  assert.match(go,/instanceStable/);assert.match(go,/ownedStable/);assert.match(go,/core-beta1/);assert.match(go,/core-beta2/);assert.match(go,/core-reinstall/);
 });
 
