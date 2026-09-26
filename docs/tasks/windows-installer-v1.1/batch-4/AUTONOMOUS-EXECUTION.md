@@ -1,5 +1,7 @@
 # Batch 4 自主工程续行与 Hosted 预算
 
+当前状态：**BLOCKED — HOSTED BUDGET EXHAUSTED**。F2失败后按用户止损规则冻结工程续行；不是AUTOMATION/QA PASS，也未到HUMAN PENDING终点。原T4已确认保持58898b2及原worktree，不继续实现/测试/提交/Hosted。新主控唯一ACTIVE，等待新的预算及范围决定。
+
 授权日期：2026-09-26；用户 MASTER MIGRATION FINALIZE + RESUME BATCH 4。唯一ACTIVE ENGINEERING MASTER：01a0db0e-c950-79e0-8e11-07155e0742f2。旧主控019fa7e9-f46b-7192-9052-cd0aac7c2cc5为RETIRED — READ ONLY HISTORY，无派单/Review/Integration/Push/Actions/QA权。
 
 本授权替代Phase2暂停及历史“两次sequence用尽后不得继续”的当前限制，不改写历史事实。原任务及工作树复用；治理提交fae647e、159ee41已审查并仅推开发分支，local/origin/API三方核验159ee4163dd52c08584856521463a793eb6e5c7a；未因此触发完整Actions。
@@ -29,13 +31,15 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 | F1 | 完整Setup | 6fdb7ed19467ac64a80c2f4824b4dfe0431fc62d | 36210201290 | D2专项PASS；实现与D2一致，后续仅治理文档和公开措辞修正；主控npm26 files/failed0；local/origin/API同SHA | FAIL于U21：fault-copy success=true want=false；fresh Setup及U01/U02/U15—U18/U20通过，742及最终privacy未运行 |
 | D3 | 最小诊断 | b3ab5978ca90be3fa5d3c5f793735fc42879ffc6 | 36212532363 | 第三轮copy原生失败、post-install退出/启动保护，19阶段包含U21/U23；增量中文路径修复；主控14/14契约、2项纯Go、3份PS AST PASS；local/origin/API一致 | FAIL；前17阶段和U21 PASS，U23=POST_COPY_MARKER_MISSING/UNCHANGED；已扣第3次 |
 | D4 | 最小诊断 | d7ef3964b8fdbf1979dc527e0b65fa202c398ab0 | 36213904038 | 事务consumer严格读取既有programManifestHash，固定八节点及异常finalize/rollback诊断；主控23/23专项、纯Go两项、PS AST PASS；local/origin/API一致 | PASS；19阶段，U21=COPY_FAILED/UNCHANGED、U23=POST_COPY_VERIFY_FAILED/UNCHANGED；诊断4/4已用 |
-| F2 | 完整Setup | 23ab36bff1e953e14fd5a213d1c9fb759997ee9c | 36214270618 | D4全19阶段PASS；实现与D4相同，后续仅治理/结果文档；主控23/23、纯Go/AST、公开文档8/8 PASS；local/origin/API一致 | RUNNING；显式mode=full，完整Setup2/2已用 |
+| F2 | 完整Setup | 23ab36bff1e953e14fd5a213d1c9fb759997ee9c | 36214270618 | D4全19阶段PASS；实现与D4相同，后续仅治理/结果文档；主控23/23、纯Go/AST、公开文档8/8 PASS；local/origin/API一致 | FAIL于U22期望prepare-failure marker缺失；exit4并有rollback marker，exact state断言未执行；完整Setup2/2耗尽 |
 
 所有工程push带[skip ci]，用明确workflow_dispatch及mode扣减预算；不允许push隐式启动完整流水线。Full Setup本身同commit构建Runtime/Launcher/Portable/Setup和742门禁，无须为了名字另外触发重复流水线。每轮首失败证据保留，闭合Artifact不含原始日志/路径/凭据/业务内容。
 
 D2等待期间主控整合目录补跑npm：首次26 files/failed1，定位为新任务卡的一处来源措辞触发既有公开文档门禁；只改为“仅阅读指定公开仓库材料”，范围约束不变，未修改测试。修正后26 files/failed0；本机hosted-only SKIP照常，不冒充742结果。D2不运行公开回归；Full必须使用含此文档修正的后续HEAD。
 
 ## 当前任务
+
+F2 job108326997302失败Artifact10897445184（setup-failure-evidence-23ab36bff1e953e14fd5a213d1c9fb759997ee9c-1，digestc6f01ed8ef890629feef8724ffbf9f04ef012e28f6168416ba94aa2792190bdb）已读取安全报告。fresh Setup29自动PASS/3人工PENDING、D13/13，U01/U02/U15/U16/U17/U18/U20/U21八项PASS。U22缺少KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED，实际有GATE_ACCEPTED/TRANSACTION_PREPARED/NATIVE_COPY_COMPLETE/POSTINSTALL_FAILED/TRANSACTION_ROLLED_BACK，exit4；marker断言先于exact state对比，不能称U22恢复验证通过。offline externalDuring=false/restored=true；742/最终privacy/Setup上传均未执行。原T4已主动确认停止，QA未创建；决策见B4-STOPLOSS-DECISION-20260926.md。下文F2准入/等待均为历史记录。
 
 D4真实19阶段PASS，Artifact10896079310（upgrade-sequence-diagnostic-36213904038-1，digest40f84115d9326c0246f11dc2b864f6e5abb65e938a67a408f0381d1113249e04），只有严格JSON，主控字段/顺序/闭合枚举和报告privacy通过。U23已越过commit与installed verification，目标故障注入、失败handler、rollback marker均满足且旧状态不变；本地字段根因修复已在真实Inno路径越过断点。最小诊断结束且无追加额度；可进入剩余一次F2完整Setup，不能据此宣称最终当前payload升级/742/QA已通过。
 

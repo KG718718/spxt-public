@@ -1,5 +1,5 @@
 # Batch 4 当前结果
-状态：IN PROGRESS — D4 最小 Hosted 诊断PASS，等待F2；不是 Batch PASS。
+状态：**BLOCKED — HOSTED BUDGET EXHAUSTED**。D4已PASS，最后F2在U22失败；不是AUTOMATION PASS / QA PASS / HUMAN PENDING。
 
 2026-09-26 唯一工程主控01a0db0e-c950-79e0-8e11-07155e0742f2已接管；旧主控019fa7e9-f46b-7192-9052-cd0aac7c2cc5永久RETIRED — READ ONLY HISTORY。治理提交已Review并仅同步开发分支；Primary保持public-source。原B4-T4和f8bd工作树复用，T1/T1A/T2/T3未重开。
 
@@ -7,6 +7,8 @@
 
 Hosted事实：D1在BASELINE失败；D2全部17阶段PASS；F1 fresh Setup29自动PASS/3人工PENDING、D13/13及U01/U02/U15—U18/U20通过，U21失败；D3前17阶段及U21通过，U23=POST_COPY_MARKER_MISSING/UNCHANGED；D4 run36213904038@d7ef3964b8fdbf1979dc527e0b65fa202c398ab0已19阶段PASS。不得将这些不同受测身份拼成最终U01—U30 PASS。
 
-最小诊断4/4已使用，完整Setup1/2已使用，QA0/2。D4已满足最后F2准入，完整Setup仍只有1次余额。完整26/26、742、fail0/skip0、最终Artifact privacy、独立B4-QA及最终beta.2 Artifact均未取得，Win10人工未开始。
+F2 run36214270618/source23ab36bff1e953e14fd5a213d1c9fb759997ee9c已FAIL：fresh Setup29自动PASS/3人工PENDING，D13/13及U01/U02/U15/U16/U17/U18/U20/U21八项通过。U22期望KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED缺失；实际exit4并有准备、复制完成、失败handler和回滚固定marker。测试在exact state断言前停止，U22恢复未验证，后续U项未运行。
+
+失败Artifact10897445184，digestc6f01ed8ef890629feef8724ffbf9f04ef012e28f6168416ba94aa2792190bdb。offline externalDuring=false/restored=true；最终26/742、privacy和Setup上传未执行。诊断4/4、Full2/2已用，QA0/2不能替用；原T4已主动确认停止并冻结58898b2。独立QA未开始、最终beta.2 Artifact未生成、Win10人工未开始；不进入Batch4.5。等待B4-STOPLOSS-DECISION-20260926.md中的新授权决定。
 
 详细逐轮SHA、Run、Artifact和预算见AUTONOMOUS-EXECUTION.md；任务回单/Review链见ORCHESTRATION.md和tasks/B4-T4-RESULT.md。未进入Batch4.5，未修改main/tag/Release。远端main及v1.0.0核验仍为84cbb324a4f63bef094d2c21d70eba841205a7a7。

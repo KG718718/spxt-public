@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## Batch4 最新止损状态｜2026-09-26
+
+**BLOCKED — HOSTED BUDGET EXHAUSTED**。D4 run36213904038@d7ef396全部19阶段PASS，U21/U23实际故障与恢复通过；F2 run36214270618@23ab36b在U22期望prepare-failure marker处停止，未完成U22状态对比。fresh Setup29自动PASS/3人工PENDING、D13/13、8个U项通过；26/742/最终Artifact privacy/独立QA尚未取得，最终beta.2 Setup Artifact未生成。诊断4/4、Full2/2预算耗尽，QA0/2不能挪用；原T4冻结，已提交[止损决策卡](docs/tasks/windows-installer-v1.1/batch-4/B4-STOPLOSS-DECISION-20260926.md)。新主控唯一ACTIVE，旧主控永久退役；Primary仍为public-source，原始工作区状态未整理。下文pre-baseline与自动续行描述为历史。
+
 ## Batch 4 自动续行｜2026-09-26
 
 用户已批准迁移完成后立即恢复原B4-T4。两份治理提交已仅推 `codex/windows-installer-v1.1`，local/origin/GitHub API均核验为 `159ee4163dd52c08584856521463a793eb6e5c7a`；治理push未触发完整Actions。唯一新主控及回单目标不变，旧主控改记 RETIRED — READ ONLY HISTORY。

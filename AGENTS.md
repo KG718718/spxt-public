@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损停点｜2026-09-26
+
+Batch4为 **BLOCKED — HOSTED BUDGET EXHAUSTED**。本次恢复诊断4/4、完整Setup2/2已用，F2 run36214270618在U22预期marker断言失败，742/最终Artifact privacy/独立QA未运行；QA剩2次不能替代诊断或Full。原B4-T4已确认停止并冻结58898b2，原worktree保留。只有新主控01a0db0e-c950-79e0-8e11-07155e0742f2保持ACTIVE，但不得凭下文历史自主授权继续返工或Hosted；等待网页版/用户新的明确预算和范围授权。详见batch4/AUTONOMOUS-EXECUTION.md与B4-STOPLOSS-DECISION-20260926.md（均在docs/tasks/windows-installer-v1.1/下）。本节是用户预算止损规则的执行结果，不撤销主控迁移；旧主控永久只读历史。
+
 本仓库维护面向广告公司的 OA、财务核对和数据统计系统。
 
 ## 当前恢复授权｜2026-09-26

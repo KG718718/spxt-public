@@ -1,5 +1,9 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## 2026-09-26 当前预算止损
+
+Batch4 **BLOCKED — HOSTED BUDGET EXHAUSTED**：D4十九阶段通过；最后F2 run36214270618@23ab36b在U22的固定marker断言失败，U22恢复对比未运行，后续全门禁/QA/最终产物未完成。诊断4/4、Full2/2已用，QA0/2不可替用。原T4已确认冻结；唯一新主控保留控制权，但工程续行等待新的明确授权。详见[决策卡](batch-4/B4-STOPLOSS-DECISION-20260926.md)。下方恢复授权不能覆盖其自身预算耗尽条件，不进入Batch4.5/main/tag/Release。
+
 ## 2026-09-26 已批准恢复
 
 MASTER RECOVERY PASS后用户恢复Batch4自主工程执行，沿用原B4-T4与f8bd，不重做T1/T1A/T2/T3。新Hosted预算与状态以 [AUTONOMOUS-EXECUTION.md](batch-4/AUTONOMOUS-EXECUTION.md) 为准，覆盖下文Phase2暂停及旧次数限制。最终自动化及独立QA全部通过后仍为HUMAN PENDING；禁止进入Batch4.5/main/tag/Release。

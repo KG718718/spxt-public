@@ -1,5 +1,5 @@
 # Batch 4 测试报告
-状态：PARTIAL / D4 PASS / F2 PENDING。已有真实Hosted局部证据，尚无完整Batch4 PASS或最终beta.2 Setup Artifact。各轮身份独立，不合并局部PASS冒充最终全项通过。
+状态：**BLOCKED / D4 PASS / F2 FAIL / HOSTED BUDGET EXHAUSTED**。尚无完整Batch4 PASS或最终beta.2 Setup Artifact。各轮身份独立，不合并局部PASS冒充最终全项通过。
 
 | 轮次 | Run / source | 实际结果 |
 | --- | --- | --- |
@@ -8,6 +8,11 @@
 | F1 | 36210201290 / 6fdb7ed19467ac64a80c2f4824b4dfe0431fc62d | fresh Setup29自动PASS/3人工PENDING，D01—D13 PASS；U01/U02/U15—U18/U20 PASS后U21意外success；后续未执行 |
 | D3 | 36212532363 / b3ab5978ca90be3fa5d3c5f793735fc42879ffc6 | 前17阶段+U21 COPY_FAILED/UNCHANGED；U23 POST_COPY_MARKER_MISSING/UNCHANGED |
 | D4 | 36213904038 / d7ef3964b8fdbf1979dc527e0b65fa202c398ab0 | PASS；19阶段，U23八节点齐全、非零退出且UNCHANGED |
+| F2 | 36214270618 / 23ab36bff1e953e14fd5a213d1c9fb759997ee9c | fresh Setup29自动PASS/3人工PENDING、D13/13；U01/U02/U15/U16/U17/U18/U20/U21八项PASS；U22期望prepare-failure marker缺失，后续未执行 |
+
+F2首失败：upgrade_windows_test.go:653，KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED缺失；实际GATE_ACCEPTED、TRANSACTION_PREPARED、NATIVE_COPY_COMPLETE、POSTINSTALL_FAILED、TRANSACTION_ROLLED_BACK，exit4，耗时9610ms。主控只读取固定诊断，未将原始安装日志保存到开发机或另行上传。U22 marker断言先于exact owned/instance状态比较，故不能以rollback marker替代恢复验收。
+
+F2失败Artifact10897445184（digestc6f01ed8ef890629feef8724ffbf9f04ef012e28f6168416ba94aa2792190bdb），INSTALLER report source精确匹配受测commit，UPGRADE status FAIL且只有八项checks。offline status FAIL反映生命周期失败，但externalDuring=false、restored=true、firewallChanged=false。报告中的受测候选EXE SHA256为d82401a7128e362558f10130498e1c161e952eb4875ad69ce8d5595cd525dd72；不是已交付最终Artifact。公开742回归、最终privacy和Setup上传步骤均SKIPPED（不是通过）。历史identity job108326997379 PASS；不代替其余门禁。
 
 F1 offline证据externalDuring=false、restored=true；失败未导致网络遗留隔离。F1未执行742回归或最终Artifact隐私门禁。D2/D3闭合JSON通过严格字段/顺序/固定枚举及报告隐私审查，不能替代发行Artifact privacy。
 

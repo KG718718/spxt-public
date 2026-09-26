@@ -1,5 +1,9 @@
 # Batch 4 编排索引
 
+## 当前停点｜BLOCKED — HOSTED BUDGET EXHAUSTED
+
+F2 run36214270618@23ab36b在U22固定marker断言失败；安全报告及Artifact10897445184已由主控核实，诊断4/4、Full2/2用尽。QA0/2不可替用，未创建QA。原B4-T4已向新主控主动确认停止，保持原thread/worktree/branch和local58898b2，不继续实现、测试、commit或Hosted。第四轮成果已Review/整合d7ef396；这不等于任务全生命周期或Batch验收完成。唯一ACTIVE Master仍01a0db0e-c950-79e0-8e11-07155e0742f2，旧Master只读历史。最新决定入口B4-STOPLOSS-DECISION-20260926.md；下文RUNNING/准入为历史。
+
 ## 当前执行授权｜2026-09-26
 
 当前F2 RUNNING：run36214270618/source23ab36bff1e953e14fd5a213d1c9fb759997ee9c，D4后的实现未变，只增加治理文档，dispatch前local/origin/API一致。显式mode=full；诊断4/4、完整Setup2/2均已用，QA0/2。F2若失败则停止交网页版，不能用QA预算重跑full。QA尚未创建，待真实完整候选。
