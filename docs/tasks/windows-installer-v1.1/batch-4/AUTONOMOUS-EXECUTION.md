@@ -1,5 +1,9 @@
 # Batch 4 自主工程续行与 Hosted 预算
 
+当前：**QA1 RUNNING**，run36249047967 / job108423523439 / source4f95e981c6b765e3ab225778508801eadbc20df3；独立QA已对b7704ab回HOSTED_READY，后续只有两行编排文档，tools/.github完全一致，三方HEAD核验完成。mode=qa-static，仅静态job运行，其余四job skipped；QA第1次已扣，剩1次。D5/F3不增加，不构建或重测Setup；F3候选来源仍c8886e6。下方“尚未创建”属于派单前登记。
+
+当前QA准入登记：首轮独立QA确认F3 historical静态suite70/69/1被后续命令掩盖，产品U01—U30、26/742及Artifact实际核验仍成立；只修CI/静态测试的有界闭合由QA明确认可。原T4 local88ae624已整合b7704ab，共享静态helper首失败停止、严格四字段报告及退出码/状态双门禁；主控真实helper、lifecycle15/15和产品等价检查PASS。拟QA1受测HEAD `4f95e981c6b765e3ab225778508801eadbc20df3`（较b770仅编排文档），收到同一QA的HOSTED_READY并三方HEAD核验后才显式mode=qa-static；只跑静态/合成门禁与内嵌真实失败传播反例，不运行Full/构建/安装，不重建F3 Artifact。当前尚未创建QA1、不扣额度；QA预算仍0/2。F3 Artifact仍来自c8886e6，后续源码身份必须分列，不能冒充同一次构建。
+
 当前：**F3 RUNNING**。run36246132535，受测commit c8886e6b6d413c2fd73d6716621d07a80b337e58；local/origin/API一致，tools/.github精确等于D5。显式mode=full，setup job108415569184、historical-identity job108415569036；sequence/identity skipped。新增Full唯一额度已扣，失败不得自动retry或改用QA额度。QA尚未创建，最终PASS未确认。
 
 当前实际结果：**D5 PASS / F3 READY**。D5 run36245606056 / job108414119580 / source22bacc5d45278bdff838d5a002bf7121085751b3用时5m44s，18阶段全部闭合，U22=PAYLOAD_HASH_REJECTED/UNCHANGED。Artifact10907850207（upgrade-sequence-diagnostic-36245606056-1），SHA256 a41830b6d8814a70fcf9b993de65d953f82f648a934517df7042233d9534c171；仅SEQUENCE-DIAGNOSTIC.json，主控严格schema/顺序/枚举和隐私核验PASS。此为旧payload专项，不替代Full当前payload验收。F3准入：后续只有结果/治理文档，tools/.github代码仍精确等于D5；同步并三方HEAD核验后仅dispatch mode=full，拿到run后扣唯一Full额度。下方RUNNING/派单为历史。
@@ -16,7 +20,7 @@ D5准入登记：原T4回单commit `2b149857e566153bc3d50427c59912d05c3e50af`，
 | --- | --- | --- | --- |
 | U22最小诊断 | 1 | 1 | 0 |
 | 完整Setup | 1 | 1 | 0 |
-| QA（沿用） | 2 | 0 | 2 |
+| QA（沿用） | 2 | 1 | 1 |
 
 D5已创建：run `36245606056`，受测HEAD `22bacc5d45278bdff838d5a002bf7121085751b3`；local/origin/API三方一致，mode=sequence，仅sequence job运行，其余jobs skipped。主控30/30专项、纯Go两项、PS AST、公开文档8/8 PASS；工具与workflow目录精确等于T4冻结提交。状态RUNNING，尚无Hosted PASS。D5额度已扣至0；失败不得retry。
 
