@@ -1,5 +1,7 @@
 # Batch 4 编排索引
 
+当前QA发现：historical-identity静态测试旧workflow路由断言本地确定失败，历史job连续原生命令未逐条检查退出码，存在被后续成功掩盖风险；不能以F3绿色直接认定QA PASS。原T4已返工B4-T4-QA-GATE-20260926-06，从2b14985仅修CI静态门禁/契约，产品及生命周期全部冻结，禁止Hosted；卡tasks/B4-T4-QA-GATE-20260926.md。同一B4-QA继续独立审查与首失败证据核验。任何专用QA静态Hosted先Review，D5/F3预算不增加，不得用QA重跑Full。
+
 当前：**F3 WORKFLOW PASS / B4-QA RUNNING**。F3 run36246132535@c8886e6b6d413c2fd73d6716621d07a80b337e58所有job/gate通过，setup11m44s；最终Artifact10907910968，SHA256 e6b01fe7c4499526eb99a837892a0c0641ad2232c84981b191b2ac6f7c18f3c6，主控独立内容核验进行中。B4-QA thread `01a0de04-719c-7691-8b04-33d9d53596a0`，managed worktree `E:/CodexWorkspace/CodexWorktrees/b4-qa/public-source`，branch `codex/b4-qa`，baseline c8886e6；gpt-5.6-sol/medium，生产只读、仅报告可local commit，return target新主控。卡tasks/B4-QA.md；QA Hosted0/2，无额外run。原T4冻结2b14985；不清理任何旧工作树。
 
 当前：**F3 RUNNING**，run36246132535@c8886e6b6d413c2fd73d6716621d07a80b337e58；主控三方HEAD/同D5实现核验完成。新增D5/F3预算各1/1已用；QA0/2未启动，等待Full实际报告。T4保持2b14985冻结。
