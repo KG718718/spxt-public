@@ -1,5 +1,21 @@
 # Batch 4 自主工程续行与 Hosted 预算
 
+## 最终预算与执行停点
+
+**BLOCKED — AUTOMATION PASS / QA PASS / HUMAN PENDING**。D5、F3产品验收与QA1补证已完成，独立QA caf034f已回PASS并整合e124722；自动链到此停止，剩余QA额度不再使用。
+
+| 额度 | 已用 / 上限 | 剩余 | 结果 |
+| --- | --- | --- | --- |
+| 首次恢复最小诊断D1—D4 | 4/4 | 0 | 历史保留 |
+| 首次恢复Full F1—F2 | 2/2 | 0 | 历史保留 |
+| 方案B D5 | 1/1 | 0 | run36245606056，18阶段PASS |
+| 方案B F3 | 1/1 | 0 | run36246132535，产品U01—U30/26/742及Artifact PASS；原historical假绿另行修复，不改旧日志 |
+| QA Hosted | 1/2 | 1（停止使用） | QA1 run36249047967，只运行qa-static，34s PASS |
+
+QA1 source4f95e981c6b765e3ab225778508801eadbc20df3 / Artifact10908731584，严格四字段HISTORICAL_IDENTITY_STATIC/PASS；digest8e044cb9a4709d4bd5a4ee0a375e889c6d4d6f5e3b848a09e1196e80625d2c7f。原T4只改CI静态门禁与测试，Artifact影响输入相对c8886e6未变；独立QA明确批准这种专用补证，不挪用QA重跑Full，没有新的Setup构建。
+
+最终F3安装包来源仍c8886e6/run36246132535/Artifact10907910968；原始ZIP/EXE实际hash和隐私PASS，详ARTIFACT-VERIFICATION.md。只有用户Win10人工验收待办；不进入Batch4.5/main/tag/Release。以下为各次授权和用量登记的历史记录，不再构成运行授权。
+
 当前：**QA1 RUNNING**，run36249047967 / job108423523439 / source4f95e981c6b765e3ab225778508801eadbc20df3；独立QA已对b7704ab回HOSTED_READY，后续只有两行编排文档，tools/.github完全一致，三方HEAD核验完成。mode=qa-static，仅静态job运行，其余四job skipped；QA第1次已扣，剩1次。D5/F3不增加，不构建或重测Setup；F3候选来源仍c8886e6。下方“尚未创建”属于派单前登记。
 
 当前QA准入登记：首轮独立QA确认F3 historical静态suite70/69/1被后续命令掩盖，产品U01—U30、26/742及Artifact实际核验仍成立；只修CI/静态测试的有界闭合由QA明确认可。原T4 local88ae624已整合b7704ab，共享静态helper首失败停止、严格四字段报告及退出码/状态双门禁；主控真实helper、lifecycle15/15和产品等价检查PASS。拟QA1受测HEAD `4f95e981c6b765e3ab225778508801eadbc20df3`（较b770仅编排文档），收到同一QA的HOSTED_READY并三方HEAD核验后才显式mode=qa-static；只跑静态/合成门禁与内嵌真实失败传播反例，不运行Full/构建/安装，不重建F3 Artifact。当前尚未创建QA1、不扣额度；QA预算仍0/2。F3 Artifact仍来自c8886e6，后续源码身份必须分列，不能冒充同一次构建。

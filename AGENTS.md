@@ -1,5 +1,13 @@
 # K⁺-SESSION 协作边界
 
+## 当前最终停点｜2026-09-26
+
+**BLOCKED — AUTOMATION PASS / QA PASS / HUMAN PENDING**。U01—U30、Runtime/Launcher/Portable/Setup、26/26 suites、742 checks、fail0、skip0、Artifact privacy及独立B4-QA均已闭合。仅Win10人工I01/I02/I09及十步升级验收待用户执行。自动工程在此停止，不再派开发任务或追加Hosted，不进入Batch4.5/main/tag/Release。
+
+F3候选来源c8886e6b6d413c2fd73d6716621d07a80b337e58 / run36246132535 / Artifact10907910968；后续CI静态门禁修复b7704ab及QA1 run36249047967@4f95e981c6b765e3ab225778508801eadbc20df3，产品及构建输入不变。首轮QA发现的假绿已保留证据并修复，不能追溯称F3旧historical测试全部通过。独立QA最终caf034f527e85e7cb4c0f0a410fcb392bfa701ca已整合e12472285d34c0b255d4c7168290cfd39b4db5d2。
+
+唯一ACTIVE Master仍01a0db0e-c950-79e0-8e11-07155e0742f2；旧019fa7e9-f46b-7192-9052-cd0aac7c2cc5永久RETIRED — READ ONLY HISTORY。Primary保持public-source；原SPXT状态未整理。下方过去阶段的运行/停止用语是历史记录，以本节终态为准；长期协作与安全规则继续有效。
+
 ## 当前U22有界续行授权｜2026-09-26
 
 用户明确批准方案B，继续唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2、原B4-T4/f8bd及原分支，覆盖下方预算停止令的当前效力。U22目标是错误payload/program manifest hash在实际旧program替换前拒绝，故障后program、installer metadata、registration、binding、shortcuts和business instance精确保持/恢复；不要求PrepareToInstall失败或旧prepare marker。按已批准方案B新增最小U22诊断1次、Full1次，原QA剩2次不变，分轮记录且不挪用、不无修改retry。先本地反例→Review→最小诊断→通过后Full→独立QA→最终Artifact，所有原安全/产品边界及HUMAN PENDING终点保留，不进入Batch4.5/main/tag/Release。任务卡和预算见docs/tasks/windows-installer-v1.1/batch-4/。下方BLOCKED为历史止损记录，不是本次停止指令。

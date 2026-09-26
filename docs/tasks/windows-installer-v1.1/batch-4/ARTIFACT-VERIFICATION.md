@@ -1,6 +1,6 @@
 # Batch 4 F3 Artifact 独立核验
 
-状态：**Artifact identity/privacy PASS；B4-QA 首轮 FAIL，CI 门禁返工中。** 本文不把工作流绿色等同于最终 QA 通过。
+状态：**Artifact identity/privacy PASS；独立B4-QA PASS；HUMAN PENDING。** 首轮CI门禁FAIL已保留并由QA1专用补证闭合，详tasks/B4-QA-RESULT.md。
 
 - 公开仓库：KG718718/spxt-public；候选分支 codex/windows-installer-v1.1。
 - 受测来源：`c8886e6b6d413c2fd73d6716621d07a80b337e58`，tree `0f298af80c1cbdf3835f39aca265cbcdb859bea6`。
@@ -27,5 +27,5 @@
 
 F3 historical-identity job108415569036在2026-09-26T13:44:18Z真实记录70 tests /69 pass /1 fail，失败为旧workflow条件断言；后续命令成功掩盖前序非零，使job/run仍显示success。该缺陷由独立QA确认，首次报告commit36fbb7b7ac54db0c08cca9f0855fbc0583d18fa5已保留。它不推翻上述实际生命周期/Artifact数据，但阻断整体QA PASS。
 
-原T4正在严格限定的CI/静态测试范围修复，产品、构建、payload、身份与生命周期代码冻结。独立QA同意：只有证明Artifact影响输入逐字节不变并通过专用QA Hosted首失败停止反例及正例，才可保留本F3 Artifact并完成后续QA；不得用QA额度重跑Full或伪称该Artifact来自后续修复commit。
+原T4已完成严格限定的CI/静态测试修复88ae624→主控b7704ab；主控与独立QA均确认产品、构建、payload、身份与生命周期输入逐字节不变。QA1 run36249047967@4f95e98只运行共享静态门禁及内嵌首失败反例，严格报告PASS；Artifact10908731584，SHA2568e044cb9a4709d4bd5a4ee0a375e889c6d4d6f5e3b848a09e1196e80625d2c7f。独立QA最终caf034f PASS。本F3 Artifact继续保留原来源c8886e6，未用QA额度重跑Full或重建包。
 

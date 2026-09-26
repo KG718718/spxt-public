@@ -1,4 +1,19 @@
 # Batch 4 测试报告
+
+## 最终工程验收结果
+
+**BLOCKED — AUTOMATION PASS / QA PASS / HUMAN PENDING**。
+
+| 轮次 | source / Run / Artifact | 实际结果 |
+| --- | --- | --- |
+| D5 | 22bacc5d45278bdff838d5a002bf7121085751b3 /36245606056 /10907850207 | 18阶段全部闭合；U22专用hash拒绝、无旧program swap、六类旧状态精确不变 |
+| F3产品 | c8886e6b6d413c2fd73d6716621d07a80b337e58 /36246132535 /10907910968 | U01—U30 PASS，26 suites/742 checks/fail0/skip0；Runtime/Launcher/Portable/Setup、29项I自动检查、D01—D13、offline和Artifact privacy PASS |
+| QA1 | 4f95e981c6b765e3ab225778508801eadbc20df3 /36249047967 /10908731584 | 仅qa-static 34s PASS，其余4 jobs skipped；历史静态门禁逐条非零即停与真实反例闭合 |
+
+F3原historical静态测试70/69/1的假绿由QA首轮FAIL发现；原T4仅修CI/静态测试并用QA1补证，产品/构建/payload/身份及生命周期输入完全未改。首失败日志与独立报告保留，不追溯伪称原测试通过。最终QA localcaf034f→主控e124722 PASS。
+
+主控独立内存重算ZIP SHA256 e6b01fe7c4499526eb99a837892a0c0641ad2232c84981b191b2ac6f7c18f3c6，EXE SHA256877383fe14bf089eb0a4e130641a957062c07ab258d22d59895c46f9b3f671b6，12文件白名单与安全报告PASS。I01/I02/I09仍人工PENDING；Win10十步见HUMAN-ACCEPTANCE.md。以下为前轮历史报告，其“尚无/当前”用语指当时状态。
+
 状态：**BLOCKED / D4 PASS / F2 FAIL / HOSTED BUDGET EXHAUSTED**。尚无完整Batch4 PASS或最终beta.2 Setup Artifact。各轮身份独立，不合并局部PASS冒充最终全项通过。
 
 | 轮次 | Run / source | 实际结果 |

@@ -1,5 +1,15 @@
 # K⁺-SESSION｜项目状态
 
+## 当前最终停点｜2026-09-26
+
+**BLOCKED — AUTOMATION PASS / QA PASS / HUMAN PENDING**。U01—U30、Runtime/Launcher/Portable/Setup、26/26 suites、742 checks、fail0、skip0、Artifact privacy及独立B4-QA均已闭合。仅Win10人工I01/I02/I09及十步升级验收待用户执行。自动工程在此停止，不再派开发任务或追加Hosted，不进入Batch4.5/main/tag/Release。
+
+F3候选来源c8886e6b6d413c2fd73d6716621d07a80b337e58 / run36246132535 / Artifact10907910968；后续CI静态门禁修复b7704ab及QA1 run36249047967@4f95e981c6b765e3ab225778508801eadbc20df3，产品及构建输入不变。首轮QA发现的假绿已保留证据并修复，不能追溯称F3旧historical测试全部通过。独立QA最终caf034f527e85e7cb4c0f0a410fcb392bfa701ca已整合e12472285d34c0b255d4c7168290cfd39b4db5d2。
+
+唯一ACTIVE Master仍01a0db0e-c950-79e0-8e11-07155e0742f2；旧019fa7e9-f46b-7192-9052-cd0aac7c2cc5永久RETIRED — READ ONLY HISTORY。Primary保持public-source；原SPXT状态未整理。下方过去阶段的运行/停止用语是历史记录，以本节终态为准；长期协作与安全规则继续有效。
+
+当前交付入口：[Batch4结果](docs/tasks/windows-installer-v1.1/batch-4/RESULT.md)、[Win10人工验收](docs/tasks/windows-installer-v1.1/batch-4/HUMAN-ACCEPTANCE.md)。
+
 ## 当前U22恢复｜2026-09-26
 
 用户已批准方案B，原B4-T4从58898b2继续，唯一新主控/原f8bd/开发分支不变。产品要求是错误hash在实际旧program替换前拒绝并精确保持或恢复全部旧状态，不要求旧PrepareToInstall marker。新增有界额度：最小诊断1、Full1，QA原2次未用；历史4次诊断和2次Full保留。先反例与安全固定诊断，Review后Hosted；当前未取得U22 PASS。下文预算BLOCKED为已由本次明确授权覆盖的历史。实时记录见[AUTONOMOUS-EXECUTION.md](docs/tasks/windows-installer-v1.1/batch-4/AUTONOMOUS-EXECUTION.md)。

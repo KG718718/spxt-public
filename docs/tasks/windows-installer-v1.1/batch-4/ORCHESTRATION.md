@@ -1,5 +1,17 @@
 # Batch 4 编排索引
 
+## 当前最终编排状态
+
+**BLOCKED — AUTOMATION PASS / QA PASS / HUMAN PENDING**。唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2；旧Master永久只读。所有本轮自动任务停止，原T4与QA工作树保留，不创建新任务、不清理工作树、不进入Batch4.5。
+
+- 原B4-T4：thread01a0cb6a-67cc-7c03-a68b-2727af8fce6e，f8bd/public-source，codex/b4-t4-upgrade-lifecycle，冻结88ae624c4b315ea960c354286873326102143d43；U22修复2b14985→整合22bacc5，QA门禁修复88ae624→整合b7704ab。
+- B4-QA：thread01a0de04-719c-7691-8b04-33d9d53596a0，b4-qa/public-source，codex/b4-qa，最终caf034f527e85e7cb4c0f0a410fcb392bfa701ca→整合e12472285d34c0b255d4c7168290cfd39b4db5d2；状态PASS，首轮FAIL原文保留。
+- D5 run36245606056 PASS；F3产品与Artifact run36246132535@c8886e6 PASS；CI假绿由QA1 run36249047967@4f95e98专用静态门禁补证闭合。两种source精确分列，不重建F3包。
+- QA1 Artifact10908731584 / SHA2568e044cb9a4709d4bd5a4ee0a375e889c6d4d6f5e3b848a09e1196e80625d2c7f，严格单文件PASS；QA1/2已用，不再运行。
+- F3 Artifact10907910968由主控内存重算ZIP与EXE实际hash、12文件白名单/隐私及原始报告PASS。
+
+以下编排记录按当时状态保留，其中“当前/运行/待Review”不构成继续执行指令。
+
 当前：**QA1 RUNNING**。同一B4-QA已回HOSTED_READY；主控仅dispatch qa-static run36249047967/job108423523439@4f95e981c6b765e3ab225778508801eadbc20df3，与QA审查b7704ab代码一致、仅编排文档不同，所有其他job skipped。QA已用1/2，余1；D5/F3不变。QA报告阶段性修改保留在原b4-qa工作树，待Hosted后同一线程最终复审并local commit；未提前宣称QA PASS。
 
 当前：**QA门禁修复已整合 / 独立复审中**。原T4 local88ae624c4b315ea960c354286873326102143d43 → 主控b7704ab74fb19d270fc4711169aecdc3e5497bb7，主控共用static gate真实PASS、lifecycle15/15、文档8/8、diffcheck及产品等价检查PASS；相对F3仅5个CI/静态测试非文档文件变化。QA首轮36fbb7b已整合df948956并保留FAIL历史；确认QA idle/clean后主控把同一QA分支安全同步到b7704ab，现同一thread复审。QA Hosted仍0/2，只有收到HOSTED_READY后才显式运行qa-static。F3最终Artifact完整ZIP及EXE实际哈希均核验PASS，详情ARTIFACT-VERIFICATION.md；不会伪称其来源为修复commit。

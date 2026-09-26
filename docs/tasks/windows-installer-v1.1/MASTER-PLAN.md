@@ -1,5 +1,15 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## 当前最终停点｜2026-09-26
+
+**BLOCKED — AUTOMATION PASS / QA PASS / HUMAN PENDING**。U01—U30、Runtime/Launcher/Portable/Setup、26/26 suites、742 checks、fail0、skip0、Artifact privacy及独立B4-QA均已闭合。仅Win10人工I01/I02/I09及十步升级验收待用户执行。自动工程在此停止，不再派开发任务或追加Hosted，不进入Batch4.5/main/tag/Release。
+
+F3候选来源c8886e6b6d413c2fd73d6716621d07a80b337e58 / run36246132535 / Artifact10907910968；后续CI静态门禁修复b7704ab及QA1 run36249047967@4f95e981c6b765e3ab225778508801eadbc20df3，产品及构建输入不变。首轮QA发现的假绿已保留证据并修复，不能追溯称F3旧historical测试全部通过。独立QA最终caf034f527e85e7cb4c0f0a410fcb392bfa701ca已整合e12472285d34c0b255d4c7168290cfd39b4db5d2。
+
+唯一ACTIVE Master仍01a0db0e-c950-79e0-8e11-07155e0742f2；旧019fa7e9-f46b-7192-9052-cd0aac7c2cc5永久RETIRED — READ ONLY HISTORY。Primary保持public-source；原SPXT状态未整理。下方过去阶段的运行/停止用语是历史记录，以本节终态为准；长期协作与安全规则继续有效。
+
+当前Batch4只等待Win10人工反馈；剩余QA额度不是继续开发授权。
+
 ## 当前批准U22方案B｜2026-09-26
 
 用户已明确恢复原T4有界续行；U22验收不绑定Inno PrepareToInstall或旧prepare-failure marker，仍必须在旧program替换前拒绝错误hash并证明故障后全部旧状态精确一致。新增最小诊断1/Full1，原QA2次未用不变；执行顺序、止损及最终HUMAN PENDING按[台账](batch-4/AUTONOMOUS-EXECUTION.md)。下方停止状态为历史；此授权不重开其他T任务，不改变产品安全规则。
