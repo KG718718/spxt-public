@@ -10,12 +10,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Run an identity, closed upgrade-fault sequence, historical static QA, or full Setup workflow
+        description: Run an identity, LAN identity capture, closed upgrade-fault sequence, historical static QA, or full Setup workflow
         required: false
         default: identity
         type: choice
         options:
           - identity
+          - lan-identity
           - sequence
           - qa-static
           - full
@@ -261,6 +262,73 @@ jobs:
           . ./tools/windows-installer/historical-identity/static-gate-report.ps1
           Test-KSessionHistoricalStaticGateReport -Report $taskReport -ExpectedCommit '${{ github.sha }}'
           "Historical identity static gate: $($taskReport.status)" >> $env:GITHUB_STEP_SUMMARY
+  lan-identity:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-host-v1.1' && github.event_name == 'workflow_dispatch' && inputs.mode == 'lan-identity'
+    permissions:
+      contents: read
+      actions: read
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Exact public Git bytes
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Initialize fixed beta.2 identity report
+        shell: pwsh
+        run: |
+          $taskOutput=Join-Path $env:RUNNER_TEMP 'b45-beta2-identity-output'
+          if (Test-Path -LiteralPath $taskOutput) { throw 'Identity output already exists' }
+          New-Item -ItemType Directory -Path $taskOutput | Out-Null
+          $taskReport=Join-Path $taskOutput 'BETA2-IDENTITY-REPORT.json'
+          $taskEvidence=Join-Path $taskOutput 'beta2-identity-evidence.json'
+          $taskValue=[ordered]@{schema=1;kind='k-session-beta2-identity-run';status='BLOCKED';stage='STATIC_GATE';reason='BLOCKED_STATIC_GATE';source=[ordered]@{repository='KG718718/spxt-public';runId=[Int64]36246132535;artifactId=[Int64]10907910968;headSha='c8886e6b6d413c2fd73d6716621d07a80b337e58'};testedCommit='${{ github.sha }}'}
+          [IO.File]::WriteAllText($taskReport,($taskValue|ConvertTo-Json -Depth 4 -Compress)+"`n",[Text.UTF8Encoding]::new($false))
+          "KSESSION_BETA2_IDENTITY_OUTPUT=$taskOutput" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "KSESSION_BETA2_IDENTITY_REPORT=$taskReport" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "KSESSION_BETA2_IDENTITY_EVIDENCE=$taskEvidence" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Static and synthetic beta.2 identity gates
+        shell: pwsh
+        run: |
+          $taskHead=git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $taskHead -cne '${{ github.sha }}') { throw 'Tested commit mismatch' }
+          node --check tools/windows-installer/beta2-identity/index.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Identity module syntax failed' }
+          node --check tools/windows-installer/beta2-identity/cli.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Identity CLI syntax failed' }
+          node --test tools/tests/windows-installer/beta2-identity/beta2-identity.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Identity synthetic gate failed' }
+          & tools/tests/windows-installer/beta2-identity/setup-process.test.ps1 -RepositoryRoot $env:GITHUB_WORKSPACE
+          if ($LASTEXITCODE -ne 0) { throw 'Identity process gate failed' }
+          $taskValue=[ordered]@{schema=1;kind='k-session-beta2-identity-run';status='BLOCKED';stage='HOSTED_PREFLIGHT';reason='BLOCKED_HOSTED_PREFLIGHT';source=[ordered]@{repository='KG718718/spxt-public';runId=[Int64]36246132535;artifactId=[Int64]10907910968;headSha='c8886e6b6d413c2fd73d6716621d07a80b337e58'};testedCommit='${{ github.sha }}'}
+          [IO.File]::WriteAllText($env:KSESSION_BETA2_IDENTITY_REPORT,($taskValue|ConvertTo-Json -Depth 4 -Compress)+"`n",[Text.UTF8Encoding]::new($false))
+      - name: Install accepted F3 beta.2 and capture exact post-install identity
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          & pwsh -NoLogo -NoProfile -File tools/windows-installer/beta2-identity/invoke.ps1 -RepositoryRoot $env:GITHUB_WORKSPACE -OutputDirectory $env:KSESSION_BETA2_IDENTITY_OUTPUT -TestedCommit '${{ github.sha }}'
+          $taskExit=$LASTEXITCODE
+          if ($taskExit -ne 0) { throw 'Beta.2 identity capture blocked' }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: b45-beta2-identity-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.KSESSION_BETA2_IDENTITY_REPORT }}
+            ${{ env.KSESSION_BETA2_IDENTITY_EVIDENCE }}
+          if-no-files-found: error
+          retention-days: 30
+      - name: Fixed beta.2 identity summary only
+        if: always()
+        shell: pwsh
+        run: |
+          node tools/windows-installer/beta2-identity/cli.cjs verify-report --input $env:KSESSION_BETA2_IDENTITY_REPORT
+          if ($LASTEXITCODE -ne 0) { throw 'Unsafe beta.2 identity report' }
+          $taskReport=Get-Content -LiteralPath $env:KSESSION_BETA2_IDENTITY_REPORT -Raw | ConvertFrom-Json
+          "Beta.2 identity capture: $($taskReport.status) / $($taskReport.stage) / $($taskReport.reason)" >> $env:GITHUB_STEP_SUMMARY
   historical-identity:
     if: github.event_name == 'workflow_dispatch' && inputs.mode == 'full' && github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1'
     permissions:
