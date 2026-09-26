@@ -4,13 +4,17 @@
 
 ## U22方案B新增预算｜2026-09-26
 
+D5准入登记：原T4回单commit `2b149857e566153bc3d50427c59912d05c3e50af`，主控整合受测commit `22bacc5d45278bdff838d5a002bf7121085751b3`；专用manifest-hash拒绝原因、进程启动判定、旧状态先采集、18阶段封闭诊断。主控已核实validateStaged仍在old program rename之前，未改身份策略/数据生命周期；等待主控本地核验完成及三方HEAD一致后只dispatch mode=sequence。此登记不是已创建run或PASS；拿到run ID后扣D5唯一额度。
+
 按用户“批准方案B”及该方案有界建议登记：最小U22诊断最多1次、Full最多1次；未动用的QA原2次继续保留，不新增QA额度。原D1—D4/F1—F2不重算、不重试，新增轮次D5/F3；失败/取消已创建run仍扣额。任何进一步额度须重新授权。
 
 | 类别 | 本轮上限 | 本轮已用 | 本轮剩余 |
 | --- | --- | --- | --- |
-| U22最小诊断 | 1 | 0 | 1 |
+| U22最小诊断 | 1 | 1 | 0 |
 | 完整Setup | 1 | 0 | 1 |
 | QA（沿用） | 2 | 0 | 2 |
+
+D5已创建：run `36245606056`，受测HEAD `22bacc5d45278bdff838d5a002bf7121085751b3`；local/origin/API三方一致，mode=sequence，仅sequence job运行，其余jobs skipped。主控30/30专项、纯Go两项、PS AST、公开文档8/8 PASS；工具与workflow目录精确等于T4冻结提交。状态RUNNING，尚无Hosted PASS。D5额度已扣至0；失败不得retry。
 
 用户确认真实顺序：Gate→Prepare/旧状态快照→Inno staging copy→commit/validate hash→错误hash在旧program替换前拒绝→安全rollback（如需）→exact old state。无须PrepareToInstall失败或KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED，但必须有可靠原因/阶段证据和program/metadata/registration/binding/shortcuts/instance完整状态比较。卡见tasks/B4-T4-U22-20260926.md；不得用任意失败或rollback marker替代验收。
 
