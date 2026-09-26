@@ -5,8 +5,8 @@
 |Task|Thread|worktree/branch|状态|依赖|
 |---|---|---|---|---|
 |B45-T5-PREFLIGHT|01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9|b4-qa/codex/b45-t5-preflight|已整合7bfbfd3；c06dcfe历史冻结|方案A已解除原阻塞|
-|B45-T5-IDENTITY|复用同一Execution|b4-qa/新codex/b45-t5|待派发|先实现最小取证，再Review才专项1|
-|B45-T1|待派发|拟复用f8bd/新codex/b45-t1|待派发|网络/config/port独立模块，与取证无共享文件|
+|B45-T5-IDENTITY|01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9|b4-qa/codex/b45-t5|DISPATCHED @abb4959|先实现最小取证，再Review才专项1|
+|B45-T1|01a0e002-cbb8-77f1-bf0b-505a7a327007|f8bd/codex/b45-t1|DISPATCHED @abb4959|网络/config/port独立模块，与取证无共享文件|
 |B45-T2|待派发|待分配|WAITING|T1接口|
 |B45-T3|待派发|待分配|WAITING|T1/T2|
 |B45-T4|待派发|待分配|WAITING|T1契约；共享Launcher串行|
