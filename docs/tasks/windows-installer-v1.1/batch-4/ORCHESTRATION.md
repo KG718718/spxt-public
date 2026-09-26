@@ -1,5 +1,7 @@
 # Batch 4 编排索引
 
+当前：D5 run36245606056@22bacc5完整18阶段PASS，U22=PAYLOAD_HASH_REJECTED/UNCHANGED；Artifact10907850207白名单/hash/严格报告PASS。原T4已冻结2b14985；F3准备以同实现（仅后续治理文档）的开发分支精确HEAD显式运行Full。QA尚未创建；下方状态为历史。
+
 ## 当前U22｜D5 RUNNING
 
 2026-09-26：B4-T4-U22-20260926-05已主动回单；local `2b149857e566153bc3d50427c59912d05c3e50af` → 主控Review/整合 `22bacc5d45278bdff838d5a002bf7121085751b3`。30/30专项及纯Go/PS AST/公开文档PASS。D5 run36245606056仅sequence运行，新增诊断1/1已用；F3/QA尚未启动。原thread/worktree保留冻结，主控继续跟踪至真实结果。下方派单/冻结状态保留为历史。

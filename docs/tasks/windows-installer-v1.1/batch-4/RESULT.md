@@ -1,4 +1,9 @@
 # Batch 4 当前结果
+
+## 2026-09-26 U22有界续行：D5 PASS，Full待执行
+
+T4 local2b149857e566153bc3d50427c59912d05c3e50af整合22bacc5d45278bdff838d5a002bf7121085751b3，主控30/30专项、纯Go两项、PS AST、公开文档8/8 PASS。D5 run36245606056/job108414119580受测该整合commit，18阶段全部PASS；U22专用hash拒绝在旧program swap之前，故障后owned/instance精确UNCHANGED。Artifact10907850207仅闭合JSON，SHA256 a41830b6d8814a70fcf9b993de65d953f82f648a934517df7042233d9534c171，主控独立核验PASS。当前没有Full或QA新结论；历史F2失败不改写，完整当前payload仍待F3。下方派单/止损为历史。
+
 当前：U22方案B已由用户批准，原T4有界续行中；新增最小诊断1/Full1，QA沿用2。U22目标保持错误hash在实际program替换前拒绝及完整旧状态精确一致，不再绑定PrepareToInstall marker。下文为F2结束时真实止损证据，尚未有新增Hosted或U22 PASS。
 状态：**BLOCKED — HOSTED BUDGET EXHAUSTED**。D4已PASS，最后F2在U22失败；不是AUTOMATION PASS / QA PASS / HUMAN PENDING。
 
