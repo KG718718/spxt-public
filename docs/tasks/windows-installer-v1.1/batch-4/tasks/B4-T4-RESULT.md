@@ -127,6 +127,7 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - 本机无系统 Go；尝试按仓库固定 URL 下载 Go 1.27.1，在 10 秒连接超时前未收到字节，因此未取得可核 hash 的工具，未运行 `gofmt` 或 Go compile-only。专用缓存留在未跟踪 `.test-work/`；主控或 hosted 必须用固定 Go 1.27.1 完成格式/编译验证后才能触发序列诊断。
 - PowerShell AST：PASS；修改/新增 CJS `node --check`：PASS。
 - 仓库固定 Go 1.27.1 ZIP SHA256 `a3911b5e0e1b1053f25ed0675f4c1c6aad1e2bfcf253df2b9be4caabd2edd95d` 核对通过；`gofmt` 完成；`go test -run '^$' .` 编译整个 `windows-launcher` 测试包 PASS（无真实测试执行）。首次 `Invoke-WebRequest` 因 EOF 未产生 ZIP；固定 hash 门禁停止，随后 `curl` 受限重试成功。
+- 2026-09-26 pre-baseline 返工：先以隔离可执行反例复现旧 sequence 夹具冲突，结果为 evidence root 已创建、`synthetic-instance` leaf 不存在、但旧 parent-must-not-exist 守卫仍确定性拒绝（约定退出码 23）。修正后固定 Go 1.27.1 的 `TestUpgradeLifecycleInstanceIsolation` PASS，且 `go test -run '^$' .` compile-only PASS；未运行真实 `TestUpgradeLifecycle`。fresh identity/detection/lifecycle/transaction 联合专项 84 tests：83 PASS / 0 FAIL / 1 本机 8.3 alias SKIP；preflight 21 tests：20 PASS / 0 FAIL / 1 本机 file-symlink privilege SKIP；公开 `npm test` 为 26 files / failed 0（hosted-only 测试仍按既定策略 SKIP）。生命周期契约单独 13 PASS / 0 FAIL，其中封闭报告正反例为单次 PowerShell 批量执行；PowerShell AST、修改 CJS `node --check` 与 `git diff --check` PASS。
 - `git diff --check`：PASS（仅现有 LF→CRLF checkout warning）。
 - 本轮本地完整 Portable 脚本未进入实际 Portable 测试：首次输出误置源码树内，被 `Unsafe source/output` 门禁拒绝；改用源码树外隔离输出后，Runtime 闭包因本地 checkout 的 `archive.cjs` 原始 CRLF 字节不等于 commit blob 而正确失败关闭。未修改或绕过 source-byte 门禁；实际 Portable 仍须由 `core.autocrlf=false` 的 hosted checkout 复验。
 - 本机未运行 Inno 6.7.3 编译、真实注册表/快捷方式/安装/卸载或全网卡隔离。首次 Actions 的历史 GUI 失败见上，不冒充修正后 hosted 已完成。
@@ -150,9 +151,11 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - 复用 exact beta.1 已验证的 Node、Go、Inno 工具链和 Portable payload，只编译 `sequence-gate`、`sequence-space` 两个明确标记 `SEQUENCE DIAGNOSTIC - NEVER DISTRIBUTE OR INSTALL OUTSIDE DISPOSABLE HOST` 的壳。`sequence-gate` 在真实 gate 接受后立即记录固定码并于 transaction prepare / `[Files]` copy 之前返回；`sequence-space` 只命中真实空间门禁。
 - Go 生命周期沿用真实 beta.1 安装、Launcher、合成 Admin/数据、U15 数据损坏、U16 binding 缺失、U17 program tamper 及 U18 空间不足路径。每次受控恢复后重新运行当前 gate，并比较 program/metadata、registration、binding、shortcuts 与完整 instance 的既有 hash map，仅把 `UNCHANGED/CONTROLLED_MUTATION` 布尔结论写入报告，不输出哈希值。
 - 登记组失败时，序列壳对同一私有 request 仅映射固定子原因：count、version、snapshot、conflict、uninstall、ambiguous、inconsistent；不输出 request、路径、登记值、bundle、日志、anchor、stdout/stderr 或错误正文。
-- 唯一上传文件为 `E:/sequence-diagnostic/SEQUENCE-DIAGNOSTIC.json`，Artifact 名 `upgrade-sequence-diagnostic-<run_id>-<run_attempt>`；schema 仅 `schema/status/phases`，phase 仅九个固定 ID，每项仅 `phase/result/state`。诊断 Setup、私有 request、注册表快照、日志、构建目录、账号、附件和 instance 均不上传。
+- 唯一上传文件为 `E:/sequence-diagnostic/SEQUENCE-DIAGNOSTIC.json`，Artifact 名 `upgrade-sequence-diagnostic-<run_id>-<run_attempt>`；schema 仅 `schema/status/phases`，phase 为八个 pre-baseline 阶段加 `BASELINE/U15/AFTER_U15/U16/AFTER_U16/U17/AFTER_U17/U18/U20_PRECOPY` 共十七个固定 ID，每项仅 `phase/result/state`。诊断 Setup、私有 request、注册表快照、日志、构建目录、账号、附件和 instance 均不上传。
 - 主控 Review 发现首版 `sequence-diagnostic.ps1` 的 E 盘检查在 PowerShell 运行时形成尾部反斜杠非法正则，AST 与原静态契约未捕获。返工移除该正则，改为共享 `Test-KSessionFixedEPath`：先要求 `IsPathFullyQualified`，再比较 `GetFullPath` 的 `GetPathRoot` 是否严格等于 `E:\`。可执行测试直接调用 helper，并以伪 hosted 环境运行诊断入口：合法 `E:\...`/`E:/...` 已越过卷门禁到达输入门禁；`C:\...`、`EE:\...`、`E:relative`、UNC 与设备路径均固定拒绝，且不再出现旧正则异常。
 - 主控整合路径修正后的唯一获批 sequence run `36141099074` 在 `sequence-gate` build 固定失败为 `SEQUENCE_GATE_BUILD_FAILED`，未生成 `SEQUENCE-DIAGNOSTIC.json`，U15—U20 均未开始；该次一次性 hosted 额度已消耗，禁止自行重跑。静态执行顺序确认：`portable-test-report.sourceCommit` 与解包 `verify().sourceCommit` 已正确比较 beta.1 `payloadCommit`，但紧接着 `zip-identity.sourceCommit` 仍误与当前诊断源码 `commit` 比较；exact beta.1 Portable 的 ZIP 身份必为 `e9417f0`，因此断言必然失败。修正保留 ZIP SHA 与 source identity 校验，只把 ZIP source 比较统一为 `payloadCommit`。普通 candidate/fault 模式的 `payloadCommit=commit` 仍要求当前 commit；sequence 模式要求 beta.1 payload commit；诊断 `build-info` 与 target manifest 的 `sourceCommit` 继续记录当前诊断源码 commit，禁止发行标记不变。
+- 第二次 sequence run `36145933140` / commit `3ae73b7e4c37c1615c4867345883432d58150fbc` / Artifact `10869846376` 只得到 `status=FAIL, phases=[]`，证明失败发生于旧 `BASELINE` 记录前，不能证明 beta.1 已安装或 U20 已执行。隔离反例确认旧 sequence fixture 将 instance 直接放在已创建 evidence root 下，却复用“父目录必须不存在”守卫，因而会在安装前必然拒绝。最小修复将 sequence instance 改为 evidence root 下新的专属 parent/leaf；full 模式原 D 盘路径不变，leaf 或 parent 已存在仍拒绝，未删除目录或放宽未知非空、reparse、路径及产品门禁。
+- pre-baseline 报告现先写当前 `STAGE_PENDING/RUNNING`，成功闭合为固定 result/state，失败 defer 只写 `STAGE_FAILED/STOPPED`；每一步均能定位最后完成与当前失败阶段。共享报告 helper 同时约束 wrapper 与 workflow summary：顶层/phase 字段白名单、`schema` Int64 值 1、`phases` 数组、大小写严格枚举、固定顺序、缺失/重复/未知/额外字段全部拒绝。主控复现的 `status='fail', result='private-detail', state='arbitrary'` 绕过已修复；可执行反例还拒绝路径、错误正文、凭据样式、64 位 hash 原值及类型注入。合法 FAIL 报告先验证并复制到唯一外层 JSON，再按测试退出码使 job 失败，因此不会丢失 pre-baseline 固定失败证据。
 
 ## 修改文件
 
@@ -164,14 +167,14 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - `tools/windows-installer/upgrade-detection/index.cjs`
 - `tools/tests/windows-installer/upgrade-detection/upgrade-detection.test.cjs`
 - `tools/windows-installer/{identity-diagnostic.cjs,identity-diagnostic.ps1}`
-- `tools/windows-installer/{sequence-diagnostic.ps1,sequence-diagnostic-path.ps1,sequence-identity.cjs}`
+- `tools/windows-installer/{sequence-diagnostic.ps1,sequence-diagnostic-path.ps1,sequence-diagnostic-report.ps1,sequence-identity.cjs}`
 - `tools/windows-launcher/{setup_windows_test.go,setup_wizard_windows_test.go,upgrade_windows_test.go}`
 - `tools/tests/windows-portable/core-client.cjs`
 - `docs/tasks/windows-installer-v1.1/batch-4/tasks/B4-T4-RESULT.md`
 
 ## 风险与主控处理
 
-1. Sequence run `36141099074` 已消耗本次一次性 hosted 额度且在 build 阶段失败；当前修正仍只有本地静态/合成证据。主控 Review 整合时 commit message 必须包含 `[sequence-diagnostic]`，避免 push 自动运行 full。任何第二次 `mode=sequence` 必须先取得上级明确允许；执行任务不得自行重跑，也不得运行 `full` 或把诊断壳作为发行 Artifact。
+1. 当前修正仍只有本地静态/合成证据，不能写成 Hosted 或 Batch 4 PASS。主控 Review 整合时 commit message 必须同时包含 `[sequence-diagnostic]` 与 `[skip ci]`；新批准预算由主控按 `AUTONOMOUS-EXECUTION.md` 登记后显式 dispatch。执行任务不得自行触发 sequence/full/QA Hosted，也不得把诊断壳作为发行 Artifact。
 2. 下一次真实运行仍可能暴露 build-only 闭包、Inno 生命周期次序、完整 registry values 恢复、ACL 继承或取消时机问题。任何新失败应保留首次 failure Artifact 并退回本任务修复。
 3. `U03/U04` 成功升级链不会使用伪造 registry；负例由既有 exact T1 gate 与真实 Portable-running Setup gate组成。若 QA 要求 v1.0.0 实物安装负例，需要新的受信任旧发行身份，不能在本任务伪造。
 4. 当前工作树因本任务生成的未跟踪 `.test-work/` 与 `node_modules/` 不 clean；它们不得提交。tracked 变更只限上列文件。

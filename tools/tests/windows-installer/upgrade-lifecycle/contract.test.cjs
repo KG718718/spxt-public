@@ -44,16 +44,23 @@ test('identity stop-loss workflow runs only the exact beta1 identity diagnostic'
 });
 
 test('U15-U20 sequence diagnostic is manual, pre-transaction, closed, and does not build current portable or run regression',()=>{
- const workflow=read('.github/workflows/setup-v3.yml'),script=read('tools/windows-installer/sequence-diagnostic.ps1'),pathHelper=read('tools/windows-installer/sequence-diagnostic-path.ps1'),helper=read('tools/windows-installer/sequence-identity.cjs'),build=read('tools/windows-installer/build.cjs'),iss=read('tools/windows-installer/setup.iss'),go=read('tools/windows-launcher/upgrade_windows_test.go');
+ const workflow=read('.github/workflows/setup-v3.yml'),script=read('tools/windows-installer/sequence-diagnostic.ps1'),pathHelper=read('tools/windows-installer/sequence-diagnostic-path.ps1'),reportHelper=read('tools/windows-installer/sequence-diagnostic-report.ps1'),helper=read('tools/windows-installer/sequence-identity.cjs'),build=read('tools/windows-installer/build.cjs'),iss=read('tools/windows-installer/setup.iss'),go=read('tools/windows-launcher/upgrade_windows_test.go');
  const sequence=workflow.slice(workflow.indexOf('  sequence:'),workflow.indexOf('  historical-identity:'));
  assert.match(sequence,/github\.event_name == 'workflow_dispatch' && inputs\.mode == 'sequence'/);
  for(const marker of ['rebuild-beta1.ps1','sequence-diagnostic.ps1','SEQUENCE-DIAGNOSTIC.json','upgrade-sequence-diagnostic-','Fixed sequence summary only','persist-credentials: false'])assert.match(sequence,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  for(const forbidden of ['windows-installer/ci.ps1','windows-portable/ci.ps1','npm test','hosted-gate.cjs','inputs.mode == \'full\'','testTotal','742'])assert.doesNotMatch(sequence,new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
- for(const marker of ['HOSTED_SEQUENCE_DIAGNOSTIC_REQUIRED','sequence-gate','sequence-space','KSESSION_UPGRADE_SEQUENCE_DIAGNOSTIC','SEQUENCE-DIAGNOSTIC.json','SEQUENCE_REPORT_UNSAFE'])assert.match(script,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const marker of ['HOSTED_SEQUENCE_DIAGNOSTIC_REQUIRED','sequence-gate','sequence-space','KSESSION_UPGRADE_SEQUENCE_DIAGNOSTIC','SEQUENCE-DIAGNOSTIC.json'])assert.match(script,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.match(reportHelper,/SEQUENCE_REPORT_UNSAFE/);
  assert.match(script,/& \$taskGo test[^\n]*\*> \$null/);
  assert.doesNotMatch(script,/Write-Output|Write-Host|Get-Content[^\n]*(private-request|private-setup|\.log)/i);
  assert.match(script,/sequence-diagnostic-path\.ps1/);assert.match(script,/Test-KSessionFixedEPath/);
+ assert.match(script,/sequence-diagnostic-report\.ps1/);assert.match(script,/Test-KSessionSequenceReport/);
  assert.match(pathHelper,/IsPathFullyQualified/);assert.match(pathHelper,/GetPathRoot/);assert.doesNotMatch(pathHelper,/-match|-notmatch/);
+ for(const phase of ['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE'])assert.match(reportHelper,new RegExp(phase));
+ assert.match(workflow,/sequence-diagnostic-report\.ps1[\s\S]*Test-KSessionSequenceReport/);
+ assert.match(sequence,/uses: actions\/upload-artifact@[\s\S]*if: always\(\)[\s\S]*SEQUENCE-DIAGNOSTIC\.json/);
+ assert.ok(script.indexOf('Test-KSessionSequenceReport')<script.indexOf('Copy-Item -LiteralPath $taskSource'));
+ assert.ok(script.indexOf('Copy-Item -LiteralPath $taskSource')<script.indexOf("if($taskTestExit -ne 0){throw 'SEQUENCE_LIFECYCLE_FAILED'}"));
  assert.match(build,/payloadCommit=sequenceDiagnostic\?'e9417f036d0cdf736ff84682556a994040f0de0b':commit/);
  assert.match(build,/assert\.equal\(zi\.sourceCommit,payloadCommit\)/);
  assert.doesNotMatch(build,/assert\.equal\(zi\.sourceCommit,commit\)/);
@@ -69,8 +76,59 @@ test('U15-U20 sequence diagnostic is manual, pre-transaction, closed, and does n
  const gateStop=iss.indexOf("Log('KSESSION_SEQUENCE_IDENTITY_ACCEPTED')"),transaction=iss.indexOf('if not PrepareUpgradeTransaction');
  assert.ok(gateStop>iss.indexOf('if not RunUpgradeGate')&&transaction>gateStop);
  for(const marker of ['KSESSION_SEQUENCE_REGISTRATION_COUNT','KSESSION_SEQUENCE_REGISTRATION_VERSION','KSESSION_SEQUENCE_REGISTRATION_SNAPSHOT','KSESSION_SEQUENCE_REGISTRATION_CONFLICT','KSESSION_SEQUENCE_REGISTRATION_UNINSTALL','KSESSION_SEQUENCE_REGISTRATION_AMBIGUOUS','KSESSION_SEQUENCE_REGISTRATION_INCONSISTENT'])assert.match(iss,new RegExp(marker));
- for(const marker of ['BASELINE','"AFTER_" + probe.id','U20_PRECOPY','sequencePhases','CONTROLLED_MUTATION'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ for(const marker of ['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','"AFTER_" + probe.id','U20_PRECOPY','sequencePhases','CONTROLLED_MUTATION','STAGE_FAILED','STOPPED','panicked := recover()','panic(panicked)'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.match(go,/if sequenceDiagnostic \{\s*fixtures = fixtures\[:1\]/);
+});
+
+test('sequence report validator accepts only ordered closed stage evidence and rejects injected details',()=>{
+ const helper=path.join(repo,'tools/windows-installer/sequence-diagnostic-report.ps1').replaceAll("'","''");
+ const expected=['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','U15','AFTER_U15','U16','AFTER_U16','U17','AFTER_U17','U18','U20_PRECOPY'];
+ const success=phase=>{
+  if(['BASELINE','AFTER_U15','AFTER_U16','AFTER_U17','U20_PRECOPY'].includes(phase))return {phase,result:'IDENTITY_ACCEPTED',state:'UNCHANGED'};
+  if(phase==='U15')return {phase,result:'PREFLIGHT_REJECTED',state:'CONTROLLED_MUTATION'};
+  if(phase==='U16')return {phase,result:'IDENTITY_BINDING',state:'CONTROLLED_MUTATION'};
+  if(phase==='U17')return {phase,result:'IDENTITY_PROGRAM',state:'CONTROLLED_MUTATION'};
+  if(phase==='U18')return {phase,result:'SPACE_REJECTED',state:'UNCHANGED'};
+  return {phase,result:'STAGE_COMPLETE',state:'COMPLETE'};
+ };
+ const pass={schema:1,status:'PASS',phases:expected.map(success)};
+ const stopped={schema:1,status:'FAIL',phases:[success(expected[0]),{phase:expected[1],result:'STAGE_FAILED',state:'STOPPED'}]};
+ const identityFailure={schema:1,status:'FAIL',phases:expected.slice(0,9).map(success)};
+ identityFailure.phases[8]={phase:'BASELINE',result:'IDENTITY_REGISTRATION_COUNT',state:'UNCHANGED'};
+ const reject=[];
+ reject.push({schema:1,status:'FAIL',phases:[]});
+ reject.push({schema:1,status:'FAIL',phases:[success(expected[0])]});
+ reject.push({schema:1,status:'fail',phases:[{phase:'PRE_ENV_READY',result:'private-detail',state:'arbitrary'}]});
+ for(const schema of ['1',1.5,true,null])reject.push({schema,status:'FAIL',phases:[{phase:'PRE_ENV_READY',result:'STAGE_FAILED',state:'STOPPED'}]});
+ for(const phases of [{phase:'PRE_ENV_READY',result:'STAGE_FAILED',state:'STOPPED'},'not-an-array',null])reject.push({schema:1,status:'FAIL',phases});
+ reject.push({...pass,extra:'forbidden'});
+ const extraPhase=structuredClone(stopped);extraPhase.phases[1].detail='forbidden';reject.push(extraPhase);
+ const missing=structuredClone(pass);missing.phases.splice(2,1);reject.push(missing);
+ const duplicate=structuredClone(pass);duplicate.phases[2].phase=duplicate.phases[1].phase;reject.push(duplicate);
+ for(const value of ['UNKNOWN_PHASE','E:\\private\\path','error text','token=secret','a'.repeat(64)]){
+  const injected=structuredClone(stopped);injected.phases[1].result=value;reject.push(injected);
+ }
+ for(const value of ['stage_failed',7,true]){const typed=structuredClone(stopped);typed.phases[1].result=value;reject.push(typed);}
+ for(const value of ['stopped',7,true]){const typed=structuredClone(stopped);typed.phases[1].state=value;reject.push(typed);}
+ const lowerPhase=structuredClone(stopped);lowerPhase.phases[1].phase='pre_beta1_install';reject.push(lowerPhase);
+ const lowerIdentity=structuredClone(identityFailure);lowerIdentity.phases[8].result='identity_registration_count';reject.push(lowerIdentity);
+ const unknownState=structuredClone(stopped);unknownState.phases[1].state='RUNNING';reject.push(unknownState);
+ const cases=[pass,stopped,identityFailure].map(report=>({json:JSON.stringify(report),accept:true}));
+ for(const report of reject)cases.push({json:JSON.stringify(report),accept:false});
+ cases.push({json:'{"schema":1.0,"status":"FAIL","phases":[{"phase":"PRE_ENV_READY","result":"STAGE_FAILED","state":"STOPPED"}]}',accept:false});
+ const encoded=Buffer.from(JSON.stringify(cases)).toString('base64');
+ const command=`. '${helper}';$cases=([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encoded}'))|ConvertFrom-Json);foreach($case in $cases){$accepted=$true;try{$r=$case.json|ConvertFrom-Json;Test-KSessionSequenceReport -Report $r}catch{$accepted=$false};if($accepted-ne[bool]$case.accept){exit 9}};'BATCH_VALIDATION_PASS'`;
+ const result=cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command',command],{encoding:'utf8',windowsHide:true});
+ assert.equal(result.status,0,result.stderr);assert.equal(result.stdout.trim(),'BATCH_VALIDATION_PASS');
+});
+
+test('sequence fixture uses a new absent parent while full lifecycle keeps the D-volume layout',()=>{
+ const go=read('tools/windows-launcher/upgrade_windows_test.go');
+ assert.match(go,/filepath\.Join\(base, "sequence-instance-fixture", "synthetic-instance"\)/);
+ assert.ok(go.includes('filepath.Join(`D:\\`, "KSESSION-B4-UPGRADE-"+prefix, "synthetic-instance")'));
+ assert.match(go,/os\.Lstat\(instance\)/);assert.match(go,/os\.Lstat\(filepath\.Dir\(instance\)\)/);
+ assert.match(go,/old sequence layout must be rejected/);assert.match(go,/existing sequence parent must remain rejected/);assert.match(go,/full lifecycle fixture path changed/);
+ assert.doesNotMatch(go,/instance = filepath\.Join\(base, "synthetic-instance"\)/);
 });
 
 test('sequence diagnostic executes the fixed E-volume path boundary',()=>{
@@ -143,7 +201,8 @@ test('successful upgrade asserts real shortcut targets, arguments, and normalize
  assert.ok(u24>go.indexOf('readShortcut(link, false)'));assert.ok(u24>go.indexOf('readShortcut(link, true)'));
  assert.ok(u25>go.indexOf('assertRegistration("1.1.0-beta.2")'));
  for(const marker of ['row.Registration.DisplayVersion != wantVersion','state.Machine != 0','len(state.Rows) < 1','32/64 registry aliases conflict'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
- assert.match(go,/runSetup\(beta1, true\)\s+assertRegistration\("1\.1\.0-beta\.1"\)\s+record\("U01"/);
+ assert.ok(go.indexOf('runSetup(beta1, true)')<go.indexOf('assertRegistration("1.1.0-beta.1")'));
+ assert.ok(go.indexOf('assertRegistration("1.1.0-beta.1")')<go.indexOf('record("U01"'));
  assert.match(go,/assertRegistration\("1\.1\.0-beta\.2"\)/);
 });
 

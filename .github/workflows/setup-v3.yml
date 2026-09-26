@@ -214,13 +214,11 @@ jobs:
         if: always()
         shell: pwsh
         run: |
+          . ./tools/windows-installer/sequence-diagnostic-report.ps1
           $taskReport=Get-Content -LiteralPath E:/sequence-diagnostic/SEQUENCE-DIAGNOSTIC.json -Raw|ConvertFrom-Json
-          if($taskReport.status -notin @('PASS','FAIL') -or @($taskReport.phases).Count -gt 9 -or ($taskReport.status -eq 'PASS' -and @($taskReport.phases).Count -ne 9)){throw 'Unsafe sequence diagnostic summary'}
+          Test-KSessionSequenceReport -Report $taskReport
           "Sequence diagnostic: $($taskReport.status)" >> $env:GITHUB_STEP_SUMMARY
           foreach($taskPhase in $taskReport.phases){
-            if($taskPhase.phase -notmatch '^(BASELINE|U15|AFTER_U15|U16|AFTER_U16|U17|AFTER_U17|U18|U20_PRECOPY)$' -or
-               $taskPhase.result -notmatch '^(IDENTITY_(ACCEPTED|REGISTRATION(_(COUNT|VERSION|SNAPSHOT|CONFLICT|UNINSTALL|AMBIGUOUS|INCONSISTENT))?|BINDING|PATH|MANIFEST|PROGRAM|BUILD|RUNTIME|LAUNCHER|INTERNAL)|PREFLIGHT_REJECTED|SPACE_REJECTED)$' -or
-               $taskPhase.state -notmatch '^(UNCHANGED|CONTROLLED_MUTATION)$'){throw 'Unsafe sequence diagnostic phase'}
             "- $($taskPhase.phase): $($taskPhase.result) / $($taskPhase.state)" >> $env:GITHUB_STEP_SUMMARY
           }
   historical-identity:

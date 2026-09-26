@@ -7,6 +7,7 @@ param(
 )
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'sequence-diagnostic-path.ps1')
+. (Join-Path $PSScriptRoot 'sequence-diagnostic-report.ps1')
 $taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public'){
   throw 'HOSTED_SEQUENCE_DIAGNOSTIC_REQUIRED'
@@ -48,17 +49,7 @@ try{
   $taskSource=Join-Path $taskEvidence 'SEQUENCE-DIAGNOSTIC.json'
   if(!(Test-Path -LiteralPath $taskSource -PathType Leaf)){throw 'SEQUENCE_REPORT_MISSING'}
   $taskReport=Get-Content -LiteralPath $taskSource -Raw|ConvertFrom-Json
-  $taskKeys=@($taskReport.PSObject.Properties.Name|Sort-Object)
-  if(($taskKeys -join ',') -ne 'phases,schema,status' -or $taskReport.schema -ne 1 -or $taskReport.status -notin @('PASS','FAIL')){throw 'SEQUENCE_REPORT_SCHEMA'}
-  $taskExpected=@('BASELINE','U15','AFTER_U15','U16','AFTER_U16','U17','AFTER_U17','U18','U20_PRECOPY')
-  $taskPhaseCount=@($taskReport.phases).Count
-  if($taskPhaseCount -gt $taskExpected.Count -or ($taskReport.status -eq 'PASS' -and $taskPhaseCount -ne $taskExpected.Count)){throw 'SEQUENCE_REPORT_PHASE_COUNT'}
-  for($taskIndex=0;$taskIndex -lt $taskPhaseCount;$taskIndex++){
-    $taskPhase=$taskReport.phases[$taskIndex]
-    if((@($taskPhase.PSObject.Properties.Name|Sort-Object)-join ',') -ne 'phase,result,state' -or $taskPhase.phase -ne $taskExpected[$taskIndex] -or
-       $taskPhase.result -notmatch '^(IDENTITY_(ACCEPTED|REGISTRATION(_(COUNT|VERSION|SNAPSHOT|CONFLICT|UNINSTALL|AMBIGUOUS|INCONSISTENT))?|BINDING|PATH|MANIFEST|PROGRAM|BUILD|RUNTIME|LAUNCHER|INTERNAL)|PREFLIGHT_REJECTED|SPACE_REJECTED)$' -or
-       $taskPhase.state -notin @('UNCHANGED','CONTROLLED_MUTATION')){throw 'SEQUENCE_REPORT_UNSAFE'}
-  }
+  Test-KSessionSequenceReport -Report $taskReport
   Copy-Item -LiteralPath $taskSource -Destination (Join-Path $taskWork 'SEQUENCE-DIAGNOSTIC.json')
   if($taskTestExit -ne 0){throw 'SEQUENCE_LIFECYCLE_FAILED'}
 }finally{

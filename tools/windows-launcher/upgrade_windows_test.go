@@ -139,6 +139,64 @@ func safeSetupFailure(expectedMarker string, result setupRunResult) string {
 		len(result.logText), digest([]byte(result.logText)))
 }
 
+func upgradeLifecycleInstance(base, sourceCommit string, sequenceDiagnostic bool) string {
+	if sequenceDiagnostic {
+		return filepath.Join(base, "sequence-instance-fixture", "synthetic-instance")
+	}
+	prefix := sourceCommit
+	if len(prefix) > 12 {
+		prefix = prefix[:12]
+	}
+	return filepath.Join(`D:\`, "KSESSION-B4-UPGRADE-"+prefix, "synthetic-instance")
+}
+
+func validateFreshInstanceFixture(instance string) error {
+	if _, err := os.Lstat(instance); !os.IsNotExist(err) {
+		return fmt.Errorf("instance fixture leaf already exists")
+	}
+	if _, err := os.Lstat(filepath.Dir(instance)); !os.IsNotExist(err) {
+		return fmt.Errorf("instance fixture parent already exists")
+	}
+	return nil
+}
+
+func TestUpgradeLifecycleInstanceIsolation(t *testing.T) {
+	base := ""
+	if testWork := os.Getenv("KSESSION_TEST_WORK"); testWork != "" {
+		var err error
+		base, err = os.MkdirTemp(testWork, "upgrade-instance-isolation-")
+		if err != nil {
+			t.Fatal(err)
+		}
+	} else {
+		base = t.TempDir()
+	}
+	oldSequenceLayout := filepath.Join(base, "synthetic-instance")
+	if err := validateFreshInstanceFixture(oldSequenceLayout); err == nil {
+		t.Fatal("old sequence layout must be rejected because its parent is the existing evidence root")
+	}
+
+	sequenceInstance := upgradeLifecycleInstance(base, strings.Repeat("a", 40), true)
+	if filepath.Dir(sequenceInstance) == base {
+		t.Fatal("sequence instance must use a new exclusive parent")
+	}
+	if err := validateFreshInstanceFixture(sequenceInstance); err != nil {
+		t.Fatal("new sequence fixture should accept an absent exclusive parent and leaf")
+	}
+	if err := os.Mkdir(filepath.Dir(sequenceInstance), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateFreshInstanceFixture(sequenceInstance); err == nil {
+		t.Fatal("existing sequence parent must remain rejected")
+	}
+
+	fullInstance := upgradeLifecycleInstance(base, "0123456789abcdef", false)
+	wantFull := filepath.Join(`D:\`, "KSESSION-B4-UPGRADE-0123456789ab", "synthetic-instance")
+	if fullInstance != wantFull {
+		t.Fatal("full lifecycle fixture path changed")
+	}
+}
+
 // TestUpgradeLifecycle is intentionally separate from TestSetup: the former proves a real
 // beta.1 -> beta.2 transition while the latter keeps the beta.2 fresh-install regression.
 func TestUpgradeLifecycle(t *testing.T) {
@@ -156,25 +214,62 @@ func TestUpgradeLifecycle(t *testing.T) {
 	}
 	checks := map[string]map[string]string{}
 	sequencePhases := []map[string]string{}
+	sequencePhaseActive := false
 	record := func(id, method string) {
 		checks[id] = map[string]string{"status": "PASS", "method": method}
 		t.Log(id, "PASS", method)
 	}
 	report := map[string]any{"status": "RUNNING", "checks": checks, "beta1SourceCommit": "e9417f036d0cdf736ff84682556a994040f0de0b", "beta2SourceCommit": os.Getenv("GITHUB_SHA")}
 	defer func() {
+		panicked := recover()
+		failed := t.Failed() || panicked != nil
 		file := "UPGRADE-TEST-REPORT.json"
 		if sequenceDiagnostic {
+			if failed && sequencePhaseActive && len(sequencePhases) > 0 {
+				current := sequencePhases[len(sequencePhases)-1]
+				current["result"] = "STAGE_FAILED"
+				current["state"] = "STOPPED"
+				sequencePhaseActive = false
+			}
 			file = "SEQUENCE-DIAGNOSTIC.json"
 			report = map[string]any{"schema": 1, "status": "PASS", "phases": sequencePhases}
 		}
-		if t.Failed() {
+		if failed {
 			report["status"] = "FAIL"
 		} else if !sequenceDiagnostic {
 			report["status"] = "PASS"
 		}
 		b, _ := json.MarshalIndent(report, "", "  ")
 		_ = os.WriteFile(filepath.Join(base, file), append(b, '\n'), 0600)
+		if panicked != nil {
+			panic(panicked)
+		}
 	}()
+	startSequencePhase := func(phase string) {
+		t.Helper()
+		if !sequenceDiagnostic {
+			return
+		}
+		if sequencePhaseActive {
+			t.Fatal("sequence diagnostic phase overlap")
+		}
+		sequencePhases = append(sequencePhases, map[string]string{"phase": phase, "result": "STAGE_PENDING", "state": "RUNNING"})
+		sequencePhaseActive = true
+	}
+	completeSequencePhase := func(phase, result, state string) {
+		t.Helper()
+		if !sequenceDiagnostic {
+			return
+		}
+		if !sequencePhaseActive || len(sequencePhases) == 0 || sequencePhases[len(sequencePhases)-1]["phase"] != phase {
+			t.Fatal("sequence diagnostic phase completion mismatch")
+		}
+		current := sequencePhases[len(sequencePhases)-1]
+		current["result"] = result
+		current["state"] = state
+		sequencePhaseActive = false
+	}
+	startSequencePhase("PRE_ENV_READY")
 
 	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
 	cmdOut := func(exe string, args ...string) []byte {
@@ -235,13 +330,11 @@ func TestUpgradeLifecycle(t *testing.T) {
 	t.Setenv("TMP", os.Getenv("TEMP"))
 	_ = os.Mkdir(os.Getenv("TEMP"), 0700)
 	target := filepath.Join(base, "installed-program")
-	instance := filepath.Join(`D:\`, "KSESSION-B4-UPGRADE-"+os.Getenv("GITHUB_SHA")[:12], "synthetic-instance")
-	if sequenceDiagnostic {
-		instance = filepath.Join(base, "synthetic-instance")
+	instance := upgradeLifecycleInstance(base, os.Getenv("GITHUB_SHA"), sequenceDiagnostic)
+	if e = validateFreshInstanceFixture(instance); e != nil {
+		t.Fatal(e)
 	}
-	if _, e = os.Stat(filepath.Dir(instance)); !os.IsNotExist(e) {
-		t.Fatal("instance fixture already exists")
-	}
+	completeSequencePhase("PRE_ENV_READY", "STAGE_COMPLETE", "COMPLETE")
 	beta2 := filepath.Join(artifact, "K-SESSION-Setup-1.1.0-beta.2.exe")
 
 	n := 0
@@ -376,9 +469,13 @@ func TestUpgradeLifecycle(t *testing.T) {
 		}
 	}
 
+	startSequencePhase("PRE_BETA1_INSTALL")
 	runSetup(beta1, true)
+	completeSequencePhase("PRE_BETA1_INSTALL", "STAGE_COMPLETE", "COMPLETE")
+	startSequencePhase("PRE_REGISTRATION_ASSERT")
 	assertRegistration("1.1.0-beta.1")
 	record("U01", "fresh rebuilt beta.1 installed with real registration and binding")
+	completeSequencePhase("PRE_REGISTRATION_ASSERT", "STAGE_COMPLETE", "COMPLETE")
 	root := filepath.Join(target, "program")
 	launcher := filepath.Join(root, "K-SESSION.exe")
 	startApp := func() *exec.Cmd {
@@ -390,29 +487,40 @@ func TestUpgradeLifecycle(t *testing.T) {
 		}
 		return c
 	}
+	startSequencePhase("PRE_LAUNCH_READY")
 	app := startApp()
 	until(t, func() bool { return lastEvent(instance, "READY") != nil })
 	ready := lastEvent(instance, "READY")
 	pid := uint32(ready["pid"].(float64))
 	port := int(ready["port"].(float64))
 	node := filepath.Join(root, "runtime", "node.exe")
+	completeSequencePhase("PRE_LAUNCH_READY", "STAGE_COMPLETE", "COMPLETE")
+	startSequencePhase("PRE_BETA1_CORE_PROBE")
 	coreProbe("BETA1_INITIAL", node, filepath.Join(repo, "tools/tests/windows-portable/core-client.cjs"), root, instance, fmt.Sprint(port), filepath.Join(base, "core-beta1"), "initial")
+	completeSequencePhase("PRE_BETA1_CORE_PROBE", "STAGE_COMPLETE", "COMPLETE")
+	startSequencePhase("PRE_U02_RUNNING_GUARD")
 	runningLog := runSetup(beta2, false)
 	assertLog(runningLog, "KSESSION_REJECT_RUNNING")
 	if !alivePID(pid) || !alivePID(uint32(app.Process.Pid)) {
 		t.Fatal("upgrade running guard terminated beta.1")
 	}
 	record("U02", "real running beta.1 rejected without terminating Launcher or private Node")
+	completeSequencePhase("PRE_U02_RUNNING_GUARD", "STAGE_COMPLETE", "COMPLETE")
+	startSequencePhase("PRE_BETA1_STOP")
 	cls := "KSESSION_" + digest([]byte(strings.ToLower(instance)))
 	if !dispatchExisting(cls, launcher, true) {
 		t.Fatal("stop beta.1 failed")
 	}
 	until(t, func() bool { return !alivePID(pid) && !alivePID(uint32(app.Process.Pid)) })
 	_ = app.Wait()
+	completeSequencePhase("PRE_BETA1_STOP", "STAGE_COMPLETE", "COMPLETE")
+	startSequencePhase("PRE_OWNED_STATE_SNAPSHOT")
 	instanceStable := walkHash(instance)
 	ownedStable := owned()
+	completeSequencePhase("PRE_OWNED_STATE_SNAPSHOT", "STAGE_COMPLETE", "COMPLETE")
 	probeSequenceIdentity := func(phase string) {
 		t.Helper()
+		startSequencePhase(phase)
 		result := runSetup(beta2, false)
 		reason := "IDENTITY_INTERNAL"
 		markers := safeInstallerMarkers(result.logText)
@@ -436,7 +544,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 		if equalMaps(instanceStable, walkHash(instance)) && equalMaps(ownedStable, owned()) {
 			state = "UNCHANGED"
 		}
-		sequencePhases = append(sequencePhases, map[string]string{"phase": phase, "result": reason, "state": state})
+		completeSequencePhase(phase, reason, state)
 		if reason != "IDENTITY_ACCEPTED" || state != "UNCHANGED" {
 			t.Fatalf("sequence identity phase %s rejected: result=%s state=%s", phase, reason, state)
 		}
@@ -447,6 +555,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 
 	// Corruption gates are exercised against the real beta.1 installation and exact bytes are restored by the harness.
 	for _, probe := range []struct{ id, file string }{{"U15", filepath.Join(instance, "data.json")}, {"U16", filepath.Join(target, "uninstall", "instance-binding.ini")}, {"U17", filepath.Join(root, "app", "login.html")}} {
+		startSequencePhase(probe.id)
 		original := mustRead(t, probe.file)
 		if probe.id == "U16" {
 			if e = os.Rename(probe.file, probe.file+".owned"); e != nil {
@@ -464,14 +573,13 @@ func TestUpgradeLifecycle(t *testing.T) {
 			}
 		}
 		probeResult := runSetup(beta2, false)
+		phaseResult := map[string]string{"U15": "PREFLIGHT_REJECTED", "U16": "IDENTITY_BINDING", "U17": "IDENTITY_PROGRAM"}[probe.id]
 		if sequenceDiagnostic {
 			markers := safeInstallerMarkers(probeResult.logText)
 			want := map[string]string{"U15": "KSESSION_UPGRADE_PREFLIGHT_REJECTED", "U16": "KSESSION_UPGRADE_GATE_IDENTITY_BINDING", "U17": "KSESSION_UPGRADE_GATE_IDENTITY_PROGRAM"}[probe.id]
-			result := map[string]string{"U15": "PREFLIGHT_REJECTED", "U16": "IDENTITY_BINDING", "U17": "IDENTITY_PROGRAM"}[probe.id]
 			if !strings.Contains(markers, want) {
 				t.Fatalf("sequence mutation %s lacked fixed rejection", probe.id)
 			}
-			sequencePhases = append(sequencePhases, map[string]string{"phase": probe.id, "result": result, "state": "CONTROLLED_MUTATION"})
 		}
 		if probe.id == "U16" {
 			if e = os.Rename(probe.file+".owned", probe.file); e != nil {
@@ -486,6 +594,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 			t.Fatal("preflight rejection changed owned state")
 		}
 		record(probe.id, "real beta.1 corruption rejected before persistent changes")
+		completeSequencePhase(probe.id, phaseResult, "CONTROLLED_MUTATION")
 		if sequenceDiagnostic {
 			probeSequenceIdentity("AFTER_" + probe.id)
 		}
@@ -496,6 +605,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 		fixtures = fixtures[:1]
 	}
 	for _, f := range fixtures {
+		startSequencePhase(f.id)
 		binary := filepath.Join(build, f.dir, "artifact", "K-SESSION-Setup-1.1.0-beta.2.exe")
 		text := runSetup(binary, false)
 		assertLog(text, f.marker)
@@ -507,9 +617,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 			method = "target manifest hash mismatch rejected before program rewrite; old owned state and byte-identical instance retained"
 		}
 		record(f.id, method)
-		if sequenceDiagnostic {
-			sequencePhases = append(sequencePhases, map[string]string{"phase": f.id, "result": "SPACE_REJECTED", "state": "UNCHANGED"})
-		}
+		completeSequencePhase(f.id, "SPACE_REJECTED", "UNCHANGED")
 	}
 	if sequenceDiagnostic {
 		probeSequenceIdentity("U20_PRECOPY")
