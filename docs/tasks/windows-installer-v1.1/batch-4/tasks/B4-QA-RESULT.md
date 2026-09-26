@@ -1,6 +1,6 @@
 # B4-QA Result — Final Batch 4 Independent Review
 
-状态：**FAIL — CI 门禁假绿；不是已确认的安装器产品缺陷。**
+状态：**AUTOMATION PASS / QA PASS / HUMAN PENDING（I01/I02/I09）；首轮 FAIL 及修复链完整保留。**
 
 受测提交：`c8886e6b6d413c2fd73d6716621d07a80b337e58`；tree `0f298af80c1cbdf3835f39aca265cbcdb859bea6`。QA 工作树/分支为 `E:/CodexWorkspace/CodexWorktrees/b4-qa/public-source` / `codex/b4-qa`。本任务未修改生产、测试或 workflow，未调度 Hosted，未下载或保存发行 ZIP/EXE，未操作注册表、快捷方式、默认实例或真实业务环境。
 
@@ -37,3 +37,26 @@
 - 基于证据的判断：该缺陷位于测试/workflow 层，现有证据未显示安装器产品行为失败；严格限定的门禁修复可以不消耗 Full 额度。
 - 未完成：B4-QA PASS、Win10 人工 I01/I02/I09。不得进入 Batch 4.5、main、tag 或 Release。
 
+## 修复复审阶段 1 — HOSTED_READY
+
+复审提交：`b7704ab74fb19d270fc4711169aecdc3e5497bb7`；分支 `codex/b4-qa`。首轮 `c8886e6` / F3 假绿结论及失败证据继续有效，本节只判断严格限定的门禁修复是否可进入 QA 专用 Hosted，不追溯改写 F3，也不提前给出 QA PASS。
+
+- 基线与范围：QA 开始时 HEAD 精确为 `b7704ab`，tracked clean，仅保留既有未跟踪 `.test-work/`。修复提交本身恰为 6 个文件：workflow、两个新静态 helper、两份静态契约测试及 T4 RESULT。比较 `c8886e6..b7704ab` 后，除治理文档外，非文档差异精确为上述 workflow、两个 helper和两份契约测试；产品、Setup 构建、payload、身份接受策略、transaction/gate/detection/preflight、Go 生命周期、Runtime/Launcher/Portable、package/lock 均无差异。F3 Artifact 仍只来自 `c8886e6`，不得称为由 `b7704ab` 构建。
+- fail-fast：Full historical job 与 `qa-static` 复用同一个 `static-gate.ps1`。六条原生 Node 命令固定串行，每条执行后立即检查 `$LASTEXITCODE`；任一非零立即停止。可执行反例在中文及空格路径中证明首条失败固定 exit 41、后续 sentinel 不执行；全通过正例固定 exit 0 且 sentinel 执行。
+- 报告闭包：helper 只 create-new 写入 `schema/status/gate/sourceCommit` 四字段 UTF-8 JSON。非法 source commit 固定 exit 40、无报告及输入泄露。独立 validator 严格检查字段集合、Int64 schema 1、大小写敏感 PASS/FAIL、固定 gate、40 位小写 commit 且与预期一致。Full 与 QA 两个调用方均要求 helper exit 0 且报告 status 为 PASS；合法 FAIL 可由 `qa-static` 的 always-upload 保留，但主步骤必定失败。
+- 路由边界：`qa-static` 仅允许公开仓库 `KG718718/spxt-public`、开发分支、`workflow_dispatch` 和精确 `mode=qa-static`；只运行共享静态门禁，不调用 Full、rebuild、invoke、真实安装、Runtime/Launcher/Portable/Setup 构建或业务环境。原 identity/sequence/full/default/push 条件未放宽。
+- 独立本地复测：historical identity `71/71 PASS`；upgrade lifecycle contract `15/15 PASS`；对真实仓库直接运行共享 helper 返回 exit 0，并生成严格四字段 `HISTORICAL_IDENTITY_STATIC/PASS` 报告，sourceCommit 精确为 `b7704ab`。`git diff --check c8886e6..b7704ab` 仅报告两份既有治理文档尾部空行，无修复代码 whitespace error。
+- Artifact 延续证据：主控已对 F3 原始 ZIP 与其中 EXE 在内存独立重算哈希，分别为 `e6b01fe7c4499526eb99a837892a0c0641ad2232c84981b191b2ac6f7c18f3c6` 与 `877383fe14bf089eb0a4e130641a957062c07ab258d22d59895c46f9b3f671b6`，并核对 12 文件 allowlist、U30、26/742/0/0、I29+D13、offline、Portable、source 与 privacy PASS；本 QA 未下载或保存 ZIP/EXE。
+
+阶段结论：**HOSTED_READY**。可由唯一主控使用既有 QA Hosted 额度第 1 次显式运行 `qa-static`。运行前不得将本结论写成 QA PASS；运行后须核对精确 source commit、job 路由、真实 helper 执行、PASS 报告及 Artifact 闭包，再由同一 QA thread 完成最终复审。当前 QA Hosted 用量仍为 `0/2`，本任务未触发 Hosted、未 push，I01/I02/I09 继续 HUMAN PENDING。
+
+## 修复复审阶段 2 — Hosted 闭合与最终结论
+
+- QA1 run `36249047967` / job `108423523439` / source `4f95e981c6b765e3ab225778508801eadbc20df3` 已由 GitHub API 和原始 job log 独立核对：事件为 `workflow_dispatch`，分支为 `codex/windows-installer-v1.1`，唯一成功 job 为 `qa-static`；`identity`、`historical-identity`、`sequence`、`setup` 四个 job 全部 skipped。运行未进入 Full、构建或安装。
+- `4f95e98` 相对已审查修复提交 `b7704ab` 仅修改 `docs/tasks/windows-installer-v1.1/batch-4/ORCHESTRATION.md` 两行；`git diff --quiet b7704ab 4f95e98 -- tools .github` 返回 0。因此 QA1 执行的 workflow/helper/测试与阶段 1 审查版本逐字节一致。
+- 原始 job log 明确调用共享 `static-gate.ps1`，sourceCommit 参数精确为 `4f95e98`；该 helper 的第三条固定命令真实运行包含首失败停止及 sentinel 反例的 historical identity 测试。任何该测试失败都会立即触发 exit 41/FAIL，不能继续到后续命令或被其成功覆盖；workflow 调用方又同时要求 exit 0 与 status PASS。因此本次 success 闭合了首轮假绿缺陷，不是仅靠静态文本推断。
+- QA1 Artifact `10908731584` 名称为 `historical-identity-static-36249047967-1`，GitHub API 记录 286 bytes、未过期、ZIP digest `sha256:8e044cb9a4709d4bd5a4ee0a375e889c6d4d6f5e3b848a09e1196e80625d2c7f`，source 精确为该 run / branch / `4f95e98`。主控已在内存独立重算 ZIP 哈希并核对单文件 allowlist、隐私和内容；没有发行包落盘。
+- 唯一安全文件 `historical-static-gate.json` 为 `{"schema":1,"status":"PASS","gate":"HISTORICAL_IDENTITY_STATIC","sourceCommit":"4f95e981c6b765e3ab225778508801eadbc20df3"}`。QA 使用仓库内严格 validator 再验 PASS；本地安全 JSON SHA256 为 `3065a3828bf6c386eede32efa80b1b7d91045f7814b35e6e298d3eb5d8c3b9d0`。报告无路径、日志、身份 bundle、凭据或任意失败文本。
+- QA Hosted 预算实际使用 `1/2`、剩余 `1`；没有新增 D5/F3、Full 或构建运行。F3 安装器候选及 Artifact 来源仍严格为 `c8886e6` / run `36246132535` / Artifact `10907910968`；QA1 只验证后续 CI 静态门禁修复，不改变或冒充安装包 source。
+
+最终判断：首轮 P1 假绿缺陷已由最小 CI/静态测试修复、本地正反例和专用 Hosted 共同闭合；Artifact 影响输入相对 F3 未改变，既有 U01—U30、26/742、Portable、offline、I/D 自动项和 Artifact 身份/隐私证据可继续使用。因此 Batch 4 工程自动化与独立 QA 结论为 **AUTOMATION PASS / QA PASS**。I01、I02、I09 仍须用户在 Win10 上人工验收，终态为 **HUMAN PENDING**；本结论不授权 Batch 4.5、合并 main、tag 或 Release。
