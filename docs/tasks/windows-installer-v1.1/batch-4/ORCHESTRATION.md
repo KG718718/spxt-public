@@ -2,6 +2,8 @@
 
 ## 当前执行授权｜2026-09-26
 
+最新断点：D3 run36212532363结束FAIL，Artifact10896127812严格JSON通过；前17阶段+U21通过，U23固定POST_COPY_MARKER_MISSING/UNCHANGED，未证明post-copy注入。已向原B4-T4发送完整B4-T4-POSTCOPY-20260926-04卡，REWORK/DISPATCHED，从c717d8c继续；return target新主控不变。诊断剩1、Full剩1、QA剩2；禁止用full规避U23未定位问题。下方D3 RUNNING为启动历史。
+
 当前：原T4第三轮2ed43cc及增量c717d8c主动RETURNED→REVIEWED→INTEGRATED，开发分支e6ae80d→b3ab597；主控中文路径14/14专项、纯Go两项、PS AST通过，生产身份/数据规则不变。D3 run36212532363@b3ab5978ca90be3fa5d3c5f793735fc42879ffc6已显式启动mode=sequence，19阶段含U21/U23；local/origin/API核验一致。预算剩诊断1、完整Setup1、QA2，先取D3证据再决定最后full；下方REWORK状态为历史。尚无最终安装包或QA PASS。
 
 最新工程断点：F1 run36210201290@6fdb7ed1在U21失败，fault-copy意外success；fresh Setup、D13/13及U01/U02/U15—U18/U20已通过，后续未执行，网络恢复true。失败Artifact10895856282已核实；原T4第三轮B4-T4-COPY-FAULT-20260926-03已REWORK/DISPATCHED，继续4918e5b，不另建任务。预算剩诊断2、完整Setup1、QA2；先固定copy/post-copy故障证据和最小修复，禁止无修改retry。下文F1 RUNNING为派单时历史状态。

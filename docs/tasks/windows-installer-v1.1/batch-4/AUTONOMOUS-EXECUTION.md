@@ -27,13 +27,15 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 | D1 | 最小诊断 | 4319e08694b6660477397102af20d95eb25062b4 | 36208733404 | 17阶段闭合报告、sequence专属夹具父目录；主控六文件Review及13/13契约、三份PS AST PASS | FAIL；八个PRE阶段完成，BASELINE=IDENTITY_REGISTRATION_VERSION/UNCHANGED；已扣1次 |
 | D2 | 最小诊断 | 9e070de4efa7bc10118a7942c33d24b51cb326d0 | 36209825354 | 三处JSON显式UTF8、固定name/version/both原因；主控八文件Review、独立22/22专项PASS，生产detection/gate未改；local/origin/API同SHA | PASS；17阶段完整，BASELINE及U15/16/17恢复后与U20_PRECOPY均IDENTITY_ACCEPTED/UNCHANGED |
 | F1 | 完整Setup | 6fdb7ed19467ac64a80c2f4824b4dfe0431fc62d | 36210201290 | D2专项PASS；实现与D2一致，后续仅治理文档和公开措辞修正；主控npm26 files/failed0；local/origin/API同SHA | FAIL于U21：fault-copy success=true want=false；fresh Setup及U01/U02/U15—U18/U20通过，742及最终privacy未运行 |
-| D3 | 最小诊断 | b3ab5978ca90be3fa5d3c5f793735fc42879ffc6 | 36212532363 | 第三轮copy原生失败、post-install退出/启动保护，19阶段包含U21/U23；增量中文路径修复；主控14/14契约、2项纯Go、3份PS AST PASS；local/origin/API一致 | RUNNING；显式mode=sequence，已扣第3次 |
+| D3 | 最小诊断 | b3ab5978ca90be3fa5d3c5f793735fc42879ffc6 | 36212532363 | 第三轮copy原生失败、post-install退出/启动保护，19阶段包含U21/U23；增量中文路径修复；主控14/14契约、2项纯Go、3份PS AST PASS；local/origin/API一致 | FAIL；前17阶段和U21 PASS，U23=POST_COPY_MARKER_MISSING/UNCHANGED；已扣第3次 |
 
 所有工程push带[skip ci]，用明确workflow_dispatch及mode扣减预算；不允许push隐式启动完整流水线。Full Setup本身同commit构建Runtime/Launcher/Portable/Setup和742门禁，无须为了名字另外触发重复流水线。每轮首失败证据保留，闭合Artifact不含原始日志/路径/凭据/业务内容。
 
 D2等待期间主控整合目录补跑npm：首次26 files/failed1，定位为新任务卡的一处来源措辞触发既有公开文档门禁；只改为“仅阅读指定公开仓库材料”，范围约束不变，未修改测试。修正后26 files/failed0；本机hosted-only SKIP照常，不冒充742结果。D2不运行公开回归；Full必须使用含此文档修正的后续HEAD。
 
 ## 当前任务
+
+当前REWORK/DISPATCHED：B4-T4-POSTCOPY-20260926-04，继续原thread/worktree@c717d8c。D3 Artifact10896127812，digest35a94f85980a2ef99460af04fc4a99ce5449f1036802b74f61976ee2c875b1ff，只有闭合JSON，19阶段顺序/字段/隐私门禁通过；U21=COPY_FAILED/UNCHANGED，U23=POST_COPY_MARKER_MISSING/UNCHANGED。U23仅证明非零退出且恢复，不证明目标故障注入。先定位prepare/copy/commit/installed-verify/fixture/rollback并补固定安全诊断、本地反例、最小修复，再Review决定最后D4；不直接跑F2。完整卡tasks/B4-T4-POSTCOPY-20260926.md。尚无Full或QA PASS。
 
 第三轮增量c717d8c1e976679dec99dc67018e4db41bbb13be主动RETURNED→REVIEWED→INTEGRATED为b3ab5978ca90be3fa5d3c5f793735fc42879ffc6。主控含中文工作目录实际14/14契约PASS、0fail/skip；同批validator反例主动覆盖合成中文目录，公开文档8/8 PASS。实现与任务树逐字一致。D3仅诊断故障停止及旧状态不变；exact beta.1 payload不作为当前beta.2升级成功或发行物证据。
 
