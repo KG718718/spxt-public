@@ -2,6 +2,12 @@
 
 本仓库维护面向广告公司的 OA、财务核对和数据统计系统。
 
+## 当前恢复授权｜2026-09-26
+
+用户已确认 MASTER RECOVERY PASS 并立即恢复 Batch 4。唯一 ACTIVE ENGINEERING MASTER 为 `01a0db0e-c950-79e0-8e11-07155e0742f2`；旧主控 `019fa7e9-f46b-7192-9052-cd0aac7c2cc5` 永久保持 **RETIRED — READ ONLY HISTORY**，即使认证恢复也没有派单、Review、Integration、Push、Actions或QA调度权。
+
+本次恢复覆盖下文Phase2暂停及旧Hosted次数限制；新预算为最小诊断4次、完整Setup2次、QA相关Hosted2次，按 `docs/tasks/windows-installer-v1.1/batch-4/AUTONOMOUS-EXECUTION.md` 逐次记录，不无修改retry。普通工程问题自动续行；只有用户列出的产品/UX/schema/migration/数据生命周期/信任或安全放宽/技术路线/平台改变、预算耗尽或无法安全恢复才升级。主控不写实质实现，继续原Execution，不重开已整合任务。最终停在 AUTOMATION PASS / QA PASS / HUMAN PENDING，不进入Batch4.5，不操作main/tag/Release。
+
 ## 当前唯一工程主控｜2026-09-26 迁移决定
 
 - 唯一活动主控及 Execution / QA 回单目标：`01a0db0e-c950-79e0-8e11-07155e0742f2`。

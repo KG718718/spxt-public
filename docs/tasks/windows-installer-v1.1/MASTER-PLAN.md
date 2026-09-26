@@ -1,5 +1,9 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## 2026-09-26 已批准恢复
+
+MASTER RECOVERY PASS后用户恢复Batch4自主工程执行，沿用原B4-T4与f8bd，不重做T1/T1A/T2/T3。新Hosted预算与状态以 [AUTONOMOUS-EXECUTION.md](batch-4/AUTONOMOUS-EXECUTION.md) 为准，覆盖下文Phase2暂停及旧次数限制。最终自动化及独立QA全部通过后仍为HUMAN PENDING；禁止进入Batch4.5/main/tag/Release。
+
 ## 主控迁移与当前暂停边界｜2026-09-26
 
 唯一工程主控及回单目标已由用户指定为 `01a0db0e-c950-79e0-8e11-07155e0742f2`。旧 ID `019fa7e9-f46b-7192-9052-cd0aac7c2cc5` 为 RETIRED — AUTH FAILURE，仅用于历史追溯。Phase 2 只迁移控制职责，Batch 4 生产开发、Hosted 和 QA 启动暂停；原任务身份、工作树、分支、baseline 和 scope 不变。最新迁移回执以 [MASTER-MIGRATION.md](batch-4/MASTER-MIGRATION.md) 为准；下文旧阶段状态不覆盖该决定。

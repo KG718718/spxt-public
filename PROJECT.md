@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 4 自动续行｜2026-09-26
+
+用户已批准迁移完成后立即恢复原B4-T4。两份治理提交已仅推 `codex/windows-installer-v1.1`，local/origin/GitHub API均核验为 `159ee4163dd52c08584856521463a793eb6e5c7a`；治理push未触发完整Actions。唯一新主控及回单目标不变，旧主控改记 RETIRED — READ ONLY HISTORY。
+
+当前先处理pre-baseline固定阶段诊断，原任务/工作树/branch/baseline/scope保留。最小诊断4、Full Setup2、QA Hosted2的剩余预算及当前状态见 [自主执行台账](docs/tasks/windows-installer-v1.1/batch-4/AUTONOMOUS-EXECUTION.md)。本节替代下文暂停与旧预算耗尽的当前效力，历史失败仍保留，不能预先宣称Batch4通过。
+
 ## 唯一工程主控迁移｜2026-09-26
 
 用户批准 Phase 2 控制职责接管：唯一活动主控及回单目标为 `01a0db0e-c950-79e0-8e11-07155e0742f2`；旧主控 `019fa7e9-f46b-7192-9052-cd0aac7c2cc5` 标记 **RETIRED — AUTH FAILURE**，仅保留历史读取用途。当前主要目录继续使用本公开仓库；本轮仅治理文档及回单握手，不恢复 Batch 4 生产开发、Hosted 或 QA。
