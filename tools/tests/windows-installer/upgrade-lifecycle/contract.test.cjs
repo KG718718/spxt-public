@@ -29,7 +29,7 @@ test('identity stop-loss workflow runs only the exact beta1 identity diagnostic'
  const workflow=read('.github/workflows/setup-v3.yml'),script=read('tools/windows-installer/identity-diagnostic.ps1'),helper=read('tools/windows-installer/identity-diagnostic.cjs');
  const setup=workflow.slice(workflow.indexOf('  setup:'),workflow.indexOf('  identity:'));
  const identity=workflow.slice(workflow.indexOf('  identity:'),workflow.indexOf('  sequence:'));
- assert.match(workflow,/workflow_dispatch:[\s\S]*mode:[\s\S]*required: false[\s\S]*default: identity[\s\S]*options:[\s\S]*- identity[\s\S]*- sequence[\s\S]*- full/);
+ assert.match(workflow,/workflow_dispatch:[\s\S]*mode:[\s\S]*required: false[\s\S]*default: identity[\s\S]*options:[\s\S]*- identity[\s\S]*- sequence[\s\S]*- qa-static[\s\S]*- full/);
  assert.match(setup,/github\.event_name == 'push'[\s\S]*\[identity-diagnostic\][\s\S]*\[sequence-diagnostic\][\s\S]*github\.event_name == 'workflow_dispatch' && inputs\.mode == 'full'/);
  assert.match(identity,/github\.event_name == 'workflow_dispatch' && \(inputs\.mode == '' \|\| inputs\.mode == 'identity'\)/);
  assert.match(workflow,/historical-identity:[\s\S]*if: github\.event_name == 'workflow_dispatch' && inputs\.mode == 'full'/);
@@ -41,6 +41,20 @@ test('identity stop-loss workflow runs only the exact beta1 identity diagnostic'
  assert.doesNotMatch(script,/Write-Output \$taskSnapshot|Write-Output \$taskRequest|Get-Content -LiteralPath \$taskLog/);
  for(const marker of ['safeIdentityReason','IDENTITY_ACCEPTED','IDENTITY_INTERNAL','flag: \'wx\'','PREFLIGHT_OK'])assert.match(helper,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.doesNotMatch(helper,/console\.error|error\.message|error\.stack|JSON\.stringify\(request/);
+});
+
+test('qa-static is a closed manual route and reuses the full historical static gate',()=>{
+ const workflow=read('.github/workflows/setup-v3.yml'),reportHelper=read('tools/windows-installer/historical-identity/static-gate-report.ps1');
+ const qa=workflow.slice(workflow.indexOf('  qa-static:'),workflow.indexOf('  historical-identity:'));
+ const historical=workflow.slice(workflow.indexOf('  historical-identity:'));
+ assert.match(qa,/github\.repository == 'KG718718\/spxt-public'[\s\S]*github\.ref == 'refs\/heads\/codex\/windows-installer-v1\.1'[\s\S]*github\.event_name == 'workflow_dispatch'[\s\S]*inputs\.mode == 'qa-static'/);
+ for(const block of [qa,historical])assert.match(block,/historical-identity\/static-gate\.ps1 -RepositoryRoot \$env:GITHUB_WORKSPACE/);
+ for(const block of [qa,historical])assert.match(block,/static-gate-report\.ps1[\s\S]*Test-KSessionHistoricalStaticGateReport[\s\S]*ExpectedCommit/);
+ for(const block of [qa,historical])assert.match(block,/\$taskExit -ne 0 -or \$taskEvidence\.status -cne 'PASS'/);
+ for(const forbidden of ['rebuild-beta1.ps1','historical-identity/invoke.ps1','windows-installer/ci.ps1','windows-portable/ci.ps1','K-SESSION-Setup','setup-build','beta1-build'])assert.doesNotMatch(qa,new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.match(qa,/actions\/upload-artifact@[\s\S]*if: always\(\)[\s\S]*KSESSION_HISTORICAL_STATIC_REPORT/);
+ assert.match(historical,/inputs\.mode == 'full'/);
+ for(const marker of ["'gate,schema,sourceCommit,status'","'HISTORICAL_IDENTITY_STATIC'","@('PASS','FAIL')","'^[a-f0-9]{40}$'"])assert.match(reportHelper,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
 });
 
 test('closed upgrade-fault sequence is manual, bounded, and does not build current portable or run regression',()=>{

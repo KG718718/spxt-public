@@ -182,6 +182,15 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - 本轮本地验证：transaction/lifecycle/contract 聚焦 30/30 PASS；preflight 21 项为 20 PASS / 0 FAIL / 1 本机 file-symlink privilege SKIP；固定 Go 1.27.1 的 `TestSafeCoreProbeFailure`、`TestUpgradeLifecycleInstanceIsolation` 及 compile-only PASS，并已 `gofmt`；`npm test` 为 26 files / failed 0；PowerShell AST、修改 CJS `node --check`、`git diff --check` PASS。一次全 installer 并行汇总得到 178 PASS / 3 FAIL / 2 SKIP，其中 historical workflow 旧断言与当前既有 `inputs.mode == 'full'` 不符，另有并行 `subst` 卷正例冲突；聚焦单独 preflight/subst 已 PASS，未为这两个非本轮产品失败改代码。
 - 本机未运行 Inno 编译、真实安装/注册表/快捷方式、断网或 Hosted D5/F3；因此当前结论只是本地修复候选，不能写 U22、Batch 4 或 Automation PASS。D5、F3、QA 仍仅由主控按预算显式调度。
 
+## QA 历史静态门禁失败传播修复
+
+- 已确认 F3 run `36246132535` / tested `c8886e6b6d413c2fd73d6716621d07a80b337e58` / setup job `108415569184` workflow success；原始 U01—U30、26/742/fail0/skip0、Portable/offline、29 自动 I 项及 D01—D13 均 PASS，3 个人工项 pending。该 F3 Artifact `10907910968` 仍只代表 `c8886e6` 受测 candidate，本轮治理 commit 未构建或替换该 Artifact。
+- 修复前本地直接运行 `default-registered Setup workflow...` 确定性 FAIL：测试仍要求旧 historical job 条件，实际 workflow 已正确增加 `inputs.mode == 'full'`。独立 QA 又从 Hosted 原始历史 job 日志确认 70 tests / 69 pass / 1 fail；同一 PowerShell step 的后续成功原生命令覆盖了前序 `$LASTEXITCODE`，造成静态门禁假绿。这是测试/门禁传播缺陷，不是已确认产品缺陷。
+- 新增 `historical-identity/static-gate.ps1` 作为 Full historical job 与可选 `qa-static` job 的唯一共同实现。它按固定顺序运行原有六条静态/合成命令，每条立即检查非零退出；任一未知/非零均停止，最终只以 create-new UTF-8 JSON 写出 `{schema,status,gate,sourceCommit}`，不输出原始日志、路径、bundle 或错误正文。非法 sourceCommit/路径输入固定 exit 40 且不生成报告，不能把任意输入带入可上传 JSON；命令失败固定 exit 41 并生成闭合 FAIL。
+- workflow 保留 historical job 的精确 `workflow_dispatch + mode=full + public repo + dev branch` 条件；新增 `qa-static` 也只允许精确 public repo/dev branch/manual mode，只运行共同静态门禁并上传闭合 JSON，不调用 rebuild、invoke、真实安装、Runtime/Launcher/Portable/Setup、Full、业务环境或发行构建。两个调用方在 schema 验证后还同时要求原生退出码为 0 且 evidence status 严格为 PASS；合法 FAIL 只可作为失败证据上传，不能因退出码异常为 0 继续绿灯。默认 identity、sequence、full 与 push 行为未放宽。
+- 本地可执行反例在含中文和空格的隔离目录真实启动 PowerShell/Node：首个 `node --check` 非零时 helper 固定 exit 41、report=FAIL，最后一个本可成功并写 sentinel 的原生命令未执行；全通过正例固定 exit 0、report=PASS 且 sentinel 存在。stdout/stderr 均为空，报告拒绝路径和任意失败文本。独立 report validator 精确要求四字段集合、Int64 schema 1、固定 gate、大小写严格 PASS/FAIL、40位小写 sourceCommit 且等于受测 `github.sha`；额外字段、错误类型、大小写、未知 gate、commit 不匹配均拒绝。真实仓库同一 helper 完整执行后得到固定 `HISTORICAL_IDENTITY_STATIC/PASS`。
+- 本地证据：historical identity + lifecycle contract 共 86/86 PASS；其中修复前失败的精确 full-only 契约、共同 helper、fail-fast 正反例、qa-static 封闭路由全部 PASS。产品实现、Setup payload、身份接受策略、transaction/gate/detection/preflight、Go 生命周期、Runtime/Launcher/Portable、schema/migration/package/lock/742 计数均未修改；本轮 diff 仅 workflow、静态 helper、两份契约测试及本 RESULT。
+
 ## 修改文件
 
 - `.github/workflows/setup-v3.yml`（identity/sequence/full dispatch 互斥及 push marker）
@@ -193,6 +202,7 @@ U01、U02、U15—U18 已在第十八次 hosted 真实 PASS；U20 为 **FAIL**�
 - `tools/windows-installer/upgrade-detection/index.cjs`
 - `tools/tests/windows-installer/upgrade-detection/upgrade-detection.test.cjs`
 - `tools/windows-installer/{identity-diagnostic.cjs,identity-diagnostic.ps1}`
+- `tools/windows-installer/historical-identity/{static-gate.ps1,static-gate-report.ps1}`
 - `tools/windows-installer/{sequence-diagnostic.ps1,sequence-diagnostic-path.ps1,sequence-diagnostic-report.ps1,sequence-identity.cjs}`
 - `tools/windows-launcher/{setup_windows_test.go,setup_wizard_windows_test.go,upgrade_windows_test.go}`
 - `tools/tests/windows-portable/core-client.cjs`

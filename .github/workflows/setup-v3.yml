@@ -10,13 +10,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Run an identity, closed upgrade-fault sequence, or full Setup workflow
+        description: Run an identity, closed upgrade-fault sequence, historical static QA, or full Setup workflow
         required: false
         default: identity
         type: choice
         options:
           - identity
           - sequence
+          - qa-static
           - full
 permissions:
   contents: read
@@ -221,6 +222,45 @@ jobs:
           foreach($taskPhase in $taskReport.phases){
             "- $($taskPhase.phase): $($taskPhase.result) / $($taskPhase.state)" >> $env:GITHUB_STEP_SUMMARY
           }
+  qa-static:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1' && github.event_name == 'workflow_dispatch' && inputs.mode == 'qa-static'
+    permissions:
+      contents: read
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - name: Exact public Git bytes
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Historical identity static gate only
+        shell: pwsh
+        run: |
+          $taskReport=Join-Path $env:RUNNER_TEMP 'historical-static-gate.json'
+          & ./tools/windows-installer/historical-identity/static-gate.ps1 -RepositoryRoot $env:GITHUB_WORKSPACE -ReportPath $taskReport -SourceCommit '${{ github.sha }}'
+          $taskExit=$LASTEXITCODE
+          . ./tools/windows-installer/historical-identity/static-gate-report.ps1
+          $taskEvidence=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json
+          Test-KSessionHistoricalStaticGateReport -Report $taskEvidence -ExpectedCommit '${{ github.sha }}'
+          "KSESSION_HISTORICAL_STATIC_REPORT=$taskReport" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          if($taskExit -ne 0 -or $taskEvidence.status -cne 'PASS'){throw 'Historical identity static gate failed'}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: historical-identity-static-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.KSESSION_HISTORICAL_STATIC_REPORT }}
+          if-no-files-found: error
+          retention-days: 30
+      - name: Fixed historical static summary only
+        if: always()
+        shell: pwsh
+        run: |
+          $taskReport=Get-Content -LiteralPath $env:KSESSION_HISTORICAL_STATIC_REPORT -Raw|ConvertFrom-Json
+          . ./tools/windows-installer/historical-identity/static-gate-report.ps1
+          Test-KSessionHistoricalStaticGateReport -Report $taskReport -ExpectedCommit '${{ github.sha }}'
+          "Historical identity static gate: $($taskReport.status)" >> $env:GITHUB_STEP_SUMMARY
   historical-identity:
     if: github.event_name == 'workflow_dispatch' && inputs.mode == 'full' && github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1'
     permissions:
@@ -238,12 +278,13 @@ jobs:
       - name: Static and synthetic historical identity gates
         shell: pwsh
         run: |
-          node --check tools/windows-installer/historical-identity/index.cjs
-          node --check tools/windows-installer/historical-identity/cli.cjs
-          node --test tools/tests/windows-installer/historical-identity/historical-identity.test.cjs
-          node --test tools/tests/windows-installer/upgrade-detection/upgrade-detection.test.cjs
-          node --test tools/tests/windows-installer/upgrade-preflight/preflight.test.cjs
-          node tools/tests/windows-installer/contract.cjs
+          $taskReport=Join-Path $env:RUNNER_TEMP 'historical-static-gate.json'
+          & ./tools/windows-installer/historical-identity/static-gate.ps1 -RepositoryRoot $env:GITHUB_WORKSPACE -ReportPath $taskReport -SourceCommit '${{ github.sha }}'
+          $taskExit=$LASTEXITCODE
+          . ./tools/windows-installer/historical-identity/static-gate-report.ps1
+          $taskEvidence=Get-Content -LiteralPath $taskReport -Raw|ConvertFrom-Json
+          Test-KSessionHistoricalStaticGateReport -Report $taskEvidence -ExpectedCommit '${{ github.sha }}'
+          if($taskExit -ne 0 -or $taskEvidence.status -cne 'PASS'){throw 'Historical identity static gate failed'}
       - name: Install historical beta.1 and capture exact post-install identity
         shell: pwsh
         env:

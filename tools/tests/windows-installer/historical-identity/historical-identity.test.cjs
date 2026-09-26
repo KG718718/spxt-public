@@ -251,7 +251,7 @@ test('default-registered Setup workflow isolates historical capture to manual de
   const start = workflow.indexOf('\n  historical-identity:');
   assert.ok(start > 0, 'historical job missing');
   const historical = workflow.slice(start);
-  assert.match(historical, /if: github\.event_name == 'workflow_dispatch' && github\.repository == 'KG718718\/spxt-public' && github\.ref == 'refs\/heads\/codex\/windows-installer-v1\.1'/);
+  assert.match(historical, /if: github\.event_name == 'workflow_dispatch' && inputs\.mode == 'full' && github\.repository == 'KG718718\/spxt-public' && github\.ref == 'refs\/heads\/codex\/windows-installer-v1\.1'/);
   assert.match(historical, /permissions:\s*\n\s+contents: read\s*\n\s+actions: read/);
   assert.match(historical, /invoke\.ps1/);
   assert.match(historical, /C:\/KSESSION-B4-T1A-EVIDENCE\/historical-identity-evidence\.json/);
@@ -259,6 +259,61 @@ test('default-registered Setup workflow isolates historical capture to manual de
   assert.match(historical, /if: success\(\)[\s\S]*path: \$\{\{ env\.KSESSION_HISTORICAL_EVIDENCE \}\}/);
   assert.doesNotMatch(historical, /(?:\.exe|artifact\.zip|installed|taskWork)\s*$/im);
   assert.equal((historical.match(/actions\/upload-artifact@/g) || []).length, 1, 'historical job uploads exactly one artifact');
+});
+
+test('historical static gate is shared, fail-fast, path-safe, and emits only a closed report', () => {
+  const root = path.resolve(__dirname, '../../../..');
+  const workflow = fs.readFileSync(path.join(root, '.github/workflows/setup-v3.yml'), 'utf8');
+  const helper = path.join(root, 'tools/windows-installer/historical-identity/static-gate.ps1');
+  const reportHelper = path.join(root, 'tools/windows-installer/historical-identity/static-gate-report.ps1');
+  const qaStart = workflow.indexOf('\n  qa-static:'), historicalStart = workflow.indexOf('\n  historical-identity:');
+  assert.ok(qaStart > 0 && historicalStart > qaStart);
+  const qa = workflow.slice(qaStart, historicalStart), historical = workflow.slice(historicalStart);
+  assert.match(qa, /github\.repository == 'KG718718\/spxt-public'[\s\S]*github\.ref == 'refs\/heads\/codex\/windows-installer-v1\.1'[\s\S]*github\.event_name == 'workflow_dispatch'[\s\S]*inputs\.mode == 'qa-static'/);
+  for (const block of [qa, historical]) assert.match(block, /historical-identity\/static-gate\.ps1 -RepositoryRoot \$env:GITHUB_WORKSPACE/);
+  for (const forbidden of ['rebuild-beta1.ps1','historical-identity/invoke.ps1','windows-installer/ci.ps1','windows-portable/ci.ps1','K-SESSION-Setup']) assert.doesNotMatch(qa, new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(qa, /if: always\(\)[\s\S]*historical-identity-static-[\s\S]*KSESSION_HISTORICAL_STATIC_REPORT/);
+  for (const block of [qa, historical]) assert.match(block, /static-gate-report\.ps1[\s\S]*Test-KSessionHistoricalStaticGateReport[\s\S]*ExpectedCommit/);
+  for (const block of [qa, historical]) assert.match(block, /\$taskExit -ne 0 -or \$taskEvidence\.status -cne 'PASS'/);
+
+  const makeFixture = (base, invalidFirst) => {
+    const put = (relative, text) => { const file = path.join(base, relative); fs.mkdirSync(path.dirname(file), {recursive:true}); fs.writeFileSync(file, text); };
+    put('tools/windows-installer/historical-identity/index.cjs', invalidFirst ? '}' : "'use strict';\n");
+    put('tools/windows-installer/historical-identity/cli.cjs', "'use strict';\n");
+    put('tools/tests/windows-installer/historical-identity/historical-identity.test.cjs', "'use strict';require('node:test')('synthetic pass',()=>{});\n");
+    put('tools/tests/windows-installer/upgrade-detection/upgrade-detection.test.cjs', "'use strict';require('node:test')('synthetic pass',()=>{});\n");
+    put('tools/tests/windows-installer/upgrade-preflight/preflight.test.cjs', "'use strict';require('node:test')('synthetic pass',()=>{});\n");
+    put('tools/tests/windows-installer/contract.cjs', `'use strict';require('node:fs').writeFileSync(${JSON.stringify(path.join(base, 'later-ran'))},'ran');\n`);
+  };
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'ksession-static-gate-'));
+  try {
+    for (const [name, invalidFirst, expectedStatus] of [['前序失败 with spaces', true, 'FAIL'], ['全部通过 with spaces', false, 'PASS']]) {
+      const fixture = path.join(temp, name), report = path.join(temp, `${name}-报告.json`), sentinel = path.join(fixture, 'later-ran');
+      fs.mkdirSync(fixture); makeFixture(fixture, invalidFirst);
+      const result = childProcess.spawnSync('pwsh', ['-NoProfile','-NonInteractive','-File',helper,'-RepositoryRoot',fixture,'-ReportPath',report,'-SourceCommit','a'.repeat(40)],
+        {encoding:'utf8',windowsHide:true});
+      assert.equal(result.status, invalidFirst ? 41 : 0, result.stderr);
+      assert.equal(result.stdout, ''); assert.equal(result.stderr, '');
+      assert.equal(fs.existsSync(sentinel), !invalidFirst, `${name}: later successful command execution must reflect fail-fast boundary`);
+      const evidence = JSON.parse(fs.readFileSync(report, 'utf8'));
+      assert.deepEqual(evidence, {schema:1,status:expectedStatus,gate:'HISTORICAL_IDENTITY_STATIC',sourceCommit:'a'.repeat(40)});
+      assert.doesNotMatch(fs.readFileSync(report, 'utf8'), /ksession-static-gate|with spaces|前序失败|全部通过|[A-Z]:\\/i);
+    }
+    const invalidReport=path.join(temp,'invalid-source-report.json');
+    const invalidInput=childProcess.spawnSync('pwsh',['-NoProfile','-NonInteractive','-File',helper,'-RepositoryRoot',temp,'-ReportPath',invalidReport,'-SourceCommit','path=E:\\private'],{encoding:'utf8',windowsHide:true});
+    assert.equal(invalidInput.status,40);assert.equal(invalidInput.stdout,'');assert.equal(invalidInput.stderr,'');assert.equal(fs.existsSync(invalidReport),false);
+
+    const expected='a'.repeat(40),valid={schema:1,status:'PASS',gate:'HISTORICAL_IDENTITY_STATIC',sourceCommit:expected};
+    const cases=[
+      [valid,true],[{...valid,status:'FAIL'},true],[{...valid,extra:'forbidden'},false],[{...valid,schema:'1'},false],
+      [{...valid,schema:1.5},false],[{...valid,status:'pass'},false],[{...valid,gate:'OTHER'},false],
+      [{...valid,sourceCommit:'b'.repeat(40)},false],[{...valid,sourceCommit:7},false],[[valid,valid],false]
+    ].map(([report,accept])=>({json:JSON.stringify(report),accept}));
+    const encoded=Buffer.from(JSON.stringify(cases)).toString('base64');
+    const bootstrap=`. $env:KSESSION_STATIC_REPORT_HELPER;$cases=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String([Console]::In.ReadToEnd()))|ConvertFrom-Json;for($i=0;$i-lt$cases.Count;$i++){$case=$cases[$i];$accepted=$true;try{$report=$case.json|ConvertFrom-Json;Test-KSessionHistoricalStaticGateReport -Report $report -ExpectedCommit '${expected}'}catch{$accepted=$false};if($accepted-ne[bool]$case.accept){exit (20+$i)}}`;
+    const validation=childProcess.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command',bootstrap],{encoding:'utf8',windowsHide:true,input:encoded,env:{...process.env,KSESSION_STATIC_REPORT_HELPER:reportHelper}});
+    assert.equal(validation.status,0,validation.stderr);assert.equal(validation.stdout,'');assert.equal(validation.stderr,'');
+  } finally { fs.rmSync(temp, {recursive:true,force:true}); }
 });
 
 test('PowerShell registry subkeys use one separator and exactly match the approved beta.1 keys', () => {
