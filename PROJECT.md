@@ -1,5 +1,10 @@
 # K⁺-SESSION｜项目状态
 
+## 当前停点｜2026-09-27
+
+**BLOCKED / NEED PRODUCT DECISION — 第27节升级兼容门禁**。Batch4用户人工1—10 PASS收尾已推9eaad01；完整Batch4.5第1—38节已接收并建立codex/lan-host-v1.1。独立B45-T5-PREFLIGHT主动回单c06dcfe，经Master独立复验与Review整合7bfbfd3；现有Setup/封闭身份/事务仅支持beta.1→beta.2，必须决定beta.3接受的精确beta.2身份及是否直接兼容beta.1。未发现必须改appVersion/DC1/Runtime identity契约或使用0.0.0.0的证据。依用户第27节明确要求，停止后续实施并交网页版决策；无生产修改，无Hosted消费（专项0/4、Full0/2、QA0/2），无beta.3 Artifact。决策卡：docs/tasks/windows-installer-v1.1/batch-4.5/COMPATIBILITY-DECISION.md。唯一Master/Primary及main/tag/Release禁令不变。
+
+
 ## 当前活动Batch｜2026-09-27
 
 Batch4已获用户Win10人工1—10项PASS并正式关闭；Batch4.5完整1—38节已批准。唯一集成分支改为 `codex/lan-host-v1.1`，本Batch取代下文旧windows-installer集成分支约定；Primary public-source，唯一Master及退役旧Master不变。规格/Plan/验收见docs/tasks/windows-installer-v1.1/batch-4.5/。先版本与兼容预检；不得绕过第27/35节决策条件。预算专项4/Full2/QA2，最终停LAN HUMAN PENDING。旧Batch停止文字保留为历史，不能覆盖本次授权。
