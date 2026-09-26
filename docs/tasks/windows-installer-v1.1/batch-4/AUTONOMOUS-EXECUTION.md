@@ -26,13 +26,15 @@ Execution → Return/Watchdog → Review → Rework → Integration → 最小Ho
 | --- | --- | --- | --- | --- | --- |
 | D1 | 最小诊断 | 4319e08694b6660477397102af20d95eb25062b4 | 36208733404 | 17阶段闭合报告、sequence专属夹具父目录；主控六文件Review及13/13契约、三份PS AST PASS | FAIL；八个PRE阶段完成，BASELINE=IDENTITY_REGISTRATION_VERSION/UNCHANGED；已扣1次 |
 | D2 | 最小诊断 | 9e070de4efa7bc10118a7942c33d24b51cb326d0 | 36209825354 | 三处JSON显式UTF8、固定name/version/both原因；主控八文件Review、独立22/22专项PASS，生产detection/gate未改；local/origin/API同SHA | PASS；17阶段完整，BASELINE及U15/16/17恢复后与U20_PRECOPY均IDENTITY_ACCEPTED/UNCHANGED |
-| F1 | 完整Setup | 6fdb7ed19467ac64a80c2f4824b4dfe0431fc62d | 36210201290 | D2专项PASS；实现与D2一致，后续仅治理文档和公开措辞修正；主控npm26 files/failed0；local/origin/API同SHA | RUNNING；已扣1次 |
+| F1 | 完整Setup | 6fdb7ed19467ac64a80c2f4824b4dfe0431fc62d | 36210201290 | D2专项PASS；实现与D2一致，后续仅治理文档和公开措辞修正；主控npm26 files/failed0；local/origin/API同SHA | FAIL于U21：fault-copy success=true want=false；fresh Setup及U01/U02/U15—U18/U20通过，742及最终privacy未运行 |
 
 所有工程push带[skip ci]，用明确workflow_dispatch及mode扣减预算；不允许push隐式启动完整流水线。Full Setup本身同commit构建Runtime/Launcher/Portable/Setup和742门禁，无须为了名字另外触发重复流水线。每轮首失败证据保留，闭合Artifact不含原始日志/路径/凭据/业务内容。
 
 D2等待期间主控整合目录补跑npm：首次26 files/failed1，定位为新任务卡的一处来源措辞触发既有公开文档门禁；只改为“仅阅读指定公开仓库材料”，范围约束不变，未修改测试。修正后26 files/failed0；本机hosted-only SKIP照常，不冒充742结果。D2不运行公开回归；Full必须使用含此文档修正的后续HEAD。
 
 ## 当前任务
+
+B4-T4 / B4-T4-COPY-FAULT-20260926-03：REWORK / DISPATCHED，原thread/worktree/branch@4918e5b，return target不变。F1 Artifact10895856282（digest4ec029dc062e530f8d6bc26f88e04c42dc0c7674cc2e5747f11b58a0a19765af）确认Installer29自动PASS/3人工PENDING、D13/13 PASS、Upgrade7项PASS后U21退出码预期不符；U21状态恢复比较未执行，不宣称已恢复。offline证据externalDuring=false/restored=true。原T4先调查copy hook、增加固定失败诊断及同源post-copy异常传播审查，必要最小诊断由主控Review后使用剩余2次额度；不直接重跑最后一次full。完整卡见tasks/B4-T4-COPY-FAULT-20260926.md。QA尚未开始，无最终Setup Artifact。
 
 D2专项及报告privacy PASS：Artifact10895610527（upgrade-sequence-diagnostic-36209825354-1，digest9faa9d454eb7d797a757f5416ab983f5a0259f0ef2cd9420c608354661545f8e），仅SEQUENCE-DIAGNOSTIC.json，17阶段顺序/结果严格validator通过。编码修复后真实Inno已通过D1失败门禁和后续受控序列，但没有测量Hosted代码页，不把合成编码测试描述成宿主配置取证。已满足首次Full准入；这不是U01—U30或整个Batch4 PASS。
 

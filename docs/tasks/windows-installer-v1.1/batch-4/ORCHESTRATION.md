@@ -2,6 +2,8 @@
 
 ## 当前执行授权｜2026-09-26
 
+最新工程断点：F1 run36210201290@6fdb7ed1在U21失败，fault-copy意外success；fresh Setup、D13/13及U01/U02/U15—U18/U20已通过，后续未执行，网络恢复true。失败Artifact10895856282已核实；原T4第三轮B4-T4-COPY-FAULT-20260926-03已REWORK/DISPATCHED，继续4918e5b，不另建任务。预算剩诊断2、完整Setup1、QA2；先固定copy/post-copy故障证据和最小修复，禁止无修改retry。下文F1 RUNNING为派单时历史状态。
+
 最新：D1 run36208733404@4319e086 FAIL；原T4第二轮4918e5b→9e070de4已主动RETURNED→REVIEWED→INTEGRATED，三处UTF8写入及固定诊断，生产身份门禁未改，主控22/22专项通过。D2 run36209825354@9e070de4已PASS，17阶段及封闭Artifact10895610527隐私校验通过。随后文档措辞修正通过主控npm26 files/failed0。F1完整Setup run36210201290@6fdb7ed1 RUNNING；诊断剩2/4，Full剩1/2，QA2/2未用。尚无完整Batch4或QA PASS结论。
 
 用户已恢复Batch4。唯一ACTIVE ENGINEERING MASTER及return target为01a0db0e-c950-79e0-8e11-07155e0742f2；旧主控保持RETIRED — READ ONLY HISTORY。治理提交已推并核验159ee4163dd52c08584856521463a793eb6e5c7a。原B4-T4：B4-T4-PRE-BASELINE-20260926-01 已主动RETURNED、主控REVIEWED并INTEGRATED；task 867cc752 → integrated 4319e086。六文件闭合阶段诊断及夹具最小修复、主控13/13专项和PS AST通过，尚待Hosted，不代表Batch4通过。任务卡见tasks/B4-T4-PRE-BASELINE-20260926.md，Hosted预算及逐轮结果见AUTONOMOUS-EXECUTION.md。本节覆盖下文历史暂停，不改变历史测试结果。
