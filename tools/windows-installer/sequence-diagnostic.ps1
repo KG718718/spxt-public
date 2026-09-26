@@ -34,6 +34,10 @@ try{
   if($LASTEXITCODE -ne 0){throw 'SEQUENCE_GATE_BUILD_FAILED'}
   & $taskNode (Join-Path $PSScriptRoot 'build.cjs') $taskPortable $taskCompiler (Join-Path $taskBuild 'fault-space') $Commit sequence-space $taskBundle *> $null
   if($LASTEXITCODE -ne 0){throw 'SEQUENCE_SPACE_BUILD_FAILED'}
+  & $taskNode (Join-Path $PSScriptRoot 'build.cjs') $taskPortable $taskCompiler (Join-Path $taskBuild 'fault-copy') $Commit sequence-copy $taskBundle *> $null
+  if($LASTEXITCODE -ne 0){throw 'SEQUENCE_COPY_BUILD_FAILED'}
+  & $taskNode (Join-Path $PSScriptRoot 'build.cjs') $taskPortable $taskCompiler (Join-Path $taskBuild 'fault-post-copy') $Commit sequence-post-copy $taskBundle *> $null
+  if($LASTEXITCODE -ne 0){throw 'SEQUENCE_POST_COPY_BUILD_FAILED'}
   $env:KSESSION_BETA1_SETUP=$taskBeta1Setup
   $env:KSESSION_SETUP_BUILD=$taskBuild
   $env:KSESSION_SETUP_ARTIFACT=Join-Path $taskBuild 'candidate/artifact'

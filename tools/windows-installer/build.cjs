@@ -7,13 +7,13 @@ const [portable,compiler,outArg,commit,mode='candidate',bundleArg]=process.argv.
 const repo=path.resolve(__dirname,'../..'),out=path.resolve(outArg),pin=JSON.parse(fs.readFileSync(path.join(__dirname,'toolchain.json')));
 assert.ok(/^E:\\/i.test(out)&&!fs.existsSync(out));assert.match(commit,/^[a-f0-9]{40}$/);
 assert.ok(['candidate','fault-space','fault-permission','fault-cancel','fault-copy','fault-payload-hash','fault-post-copy',
-  'sequence-gate','sequence-space'].includes(mode));
+  'sequence-gate','sequence-space','sequence-copy','sequence-post-copy'].includes(mode));
 assert.ok(bundleArg,'approved beta.1 identity bundle required');
 const bundlePath=path.resolve(bundleArg),bundleBytes=fs.readFileSync(bundlePath),bundle=JSON.parse(bundleBytes.toString('utf8'));
 validateBundle(bundle);
 const root=path.join(portable,'解包程序 中文 with spaces','K-SESSION'),pv=verify(root);
 const pr=JSON.parse(fs.readFileSync(path.join(portable,'artifact/portable-test-report.json')));
-const sequenceDiagnostic=mode==='sequence-gate'||mode==='sequence-space';
+const sequenceDiagnostic=['sequence-gate','sequence-space','sequence-copy','sequence-post-copy'].includes(mode);
 const payloadCommit=sequenceDiagnostic?'e9417f036d0cdf736ff84682556a994040f0de0b':commit;
 assert.equal(pr.sourceCommit,payloadCommit);assert.equal(pr.status,'PASS');assert.equal(pv.sourceCommit,payloadCommit);
 assert.equal(pr.staging.status,'PASS');assert.equal(pr.extracted.status,'PASS');
@@ -69,6 +69,7 @@ assert.match(license.toString(),/Inno Setup License/);writeNew(path.join(gen,'LI
 writeNew(path.join(gen,'install-info.txt'),'\ufeffK⁺-SESSION Beta / Unsigned\nInstaller 1.1.0-beta.2 | Application '+pkg.version+'\nWindows 10 x64 Beta Track；Win11 未实机认证。\n离线包含核心程序，不需要另装 Node/npm/Python/Git。\n卸载仅移除程序，账号、附件、备份和配置保留。\n只升级经精确验证的beta.1；升级沿用原数据位置，不移动或删除业务数据与附件。\nOCR、真实邮件不在离线核心承诺内。\n');
 const fixtureDefine={
  'fault-cancel':'/DFaultCancel=1','fault-copy':'/DFaultCopy=1','fault-post-copy':'/DFaultPostCopy=1',
+ 'sequence-copy':'/DFaultCopy=1','sequence-post-copy':'/DFaultPostCopy=1',
  'sequence-gate':'/DSequenceDiagnostic=1'
 }[mode];
 const args=['/Qp','/DPayload='+root,'/DGenerated='+gen,'/DOutput='+artifact,...(fixtureDefine?[fixtureDefine]:[]),path.join(__dirname,'setup.iss')];

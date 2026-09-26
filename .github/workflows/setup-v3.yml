@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Run an identity, U15-U20 sequence, or full Setup workflow
+        description: Run an identity, closed upgrade-fault sequence, or full Setup workflow
         required: false
         default: identity
         type: choice
@@ -180,7 +180,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Exact beta.1 U15-U20 registration sequence only
+      - name: Exact beta.1 closed upgrade-fault sequence only
         shell: pwsh
         run: |
           if ((git rev-parse HEAD) -ne '${{ github.sha }}') { throw 'Tested commit mismatch' }

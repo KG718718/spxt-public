@@ -49,7 +49,7 @@ func safeCoreProbeFailure(output []byte) string {
 func safeInstallerMarkers(logText string) string {
 	allowed := []string{
 		"KSESSION_DATA_PRIOR_MISSING", "KSESSION_DATA_SWITCH_UNCONFIRMED",
-		"KSESSION_FIXTURE_CANCEL_DURING_COPY", "KSESSION_FIXTURE_COPY_FAILURE", "KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE",
+		"KSESSION_FIXTURE_CANCEL_DURING_COPY", "KSESSION_FIXTURE_COPY_FAILURE", "KSESSION_FIXTURE_COPY_INJECTION_PREPARE_FAILED", "KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE",
 		"KSESSION_INSTALLED_PAYLOAD_VERIFIED", "KSESSION_PREINSTALL_READY", "KSESSION_PROCESS_INSPECTION_UNAVAILABLE",
 		"KSESSION_REJECT_INSTANCE_LOCK", "KSESSION_REJECT_NONEMPTY", "KSESSION_REJECT_PATH", "KSESSION_REJECT_REGISTERED", "KSESSION_REJECT_RUNNING",
 		"KSESSION_REJECT_SPACE", "KSESSION_REJECT_SPACE_QUERY", "KSESSION_REJECT_WRITE",
@@ -67,7 +67,7 @@ func safeInstallerMarkers(logText string) string {
 		"KSESSION_UPGRADE_GATE_IDENTITY_MANIFEST", "KSESSION_UPGRADE_GATE_IDENTITY_PROGRAM", "KSESSION_UPGRADE_GATE_IDENTITY_BUILD",
 		"KSESSION_UPGRADE_GATE_IDENTITY_RUNTIME", "KSESSION_UPGRADE_GATE_IDENTITY_LAUNCHER", "KSESSION_UPGRADE_GATE_IDENTITY_INTERNAL",
 		"KSESSION_UPGRADE_REGISTRATION_REJECTED", "KSESSION_UPGRADE_ROLLBACK_FAILED", "KSESSION_UPGRADE_ROOT_MISMATCH",
-		"KSESSION_UPGRADE_TRANSACTION_COMMITTED", "KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK",
+		"KSESSION_UPGRADE_POSTINSTALL_FAILED", "KSESSION_UPGRADE_TRANSACTION_COMMITTED", "KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK",
 		"KSESSION_SEQUENCE_IDENTITY_ACCEPTED",
 		"KSESSION_SEQUENCE_REGISTRATION_COUNT", "KSESSION_SEQUENCE_REGISTRATION_NAME", "KSESSION_SEQUENCE_REGISTRATION_VERSION", "KSESSION_SEQUENCE_REGISTRATION_NAME_VERSION", "KSESSION_SEQUENCE_REGISTRATION_SNAPSHOT",
 		"KSESSION_SEQUENCE_REGISTRATION_CONFLICT", "KSESSION_SEQUENCE_REGISTRATION_UNINSTALL",
@@ -109,6 +109,15 @@ func safeInstallerMarkers(logText string) string {
 	}
 	sort.Strings(observed)
 	return strings.Join(observed, ",")
+}
+
+func hasInstallerMarker(markers, expected string) bool {
+	for _, marker := range strings.Split(markers, ",") {
+		if marker == expected {
+			return true
+		}
+	}
+	return false
 }
 
 type setupRunResult struct {
@@ -338,7 +347,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 	beta2 := filepath.Join(artifact, "K-SESSION-Setup-1.1.0-beta.2.exe")
 
 	n := 0
-	runSetup := func(binary string, want bool) setupRunResult {
+	runSetupRaw := func(binary string) setupRunResult {
 		t.Helper()
 		n++
 		log := filepath.Join(base, fmt.Sprintf("setup-%02d.log", n))
@@ -351,21 +360,26 @@ func TestUpgradeLifecycle(t *testing.T) {
 		c := exec.Command(binary, args...)
 		c.SysProcAttr = &syscall.SysProcAttr{HideWindow: !cancelFixture}
 		startedAt := time.Now()
-		e := c.Run()
+		_ = c.Run()
 		elapsed := time.Since(startedAt).Milliseconds()
 		exitCode, processStarted := -1, c.ProcessState != nil
 		if processStarted {
 			exitCode = c.ProcessState.ExitCode()
 		}
 		text := decodeInstallerLog(mustRead(t, log))
-		if (e == nil) != want {
-			t.Fatalf("setup %s success=%v want=%v", filepath.Base(filepath.Dir(filepath.Dir(binary))), e == nil, want)
-		}
 		return setupRunResult{logText: text, exitCode: exitCode, exitStatus: safeInnoExitStatus(exitCode, processStarted), elapsedMilliseconds: elapsed}
+	}
+	runSetup := func(binary string, want bool) setupRunResult {
+		t.Helper()
+		result := runSetupRaw(binary)
+		if (result.exitCode == 0) != want {
+			t.Fatalf("setup %s success=%v want=%v", filepath.Base(filepath.Dir(filepath.Dir(binary))), result.exitCode == 0, want)
+		}
+		return result
 	}
 	assertLog := func(result setupRunResult, marker string) {
 		t.Helper()
-		if !strings.Contains(result.logText, marker) {
+		if !hasInstallerMarker(safeInstallerMarkers(result.logText), marker) {
 			t.Fatal(safeSetupFailure(marker, result))
 		}
 	}
@@ -524,17 +538,17 @@ func TestUpgradeLifecycle(t *testing.T) {
 		result := runSetup(beta2, false)
 		reason := "IDENTITY_INTERNAL"
 		markers := safeInstallerMarkers(result.logText)
-		if strings.Contains(markers, "KSESSION_SEQUENCE_IDENTITY_ACCEPTED") {
+		if hasInstallerMarker(markers, "KSESSION_SEQUENCE_IDENTITY_ACCEPTED") {
 			reason = "IDENTITY_ACCEPTED"
 		} else {
 			for _, detail := range []string{"NAME_VERSION", "COUNT", "NAME", "VERSION", "SNAPSHOT", "CONFLICT", "UNINSTALL", "AMBIGUOUS", "INCONSISTENT"} {
-				if strings.Contains(markers, "KSESSION_SEQUENCE_REGISTRATION_"+detail) {
+				if hasInstallerMarker(markers, "KSESSION_SEQUENCE_REGISTRATION_"+detail) {
 					reason = "IDENTITY_REGISTRATION_" + detail
 					break
 				}
 			}
 			for _, stage := range []string{"REGISTRATION", "BINDING", "PATH", "MANIFEST", "PROGRAM", "BUILD", "RUNTIME", "LAUNCHER", "INTERNAL"} {
-				if reason == "IDENTITY_INTERNAL" && strings.Contains(markers, "KSESSION_UPGRADE_GATE_IDENTITY_"+stage) {
+				if reason == "IDENTITY_INTERNAL" && hasInstallerMarker(markers, "KSESSION_UPGRADE_GATE_IDENTITY_"+stage) {
 					reason = "IDENTITY_" + stage
 					break
 				}
@@ -577,7 +591,7 @@ func TestUpgradeLifecycle(t *testing.T) {
 		if sequenceDiagnostic {
 			markers := safeInstallerMarkers(probeResult.logText)
 			want := map[string]string{"U15": "KSESSION_UPGRADE_PREFLIGHT_REJECTED", "U16": "KSESSION_UPGRADE_GATE_IDENTITY_BINDING", "U17": "KSESSION_UPGRADE_GATE_IDENTITY_PROGRAM"}[probe.id]
-			if !strings.Contains(markers, want) {
+			if !hasInstallerMarker(markers, want) {
 				t.Fatalf("sequence mutation %s lacked fixed rejection", probe.id)
 			}
 		}
@@ -607,8 +621,11 @@ func TestUpgradeLifecycle(t *testing.T) {
 	for _, f := range fixtures {
 		startSequencePhase(f.id)
 		binary := filepath.Join(build, f.dir, "artifact", "K-SESSION-Setup-1.1.0-beta.2.exe")
-		text := runSetup(binary, false)
-		assertLog(text, f.marker)
+		result := runSetupRaw(binary)
+		if result.exitCode == 0 {
+			t.Fatal(safeSetupFailure(f.marker, result))
+		}
+		assertLog(result, f.marker)
 		if !equalMaps(instanceStable, walkHash(instance)) || !equalMaps(ownedStable, owned()) {
 			t.Fatalf("%s did not restore exact state", f.id)
 		}
@@ -621,6 +638,38 @@ func TestUpgradeLifecycle(t *testing.T) {
 	}
 	if sequenceDiagnostic {
 		probeSequenceIdentity("U20_PRECOPY")
+		for _, f := range []struct{ id, dir, marker, result string }{
+			{"U21", "fault-copy", "KSESSION_FIXTURE_COPY_FAILURE", "COPY_FAILED"},
+			{"U23", "fault-post-copy", "KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE", "POST_COPY_VERIFY_FAILED"},
+		} {
+			startSequencePhase(f.id)
+			result := runSetupRaw(filepath.Join(build, f.dir, "artifact", "K-SESSION-Setup-1.1.0-beta.2.exe"))
+			markers := safeInstallerMarkers(result.logText)
+			markerPresent := hasInstallerMarker(markers, f.marker)
+			state := "UNCHANGED"
+			if !equalMaps(instanceStable, walkHash(instance)) || !equalMaps(ownedStable, owned()) {
+				state = "CHANGED"
+			}
+			failure := ""
+			if result.exitCode == 0 {
+				if markerPresent {
+					failure = map[string]string{"U21": "COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT", "U23": "POST_COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT"}[f.id]
+				} else {
+					failure = map[string]string{"U21": "COPY_UNEXPECTED_SUCCESS_MARKER_MISSING", "U23": "POST_COPY_UNEXPECTED_SUCCESS_MARKER_MISSING"}[f.id]
+				}
+			} else if f.id == "U21" && hasInstallerMarker(markers, "KSESSION_FIXTURE_COPY_INJECTION_PREPARE_FAILED") {
+				failure = "COPY_INJECTION_PREPARE_FAILED"
+			} else if !markerPresent {
+				failure = map[string]string{"U21": "COPY_MARKER_MISSING", "U23": "POST_COPY_MARKER_MISSING"}[f.id]
+			} else if state == "CHANGED" {
+				failure = map[string]string{"U21": "COPY_STATE_CHANGED", "U23": "POST_COPY_STATE_CHANGED"}[f.id]
+			}
+			if failure != "" {
+				completeSequencePhase(f.id, failure, state)
+				t.Fatal("closed upgrade fault diagnostic failed")
+			}
+			completeSequencePhase(f.id, f.result, "UNCHANGED")
+		}
 		return
 	}
 	// Permission failure uses the normal payload under a real deny-write ACL; no product test switch is involved.
@@ -761,6 +810,10 @@ func TestSafeCoreProbeFailure(t *testing.T) {
 	}
 	if safeInstallerMarkers("KSESSION_REJECT_SPACE_QUERY") != "KSESSION_REJECT_SPACE_QUERY" {
 		t.Fatal("installer marker diagnostic confused an exact marker with its prefix")
+	}
+	copyPrepare := safeInstallerMarkers("KSESSION_FIXTURE_COPY_INJECTION_PREPARE_FAILED")
+	if !hasInstallerMarker(copyPrepare, "KSESSION_FIXTURE_COPY_INJECTION_PREPARE_FAILED") || hasInstallerMarker(copyPrepare, "KSESSION_FIXTURE_COPY_FAILURE") {
+		t.Fatal("copy injection preparation failure was confused with a real native copy failure")
 	}
 	if safeInstallerMarkers("KSESSION_UPGRADE_ROOT_MISMATCH KSESSION_REJECT_INSTANCE_LOCK") != "KSESSION_REJECT_INSTANCE_LOCK,KSESSION_UPGRADE_ROOT_MISMATCH" {
 		t.Fatal("installer marker diagnostic omitted a fixed pre-space rejection")

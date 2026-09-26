@@ -15,7 +15,9 @@ $script:KSessionSequenceExpectedPhases=@(
   'U17',
   'AFTER_U17',
   'U18',
-  'U20_PRECOPY'
+  'U20_PRECOPY',
+  'U21',
+  'U23'
 )
 
 function Test-KSessionSequenceReport {
@@ -54,6 +56,8 @@ function Test-KSessionSequenceReport {
       'U16' {$taskExpectedResult='IDENTITY_BINDING';$taskExpectedState='CONTROLLED_MUTATION';break}
       'U17' {$taskExpectedResult='IDENTITY_PROGRAM';$taskExpectedState='CONTROLLED_MUTATION';break}
       'U18' {$taskExpectedResult='SPACE_REJECTED';$taskExpectedState='UNCHANGED';break}
+      'U21' {$taskExpectedResult='COPY_FAILED';$taskExpectedState='UNCHANGED';break}
+      'U23' {$taskExpectedResult='POST_COPY_VERIFY_FAILED';$taskExpectedState='UNCHANGED';break}
     }
 
     $taskSuccess=($taskPhase.result -ceq $taskExpectedResult -and $taskPhase.state -ceq $taskExpectedState)
@@ -61,11 +65,19 @@ function Test-KSessionSequenceReport {
     $taskIdentityFailure=(@('BASELINE','AFTER_U15','AFTER_U16','AFTER_U17','U20_PRECOPY') -ccontains $taskExpectedPhase -and
       $taskPhase.result -cmatch '^(IDENTITY_(ACCEPTED|REGISTRATION(_(COUNT|NAME|VERSION|NAME_VERSION|SNAPSHOT|CONFLICT|UNINSTALL|AMBIGUOUS|INCONSISTENT))?|BINDING|PATH|MANIFEST|PROGRAM|BUILD|RUNTIME|LAUNCHER|INTERNAL))$' -and
       @('UNCHANGED','CHANGED') -ccontains $taskPhase.state -and -not $taskSuccess)
+    $taskFaultFailure=(
+      ($taskExpectedPhase -ceq 'U21' -and @(
+        'COPY_INJECTION_PREPARE_FAILED','COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','COPY_UNEXPECTED_SUCCESS_MARKER_MISSING',
+        'COPY_MARKER_MISSING','COPY_STATE_CHANGED') -ccontains $taskPhase.result) -or
+      ($taskExpectedPhase -ceq 'U23' -and @(
+        'POST_COPY_UNEXPECTED_SUCCESS_MARKER_PRESENT','POST_COPY_UNEXPECTED_SUCCESS_MARKER_MISSING',
+        'POST_COPY_MARKER_MISSING','POST_COPY_STATE_CHANGED') -ccontains $taskPhase.result)
+    ) -and (@('UNCHANGED','CHANGED') -ccontains $taskPhase.state) -and -not $taskSuccess
     $taskLast=($taskIndex -eq $taskPhases.Count-1)
 
     if((!$taskLast -and !$taskSuccess) -or
        ($taskLast -and $Report.status -ceq 'PASS' -and !$taskSuccess) -or
-       ($taskLast -and $Report.status -ceq 'FAIL' -and !($taskStopped -or $taskIdentityFailure))){
+       ($taskLast -and $Report.status -ceq 'FAIL' -and !($taskStopped -or $taskIdentityFailure -or $taskFaultFailure))){
       throw 'SEQUENCE_REPORT_UNSAFE'
     }
   }

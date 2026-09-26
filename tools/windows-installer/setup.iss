@@ -79,7 +79,7 @@ Name: "{userdesktop}\K⁺-SESSION"; Filename: "{app}\program\K-SESSION.exe"; Par
 Name: "{userprograms}\K⁺-SESSION"; Filename: "{app}\program\K-SESSION.exe"; Parameters: "--instance ""{code:SelectedInstance}"""; WorkingDir: "{app}\program"
 
 [Run]
-Filename: "{app}\program\K-SESSION.exe"; Parameters: "--instance ""{code:SelectedInstance}"""; Description: "启动 K⁺-SESSION"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\program\K-SESSION.exe"; Parameters: "--instance ""{code:SelectedInstance}"""; Description: "启动 K⁺-SESSION"; Flags: nowait postinstall skipifsilent; Check: CanLaunchInstalled
 
 [Code]
 const
@@ -92,7 +92,7 @@ var
   DataPage: TInputDirWizardPage;
   UpgradePage: TOutputMsgWizardPage;
   PriorInstance, ConfirmedInstance, LocationChecker: String;
-  UpgradeMode, TransactionPrepared, TransactionSwapped, TransactionFinalized: Boolean;
+  UpgradeMode, TransactionPrepared, TransactionSwapped, TransactionFinalized, PostInstallFailed: Boolean;
   PriorDisplayName, PriorDisplayVersion, PriorInstallRoot, PriorUninstallString: String;
   PriorBindingRoot, PriorBindingInstance, UpgradeRequest, UpgradePlan: String;
 #ifdef FaultCancel
@@ -610,12 +610,18 @@ begin
 end;
 
 procedure BeforeUpgradeCopy(Rel: String);
+var FaultPath: String;
 begin
 #ifdef FaultCopy
   if UpgradeMode and not FaultCopyIssued then begin
     FaultCopyIssued := True;
-    Log('KSESSION_FIXTURE_COPY_FAILURE: ' + Rel);
-    RaiseException('受控复制故障。');
+    FaultPath := ExpandConstant('{tmp}\ksession-upgrade-v1\program\') + Rel;
+    if ForceDirectories(FaultPath) then
+      Log('KSESSION_FIXTURE_COPY_FAILURE: ' + Rel)
+    else
+      Log('KSESSION_FIXTURE_COPY_INJECTION_PREPARE_FAILED');
+    { A directory at the exact destination forces Inno's native file copy to fail.
+      Script exceptions from BeforeInstall are intentionally swallowed by Inno. }
   end;
 #endif
 end;
@@ -628,37 +634,54 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then begin
-    if UpgradeMode then begin
-      if not RunNode('upgrade-transaction-cli.cjs', 'commit "' + UpgradePlan + '"') then
-        RaiseException('升级提交失败；旧程序恢复结果请查看安装日志。');
-      TransactionSwapped := True;
-    end;
-    VerifyInstalled;
+    try
+      if UpgradeMode then begin
+        if not RunNode('upgrade-transaction-cli.cjs', 'commit "' + UpgradePlan + '"') then
+          RaiseException('升级提交失败；旧程序恢复结果请查看安装日志。');
+        TransactionSwapped := True;
+      end;
+      VerifyInstalled;
 #ifdef FaultPostCopy
-    if UpgradeMode then begin
-      Log('KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE');
-      RaiseException('受控安装后校验故障。');
-    end;
+      if UpgradeMode then begin
+        Log('KSESSION_FIXTURE_POST_COPY_VERIFY_FAILURE');
+        RaiseException('受控安装后校验故障。');
+      end;
 #endif
-    if (not UpgradeMode) and (CheckDataLocation(True) <> '') then RaiseException('无法准备所选数据位置；不会改写已有数据。');
-    if (not UpgradeMode) and not WriteFreshInstallState then RaiseException('无法保存安装状态。');
-    if not RegWriteStringValue(HKCU64, BindingKey, 'InstallRoot', ExpandConstant('{app}')) or
-       not RegWriteStringValue(HKCU64, BindingKey, 'Instance', BetaInstance) then RaiseException('无法记录上次数据位置。');
-    if UpgradeMode then begin
-      if not FileExists(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) or
-         not FileExists(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) then
-        RaiseException('升级后的快捷方式验证失败。');
-      if not VerifyFinalRegistration then RaiseException('升级后的安装登记或数据绑定验证失败。');
-      if not RunNode('upgrade-transaction-cli.cjs', 'finalize "' + UpgradePlan + '"') then
-        RaiseException('升级终态验证失败；将尝试恢复旧程序。');
-      TransactionFinalized := True;
-      Log('KSESSION_UPGRADE_TRANSACTION_COMMITTED');
+      if (not UpgradeMode) and (CheckDataLocation(True) <> '') then RaiseException('无法准备所选数据位置；不会改写已有数据。');
+      if (not UpgradeMode) and not WriteFreshInstallState then RaiseException('无法保存安装状态。');
+      if not RegWriteStringValue(HKCU64, BindingKey, 'InstallRoot', ExpandConstant('{app}')) or
+         not RegWriteStringValue(HKCU64, BindingKey, 'Instance', BetaInstance) then RaiseException('无法记录上次数据位置。');
+      if UpgradeMode then begin
+        if not FileExists(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) or
+           not FileExists(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) then
+          RaiseException('升级后的快捷方式验证失败。');
+        if not VerifyFinalRegistration then RaiseException('升级后的安装登记或数据绑定验证失败。');
+        if not RunNode('upgrade-transaction-cli.cjs', 'finalize "' + UpgradePlan + '"') then
+          RaiseException('升级终态验证失败；将尝试恢复旧程序。');
+        TransactionFinalized := True;
+        Log('KSESSION_UPGRADE_TRANSACTION_COMMITTED');
+      end;
+      ReleaseLocks; { allow first start only after completed checks }
+      Log('KSESSION_INSTALLED_PAYLOAD_VERIFIED');
+      Log('KSESSION_DESKTOP_LINK=' + ExpandConstant('{userdesktop}\K⁺-SESSION.lnk'));
+      Log('KSESSION_START_LINK=' + ExpandConstant('{userprograms}\K⁺-SESSION.lnk'));
+    except
+      PostInstallFailed := True;
+      Log('KSESSION_UPGRADE_POSTINSTALL_FAILED');
+      RaiseLastException;
     end;
-    ReleaseLocks; { allow first start only after completed checks }
-    Log('KSESSION_INSTALLED_PAYLOAD_VERIFIED');
-    Log('KSESSION_DESKTOP_LINK=' + ExpandConstant('{userdesktop}\K⁺-SESSION.lnk'));
-    Log('KSESSION_START_LINK=' + ExpandConstant('{userprograms}\K⁺-SESSION.lnk'));
   end;
+end;
+
+function GetCustomSetupExitCode: Integer;
+begin
+  Result := 0;
+  if PostInstallFailed then Result := 4;
+end;
+
+function CanLaunchInstalled: Boolean;
+begin
+  Result := not PostInstallFailed and ((not UpgradeMode) or TransactionFinalized);
 end;
 
 function LockExecutable(P: String; var H: LongWord): Boolean;
