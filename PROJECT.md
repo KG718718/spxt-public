@@ -1,5 +1,10 @@
 # K⁺-SESSION｜项目状态
 
+## 方案A正式批准｜2026-09-27
+
+用户已明确解除第27节upgrade compatibility阻塞，批准独立的受验F3 beta.2→beta.3路径。唯一可信来源installerVersion1.1.0-beta.2 / source c8886e6b6d413c2fd73d6716621d07a80b337e58 / Run36246132535 / Artifact10907910968；必须核验固化精确安装后非敏感锚，禁止仅版本/commit/tree相同或未经取证fresh rebuild。beta.1不得直升beta.3；保留冻结beta.1→beta.2历史语义，再走两段路径。beta.3 same-version拒绝；beta.3运行旧beta.2须保持降级保护。appVersion1.0.0、DC1、Runtime identity schema、AppId/登记键、业务schema、instance结构不变。允许detector/bundle/Setup/transaction from-to/build metadata/测试CI在此边界内改造。取证占专项4次之一，运行时仅依赖固化锚，不在线下载历史Artifact。不得创建Release或承诺历史包永久可得；旧停点为历史，自动恢复T1—T5。详见COMPATIBILITY-APPROVAL.md及C01—C15。预算专项0/4、Full0/2、QA0/2，最终LAN HUMAN PENDING停点和其他产品安全门禁不变。
+
+
 ## 当前停点｜2026-09-27
 
 **BLOCKED / NEED PRODUCT DECISION — 第27节升级兼容门禁**。Batch4用户人工1—10 PASS收尾已推9eaad01；完整Batch4.5第1—38节已接收并建立codex/lan-host-v1.1。独立B45-T5-PREFLIGHT主动回单c06dcfe，经Master独立复验与Review整合7bfbfd3；现有Setup/封闭身份/事务仅支持beta.1→beta.2，必须决定beta.3接受的精确beta.2身份及是否直接兼容beta.1。未发现必须改appVersion/DC1/Runtime identity契约或使用0.0.0.0的证据。依用户第27节明确要求，停止后续实施并交网页版决策；无生产修改，无Hosted消费（专项0/4、Full0/2、QA0/2），无beta.3 Artifact。决策卡：docs/tasks/windows-installer-v1.1/batch-4.5/COMPATIBILITY-DECISION.md。唯一Master/Primary及main/tag/Release禁令不变。

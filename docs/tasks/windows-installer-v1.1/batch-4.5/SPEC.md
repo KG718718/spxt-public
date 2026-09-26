@@ -1,5 +1,10 @@
 # Batch 4.5 — LAN Host Deployment / 批准规格
 
+## 方案A正式批准｜2026-09-27
+
+用户已明确解除第27节upgrade compatibility阻塞，批准独立的受验F3 beta.2→beta.3路径。唯一可信来源installerVersion1.1.0-beta.2 / source c8886e6b6d413c2fd73d6716621d07a80b337e58 / Run36246132535 / Artifact10907910968；必须核验固化精确安装后非敏感锚，禁止仅版本/commit/tree相同或未经取证fresh rebuild。beta.1不得直升beta.3；保留冻结beta.1→beta.2历史语义，再走两段路径。beta.3 same-version拒绝；beta.3运行旧beta.2须保持降级保护。appVersion1.0.0、DC1、Runtime identity schema、AppId/登记键、业务schema、instance结构不变。允许detector/bundle/Setup/transaction from-to/build metadata/测试CI在此边界内改造。取证占专项4次之一，运行时仅依赖固化锚，不在线下载历史Artifact。不得创建Release或承诺历史包永久可得；旧停点为历史，自动恢复T1—T5。详见COMPATIBILITY-APPROVAL.md及C01—C15。预算专项0/4、Full0/2、QA0/2，最终LAN HUMAN PENDING停点和其他产品安全门禁不变。
+
+
 来源：2026-09-27用户正式任务书第1—12节及续篇第13—38节，已完整读取。前12节按原意登记如下，后26节保留用户原文。全部条款共同生效；旧Batch的停止语句不撤销本次明确授权。
 
 ## 1. Batch 4 收尾

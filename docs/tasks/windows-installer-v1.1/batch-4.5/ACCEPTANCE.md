@@ -32,3 +32,23 @@
 |L28|升级/卸载/重装保留instance及LAN配置|NOT RUN|
 
 适用自动项之外，真实Win10+第二设备14步必须单独人工；Host self-test不等于第二设备可达。所有安全门禁、26/742 fail0 skip0、Runtime/Launcher/Portable/Setup、Batch4回归、Firewall/网络安全、privacy和独立QA必须具备实际证据。旧Batch通过不能代填本Batch。
+
+## 方案A兼容矩阵
+
+|ID|核心语义|状态|
+|---|---|---|
+|C01|受验F3 beta.2精确身份接受|NOT RUN|
+|C02|未知beta.2拒绝|NOT RUN|
+|C03|同版本号hash不同拒绝|NOT RUN|
+|C04|同source但build identity不同拒绝|NOT RUN|
+|C05|beta.1直接beta.3拒绝|NOT RUN|
+|C06|beta.3 same-version拒绝|NOT RUN|
+|C07|beta.3 downgrade保护|NOT RUN|
+|C08|beta.2→beta.3 instance保持|NOT RUN|
+|C09|原账号保持|NOT RUN|
+|C10|原附件保持|NOT RUN|
+|C11|LAN deployment config保持|NOT RUN|
+|C12|port/adapter preference保持|NOT RUN|
+|C13|升级失败rollback保持beta.2|NOT RUN|
+|C14|身份验证不依赖Artifact在线|NOT RUN|
+|C15|日志/Artifact无secret和业务正文|NOT RUN|
