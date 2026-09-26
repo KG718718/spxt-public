@@ -1,5 +1,5 @@
 'use strict';
-const test=require('node:test'),assert=require('node:assert/strict'),cp=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
+const test=require('node:test'),assert=require('node:assert/strict'),cp=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const repo=path.resolve(__dirname,'../../../..');
 const read=p=>fs.readFileSync(path.join(repo,p),'utf8');
 
@@ -83,7 +83,7 @@ test('closed upgrade-fault sequence is manual, bounded, and does not build curre
 });
 
 test('sequence report validator accepts only ordered closed stage evidence and rejects injected details',()=>{
- const helper=path.join(repo,'tools/windows-installer/sequence-diagnostic-report.ps1').replaceAll("'","''");
+ const helper=path.join(repo,'tools/windows-installer/sequence-diagnostic-report.ps1');
  const expected=['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','U15','AFTER_U15','U16','AFTER_U16','U17','AFTER_U17','U18','U20_PRECOPY','U21','U23'];
  const success=phase=>{
   if(['BASELINE','AFTER_U15','AFTER_U16','AFTER_U17','U20_PRECOPY'].includes(phase))return {phase,result:'IDENTITY_ACCEPTED',state:'UNCHANGED'};
@@ -130,9 +130,16 @@ test('sequence report validator accepts only ordered closed stage evidence and r
  for(const report of reject)cases.push({json:JSON.stringify(report),accept:false});
  cases.push({json:'{"schema":1.0,"status":"FAIL","phases":[{"phase":"PRE_ENV_READY","result":"STAGE_FAILED","state":"STOPPED"}]}',accept:false});
  const encoded=Buffer.from(JSON.stringify(cases)).toString('base64');
- const command=`. '${helper}';$cases=([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encoded}'))|ConvertFrom-Json);foreach($case in $cases){$accepted=$true;try{$r=$case.json|ConvertFrom-Json;Test-KSessionSequenceReport -Report $r}catch{$accepted=$false};if($accepted-ne[bool]$case.accept){exit 9}};'BATCH_VALIDATION_PASS'`;
- const result=cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command','-'],{encoding:'utf8',windowsHide:true,input:command});
- assert.equal(result.status,0,result.stderr);assert.equal(result.stdout.trim(),'BATCH_VALIDATION_PASS');
+ const bootstrap=`[Console]::InputEncoding=[Text.UTF8Encoding]::new($false);. $env:KSESSION_SEQUENCE_REPORT_HELPER;$encoded=[Console]::In.ReadToEnd();$cases=([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded))|ConvertFrom-Json);foreach($case in $cases){$accepted=$true;try{$r=$case.json|ConvertFrom-Json;Test-KSessionSequenceReport -Report $r}catch{$accepted=$false};if($accepted-ne[bool]$case.accept){exit 9}};'BATCH_VALIDATION_PASS'`;
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'ksession-validator-'));
+ try{
+  const unicodeDir=path.join(temp,'合成中文路径');fs.mkdirSync(unicodeDir);
+  const unicodeHelper=path.join(unicodeDir,'sequence-diagnostic-report.ps1');fs.copyFileSync(helper,unicodeHelper);
+  for(const helperPath of [helper,unicodeHelper]){
+   const result=cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command',bootstrap],{encoding:'utf8',windowsHide:true,input:Buffer.from(encoded,'ascii'),env:{...process.env,KSESSION_SEQUENCE_REPORT_HELPER:helperPath}});
+   assert.equal(result.status,0,`${helperPath}: ${result.stderr}`);assert.equal(result.stdout.trim(),'BATCH_VALIDATION_PASS');
+  }
+ }finally{fs.rmSync(temp,{recursive:true,force:true});}
 });
 
 test('Inno JSON writers preserve Unicode as UTF-8 while ASCII remains unchanged',()=>{
