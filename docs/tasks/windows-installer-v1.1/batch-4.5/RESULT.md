@@ -1,18 +1,13 @@
 # Batch 4.5 当前结果
 
-## 方案A正式批准｜2026-09-27
+IN PROGRESS。方案A已正式批准：仅受验F3 beta.2精确安装后身份可进入beta.3，beta.1历史路线保持。appVersion1.0.0、DC1、Runtime identity schema及业务/instance结构不变。最终仍停 AUTOMATION PASS / QA PASS / LAN HUMAN PENDING；目前未到达。
 
-用户已明确解除第27节upgrade compatibility阻塞，批准独立的受验F3 beta.2→beta.3路径。唯一可信来源installerVersion1.1.0-beta.2 / source c8886e6b6d413c2fd73d6716621d07a80b337e58 / Run36246132535 / Artifact10907910968；必须核验固化精确安装后非敏感锚，禁止仅版本/commit/tree相同或未经取证fresh rebuild。beta.1不得直升beta.3；保留冻结beta.1→beta.2历史语义，再走两段路径。beta.3 same-version拒绝；beta.3运行旧beta.2须保持降级保护。appVersion1.0.0、DC1、Runtime identity schema、AppId/登记键、业务schema、instance结构不变。允许detector/bundle/Setup/transaction from-to/build metadata/测试CI在此边界内改造。取证占专项4次之一，运行时仅依赖固化锚，不在线下载历史Artifact。不得创建Release或承诺历史包永久可得；旧停点为历史，自动恢复T1—T5。详见COMPATIBILITY-APPROVAL.md及C01—C15。预算专项0/4、Full0/2、QA0/2，最终LAN HUMAN PENDING停点和其他产品安全门禁不变。
+Batch4用户Win10人工1—10 PASS已记录并推送9eaad01，受验Run36246132535/Artifact10907910968/source c8886e6b6d413c2fd73d6716621d07a80b337e58未修改。
 
+T1网络发现/固定端口/config已Review整合def05c5、ec0800d、9b23ba6；Master独立15/15 PASS。T2双listener/首Admin/selected subnet guard实施中。T4 helper3ab36ca因异常后禁用、登记视图和INI binding一致性及行为测试缺口退回原线程R1，尚未整合。T3等待已Review接口，未派发。T5仅已整合取证工具和测试路径R1，beta.3路由/构建未完成。
 
-## 当前停点｜2026-09-27
+专项1 Run36280286553@bb497a8失败STATIC_GATE，Artifact10918207525只含固定报告；专项2 Run36280914931@a55395d通过静态门禁后失败CLEANUP_VERIFY，Artifact10918108433只含固定报告。无成功F3身份evidence，不能据此建立可信bundle。原T5继续R2本地反例→最小修复→Master Review。专项2/4、Full0/2、QA0/2；无修改不retry。
 
-**BLOCKED / NEED PRODUCT DECISION — 第27节升级兼容门禁**。Batch4用户人工1—10 PASS收尾已推9eaad01；完整Batch4.5第1—38节已接收并建立codex/lan-host-v1.1。独立B45-T5-PREFLIGHT主动回单c06dcfe，经Master独立复验与Review整合7bfbfd3；现有Setup/封闭身份/事务仅支持beta.1→beta.2，必须决定beta.3接受的精确beta.2身份及是否直接兼容beta.1。未发现必须改appVersion/DC1/Runtime identity契约或使用0.0.0.0的证据。依用户第27节明确要求，停止后续实施并交网页版决策；无生产修改，无Hosted消费（专项0/4、Full0/2、QA0/2），无beta.3 Artifact。决策卡：docs/tasks/windows-installer-v1.1/batch-4.5/COMPATIBILITY-DECISION.md。唯一Master/Primary及main/tag/Release禁令不变。
+旧第27节BLOCKED已被方案A解除，历史决策卡保留；当前工程失败不等于产品决策阻塞。L01—L28/C01—C15、26/742、Runtime/Launcher/Portable/Setup、privacy/独立QA均需本Batch实际证据，不代填旧Batch结果。尚无beta.3 Artifact，不宣称LAN READY或第二设备可达。
 
-## 完成与未完成
-
-Batch4收尾9eaad01、LAN规格a91cf9e、派单8170db6和预检整合7bfbfd3均只含治理文档。未改生产或测试行为，无新包、无LAN实测。Beta.2历史Artifact未变；原26/742结果仅属Batch4，不代填本Batch。
-
-独立Execution thread01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9，local c06dcfe8ec02133be043fb79c70c52dcf2e15401，主动回单已收到，RETURNED→REVIEWED→INTEGRATED，整合7bfbfd3e62db8b943867281f6c5021d033b3471d。Master独立重现21/40/41固定拒绝码和双server纯对象检查。详细报告tasks/B45-T5-PREFLIGHT-RESULT.md及COMPATIBILITY-DECISION.md。
-
-仅待第27节兼容决定。主控建议方案A：精确已验F3 beta.2→beta.3，beta.1走冻结beta.2两段路径；不接纳未知beta.2，不修改业务schema或放宽安全。不消耗预算等待决定。
+唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2；旧Master永久只读。只操作公开repo与codex/lan-host-v1.1，未操作main/tag/Release或指定范围之外材料。详情ORCHESTRATION.md、REVIEW-LOG.md及各任务RESULT。

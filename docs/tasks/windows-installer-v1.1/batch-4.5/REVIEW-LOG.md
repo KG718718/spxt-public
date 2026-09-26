@@ -23,3 +23,11 @@
 - Artifact只上传固定安全报告及成功时evidence，原始路径/log/registry/data不上传。
 
 预检工作树lan-server已建，尚未派T2；待T1正式Review/整合后精确更新baseline。所有Hosted预算仍0/4、0/2、0/2。
+
+## 本轮Review更新
+
+- T1最终未添加Go原生socket探测。Master复验.NET非独占/ReuseAddress竞争真实探测PASS，Node已有handle持续保留；不把exclusive参数本身当Windows SO_EXCLUSIVEADDRUSE证明。固定System32 PS解析返工已整合9b23ba6，15/15 PASS。
+- T2已按9b23ba6派原独立任务；提前Review要求remote bootstrap显式闭合、网络变化先停accept再毁旧连接，失败不能因地址相同直接永久跳过重绑；健康字段完整才能server-ready。
+- T4返回3ab36ca未整合。R1：enable后查询抛异常仍须best-effort禁用已确认自有规则；status/未知冲突禁止写。补实际嵌入PS的mock行为测试。product32 view读取InstallLocation而非不存在的InstallRoot，字段缺失不能当key不存在；绑定必须核对INI Schema/InstallRoot/Instance和HKCU，instance==installRoot拒绝。
+- T5 R1 deaa097→be83e8e：仅测试harness路径修复，Master双PS进程与9/9 PASS；Hosted2已通过static，失败CLEANUP_VERIFY。R2要求细分安全清理阶段和0/1/multiple pipeline反例，尚未运行下一次Hosted。
+- 当前专项2/4、Full0/2、QA0/2，前述0预算及未派T2仅是当时历史。
