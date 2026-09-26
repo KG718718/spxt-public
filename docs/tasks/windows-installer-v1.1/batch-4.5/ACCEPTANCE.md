@@ -1,0 +1,34 @@
+# Batch 4.5 Acceptance
+
+|ID|核心语义|状态|
+|---|---|---|
+|L01|private IPv4发现|NOT RUN|
+|L02|排除loopback/APIPA/public|NOT RUN|
+|L03|排除VPN/virtual/tunnel|NOT RUN|
+|L04|单一adapter自动选择|NOT RUN|
+|L05|多adapter用户选择|NOT RUN|
+|L06|DHCP重算IP|NOT RUN|
+|L07|首选8080|NOT RUN|
+|L08|8080—8099真实exclusive bind|NOT RUN|
+|L09|port持久化|NOT RUN|
+|L10|持久端口冲突fail|NOT RUN|
+|L11|不静默换port|NOT RUN|
+|L12|Hostname展示|NOT RUN|
+|L13|Adapter/IP/Subnet展示|NOT RUN|
+|L14|Local URL|NOT RUN|
+|L15|LAN URL|NOT RUN|
+|L16|Copy LAN URL|NOT RUN|
+|L17|Host-only Admin bootstrap|NOT RUN|
+|L18|Remote不能抢首Admin|NOT RUN|
+|L19|Admin后LAN登录|NOT RUN|
+|L20|selected subnet guard|NOT RUN|
+|L21|非LAN来源拒绝|NOT RUN|
+|L22|Firewall Private/LocalSubnet|NOT RUN|
+|L23|拒绝Firewall授权Local正常|NOT RUN / HUMAN REQUIRED|
+|L24|Host LAN self-health|NOT RUN|
+|L25|第二设备真实LAN访问|NOT RUN / HUMAN REQUIRED|
+|L26|双客户端Session隔离|NOT RUN|
+|L27|Host重启/IP变化/LAN恢复|NOT RUN / HUMAN REQUIRED|
+|L28|升级/卸载/重装保留instance及LAN配置|NOT RUN|
+
+适用自动项之外，真实Win10+第二设备14步必须单独人工；Host self-test不等于第二设备可达。所有安全门禁、26/742 fail0 skip0、Runtime/Launcher/Portable/Setup、Batch4回归、Firewall/网络安全、privacy和独立QA必须具备实际证据。旧Batch通过不能代填本Batch。

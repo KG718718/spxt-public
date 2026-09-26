@@ -1,5 +1,10 @@
 # K⁺-SESSION｜项目状态
 
+## 当前活动Batch｜2026-09-27
+
+Batch4已获用户Win10人工1—10项PASS并正式关闭；Batch4.5完整1—38节已批准。唯一集成分支改为 `codex/lan-host-v1.1`，本Batch取代下文旧windows-installer集成分支约定；Primary public-source，唯一Master及退役旧Master不变。规格/Plan/验收见docs/tasks/windows-installer-v1.1/batch-4.5/。先版本与兼容预检；不得绕过第27/35节决策条件。预算专项4/Full2/QA2，最终停LAN HUMAN PENDING。旧Batch停止文字保留为历史，不能覆盖本次授权。
+
+
 ## 当前验收结论｜2026-09-27
 
 **Batch 4 PASS — Windows 10 x64 Beta Upgrade Track**。用户明确报告 Win10 x64 人工第1—10步全部 PASS；I01/I02/I09人工门禁据用户反馈闭合。这是用户实机验收记录，不是本轮自动复测。受验 source `c8886e6b6d413c2fd73d6716621d07a80b337e58`、Run `36246132535`、Artifact `10907910968` 永久保持历史身份，未修改或覆盖。此前QA首轮FAIL及QA1补证链保留。
