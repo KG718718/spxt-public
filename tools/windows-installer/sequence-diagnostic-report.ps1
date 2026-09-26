@@ -59,7 +59,7 @@ function Test-KSessionSequenceReport {
     $taskSuccess=($taskPhase.result -ceq $taskExpectedResult -and $taskPhase.state -ceq $taskExpectedState)
     $taskStopped=($taskPhase.result -ceq 'STAGE_FAILED' -and $taskPhase.state -ceq 'STOPPED')
     $taskIdentityFailure=(@('BASELINE','AFTER_U15','AFTER_U16','AFTER_U17','U20_PRECOPY') -ccontains $taskExpectedPhase -and
-      $taskPhase.result -cmatch '^(IDENTITY_(ACCEPTED|REGISTRATION(_(COUNT|VERSION|SNAPSHOT|CONFLICT|UNINSTALL|AMBIGUOUS|INCONSISTENT))?|BINDING|PATH|MANIFEST|PROGRAM|BUILD|RUNTIME|LAUNCHER|INTERNAL))$' -and
+      $taskPhase.result -cmatch '^(IDENTITY_(ACCEPTED|REGISTRATION(_(COUNT|NAME|VERSION|NAME_VERSION|SNAPSHOT|CONFLICT|UNINSTALL|AMBIGUOUS|INCONSISTENT))?|BINDING|PATH|MANIFEST|PROGRAM|BUILD|RUNTIME|LAUNCHER|INTERNAL))$' -and
       @('UNCHANGED','CHANGED') -ccontains $taskPhase.state -and -not $taskSuccess)
     $taskLast=($taskIndex -eq $taskPhases.Count-1)
 

@@ -71,11 +71,11 @@ test('U15-U20 sequence diagnostic is manual, pre-transaction, closed, and does n
  assert.match(build,/sourceCommit:commit,sourceTree:build\.sourceTree/);
  assert.match(build,/manifest=\{schema:1,sourceCommit:commit/);
  assert.match(build,/SEQUENCE DIAGNOSTIC - NEVER DISTRIBUTE OR INSTALL OUTSIDE DISPOSABLE HOST/);
- for(const marker of ['REGISTRATION_COUNT','VERSION_UNSUPPORTED','SNAPSHOT_INVALID','REGISTRATION_CONFLICT','UNINSTALL_METADATA_INVALID','IDENTITY_REGISTRATION_AMBIGUOUS','IDENTITY_REGISTRATION_INCONSISTENT'])assert.match(helper,new RegExp(marker));
+ for(const marker of ['REGISTRATION_COUNT','REGISTRATION_NAME','REGISTRATION_VERSION','REGISTRATION_NAME_VERSION','SNAPSHOT_INVALID','REGISTRATION_CONFLICT','UNINSTALL_METADATA_INVALID','IDENTITY_REGISTRATION_AMBIGUOUS','IDENTITY_REGISTRATION_INCONSISTENT'])assert.match(helper,new RegExp(marker));
  assert.doesNotMatch(helper,/console\.|error\.message|error\.stack|process\.stdout|process\.stderr/);
  const gateStop=iss.indexOf("Log('KSESSION_SEQUENCE_IDENTITY_ACCEPTED')"),transaction=iss.indexOf('if not PrepareUpgradeTransaction');
  assert.ok(gateStop>iss.indexOf('if not RunUpgradeGate')&&transaction>gateStop);
- for(const marker of ['KSESSION_SEQUENCE_REGISTRATION_COUNT','KSESSION_SEQUENCE_REGISTRATION_VERSION','KSESSION_SEQUENCE_REGISTRATION_SNAPSHOT','KSESSION_SEQUENCE_REGISTRATION_CONFLICT','KSESSION_SEQUENCE_REGISTRATION_UNINSTALL','KSESSION_SEQUENCE_REGISTRATION_AMBIGUOUS','KSESSION_SEQUENCE_REGISTRATION_INCONSISTENT'])assert.match(iss,new RegExp(marker));
+ for(const marker of ['KSESSION_SEQUENCE_REGISTRATION_COUNT','KSESSION_SEQUENCE_REGISTRATION_NAME','KSESSION_SEQUENCE_REGISTRATION_VERSION','KSESSION_SEQUENCE_REGISTRATION_NAME_VERSION','KSESSION_SEQUENCE_REGISTRATION_SNAPSHOT','KSESSION_SEQUENCE_REGISTRATION_CONFLICT','KSESSION_SEQUENCE_REGISTRATION_UNINSTALL','KSESSION_SEQUENCE_REGISTRATION_AMBIGUOUS','KSESSION_SEQUENCE_REGISTRATION_INCONSISTENT'])assert.match(iss,new RegExp(marker));
  for(const marker of ['PRE_ENV_READY','PRE_BETA1_INSTALL','PRE_REGISTRATION_ASSERT','PRE_LAUNCH_READY','PRE_BETA1_CORE_PROBE','PRE_U02_RUNNING_GUARD','PRE_BETA1_STOP','PRE_OWNED_STATE_SNAPSHOT','BASELINE','"AFTER_" + probe.id','U20_PRECOPY','sequencePhases','CONTROLLED_MUTATION','STAGE_FAILED','STOPPED','panicked := recover()','panic(panicked)'])assert.match(go,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.match(go,/if sequenceDiagnostic \{\s*fixtures = fixtures\[:1\]/);
 });
@@ -112,14 +112,32 @@ test('sequence report validator accepts only ordered closed stage evidence and r
  for(const value of ['stopped',7,true]){const typed=structuredClone(stopped);typed.phases[1].state=value;reject.push(typed);}
  const lowerPhase=structuredClone(stopped);lowerPhase.phases[1].phase='pre_beta1_install';reject.push(lowerPhase);
  const lowerIdentity=structuredClone(identityFailure);lowerIdentity.phases[8].result='identity_registration_count';reject.push(lowerIdentity);
+ const injectedIdentity=structuredClone(identityFailure);injectedIdentity.phases[8].result='IDENTITY_REGISTRATION_NAME_path=E:\\private';reject.push(injectedIdentity);
  const unknownState=structuredClone(stopped);unknownState.phases[1].state='RUNNING';reject.push(unknownState);
- const cases=[pass,stopped,identityFailure].map(report=>({json:JSON.stringify(report),accept:true}));
+ const identityDetails=['NAME','VERSION','NAME_VERSION'].map(detail=>{const report=structuredClone(identityFailure);report.phases[8].result=`IDENTITY_REGISTRATION_${detail}`;return report;});
+ const cases=[pass,stopped,identityFailure,...identityDetails].map(report=>({json:JSON.stringify(report),accept:true}));
  for(const report of reject)cases.push({json:JSON.stringify(report),accept:false});
  cases.push({json:'{"schema":1.0,"status":"FAIL","phases":[{"phase":"PRE_ENV_READY","result":"STAGE_FAILED","state":"STOPPED"}]}',accept:false});
  const encoded=Buffer.from(JSON.stringify(cases)).toString('base64');
  const command=`. '${helper}';$cases=([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encoded}'))|ConvertFrom-Json);foreach($case in $cases){$accepted=$true;try{$r=$case.json|ConvertFrom-Json;Test-KSessionSequenceReport -Report $r}catch{$accepted=$false};if($accepted-ne[bool]$case.accept){exit 9}};'BATCH_VALIDATION_PASS'`;
  const result=cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command',command],{encoding:'utf8',windowsHide:true});
  assert.equal(result.status,0,result.stderr);assert.equal(result.stdout.trim(),'BATCH_VALIDATION_PASS');
+});
+
+test('Inno JSON writers preserve Unicode as UTF-8 while ASCII remains unchanged',()=>{
+ const iss=read('tools/windows-installer/setup.iss');
+ assert.equal((iss.match(/SaveStringToFile\([^,\n]+, Utf8Encode\(S\), False\)/g)||[]).length,3);
+ for(const target of ['UpgradeRequest','UpgradePlan','P'])assert.match(iss,new RegExp(`SaveStringToFile\\(${target}, Utf8Encode\\(S\\), False\\)`));
+ assert.doesNotMatch(iss,/SaveStringToFile\((UpgradeRequest|UpgradePlan|P), S, False\)/);
+ const command=String.raw`$unicode='{"displayName":"K⁺-SESSION Beta","displayVersion":"1.1.0-beta.1","installLocation":"E:\\synthetic-⁺-路径"}';$ascii='{"displayName":"K-SESSION Beta","displayVersion":"1.1.0-beta.1","installLocation":"E:\\synthetic"}';$rows=@();foreach($cp in @(1252,936,65001)){$encoding=[Text.Encoding]::GetEncoding($cp,[Text.EncoderReplacementFallback]::new('?'),[Text.DecoderReplacementFallback]::new('?'));$rows+=@{cp=$cp;old=[Convert]::ToBase64String($encoding.GetBytes($unicode));ascii=[Convert]::ToBase64String($encoding.GetBytes($ascii))}};$utf8=[Text.UTF8Encoding]::new($false);@{rows=$rows;utf8=[Convert]::ToBase64String($utf8.GetBytes($unicode))}|ConvertTo-Json -Depth 4 -Compress`;
+ const result=cp.spawnSync('pwsh',['-NoProfile','-NonInteractive','-Command',command],{encoding:'utf8',windowsHide:true});
+ assert.equal(result.status,0,result.stderr);
+ const evidence=JSON.parse(result.stdout),decode=value=>JSON.parse(Buffer.from(value,'base64').toString('utf8'));
+ const utf8=decode(evidence.utf8),rows=new Map(evidence.rows.map(row=>[row.cp,{old:decode(row.old),ascii:decode(row.ascii)}]));
+ for(const codePage of [1252,936]){const old=rows.get(codePage).old;assert.notEqual(old.displayName,'K⁺-SESSION Beta');assert.equal(old.displayVersion,'1.1.0-beta.1');assert.notEqual(old.installLocation,utf8.installLocation);}
+ assert.deepEqual(rows.get(65001).old,utf8);
+ assert.equal(utf8.displayName,'K⁺-SESSION Beta');assert.equal(utf8.displayVersion,'1.1.0-beta.1');assert.match(utf8.installLocation,/⁺/);assert.match(utf8.installLocation,/路径/);
+ for(const {ascii} of rows.values())assert.deepEqual(ascii,{displayName:'K-SESSION Beta',displayVersion:'1.1.0-beta.1',installLocation:'E:\\synthetic'});
 });
 
 test('sequence fixture uses a new absent parent while full lifecycle keeps the D-volume layout',()=>{

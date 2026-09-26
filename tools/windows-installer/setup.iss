@@ -403,7 +403,7 @@ begin
     '","instancePath":"' + JsonEscape(PriorBindingInstance) + '","bindingFile":"' + JsonEscape(AddBackslash(R) + 'uninstall\instance-binding.ini') +
     '","registeredInstallRoot":"' + JsonEscape(PriorBindingRoot) + '","registeredInstance":"' + JsonEscape(PriorBindingInstance) +
     '","dataContractVersion":"1","appRoot":"' + JsonEscape(ExpandConstant('{tmp}')) + '"}}';
-  Result := SaveStringToFile(UpgradeRequest, S, False);
+  Result := SaveStringToFile(UpgradeRequest, Utf8Encode(S), False);
 end;
 
 function WriteUpgradePlan: Boolean;
@@ -417,7 +417,7 @@ begin
     '","desktopShortcut":"' + JsonEscape(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) +
     '","startMenuShortcut":"' + JsonEscape(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) +
     '","sourceCommit":"{#SourceCommit}","runtimeManifestHash":"{#RuntimeManifestSha256}","launcherHash":"{#LauncherSha256}","programManifestHash":"{#ProgramManifestSha256}","instanceBindingSchema":1,"upgradeFrom":"1.1.0-beta.1","upgradeTo":"1.1.0-beta.2"}';
-  Result := SaveStringToFile(UpgradePlan, S, False);
+  Result := SaveStringToFile(UpgradePlan, Utf8Encode(S), False);
 end;
 
 #ifdef SequenceDiagnostic
@@ -431,11 +431,13 @@ begin
   end;
   case DetailCode of
     60: Log('KSESSION_SEQUENCE_REGISTRATION_COUNT');
-    61: Log('KSESSION_SEQUENCE_REGISTRATION_VERSION');
+    61: Log('KSESSION_SEQUENCE_REGISTRATION_NAME');
     62: Log('KSESSION_SEQUENCE_REGISTRATION_SNAPSHOT');
     63: Log('KSESSION_SEQUENCE_REGISTRATION_CONFLICT');
     64: Log('KSESSION_SEQUENCE_REGISTRATION_UNINSTALL');
     66: Log('KSESSION_SEQUENCE_REGISTRATION_INCONSISTENT');
+    67: Log('KSESSION_SEQUENCE_REGISTRATION_VERSION');
+    68: Log('KSESSION_SEQUENCE_REGISTRATION_NAME_VERSION');
   else
     Log('KSESSION_SEQUENCE_REGISTRATION_AMBIGUOUS');
   end;
@@ -516,7 +518,7 @@ begin
     '"programManifestHash":"{#ProgramManifestSha256}","instanceBindingSchema":1,"installRoot":"' +
     JsonEscape(ExpandConstant('{app}')) + '","instancePath":"' + JsonEscape(BetaInstance) +
     '","upgradeFrom":"fresh","upgradeTo":"1.1.0-beta.2"}';
-  Result := SaveStringToFile(P, S, False);
+  Result := SaveStringToFile(P, Utf8Encode(S), False);
 end;
 
 procedure RestoreUpgradeRegistration;

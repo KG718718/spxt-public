@@ -125,7 +125,9 @@ test('U01/U07 accepts only exact anchored beta.1 and maps its missing data contr
 
 test('U03/U04 rejects portable, unregistered and online/legacy identities', async t => {
   await t.test('portable or unregistered', () => { const f = fixture(); try { f.snapshot.registrations = []; expectCode(f, 'REGISTRATION_COUNT'); } finally { cleanup(f); } });
+  await t.test('wrong product name', () => { const f = fixture(); try { f.snapshot.registrations[0].displayName = 'K-SESSION Beta'; expectCode(f, 'VERSION_UNSUPPORTED'); } finally { cleanup(f); } });
   await t.test('online/legacy version', () => { const f = fixture(); try { f.snapshot.registrations[0].displayVersion = '1.0.0'; expectCode(f, 'VERSION_UNSUPPORTED'); } finally { cleanup(f); } });
+  await t.test('wrong product name and version', () => { const f = fixture(); try { f.snapshot.registrations[0].displayName = 'K-SESSION Beta'; f.snapshot.registrations[0].displayVersion = '1.0.0'; expectCode(f, 'VERSION_UNSUPPORTED'); } finally { cleanup(f); } });
 });
 
 test('U05/U06 rejects same, higher and downgrade-source versions', async t => {

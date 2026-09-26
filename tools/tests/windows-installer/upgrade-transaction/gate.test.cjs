@@ -5,7 +5,7 @@ const path = require('node:path');
 const test = require('node:test');
 const { GateError, runGate, sha } = require('../../../windows-installer/upgrade-gate/index.cjs');
 const {safeIdentityReason} = require('../../../windows-installer/identity-diagnostic.cjs');
-const {classifyCodes} = require('../../../windows-installer/sequence-identity.cjs');
+const {classifyCodes, classifyVersionDetail} = require('../../../windows-installer/sequence-identity.cjs');
 const bundleBytes = Buffer.from('{"schema":1,"profiles":[]}\n');
 const request = { schema: 1, snapshot: { registrations: [], bindings: [] }, preflight: { installRoot: 'C:\\Install', instancePath: 'D:\\Instance' } };
 const good = {
@@ -68,10 +68,18 @@ test('hosted identity diagnostic accepts only fixed reasons', () => {
   }
 });
 test('sequence registration diagnostic exposes only a closed fixed subreason', () => {
-  for (const code of ['REGISTRATION_COUNT', 'VERSION_UNSUPPORTED', 'SNAPSHOT_INVALID', 'REGISTRATION_CONFLICT', 'UNINSTALL_METADATA_INVALID']) {
+  for (const code of ['REGISTRATION_COUNT', 'REGISTRATION_NAME', 'REGISTRATION_VERSION', 'REGISTRATION_NAME_VERSION', 'SNAPSHOT_INVALID', 'REGISTRATION_CONFLICT', 'UNINSTALL_METADATA_INVALID']) {
     assert.equal(classifyCodes([code, code]), code);
   }
-  assert.equal(classifyCodes(['REGISTRATION_COUNT', 'VERSION_UNSUPPORTED']), 'IDENTITY_REGISTRATION_AMBIGUOUS');
+  assert.equal(classifyCodes(['REGISTRATION_COUNT', 'REGISTRATION_VERSION']), 'IDENTITY_REGISTRATION_AMBIGUOUS');
+  assert.equal(classifyCodes(['VERSION_UNSUPPORTED']), 'IDENTITY_REGISTRATION_AMBIGUOUS');
   assert.equal(classifyCodes(['path=C:\\private token=secret']), 'IDENTITY_REGISTRATION_AMBIGUOUS');
   assert.equal(classifyCodes(['REGISTRATION_COUNT'], true), 'IDENTITY_REGISTRATION_INCONSISTENT');
+  const policy = { fromInstallerVersion: '1.1.0-beta.1' };
+  const snapshot = (displayName, displayVersion) => ({ registrations: [{ displayName, displayVersion }] });
+  assert.equal(classifyVersionDetail(snapshot('K-SESSION Beta', '1.1.0-beta.1'), policy), 'REGISTRATION_NAME');
+  assert.equal(classifyVersionDetail(snapshot('K⁺-SESSION Beta', '1.0.0'), policy), 'REGISTRATION_VERSION');
+  assert.equal(classifyVersionDetail(snapshot('K-SESSION Beta', '1.0.0'), policy), 'REGISTRATION_NAME_VERSION');
+  assert.equal(classifyVersionDetail({ registrations: [] }, policy), 'IDENTITY_REGISTRATION_AMBIGUOUS');
+  assert.equal(classifyVersionDetail(snapshot('K⁺-SESSION Beta', '1.1.0-beta.1'), policy), 'IDENTITY_REGISTRATION_INCONSISTENT');
 });
