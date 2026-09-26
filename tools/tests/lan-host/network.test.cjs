@@ -118,15 +118,17 @@ $text=[string]$env:KSESSION_REUSE_TEST_PORT
 if($text -notmatch '^80(?:8\d|9\d)$'){exit 8}
 $socket=[System.Net.Sockets.Socket]::new([System.Net.Sockets.AddressFamily]::InterNetwork,[System.Net.Sockets.SocketType]::Stream,[System.Net.Sockets.ProtocolType]::Tcp)
 try {
+  $socket.ExclusiveAddressUse=$false
   $socket.SetSocketOption([System.Net.Sockets.SocketOptionLevel]::Socket,[System.Net.Sockets.SocketOptionName]::ReuseAddress,$true)
-  $socket.Bind([System.Net.IPEndPoint]::new([System.Net.IPAddress]::Loopback,[int]$text))
-  $socket.Listen(1)
+  $reuse=[int]$socket.GetSocketOption([System.Net.Sockets.SocketOptionLevel]::Socket,[System.Net.Sockets.SocketOptionName]::ReuseAddress)
+  if($socket.ExclusiveAddressUse -or $reuse -eq 0){[Console]::Write('SETUP_FAILED');exit 9}
+  try {$socket.Bind([System.Net.IPEndPoint]::new([System.Net.IPAddress]::Loopback,[int]$text))}
+  catch [System.Net.Sockets.SocketException] {[Console]::Write('REJECTED:BIND:'+([int]$_.Exception.SocketErrorCode));exit 0}
+  try {$socket.Listen(1)}
+  catch [System.Net.Sockets.SocketException] {[Console]::Write('REJECTED:LISTEN:'+([int]$_.Exception.SocketErrorCode));exit 0}
   [Console]::Write('BOUND')
-} catch [System.Net.Sockets.SocketException] {
-  [Console]::Write('REJECTED')
 } finally {$socket.Dispose()}`;
-  return spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden',
-    '-EncodedCommand', Buffer.from(script, 'utf16le').toString('base64')], {
+  return spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command', script], {
     encoding: 'utf8', windowsHide: true, timeout: 10000,
     env: {...process.env, KSESSION_REUSE_TEST_PORT: String(port)}
   });
@@ -143,12 +145,19 @@ test('real loopback binds prove collision, ordered search, persistence and exhau
   const initiallyFree = await freePorts();
   assert.ok(initiallyFree.length >= 2, 'this local test needs two free ports in 8080-8099');
   const occupiedPort = initiallyFree[0];
+  const positive = dotNetReuseBind(occupiedPort);
+  assert.equal(positive.status, 0, 'independent .NET positive control must complete: ' + JSON.stringify({
+    signal: positive.signal, stdout: positive.stdout, stderr: positive.stderr, error: positive.error?.code
+  }));
+  assert.equal(positive.stdout, 'BOUND', 'the .NET probe must bind the same endpoint when it is actually free');
+  assert.equal(positive.stderr, '');
   const occupant = await rawListen(occupiedPort);
   let reservation;
   try {
     const reuse = dotNetReuseBind(occupiedPort);
     assert.equal(reuse.status, 0, 'independent .NET reuse probe must complete');
-    assert.equal(reuse.stdout, 'REJECTED', 'a second Windows socket with ReuseAddress must not take the held endpoint');
+    assert.match(reuse.stdout, /^REJECTED:(?:BIND|LISTEN):(?:10048|10013)$/,
+      'only address-in-use/access-denied at bind/listen proves that the held endpoint was rejected');
     assert.equal(reuse.stderr, '');
     reservation = await network.findAndReservePort({addresses: ['127.0.0.1'], start: occupiedPort, end: network.PORT_MAX});
     assert.ok(reservation.port > occupiedPort, 'search must advance after a real failed bind');
