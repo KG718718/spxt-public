@@ -9,7 +9,7 @@
 |B45-T1|01a0e002-cbb8-77f1-bf0b-505a7a327007|f8bd/codex/b45-t1|DISPATCHED @abb4959|网络/config/port独立模块，与取证无共享文件|
 |B45-T2|待派发|待分配|WAITING|T1接口|
 |B45-T3|待派发|待分配|WAITING|T1/T2|
-|B45-T4|待派发|待分配|WAITING|T1契约；共享Launcher串行|
+|B45-T4|01a0e004-98a3-75b2-a2a1-3ffd0c6506c9|lan-firewall/codex/b45-t4|DISPATCHED @abb4959|独立helper实现，与T1交换契约；Launcher接线串行|
 |B45-T5-INTEGRATION|同T5|同T5|WAITING|取证/T1—T4|
 |B45-QA|待派发|待分配|WAITING|整合与实际证据|
 
