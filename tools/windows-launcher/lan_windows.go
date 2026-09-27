@@ -592,6 +592,17 @@ func (c *controller) currentLANURL() string {
 	return c.lanURL
 }
 
+func verifiedFreshLANEndpoint(result *lanRefreshResult) (*lanCandidate, int, bool) {
+	if result == nil || result.config == nil || result.discovery == nil || result.discovery.Status != "SELECTED" || !validCandidate(result.discovery.Selected) || result.state == nil || result.state.Port == nil || !validServerCandidate(result.state.Selected) {
+		return nil, 0, false
+	}
+	fresh, server := result.discovery.Selected, result.state.Selected
+	if *result.state.Port != result.config.Port || fresh.AdapterID != result.config.AdapterPreference || server.AdapterID != fresh.AdapterID || server.Address != fresh.Address || server.PrefixLength != fresh.PrefixLength || server.Subnet != fresh.Subnet {
+		return nil, 0, false
+	}
+	return fresh, result.config.Port, true
+}
+
 func (c *controller) applyLANRefresh() {
 	result := c.consumeLANResult()
 	if result == nil || c.closing {
@@ -651,8 +662,10 @@ func (c *controller) applyLANRefresh() {
 		if result.state.Selected != nil {
 			address = result.state.Selected.Address
 			subnet = result.state.Selected.Subnet
-			c.lanURL = privateLANURL(address, port)
 		}
+	}
+	if fresh, freshPort, ok := verifiedFreshLANEndpoint(result); ok {
+		c.lanURL = privateLANURL(fresh.Address, freshPort)
 	}
 	localURL := "-"
 	if c.child != nil {

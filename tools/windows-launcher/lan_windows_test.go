@@ -253,6 +253,45 @@ func TestFailedRefreshRevokesStaleCopyURL(t *testing.T) {
 	}
 }
 
+func TestFreshDiscoveryMismatchRevokesCopyURL(t *testing.T) {
+	port := 8083
+	stale := &lanCandidate{AdapterID: syntheticGUID, Name: "Old Adapter", Address: "192.168.40.10", PrefixLength: 24, Subnet: "192.168.40.0/24"}
+	c := &controller{
+		lanBusy: true,
+		lanURL:  "http://192.168.40.10:8083/login.html",
+		pendingLAN: &lanRefreshResult{
+			status:    networkChanged,
+			config:    &lanConfig{Schema: 1, Port: port, AdapterPreference: syntheticGUID},
+			discovery: &lanDiscovery{Schema: 1, Status: "NETWORK_CHANGED", Selected: nil},
+			state:     &lanServerState{Schema: 1, Status: "LAN_SERVER_READY", Port: &port, Selected: stale},
+		},
+	}
+	c.applyLANRefresh()
+	if c.currentLANURL() != "" {
+		t.Fatal("stale server-selected IP remained copyable without a matching fresh discovery candidate")
+	}
+}
+
+func TestFreshDiscoveryMatchPublishesURLWhenFirewallBlocked(t *testing.T) {
+	port := 8083
+	fresh := &lanCandidate{AdapterID: syntheticGUID, Name: "Current Adapter", Address: "192.168.40.11", PrefixLength: 24, Subnet: "192.168.40.0/24"}
+	server := *fresh
+	server.Name = ""
+	c := &controller{
+		lanBusy: true,
+		pendingLAN: &lanRefreshResult{
+			status:    firewallBlocked,
+			config:    &lanConfig{Schema: 1, Port: port, AdapterPreference: syntheticGUID},
+			discovery: &lanDiscovery{Schema: 1, Status: "SELECTED", Selected: fresh},
+			state:     &lanServerState{Schema: 1, Status: "FIREWALL_BLOCKED", Port: &port, Selected: &server},
+		},
+	}
+	c.applyLANRefresh()
+	if got, want := c.currentLANURL(), "http://192.168.40.11:8083/login.html"; got != want {
+		t.Fatalf("verified fresh address was not published for a non-address firewall gate: got %q want %q", got, want)
+	}
+}
+
 func TestStrictLocalStatusAndActualPIDSocketOwnership(t *testing.T) {
 	var listener net.Listener
 	var port int
