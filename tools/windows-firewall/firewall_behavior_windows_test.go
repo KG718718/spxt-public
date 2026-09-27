@@ -56,11 +56,13 @@ function Get-NetRoute {[CmdletBinding()]param($InterfaceIndex,$AddressFamily)
   [pscustomobject]@{DestinationPrefix='192.168.10.0/24'}
 }
 function Get-NetFirewallProfile {[CmdletBinding()]param($Name,$PolicyStore)
+  if($script:fault-eq'profile-query'){throw 'synthetic profile query failure'}
   $local=if($script:scenario-eq'gpo-blocked'){'False'}else{'True'}
   [pscustomobject]@{Enabled='True';AllowInboundRules='True';AllowLocalFirewallRules=$local}
 }
 function Get-NetFirewallRule {[CmdletBinding()]param($Name,$PolicyStore)
   if($PolicyStore-eq'ActiveStore'){
+    if($script:fault-eq'active-query'){throw 'synthetic ActiveStore query failure'}
     if($script:scenario-eq'active-missing'){return}
     if($null-ne$script:rule-and[string]$script:rule.Enabled-eq'True'){$script:rule}
     return
@@ -234,6 +236,16 @@ func TestFirewallScriptBehaviorWithIsolatedCmdletHarness(t *testing.T) {
 		fault := fault
 		t.Run(fault+" exception fails closed", func(t *testing.T) {
 			exit, events := runFirewallBehavior(t, "enable", "fault-enable", fault)
+			if exit != exitBlocked {
+				t.Fatalf("exit %d events=%#v", exit, events)
+			}
+			requireDisabledLast(t, events)
+		})
+	}
+	for _, fault := range []string{"profile-query", "active-query"} {
+		fault := fault
+		t.Run("exact existing "+fault+" exception disables owned rule", func(t *testing.T) {
+			exit, events := runFirewallBehavior(t, "enable", "exact", fault)
 			if exit != exitBlocked {
 				t.Fatalf("exit %d events=%#v", exit, events)
 			}

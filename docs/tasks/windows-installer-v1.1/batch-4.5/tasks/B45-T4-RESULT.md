@@ -2,7 +2,7 @@
 
 ## 结论
 
-**PASS（Execution R1 本地实现与非提权反例）**。Master Review 指出的启用后异常清理、真实脚本行为测试、32 位登记字段、INI binding 以及 instance/root 相等路径缺口均已修复。已新增独立 `tools/windows-firewall/` 最小 helper，实现闭合 CLI、安装/Runtime/绑定/config 信任校验、selected Private 实体网卡与 RFC1918 subnet 再验证，以及固定产品规则的只读状态和用户主动启用语义。
+**PASS（Execution R2 本地实现与非提权反例）**。Master Review 与独立 QA 指出的启用后异常清理、真实脚本行为测试、32 位登记字段、INI binding、instance/root 相等路径，以及精确已启用规则在 ActiveStore/Profile 查询异常时未禁用的窗口均已修复。已新增独立 `tools/windows-firewall/` 最小 helper，实现闭合 CLI、安装/Runtime/绑定/config 信任校验、selected Private 实体网卡与 RFC1918 subnet 再验证，以及固定产品规则的只读状态和用户主动启用语义。
 
 本结论不等于真实 Windows Firewall、UAC、Launcher 接线、Setup 打包、L22/L23 或端到端 LAN PASS。本任务没有在开发机创建、修改或删除防火墙规则，没有提权，没有运行 Actions。真实规则行为必须由 T5 在受控 Hosted Windows 专项中验证。
 
@@ -21,14 +21,14 @@
 - PowerShell 由 `GetSystemDirectoryW` 定位，不信任继承的 SystemRoot/PATH/PSModulePath；只从系统目录固定加载 NetAdapter/NetConnection/NetTCPIP/NetSecurity。无 `cmd /c`、临时提权脚本、任意命令或 `ExecutionPolicy Bypass`，进程隐藏窗口；Go 构建固定 `-H windowsgui`。
 - selected adapter 必须唯一、Up、非 Hidden、HardwareInterface、非 Virtual、Ethernet/Wi-Fi，名称/描述排除明显 VPN/virtual/tunnel/WSL/Docker/Hyper-V/TAP/TUN；NetworkCategory 必须 Private；唯一 Preferred/非 SkipAsSource RFC1918 IPv4；prefix 必须使整个 subnet 保持在相同私网块内，并存在该 NIC 的 on-link subnet route。无默认网关不作为硬门槛。
 - 规则固定 Name/DisplayName/Group/Description，仅 Inbound TCP、persisted port、Private、selected interface alias、精确可信 subnet、固定 node.exe，EdgeTraversal Block。status 只读。未知同名规则冲突拒绝；已证明自有规则只在用户再次主动 enable 时更新。
-- 新建/更新先保持 Disabled，全部 filters 核验后才 Enabled；进入本次修改后任何异常均对已确认自有的 CIM rule object 做 best-effort Disabled，未知同名规则不写，status 始终不写。最终还核验 ActiveStore 中规则精确有效，Private profile Enabled 且未禁止本地/入站规则，否则 blocked 并禁用自有规则。
+- 新建/更新先保持 Disabled，全部 filters 核验后才 Enabled；`enable` 在确认规则为自有并持有 CIM object 后、调用任何可能抛错的 filter/ActiveStore/Profile 查询前即建立 cleanup 责任，后续任何异常均对该 object 做 best-effort Disabled。未知同名规则不写，status 始终不写，正常精确且 ActiveStore 有效时仍幂等零写。最终还核验 ActiveStore 中规则精确有效，Private profile Enabled 且未禁止本地/入站规则，否则 blocked 并禁用自有规则。
 - 固定退出组：20 invocation、21 install trust、22 registration/binding/config、23 network unsafe、24 rule conflict、25 firewall blocked/operation、70 unexpected。UAC 1223 由 T3 映射 `FIREWALL BLOCKED`，不得重试且 Local 保持运行。
 
 ## 本地验证
 
 使用已存在的固定 Go `go1.27.1 windows/amd64`，GOPROXY/GOSUMDB 关闭，独立 scratch cache：
 
-- `go test -count=1 -v ./...`：12 个顶层测试及17个关键子反例 PASS。除原参数/路径/身份/config/静态/AST测试外，测试专用 harness 通过 mock `Import-Module/Net*` cmdlet 执行未改写的实际 `firewallScript`，覆盖新建先禁用、已有精确幂等、旧自有规则闭合更新顺序、未知同名不写、Public/过宽CIDR拒绝、status不修复、ActiveStore/GPO无效，以及更新前、Enabled后、最终查询异常都以自有规则 Disabled 收尾。harness 不调用真实 NIC 或 Firewall cmdlet，生产无 mock 入口。
+- `go test -count=1 -v ./...`：12 个顶层测试及19个关键子反例 PASS。除原参数/路径/身份/config/静态/AST测试外，测试专用 harness 通过 mock `Import-Module/Net*` cmdlet 执行未改写的实际 `firewallScript`，覆盖新建先禁用、已有精确幂等、旧自有规则闭合更新顺序、未知同名不写、Public/过宽CIDR拒绝、status不修复、ActiveStore/GPO无效，以及更新前、Enabled后、最终查询异常都以自有规则 Disabled 收尾；R2新增精确已启用自有规则的 Profile 查询抛错、ActiveStore rule 查询抛错两项，均固定25且最后事件为 Disabled。harness 不调用真实 NIC 或 Firewall cmdlet，生产无 mock 入口。
 - registry/INI 合成反例覆盖：真实 ProductKey `InstallLocation`、已存在32位key字段缺失/冲突、严格 UTF-16LE Schema 1、重复键、INI/registry/root/instance不一致，以及 `instance == InstallRoot` 显式拒绝；未读取开发机真实登记。
 - `go vet ./...`：PASS。
 - `git diff --check`：PASS。
@@ -58,5 +58,6 @@
 - baseline：`abb49599ca431d017dd8e3a7a07331eabe9cc61f`
 - branch：`codex/b45-t4`
 - 初版 local commit：`3ab36ca983c0152505507a1290a75c5c011835a6`（Master Review 后未整合）。
-- R1 local commit：冻结后由结构化回单精确登记；本文件不自引用未生成 SHA。
+- R1 local commit：`4f0c5c8951e399581031d7d6f4549939997433e9`（Master 已 Review/整合）。
+- R2 local commit：冻结后由结构化回单精确登记；本文件不自引用未生成 SHA。
 - push/main/tag/Release/Hosted：均未执行。

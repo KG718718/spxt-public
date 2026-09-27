@@ -88,9 +88,9 @@ try {
   $rule=$rules[0]
   if(-not (Test-RuleOwned $rule)){Stop-With 24 'RULE_CONFLICT'}
   $managedRule=$rule
+  if($action -eq 'enable'){$managedRuleMutationStarted=$true}
   if((Test-RuleExact $rule $true) -and (Test-ActiveEffective)){[Console]::Out.WriteLine('{"schema":1,"status":"ALLOWED"}');exit 0}
   if($action -eq 'status'){[Console]::Out.WriteLine('{"schema":1,"status":"STALE"}');exit 10}
-  $managedRuleMutationStarted=$true
   Set-NetFirewallRule -Name $ruleName -Direction Inbound -Action Allow -Enabled False -Profile Private -EdgeTraversalPolicy Block -PolicyStore PersistentStore -ErrorAction Stop | Out-Null
   $rule|Get-NetFirewallPortFilter|Set-NetFirewallPortFilter -Protocol TCP -LocalPort $port -RemotePort Any -ErrorAction Stop|Out-Null
   $rule|Get-NetFirewallApplicationFilter|Set-NetFirewallApplicationFilter -Program $program -ErrorAction Stop|Out-Null
