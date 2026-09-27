@@ -2,6 +2,14 @@
 
 当前均为实施中的提前Review，未形成最终验收。
 
+## 最新闭合证据与最后CI接线
+
+T3 stale URL P2在bf6f87d被独立合成反例复现，报告5ac3aa7整合6d99644。77fc8cc/3babad0修复为fresh adapter/config/state的GUID/IP/prefix/subnet/port一致才发布地址，整合59f0a9b/d967786；Master4项及vet PASS，独立QA原反例和正例3/3 PASS，报告0af651f整合137e526。错误的TCP table class=3为ALL猜测已撤回；微软TCP_TABLE_CLASS定义3为OWNER_PID_LISTENER，不产生生产修改。随后普通刷新busy停止请求首回0的同步问题经合成证实，6a2cae6整合a226ed1，逐次owner核验及15秒整体上限保留，Master2/2和vet PASS。
+
+T5完整登记snapshot/hash验证/restore/readback与事务COMMITTED、ROLLED_BACK外置marker经e894881/b2471bb修复，整合3bde248/e0fbbb1。commit内部故障保留登记待恢复journal，marker不随递归清理先丢失，cleanup异常可识别且不再错误降回登记。独立QA基于冻结51d4f7f运行事务25/25、登记顺序静态1/1 PASS，报告0f47c2整合d485b36；不把静态registry顺序声称真实API恢复成功。真实Setup双视图恢复留待Hosted。
+
+CI名单和既有setup-v3调度入口dbd758af8a025d4bf4c932facf04a1febcd703d9、7cbe124abd921628b2bab33119b1048e5b032c1f已整合76044c7/eaebaf6。Execution回单曾错误手填两条40位SHA，Master从git对象核验后要求更正，未使用不存在的身份。Master在eaebaf6实际wrapper44/44 fail0skip0；首次报告误传Execution SHA的本地报告不作来源证据，已以实际HEAD重新运行并另存正确报告。仅手动LAN分支入口可调用诊断/full/qa，旧job条件不变；未触发Hosted。专项3/4、Full0/2、QA0/2。
+
 ## T3 R1正式整合与T5独立QA
 
 T3主动返回6919bcdcd326bfe36ee316a977c6ffda930f4fc4（parent a05d39d）；环境失败关闭、UI消费pending前保持串行、worker独立controller及旧配置/端口恢复经Review通过，整合d623cdfffb2e916890b770d6297fdf9839a3a412与bf6f87ded76b8591899accdbfb47cfde746c9f3a。Master在统一树实际运行Node六文件37/37 fail0skip0，固定Go1.27.1选定25顶层+11子用例、go vet PASS；仅合成及自有loopback，没有真实LAN/UAC/Firewall操作。T5已获统一HEAD用于依赖接线。

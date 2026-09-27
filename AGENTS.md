@@ -2,7 +2,7 @@
 
 ## Batch 4.5 当前执行状态｜2026-09-27
 
-方案A已批准并继续执行。唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2，集成codex/lan-host-v1.1，Primary public-source。T1/T2/T4已Review整合并独立局部复验；T5专项3 Run36281720897精确F3取证PASS，五锚和cleanup固化0897383。T3 Launcher与原T5独立beta3路由/构建实施中；独立QA先审已整合安全组件。专项已用3/4，Full0/2、QA0/2；不得无修改retry。尚无beta.3候选或本Batch最终PASS。详细实时账本以batch-4.5/ORCHESTRATION.md为准，下文0/4及旧阻塞是发生当时历史。
+方案A已批准并继续执行。唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2，集成codex/lan-host-v1.1，Primary public-source。T1—T4已Review整合；T3最新a226ed1。T5专项3 Run36281720897精确F3五锚固化0897383；独立beta3信任/事务路线及回滚修复、CI手动入口已整合，Master兼容44/44 fail0skip0。独立QA已关闭T1/T4/T3局部缺陷和T5两P2的设计/合成门禁；真实Setup/Registry/Firewall及最终QA仍PENDING。T5最后测试名单与RESULT正在完成，未开始候选Hosted。专项3/4、Full0/2、QA0/2；不得无修改retry。尚无beta.3候选Artifact或本Batch最终PASS。详细实时账本以batch-4.5/ORCHESTRATION.md为准，下文0/4及旧阻塞是历史。
 
 ## 方案A正式批准｜2026-09-27
 
