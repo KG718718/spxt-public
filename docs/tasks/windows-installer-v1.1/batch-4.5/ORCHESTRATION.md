@@ -4,6 +4,9 @@
 
 ### H1准入 Review 与预登记
 
+H1已dispatch：setup-v3.yml / mode `lan-hosted-diagnostic` / Run `36301442048` / 精确source `f026131e9d397e6910ad41f84fa238af49d409a4` / attempt1。dispatch前local、origin tracking、GitHub API remote三者HEAD一致，且GitHub远端workflow该ref可见手动入口。H专项正式使用1/2，新增Full0/1、QA0/2；结果PENDING，不能预判PASS或失败原因，原T5冻结待证。
+
+
 原T5主动RETURNED：实现526f215、报告b81d93d；Master发现exact-source缺口退回原线程，返工4a5c7aa、报告6580002主动RETURNED。Master独立Review确认只改手动CI入口、Hosted测试门禁/专项反例、最终Artifact测试verifier及任务RESULT，生产网络/Server/Firewall/升级/身份零改；复验LAN含专项56/56、兼容事务45/45 fail0skip0，Node syntax及diff check PASS。四提交按序整合为b024df8、8fd929a、76b1bd7、bd26672，四个代码文件blob与T5冻结HEAD精确一致。T5状态 `INTEGRATED`，原工作树保留。当前H0/2、新Full0/1、QA0/2；H1仅可用已注册setup-v3.yml手动 `lan-hosted-diagnostic` / LAN分支，精确受测source为本次预登记最终治理HEAD，待push与三方HEAD一致后dispatch，随后回填Run/Artifact。H1不等于真实企业LAN验收；H1失败按固定stage/reason返原T5本地反例与最小修复，禁止无修改retry。
 
 
