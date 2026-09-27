@@ -1,0 +1,5 @@
+[
+  {"schema":1,"status":"PASS","result":"EXPLICIT_IMPORT_SERIALIZATION_PASS","stderrEmpty":true},
+  {"schema":1,"status":"BLOCKED","result":"UNRESOLVED","stderrEmpty":false},
+  {"schema":1,"status":"BLOCKED","result":"UNRESOLVED","stderrEmpty":false}
+]
