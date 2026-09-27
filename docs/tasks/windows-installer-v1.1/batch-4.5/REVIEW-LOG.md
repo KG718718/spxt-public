@@ -31,3 +31,9 @@
 - T4返回3ab36ca未整合。R1：enable后查询抛异常仍须best-effort禁用已确认自有规则；status/未知冲突禁止写。补实际嵌入PS的mock行为测试。product32 view读取InstallLocation而非不存在的InstallRoot，字段缺失不能当key不存在；绑定必须核对INI Schema/InstallRoot/Instance和HKCU，instance==installRoot拒绝。
 - T5 R1 deaa097→be83e8e：仅测试harness路径修复，Master双PS进程与9/9 PASS；Hosted2已通过static，失败CLEANUP_VERIFY。R2要求细分安全清理阶段和0/1/multiple pipeline反例，尚未运行下一次Hosted。
 - 当前专项2/4、Full0/2、QA0/2，前述0预算及未派T2仅是当时历史。
+## 独立早期QA反馈与证据更正
+
+- 已确认T1 P2：Node配置JSON.parse重复port last-wins，helper严格拒绝，形成损坏配置跨层解析分歧；没有证据证明提权或Firewall绕过。原T1 R2严格重复键/尾随内容与原字节保护返工中。
+- 已撤回T2 healthFailed孤立API漏洞定性：独立QA追溯唯一生产monitor→reconcile，发现异常前已同步selected=null/lanListening=false撤销guard；导出函数孤立测试不是生产可达绕过。Master撤销返工，原T2确认NO PRODUCTION DEFECT，清除仅自己的未提交孤立测试，clean@30a1351，无生产改动/新commit。
+- 已确认T4 P2：enable既有精确enabled自有rule时，早期Test-ActiveEffective查询异常在cleanup flag建立前，exit25但不禁用；原T4 R2补责任边界及exact规则下profile/ActiveStore查询throw反例。status/unknown仍禁止写，正常幂等保持。
+- QA未给整体PASS；T3/T5仍实施中，专项3/4、Full0/2、QA0/2不变。
