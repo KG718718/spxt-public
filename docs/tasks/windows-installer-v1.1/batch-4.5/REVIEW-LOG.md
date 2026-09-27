@@ -2,6 +2,14 @@
 
 当前均为实施中的提前Review，未形成最终验收。
 
+## 冻结阶段 Review / 2026-09-27
+
+T3主动返回a05d39d6ba6d112e4ba0d0a291dfe3df93132248；主控退回原线程R1：helper环境失败必须拒绝启动，worker结果直到UI消费前保持串行，设置过渡清除旧URL并消除child/config共享竞态；已有配置切换后启动失败须安全恢复原配置，不能引入未批准的自动换口。
+
+T5阶段fe7cb3c7167acdb82743104352d1d54ab3725997、接线修复f053b907e08be75c75aed734a78fb4c39671d3b6及报告dc45119263553a042f87f5eda82d414457184a8d已收到。Master独立实际运行兼容wrapper：33 tests / 33 pass / fail0 / skip0，C01—C15精确映射通过；这是本地合成验证，非实际Setup生命周期。原wrapper仅扫描C08-C12区间文字会漏C09—C11，现已修复。CI仍须返工旧Portable校验路由及Go测试程序helper hash注入，版本化harness保持历史测试源码不变；同时接入T3/T4安全反例及L01—L28证据映射。NODE_PATH须来自已构建Runtime，早期SOURCE/DOWNLOAD/VERIFY失败有固定安全报告。
+
+独立QA原线程正在对上述T5冻结提交审查信任、回滚、构建及证据，不改生产代码。T3/T5均未整合；专项3/4、Full0/2、QA0/2未变化，尚无beta.3候选Artifact。
+
 ## T1 网络/config/port
 - 默认网关不能硬性要求；有效connected/on-link Private LAN应保留，多NIC不猜选。Execution已接受。
 - GUID canonical小写无括号8-4-4-4-12 hex，不能任意限制UUID version/variant位，拒绝全零；T1/T4已同步。
