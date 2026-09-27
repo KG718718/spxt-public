@@ -59,7 +59,16 @@ $taskLanTests=@(
 ) | ForEach-Object {Join-Path $taskRepo $_}
 $taskLauncherTests=@(Get-ChildItem -LiteralPath (Join-Path $taskRepo 'tools/tests/lan-host') -Filter 'launcher*.test.cjs' -File|ForEach-Object FullName)
 if($taskLauncherTests.Count -eq 0){throw 'LAN Launcher contract tests missing'}
-Run-Checked $taskNode (@('--test')+$taskLanTests+$taskLauncherTests)
+$taskRuntimeModules=Join-Path $taskRoot 'app/node_modules'
+if(!(Test-Path -LiteralPath (Join-Path $taskRuntimeModules 'multer') -PathType Container)){throw 'Built Runtime dependency tree is incomplete'}
+$taskPreviousNodePath=$env:NODE_PATH
+$env:NODE_PATH=$taskRuntimeModules
+try{
+  Run-Checked $taskNode @('-e',"const p=require.resolve('multer');if(!p.startsWith(process.env.NODE_PATH))process.exit(23)")
+  Run-Checked $taskNode (@('--test')+$taskLanTests+$taskLauncherTests)
+}finally{
+  if($null -eq $taskPreviousNodePath){Remove-Item Env:NODE_PATH -ErrorAction SilentlyContinue}else{$env:NODE_PATH=$taskPreviousNodePath}
+}
 $taskArtifact=Join-Path $taskWork 'artifact';New-Item -ItemType Directory -Path $taskArtifact|Out-Null
 $env:KSESSION_TEST_LAUNCHER=Join-Path $taskRoot 'K-SESSION.exe'
 $env:KSESSION_TEST_EVIDENCE=Join-Path $taskWork 'launcher-integration'

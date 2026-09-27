@@ -1,7 +1,9 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const cp = require('node:child_process');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const identity = require('../../../windows-installer/beta3-upgrade/identity.cjs');
@@ -135,4 +137,30 @@ test('LAN portable build orders Runtime, helper, Launcher, composition and binds
   assert.match(pack, /assert\.equal\(li\.firewallHelperSha256,hi\.sha256\)/);
   assert.match(pack, /inspectPE\(read\(root,'K-SESSION-Firewall\.exe'\)\)/);
   assert.doesNotMatch(ci + pack, /0\.0\.0\.0|Profile Public|Remove-NetFirewallRule/i);
+});
+
+test('LAN test subprocess resolves dependencies only from the built Runtime tree and restores NODE_PATH', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ksession-runtime-modules-'));
+  t.after(() => fs.rmSync(directory, {recursive: true, force: true}));
+  const modules = path.join(directory, 'app', 'node_modules'), probe = path.join(modules, 'ksession-runtime-probe');
+  fs.mkdirSync(probe, {recursive: true}); fs.writeFileSync(path.join(probe, 'index.js'), "module.exports='runtime-only';\n");
+  const script = "if(require('ksession-runtime-probe')!=='runtime-only')process.exit(23)";
+  const missing = cp.spawnSync(process.execPath, ['-e', script], {cwd: repo, env: {...process.env, NODE_PATH: ''}, windowsHide: true});
+  assert.notEqual(missing.status, 0);
+  const resolved = cp.spawnSync(process.execPath, ['-e', script], {cwd: repo, env: {...process.env, NODE_PATH: modules}, windowsHide: true});
+  assert.equal(resolved.status, 0);
+  const ci = fs.readFileSync(path.join(repo, 'tools/windows-portable/ci-lan.ps1'), 'utf8');
+  assert.match(ci, /\$taskRuntimeModules=Join-Path \$taskRoot 'app\/node_modules'/);
+  assert.match(ci, /try\{[\s\S]+--test[\s\S]+\}finally\{[\s\S]+NODE_PATH/);
+});
+
+test('workflow initializes fixed evidence before checkout and closes early source or F3 failures', () => {
+  const workflow = fs.readFileSync(path.join(repo, '.github/workflows/lan-host-v1.1.yml'), 'utf8');
+  assert.ok(workflow.indexOf('Initialize fixed diagnostic stage evidence') < workflow.indexOf('uses: actions/checkout@'));
+  assert.ok(workflow.indexOf('Initialize fixed candidate stage evidence') < workflow.lastIndexOf('uses: actions/checkout@'));
+  for (const stage of ['ENV', 'SOURCE', 'DOWNLOAD', 'VERIFY']) assert.match(workflow, new RegExp("stage='" + stage + "'", 'i'));
+  assert.equal((workflow.match(/name: Finalize fixed failure stage/g) || []).length, 2);
+  assert.equal((workflow.match(/status='FAIL';stage=\$taskStage/g) || []).length, 2);
+  assert.match(workflow, /E:\/lan-evidence\/beta3-ci-stage\.json/);
+  assert.doesNotMatch(workflow, /compiler-stdout|compiler-stderr|server\.log/);
 });

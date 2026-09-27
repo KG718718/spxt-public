@@ -23,6 +23,19 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 90
     steps:
+      - name: Initialize fixed diagnostic stage evidence
+        shell: pwsh
+        run: |
+          if (!(Test-Path E:/)) {
+            $taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-lan-e'
+            New-Item -ItemType Directory -Path $taskDrive | Out-Null
+            subst E: $taskDrive
+            if ($LASTEXITCODE -ne 0) { throw 'E isolation unavailable' }
+          }
+          New-Item -ItemType Directory -Path E:/lan-evidence -Force | Out-Null
+          [IO.File]::WriteAllText('E:/lan-evidence/beta3-ci-stage.json',(@{schema=1;status='RUNNING';stage='ENV';sourceCommit='${{ github.sha }}';mode='DIAGNOSTIC'}|ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))
+          if ($env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public' -or $env:GITHUB_REF -ne 'refs/heads/codex/lan-host-v1.1' -or '${{ github.sha }}' -notmatch '^[a-f0-9]{40}$') { throw 'Workflow environment mismatch' }
+          [IO.File]::WriteAllText('E:/lan-evidence/beta3-ci-stage.json',(@{schema=1;status='RUNNING';stage='SOURCE';sourceCommit='${{ github.sha }}';mode='DIAGNOSTIC'}|ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))
       - name: Exact public Git bytes
         shell: pwsh
         run: git config --global core.autocrlf false
@@ -35,24 +48,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          function Set-EarlyStage([string]$taskStage,[string]$taskStatus='RUNNING') {[IO.File]::WriteAllText('E:/lan-evidence/beta3-ci-stage.json',(@{schema=1;status=$taskStatus;stage=$taskStage;sourceCommit='${{ github.sha }}';mode='DIAGNOSTIC'}|ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))}
+          $taskStage='SOURCE';Set-EarlyStage $taskStage
+          trap {Set-EarlyStage $taskStage 'FAIL';throw}
           if ((git rev-parse HEAD) -ne '${{ github.sha }}') { throw 'Tested commit mismatch' }
-          if (!(Test-Path E:/)) {
-            $taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-lan-e'
-            New-Item -ItemType Directory -Path $taskDrive | Out-Null
-            subst E: $taskDrive
-            if ($LASTEXITCODE -ne 0) { throw 'E isolation unavailable' }
-          }
           git clone --no-hardlinks --no-checkout . E:/lan-source
           if ($LASTEXITCODE -ne 0) { throw 'Isolated source clone failed' }
           git -C E:/lan-source -c core.autocrlf=false checkout --detach ${{ github.sha }}
           if ($LASTEXITCODE -ne 0 -or (git -C E:/lan-source rev-parse HEAD) -ne '${{ github.sha }}') { throw 'Exact checkout failed' }
+          $taskStage='DOWNLOAD';Set-EarlyStage $taskStage
           $taskHeaders=@{Authorization="Bearer $env:GH_TOKEN";Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28'}
           Invoke-WebRequest -Uri 'https://api.github.com/repos/KG718718/spxt-public/actions/artifacts/10907910968/zip' -Headers $taskHeaders -OutFile E:/accepted-f3.zip -TimeoutSec 240
+          $taskStage='VERIFY';Set-EarlyStage $taskStage
           if ((Get-Item E:/accepted-f3.zip).Length -ne 32538249 -or (Get-FileHash E:/accepted-f3.zip -Algorithm SHA256).Hash.ToLower() -ne 'e6b01fe7c4499526eb99a837892a0c0641ad2232c84981b191b2ac6f7c18f3c6') { throw 'Accepted F3 archive identity mismatch' }
           Expand-Archive -LiteralPath E:/accepted-f3.zip -DestinationPath E:/accepted-f3
           $taskSetup=@(Get-ChildItem -LiteralPath E:/accepted-f3 -Recurse -File | Where-Object Name -eq 'K-SESSION-Setup-1.1.0-beta.2.exe')
           if ($taskSetup.Count -ne 1 -or $taskSetup[0].Length -ne 33018840 -or (Get-FileHash $taskSetup[0].FullName -Algorithm SHA256).Hash.ToLower() -ne '877383fe14bf089eb0a4e130641a957062c07ab258d22d59895c46f9b3f671b6') { throw 'Accepted F3 Setup identity mismatch' }
           "KSESSION_BETA2_SETUP=$($taskSetup[0].FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Set-EarlyStage 'READY' 'PASS'
       - name: Bounded actual U22 rejection, U23 rollback, successful upgrade and firewall diagnostic
         shell: pwsh
         run: |
@@ -65,6 +78,13 @@ jobs:
           if ($taskStage.status -ne 'PASS' -or $taskStage.stage -ne 'COMPLETE' -or $taskStage.mode -ne 'DIAGNOSTIC') { throw 'Diagnostic stage report mismatch' }
           if ($taskUpgrade.status -ne 'PASS' -or !$taskUpgrade.checks.U22 -or !$taskUpgrade.checks.U23) { throw 'Actual U22/U23 evidence missing' }
           if ($taskFirewall.status -ne 'PASS') { throw 'Actual firewall evidence missing' }
+      - name: Finalize fixed failure stage
+        if: failure()
+        shell: pwsh
+        run: |
+          $taskFile='E:/lan-evidence/beta3-ci-stage.json'
+          if(Test-Path -LiteralPath $taskFile){$taskReport=Get-Content -Raw $taskFile|ConvertFrom-Json;$taskStage=[string]$taskReport.stage}else{$taskStage='ENV'}
+          [IO.File]::WriteAllText($taskFile,(@{schema=1;status='FAIL';stage=$taskStage;sourceCommit='${{ github.sha }}';mode='DIAGNOSTIC'}|ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
@@ -84,6 +104,19 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 150
     steps:
+      - name: Initialize fixed candidate stage evidence
+        shell: pwsh
+        run: |
+          if (!(Test-Path E:/)) {
+            $taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-lan-e'
+            New-Item -ItemType Directory -Path $taskDrive | Out-Null
+            subst E: $taskDrive
+            if ($LASTEXITCODE -ne 0) { throw 'E isolation unavailable' }
+          }
+          New-Item -ItemType Directory -Path E:/lan-evidence -Force | Out-Null
+          [IO.File]::WriteAllText('E:/lan-evidence/beta3-ci-stage.json',(@{schema=1;status='RUNNING';stage='ENV';sourceCommit='${{ github.sha }}';mode='${{ inputs.mode }}'.ToUpperInvariant()}|ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))
+          if ($env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public' -or $env:GITHUB_REF -ne 'refs/heads/codex/lan-host-v1.1' -or '${{ github.sha }}' -notmatch '^[a-f0-9]{40}$') { throw 'Workflow environment mismatch' }
+          [IO.File]::WriteAllText('E:/lan-evidence/beta3-ci-stage.json',(@{schema=1;status='RUNNING';stage='SOURCE';sourceCommit='${{ github.sha }}';mode='${{ inputs.mode }}'.ToUpperInvariant()}|ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))
       - name: Exact public Git bytes
         shell: pwsh
         run: git config --global core.autocrlf false
@@ -96,24 +129,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          function Set-EarlyStage([string]$taskStage,[string]$taskStatus='RUNNING') {[IO.File]::WriteAllText('E:/lan-evidence/beta3-ci-stage.json',(@{schema=1;status=$taskStatus;stage=$taskStage;sourceCommit='${{ github.sha }}';mode='${{ inputs.mode }}'.ToUpperInvariant()}|ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))}
+          $taskStage='SOURCE';Set-EarlyStage $taskStage
+          trap {Set-EarlyStage $taskStage 'FAIL';throw}
           if ((git rev-parse HEAD) -ne '${{ github.sha }}') { throw 'Tested commit mismatch' }
-          if (!(Test-Path E:/)) {
-            $taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-lan-e'
-            New-Item -ItemType Directory -Path $taskDrive | Out-Null
-            subst E: $taskDrive
-            if ($LASTEXITCODE -ne 0) { throw 'E isolation unavailable' }
-          }
           git clone --no-hardlinks --no-checkout . E:/lan-source
           if ($LASTEXITCODE -ne 0) { throw 'Isolated source clone failed' }
           git -C E:/lan-source -c core.autocrlf=false checkout --detach ${{ github.sha }}
           if ($LASTEXITCODE -ne 0 -or (git -C E:/lan-source rev-parse HEAD) -ne '${{ github.sha }}') { throw 'Exact checkout failed' }
+          $taskStage='DOWNLOAD';Set-EarlyStage $taskStage
           $taskHeaders=@{Authorization="Bearer $env:GH_TOKEN";Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28'}
           Invoke-WebRequest -Uri 'https://api.github.com/repos/KG718718/spxt-public/actions/artifacts/10907910968/zip' -Headers $taskHeaders -OutFile E:/accepted-f3.zip -TimeoutSec 240
+          $taskStage='VERIFY';Set-EarlyStage $taskStage
           if ((Get-Item E:/accepted-f3.zip).Length -ne 32538249 -or (Get-FileHash E:/accepted-f3.zip -Algorithm SHA256).Hash.ToLower() -ne 'e6b01fe7c4499526eb99a837892a0c0641ad2232c84981b191b2ac6f7c18f3c6') { throw 'Accepted F3 archive identity mismatch' }
           Expand-Archive -LiteralPath E:/accepted-f3.zip -DestinationPath E:/accepted-f3
           $taskSetup=@(Get-ChildItem -LiteralPath E:/accepted-f3 -Recurse -File | Where-Object Name -eq 'K-SESSION-Setup-1.1.0-beta.2.exe')
           if ($taskSetup.Count -ne 1 -or $taskSetup[0].Length -ne 33018840 -or (Get-FileHash $taskSetup[0].FullName -Algorithm SHA256).Hash.ToLower() -ne '877383fe14bf089eb0a4e130641a957062c07ab258d22d59895c46f9b3f671b6') { throw 'Accepted F3 Setup identity mismatch' }
           "KSESSION_BETA2_SETUP=$($taskSetup[0].FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Set-EarlyStage 'READY' 'PASS'
       - name: Same-commit LAN Runtime, helper, Launcher, Portable, Setup and lifecycle
         shell: pwsh
         run: |
@@ -149,6 +182,13 @@ jobs:
           path: E:/lan-build/candidate/artifact/
           if-no-files-found: error
           retention-days: 30
+      - name: Finalize fixed failure stage
+        if: failure()
+        shell: pwsh
+        run: |
+          $taskFile='E:/lan-evidence/beta3-ci-stage.json'
+          if(Test-Path -LiteralPath $taskFile){$taskReport=Get-Content -Raw $taskFile|ConvertFrom-Json;$taskStage=[string]$taskReport.stage}else{$taskStage='ENV'}
+          [IO.File]::WriteAllText($taskFile,(@{schema=1;status='FAIL';stage=$taskStage;sourceCommit='${{ github.sha }}';mode='${{ inputs.mode }}'.ToUpperInvariant()}|ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))
       - name: Preserve fixed non-sensitive failure summaries
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
