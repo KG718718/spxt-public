@@ -123,4 +123,9 @@ Run36294405341@ac2b47de85aaac9545cf6f2a534603d7071ed5db / Artifact10923547080（
 最终状态BLOCKED — FULL HOSTED BUDGET EXHAUSTED。预算历史4/4、D1/2、Full2/2、QA0/2；D6/QA不挪用。T5收到STOP并主动确认原worktree/local8e99b4d冻结，原T1—T4与QA保持既有冻结，未清理任何现场。决定与选择详见HOSTED-STOPLOSS-FULL2-20260927.md；原历史CHATGPT-HANDOFF保留，新卡full2-stoploss/CHATGPT-HANDOFF.md。唯一Master/Primary/集成分支不变，未main/tag/Release，不进入Batch5；等待新明确授权。
 # HOSTED_LAN H1准入 Master Review｜2026-09-27
 
+## H1后H2准入Review
+
+H1 Run36301442048 固定PRODUCTION_DISCOVERY_REJECT/PRODUCTION_DISCOVERY_INVALID，但旧代码把抛错与返回shape合并；H1无法证实生产缺陷或测试环境假设。原T5同一线程新增固定已知code→五类安全reason，未知→INTERNAL；仅修改Hosted测试门禁与合成测试，不改生产发现/安全/CI/最终verifier。Master独立在T5冻结HEAD重跑LAN62/62、兼容事务45/45 fail0skip0；差异及隐私Review通过，整合3de2715+42a6c54。H2最后预算只在远端精确HEAD一致后运行；H2 FAIL必须止损。
+
+
 原T5 526f215+b81d93d主动回单，本地14项规定反例及4项附加反例18/18。Master发现新增手动入口只用环境GITHUB_SHA写报告，缺少精确checkout HEAD核验，退回同一T5；返工4a5c7aa+6580002增加gate自身读取仓库HEAD与环境SHA精确比较，并在工作流显式交叉核验，不一致固定HOSTED_CONTEXT/SOURCE_COMMIT_MISMATCH，安全FAIL报告与本地反例。Master独立重跑原LAN+新专项56/56及beta3兼容事务45/45，fail0skip0；Node语法、diff范围与空白检查PASS。production discovery、server、config、Launcher、Firewall、Runtime身份、业务、事务逻辑未改。CI只增LAN分支手动read-only H1，不调用Full；最终Artifact verifier仍要求新严格字段、来源、双监听/health/HTTP/cleanup全真且真实LAN声明false。四提交cherry-pick后代码blob与原T5提交精确一致。只证明本地/合成门禁，Full2的Hosted根因仍未知。H1在push核验后才能运行，预算H0/2。
