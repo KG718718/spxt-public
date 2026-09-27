@@ -56,6 +56,8 @@ func (c *controller) commandEnvironment() ([]string, error) {
 	}, nil
 }
 
+var commandEnvironmentBoundary = func(c *controller) ([]string, error) { return c.commandEnvironment() }
+
 func (c *controller) runNodeCLI(script string, args ...string) ([]byte, int, error) {
 	if !c.lanEnabled() {
 		return nil, -1, fmt.Errorf("LAN build disabled")
@@ -66,7 +68,7 @@ func (c *controller) runNodeCLI(script string, args ...string) ([]byte, int, err
 	if !within(app, full) {
 		return nil, -1, fmt.Errorf("unsafe script")
 	}
-	env, err := c.commandEnvironment()
+	env, err := commandEnvironmentBoundary(c)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -327,10 +329,14 @@ func (c *controller) firewallAllowed(config *lanConfig) bool {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
+	env, err := commandEnvironmentBoundary(c)
+	if err != nil {
+		return false
+	}
 	cmd := exec.CommandContext(ctx, path, "status", "--port", strconv.Itoa(config.Port), "--adapter-guid", config.AdapterPreference)
 	cmd.Dir = c.root
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	cmd.Env, _ = c.commandEnvironment()
+	cmd.Env = env
 	output, err := cmd.Output()
 	if err != nil || len(output) > 4096 {
 		return false
@@ -419,6 +425,9 @@ type lanRefreshResult struct {
 	ownership        bool
 	suggestedAdapter string
 	err              bool
+	transition       bool
+	child            *ownedChild
+	ready            bool
 }
 
 var elevateFirewallBoundary = func(c *controller, config *lanConfig) bool { return c.elevateFirewall(config) }
@@ -435,6 +444,25 @@ var lanTransitionConfigureBoundary = func(c *controller, command, adapter string
 	}
 }
 var lanTransitionStartBoundary = func(c *controller) error { return c.start() }
+var lanTransitionSaveConfigBoundary = func(c *controller, config *lanConfig) error { return c.saveConfig(config) }
+
+func startExactLANConfig(c *controller, expected *lanConfig) error {
+	if expected == nil {
+		return fmt.Errorf("LAN_CONFIG_ABSENT")
+	}
+	if err := lanTransitionStartBoundary(c); err != nil {
+		return err
+	}
+	if c.lanConfig == nil || c.lanConfig.Port != expected.Port || c.lanConfig.AdapterPreference != expected.AdapterPreference || c.child == nil || c.child.port != expected.Port || !c.ready {
+		if c.child != nil {
+			c.child.stop()
+		}
+		c.child = nil
+		c.ready = false
+		return fmt.Errorf("LAN_START_IDENTITY_MISMATCH")
+	}
+	return nil
+}
 
 func (c *controller) claimLANWork() bool {
 	c.lanMu.Lock()
@@ -446,6 +474,26 @@ func (c *controller) claimLANWork() bool {
 	return true
 }
 func (c *controller) isLANBusy() bool { c.lanMu.Lock(); defer c.lanMu.Unlock(); return c.lanBusy }
+
+func (c *controller) publishLANResult(result *lanRefreshResult) {
+	c.lanMu.Lock()
+	if c.lanBusy && c.pendingLAN == nil {
+		c.pendingLAN = result
+	}
+	c.lanMu.Unlock()
+	call(user32, "PostMessageW", c.hwnd, lanRefreshMsg, 0, 0)
+}
+
+func (c *controller) consumeLANResult() *lanRefreshResult {
+	c.lanMu.Lock()
+	defer c.lanMu.Unlock()
+	result := c.pendingLAN
+	if result != nil {
+		c.pendingLAN = nil
+		c.lanBusy = false
+	}
+	return result
+}
 
 func (c *controller) beginLANRefresh() {
 	if !c.lanEnabled() || c.closing || c.child == nil || !c.ready {
@@ -531,31 +579,37 @@ func (c *controller) beginLANRefresh() {
 				}
 			}
 		}
-		c.lanMu.Lock()
-		c.pendingLAN = result
-		c.lanBusy = false
-		c.lanMu.Unlock()
-		call(user32, "PostMessageW", c.hwnd, lanRefreshMsg, 0, 0)
+		c.publishLANResult(result)
 	}()
 }
 
 func (c *controller) currentLANURL() string {
 	c.lanMu.Lock()
 	defer c.lanMu.Unlock()
+	if c.lanBusy {
+		return ""
+	}
 	return c.lanURL
 }
 
 func (c *controller) applyLANRefresh() {
-	c.lanMu.Lock()
-	result := c.pendingLAN
-	c.pendingLAN = nil
-	c.lanMu.Unlock()
+	result := c.consumeLANResult()
 	if result == nil || c.closing {
 		return
 	}
+	if result.transition {
+		c.child = result.child
+		c.ready = result.ready
+		c.lanConfig = result.config
+	}
+	c.lanStatus = result.status
 	if result.err && result.state == nil {
 		c.lanURL = ""
-		c.text(result.status + "\r\n本机服务与既有业务数据保持不变。")
+		if result.status == portOccupied && result.config != nil {
+			c.text(fmt.Sprintf("PORT OCCUPIED\r\n保存的 LAN 端口 %d 仍被占用；请主动重新寻找端口。", result.config.Port))
+		} else {
+			c.text(result.status + "\r\n本机服务与既有业务数据保持不变。")
+		}
 		c.lastLANCheck = time.Time{}
 		return
 	}
@@ -631,25 +685,52 @@ func (c *controller) startLANTransition(command, adapter string) {
 	oldChild := c.child
 	c.child = nil
 	c.ready = false
+	c.lanURL = ""
+	work := &controller{root: c.root, exe: c.exe, instance: c.instance, class: c.class, loginHash: c.loginHash, suppressUI: true}
 	go func() {
 		if oldChild != nil {
 			oldChild.stop()
 		}
-		next, err := lanTransitionConfigureBoundary(c, command, adapter)
-		if err != nil && previous != nil {
-			if rollback := c.saveConfig(previous); rollback != nil {
-				err = rollback
-			} else {
-				next = previous
+		next, err := lanTransitionConfigureBoundary(work, command, adapter)
+		restoredBeforeStart := false
+		if err != nil {
+			next = nil
+			if previous != nil {
+				if rollback := lanTransitionSaveConfigBoundary(work, previous); rollback != nil {
+					err = rollback
+				} else {
+					next = previous
+					restoredBeforeStart = true
+				}
 			}
 		}
-		if next != nil {
-			c.lanConfig = next
-		} else {
-			c.lanConfig = previous
+		if next == nil && err == nil {
+			err = fmt.Errorf("LAN_CONFIG_ABSENT")
 		}
-		if startErr := lanTransitionStartBoundary(c); startErr != nil {
+		work.lanConfig = next
+		var startErr error
+		if next != nil {
+			startErr = startExactLANConfig(work, next)
+		}
+		if next != nil && startErr != nil {
 			err = startErr
+			if previous != nil && !restoredBeforeStart {
+				if rollback := lanTransitionSaveConfigBoundary(work, previous); rollback != nil {
+					err = rollback
+				} else {
+					if work.child != nil {
+						work.child.stop()
+					}
+					work.child = nil
+					work.ready = false
+					work.lanConfig = previous
+					if recoveryErr := startExactLANConfig(work, previous); recoveryErr != nil {
+						err = recoveryErr
+					} else {
+						err = fmt.Errorf("LAN_START_FAILED")
+					}
+				}
+			}
 		}
 		status := networkChanged
 		if err != nil {
@@ -658,12 +739,7 @@ func (c *controller) startLANTransition(command, adapter string) {
 				status = portOccupied
 			}
 		}
-		c.lanMu.Lock()
-		c.lanBusy = false
-		c.lastLANCheck = time.Time{}
-		c.pendingLAN = &lanRefreshResult{status: status, err: true}
-		c.lanMu.Unlock()
-		call(user32, "PostMessageW", c.hwnd, lanRefreshMsg, 0, 0)
+		c.publishLANResult(&lanRefreshResult{status: status, err: true, transition: true, child: work.child, ready: work.ready, config: work.lanConfig})
 	}()
 }
 
@@ -700,16 +776,13 @@ func (c *controller) enableFirewallAsync() {
 		return
 	}
 	go func() {
-		ok := elevateFirewallBoundary(c, c.lanConfig)
-		c.lanMu.Lock()
-		c.lanBusy = false
+		config := *c.lanConfig
+		ok := elevateFirewallBoundary(c, &config)
 		status := networkChanged
 		if !ok {
 			status = firewallBlocked
 		}
-		c.pendingLAN = &lanRefreshResult{status: status, err: true}
-		c.lanMu.Unlock()
-		call(user32, "PostMessageW", c.hwnd, lanRefreshMsg, 0, 0)
+		c.publishLANResult(&lanRefreshResult{status: status, err: true})
 	}()
 }
 

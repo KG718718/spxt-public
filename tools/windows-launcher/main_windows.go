@@ -81,6 +81,7 @@ type controller struct {
 	combo, lanButton, copyButton, portButton uintptr
 	pendingLAN                               *lanRefreshResult
 	lastLANCheck                             time.Time
+	suppressUI                               bool
 }
 
 var active *controller
@@ -435,8 +436,10 @@ func (c *controller) start() error {
 			if c.healthy() {
 				c.ready = true
 				c.event("READY", map[string]any{"pid": ch.pid, "port": port})
-				c.text(fmt.Sprintf("后台已启动：http://127.0.0.1:%d/login.html\r\n关闭浏览器不会停止后台。停止请使用下方按钮。", port))
-				c.openBrowser()
+				if !c.suppressUI {
+					c.text(fmt.Sprintf("后台已启动：http://127.0.0.1:%d/login.html\r\n关闭浏览器不会停止后台。停止请使用下方按钮。", port))
+					c.openBrowser()
+				}
 				return nil
 			}
 			time.Sleep(100 * time.Millisecond)

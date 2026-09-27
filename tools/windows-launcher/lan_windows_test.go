@@ -42,16 +42,11 @@ func TestUACRejectionDoesNotStopLocalChildOrRetry(t *testing.T) {
 	child := &ownedChild{pid: 4242, port: 8083}
 	c := &controller{lanConfig: &lanConfig{Schema: 1, Port: 8083, AdapterPreference: syntheticGUID}, child: child}
 	c.enableFirewallAsync()
-	deadline := time.Now().Add(time.Second)
-	for time.Now().Before(deadline) {
-		c.lanMu.Lock()
-		busy := c.lanBusy
-		c.lanMu.Unlock()
-		if !busy {
-			break
-		}
-		time.Sleep(time.Millisecond)
+	waitPendingLAN(t, c)
+	if !c.isLANBusy() {
+		t.Fatal("UAC worker released serialization before UI consumption")
 	}
+	c.applyLANRefresh()
 	if calls != 1 {
 		t.Fatalf("elevation calls=%d", calls)
 	}
@@ -61,18 +56,29 @@ func TestUACRejectionDoesNotStopLocalChildOrRetry(t *testing.T) {
 }
 
 func TestLANSettingsTransitionDoesNotBlockUIThread(t *testing.T) {
-	oldConfigure, oldStart := lanTransitionConfigureBoundary, lanTransitionStartBoundary
-	defer func() { lanTransitionConfigureBoundary = oldConfigure; lanTransitionStartBoundary = oldStart }()
+	oldConfigure, oldStart, oldSave := lanTransitionConfigureBoundary, lanTransitionStartBoundary, lanTransitionSaveConfigBoundary
+	defer func() {
+		lanTransitionConfigureBoundary = oldConfigure
+		lanTransitionStartBoundary = oldStart
+		lanTransitionSaveConfigBoundary = oldSave
+	}()
 	release := make(chan struct{})
+	entered := make(chan struct{})
+	calls := 0
 	lanTransitionConfigureBoundary = func(c *controller, command string, _ string) (*lanConfig, error) {
+		calls++
+		if calls == 1 {
+			close(entered)
+		}
 		if command != "configure" || c.child != nil {
 			t.Error("own Local child was not detached before first range probe")
 		}
 		<-release
 		return &lanConfig{Schema: 1, Port: 8080, AdapterPreference: syntheticGUID}, nil
 	}
-	lanTransitionStartBoundary = func(_ *controller) error { return nil }
-	c := &controller{child: &ownedChild{port: 8080}}
+	lanTransitionStartBoundary = func(c *controller) error { c.child = &ownedChild{port: 8080}; c.ready = true; return nil }
+	lanTransitionSaveConfigBoundary = func(_ *controller, _ *lanConfig) error { return nil }
+	c := &controller{child: &ownedChild{port: 8080}, lanURL: "http://192.168.40.10:8080/login.html"}
 	before := time.Now()
 	c.startLANTransition("configure", syntheticGUID)
 	if time.Since(before) > 50*time.Millisecond {
@@ -81,14 +87,162 @@ func TestLANSettingsTransitionDoesNotBlockUIThread(t *testing.T) {
 	if !c.isLANBusy() {
 		t.Fatal("transition did not serialize settings")
 	}
+	if c.currentLANURL() != "" {
+		t.Fatal("transition did not immediately revoke stale copy URL")
+	}
+	<-entered
+	c.startLANTransition("configure", syntheticGUID)
+	if calls != 1 {
+		t.Fatal("second selection entered while first transition was pending")
+	}
 	close(release)
 	deadline := time.Now().Add(time.Second)
-	for c.isLANBusy() && time.Now().Before(deadline) {
+	for time.Now().Before(deadline) {
+		c.lanMu.Lock()
+		pending := c.pendingLAN != nil
+		c.lanMu.Unlock()
+		if pending {
+			break
+		}
 		time.Sleep(time.Millisecond)
 	}
-	if c.isLANBusy() {
-		t.Fatal("transition did not complete")
+	if !c.isLANBusy() {
+		t.Fatal("worker released serialization before UI consumed pending result")
 	}
+	c.startLANTransition("configure", syntheticGUID)
+	if calls != 1 || c.currentLANURL() != "" {
+		t.Fatal("pending result allowed a new selection or stale copy before UI consumption")
+	}
+	c.applyLANRefresh()
+	if c.isLANBusy() || c.child == nil || !c.ready {
+		t.Fatal("UI did not atomically consume transition result")
+	}
+}
+
+func TestFirewallEnvironmentFailureIsFailClosed(t *testing.T) {
+	root := t.TempDir()
+	helper := filepath.Join(root, "K-SESSION-Firewall.exe")
+	content := []byte("synthetic reviewed helper")
+	if err := os.WriteFile(helper, content, 0600); err != nil {
+		t.Fatal(err)
+	}
+	oldHash, oldEnvironment := firewallHelperHash, commandEnvironmentBoundary
+	defer func() { firewallHelperHash = oldHash; commandEnvironmentBoundary = oldEnvironment }()
+	firewallHelperHash = digest(content)
+	commandEnvironmentBoundary = func(_ *controller) ([]string, error) { return nil, fmt.Errorf("synthetic environment failure") }
+	c := &controller{root: root}
+	if c.firewallAllowed(&lanConfig{Schema: 1, Port: 8080, AdapterPreference: syntheticGUID}) {
+		t.Fatal("firewall status inherited ambient environment after allowlist construction failed")
+	}
+}
+
+func TestTransitionStartFailureRestoresOldConfigAndService(t *testing.T) {
+	oldConfigure, oldStart, oldSave := lanTransitionConfigureBoundary, lanTransitionStartBoundary, lanTransitionSaveConfigBoundary
+	defer func() {
+		lanTransitionConfigureBoundary = oldConfigure
+		lanTransitionStartBoundary = oldStart
+		lanTransitionSaveConfigBoundary = oldSave
+	}()
+	previous := &lanConfig{Schema: 1, Port: 8083, AdapterPreference: syntheticGUID}
+	next := &lanConfig{Schema: 1, Port: 8084, AdapterPreference: "11111111-2222-4333-8444-555555555555"}
+	lanTransitionConfigureBoundary = func(_ *controller, _, _ string) (*lanConfig, error) { copy := *next; return &copy, nil }
+	saved := 0
+	lanTransitionSaveConfigBoundary = func(_ *controller, config *lanConfig) error {
+		if config.Port != previous.Port || config.AdapterPreference != previous.AdapterPreference {
+			t.Fatal("rollback did not restore exact previous config")
+		}
+		saved++
+		return nil
+	}
+	starts := 0
+	lanTransitionStartBoundary = func(work *controller) error {
+		starts++
+		if starts == 1 {
+			if work.lanConfig.Port != next.Port {
+				t.Fatal("new config was not attempted first")
+			}
+			return fmt.Errorf("PORT_OCCUPIED")
+		}
+		if work.lanConfig.Port != previous.Port {
+			t.Fatal("recovery attempted a port other than the exact previous config")
+		}
+		work.child = &ownedChild{port: previous.Port, pid: 4242}
+		work.ready = true
+		return nil
+	}
+	c := &controller{lanConfig: previous, child: &ownedChild{port: previous.Port}, lanURL: "http://192.168.40.10:8083/login.html"}
+	c.startLANTransition("select", next.AdapterPreference)
+	waitPendingLAN(t, c)
+	if !c.isLANBusy() {
+		t.Fatal("rollback result was exposed before UI consumption")
+	}
+	c.applyLANRefresh()
+	if saved != 1 || starts != 2 || c.lanConfig == nil || c.lanConfig.Port != previous.Port || c.child == nil || c.child.port != previous.Port || !c.ready {
+		t.Fatalf("old state not recovered: saved=%d starts=%d config=%+v child=%+v ready=%t", saved, starts, c.lanConfig, c.child, c.ready)
+	}
+}
+
+func TestFirstTransitionStartFailureKeepsDeterminedPort(t *testing.T) {
+	oldConfigure, oldStart, oldSave := lanTransitionConfigureBoundary, lanTransitionStartBoundary, lanTransitionSaveConfigBoundary
+	defer func() {
+		lanTransitionConfigureBoundary = oldConfigure
+		lanTransitionStartBoundary = oldStart
+		lanTransitionSaveConfigBoundary = oldSave
+	}()
+	next := &lanConfig{Schema: 1, Port: 8086, AdapterPreference: syntheticGUID}
+	lanTransitionConfigureBoundary = func(_ *controller, _, _ string) (*lanConfig, error) { copy := *next; return &copy, nil }
+	starts, saves := 0, 0
+	lanTransitionStartBoundary = func(_ *controller) error { starts++; return fmt.Errorf("SERVER_START_FAILED") }
+	lanTransitionSaveConfigBoundary = func(_ *controller, _ *lanConfig) error { saves++; return nil }
+	c := &controller{lanURL: "http://192.168.40.10:8081/login.html"}
+	c.startLANTransition("configure", syntheticGUID)
+	waitPendingLAN(t, c)
+	c.applyLANRefresh()
+	if starts != 1 || saves != 0 || c.lanConfig == nil || c.lanConfig.Port != next.Port || c.child != nil || c.ready {
+		t.Fatalf("first determined config was not retained exactly: starts=%d saves=%d config=%+v child=%+v ready=%t", starts, saves, c.lanConfig, c.child, c.ready)
+	}
+	if c.currentLANURL() != "" {
+		t.Fatal("failed first transition restored a stale copy URL")
+	}
+}
+
+func TestTransitionRejectsUnexpectedFallbackPort(t *testing.T) {
+	oldConfigure, oldStart, oldSave := lanTransitionConfigureBoundary, lanTransitionStartBoundary, lanTransitionSaveConfigBoundary
+	defer func() {
+		lanTransitionConfigureBoundary = oldConfigure
+		lanTransitionStartBoundary = oldStart
+		lanTransitionSaveConfigBoundary = oldSave
+	}()
+	next := &lanConfig{Schema: 1, Port: 8086, AdapterPreference: syntheticGUID}
+	lanTransitionConfigureBoundary = func(_ *controller, _, _ string) (*lanConfig, error) { copy := *next; return &copy, nil }
+	lanTransitionStartBoundary = func(work *controller) error {
+		work.child = &ownedChild{port: 8091, pid: 4242}
+		work.ready = true
+		return nil
+	}
+	lanTransitionSaveConfigBoundary = func(_ *controller, _ *lanConfig) error { return nil }
+	c := &controller{}
+	c.startLANTransition("configure", syntheticGUID)
+	waitPendingLAN(t, c)
+	c.applyLANRefresh()
+	if c.child != nil || c.ready || c.lanConfig == nil || c.lanConfig.Port != next.Port || c.lanStatus != lanStartFailed {
+		t.Fatalf("unexpected fallback listener was accepted: config=%+v child=%+v ready=%t status=%s", c.lanConfig, c.child, c.ready, c.lanStatus)
+	}
+}
+
+func waitPendingLAN(t *testing.T, c *controller) {
+	t.Helper()
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		c.lanMu.Lock()
+		pending := c.pendingLAN != nil
+		c.lanMu.Unlock()
+		if pending {
+			return
+		}
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatal("LAN worker did not publish a result")
 }
 
 func TestFailedRefreshRevokesStaleCopyURL(t *testing.T) {
