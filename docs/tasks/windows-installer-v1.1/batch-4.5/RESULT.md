@@ -1,5 +1,9 @@
 # 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
+## 当前结论｜2026-09-27 生产网络发现路线只读评审
+
+只读评审交付完成；**Batch 4.5 仍 BLOCKED — PRODUCTION DISCOVERY P02 FAILED**。M00/M01 PASS、M02 FAIL、M03 PASS 及 F01—F12 合成 12/12 是历史结果，本轮未复测。唯一真实 Win10 proof：P01 PASS、P02 FAIL/`DISCOVERY_COMMAND_FAILED`、P03—P08 NOT_REACHED；未证无私网候选。对 Route A/B/C 的安全、Win10/Win11、依赖、打包、升级/回滚与验证成本已形成 `NETWORK-DISCOVERY-ARCHITECTURE-REVIEW.md` 和决策卡；工程有条件建议先验证 B 的 API/COM 可行性，待网页版决定。本轮无生产修改、无新测试/实机/Hosted/Actions；Utility 一行仍在，Final Full0/1、Final QA0/1，未生成 beta.3 最终 Artifact。下方旧 P02 止损保持历史事实。
+
 ## 当前结论｜2026-09-27 Utility修复后唯一实机proof止损
 
 **BLOCKED — CONTROLLED WINDOWS PRODUCTION DISCOVERY FAILED。** 获批的生产一行Utility显式导入经F01—F12 12/12、Master Review及公开`bcf82b2`同步；真实Win10唯一一次proof仍P01 PASS、P02 FAIL/`DISCOVERY_COMMAND_FAILED`，P03—P08未到达。固定证据local`192cd81`已整合`79f2ad8`，未保存网络身份或原始stderr。原T5冻结，不重复proof或微诊断，不运行Final Full0/1、QA0/1；无beta.3最终Artifact，待网页版决策。详见`UTILITY-FIX-P02-STOP-20260927.md`及决策卡。下方M03阻塞为历史。

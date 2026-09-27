@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 4.5 当前停点｜2026-09-27 网络发现架构只读评审
+
+生产 discovery 唯一真实 Win10 proof 仍 P02 FAIL / `DISCOVERY_COMMAND_FAILED`；P03—P08 未到达。网页版批准的本轮仅做 Route A PowerShell 封闭协议、Route B 原生 Windows 只读 helper、Route C 冻结的源码和官方资料评审。报告及决策卡见 `docs/tasks/windows-installer-v1.1/batch-4.5/NETWORK-DISCOVERY-ARCHITECTURE-REVIEW.md`、`NETWORK-DISCOVERY-ARCHITECTURE-DECISION.md`。未改生产/Utility 行，未运行测试、实机、Hosted 或 Actions；Final Full0/1、Final QA0/1。工程有条件建议先验证 B 的 API/COM/普通用户可行性，待网页版决定，Batch 4.5 仍 BLOCKED，无 beta.3 最终 Artifact。
+
 ## 当前止损｜2026-09-27 最小Utility修复未越过P02
 
 真实Win10唯一受控proof对公开`bcf82b2`返回P01 PASS、P02 FAIL/`DISCOVERY_COMMAND_FAILED`，其后未到达；Master整合固定证据`79f2ad8`，原T5冻结。不得追加网络模块、stderr微诊断/Hosted、Final Full或QA。Final Full0/1、QA0/1未动，Batch4.5仍BLOCKED；详见`docs/tasks/windows-installer-v1.1/batch-4.5/UTILITY-FIX-P02-STOP-20260927.md`和决策卡。下方修复待proof为历史。

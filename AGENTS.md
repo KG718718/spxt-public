@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前只读架构评审｜2026-09-27 生产网络发现路线
+
+网页版仅批准比较 PowerShell 封闭成功协议、Windows 原生只读 helper 和继续冻结。Master 已完成源码/微软官方 API 的只读评审，见 `docs/tasks/windows-installer-v1.1/batch-4.5/NETWORK-DISCOVERY-ARCHITECTURE-REVIEW.md` 与 `NETWORK-DISCOVERY-ARCHITECTURE-DECISION.md`。工程有条件建议先验证原生 API/COM 可行性，**不是实施授权**；本轮不得改生产、撤销 Utility 行、运行测试/实机/Hosted/Actions/Final Full/QA。唯一真实 Win10 proof 仍 P01 PASS、P02 FAIL / `DISCOVERY_COMMAND_FAILED`，P03—P08 未到达；Final Full0/1、Final QA0/1 未用，无 beta.3 最终 Artifact。当前 `BLOCKED — PRODUCTION DISCOVERY P02 FAILED`，等待网页版选择路线和下一轮范围。下方 Utility 修复后止损为本评审的事实基线。
+
 ## 当前止损｜2026-09-27 Utility修复后实机P02仍FAIL
 
 获批的一行Utility显式导入经F01—F12、Master Review整合并推公开`bcf82b2`。原T5随后在真实Win10对该公开提交只执行一次受控P01—P08：P01 PASS、P02 FAIL/`DISCOVERY_COMMAND_FAILED`，P03—P08未到达，privateCandidatePresent=false仅为未到达；固定证据/RESULT local`192cd81`已由Master Review整合`79f2ad8`。这证明一行修复不足以使完整生产发现通过，不证明具体底层原因。依网页版第11节原T5冻结；禁再跑proof/M04/M05/新S/Hosted网络诊断、导入其他模块或用Final Full/QA调试。Final Full0/1、QA0/1未用，无beta.3最终Artifact。只做治理和网页版决策，见`docs/tasks/windows-installer-v1.1/batch-4.5/UTILITY-FIX-P02-STOP-20260927.md`与`UTILITY-FIX-P02-DECISION.md`。下方Review PASS待proof为历史。

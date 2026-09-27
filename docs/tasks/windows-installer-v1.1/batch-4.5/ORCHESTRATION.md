@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前只读路线评审完成，待网页版决定｜2026-09-27
+
+唯一 Master `01a0db0e-c950-79e0-8e11-07155e0742f2` 依最新第0—16节批准，仅阅读公开源码和微软官方 API 资料，完成 `NETWORK-DISCOVERY-ARCHITECTURE-REVIEW.md` 与 `NETWORK-DISCOVERY-ARCHITECTURE-DECISION.md`。原 T5 和 QA 继续冻结；无新 Execution/测试/实机/Hosted/Actions。工程有条件建议先证明原生 helper 的 NLM COM、普通用户权限、安全 DLL 和现有筛选语义；不得直接实施。当前 P01 PASS、P02 FAIL/`DISCOVERY_COMMAND_FAILED`、P03—P08 NOT_REACHED，生产 Utility 一行及 stderr fail-closed 均未改；Final Full0/1、Final QA0/1。Batch 仍 BLOCKED，无 beta.3 最终 Artifact，待网页版在 A/B/C 中选择并给下一轮范围。下方原 P02 止损是本评审的事实基线。
+
 ## 当前BLOCKED：Utility一行修复后P02仍FAIL｜2026-09-27
 
 原T5 thread`01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`在原工作树只执行一次已推公开`bcf82b29a0ac322fb17f595fb428c3ea692fac99`受控proof；P01=true、P02=false/`DISCOVERY_COMMAND_FAILED`，P03—P08未到达、privateCandidatePresent未判定。固定证据和RESULT local`192cd81`经Master白名单/身份/两文件diff Review，整合`79f2ad8`。原T5冻结；不重复proof、不新增微诊断/网络模块/Hosted，不运行Final Full0/1或QA0/1。生产保持一行改动，stderr fail-closed及网络安全边界不变。现只治理收尾并交网页版`UTILITY-FIX-P02-DECISION.md`；无beta.3最终Artifact，未到LAN HUMAN PENDING。下方REVIEWED待proof为历史。
