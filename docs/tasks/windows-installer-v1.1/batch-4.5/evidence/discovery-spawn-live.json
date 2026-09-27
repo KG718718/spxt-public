@@ -1,0 +1,4 @@
+[
+  {"reason":"STDERR_NONEMPTY","processResultPresent":true,"spawnError":false,"timedOut":false,"exitZero":true,"signalPresent":false,"stderrEmpty":false,"stdoutPresent":true,"jsonParseable":true},
+  {"reason":"STDERR_NONEMPTY","processResultPresent":true,"spawnError":false,"timedOut":false,"exitZero":true,"signalPresent":false,"stderrEmpty":false,"stdoutPresent":true,"jsonParseable":true}
+]
