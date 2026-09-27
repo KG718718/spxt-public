@@ -4,6 +4,9 @@ const {runtimeState}=require('./public-runtime-state');
 const {createBootstrapHandler}=require('./public-bootstrap-http');
 const {createConfigStore}=require('./public-config-store');
 const {createConfigHandler}=require('./public-config-http');
+const {createLanConfigStore,CONFIG_FILENAME}=require('./public-lan-config');
+const {discoverWindowsLan}=require('./public-lan-network');
+const {STATUS:createLanStatus,createRequestGate,discoverLanInWorker,createLanHostController}=require('./public-lan-server');
 const {taxRateForCalculation}=require('./tax-config');
 const invoicePolicy=require('./invoice-access-policy');
 const http = require('http');
@@ -62,9 +65,14 @@ const {
 
 const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.KSESSION_HOST || '127.0.0.1';
-if (!Number.isInteger(PORT) || PORT<0 || PORT>65535 || !require('net').isIP(HOST)) throw Error('Invalid server host or port.');
+const LAN_MODE_VALUE = process.env.KSESSION_LAN_MODE;
+if (LAN_MODE_VALUE !== undefined && !['0','1'].includes(LAN_MODE_VALUE)) throw Error('Invalid LAN mode.');
+const LAN_MODE = LAN_MODE_VALUE === '1';
+if (!Number.isInteger(PORT) || PORT<0 || PORT>65535 || HOST !== '127.0.0.1') throw Error('Invalid server host or port.');
 const DATA_FILE = process.env.KSESSION_DATA_FILE ? path.resolve(process.env.KSESSION_DATA_FILE) : path.join(__dirname, 'data.json');
 const CONFIG_FILE = process.env.KSESSION_CONFIG_FILE ? path.resolve(process.env.KSESSION_CONFIG_FILE) : path.join(__dirname, 'config.json');
+const INSTANCE_DIRECTORY = path.dirname(CONFIG_FILE);
+const LAN_CONFIG_FILE = path.join(INSTANCE_DIRECTORY,CONFIG_FILENAME);
 const SALT = 'default_salt';
 const SESSION_TTL_MS = Math.max(1000, Number(process.env.KSESSION_SESSION_TTL_MS) || 8 * 60 * 60 * 1000);
 const PASSWORD_ITERATIONS = 210000;
@@ -141,7 +149,8 @@ function createManualBackup() {
 const startupOptions={dataFile:DATA_FILE,configFile:CONFIG_FILE,
     priorDirectories:[ATTACHMENTS_DIR,BACKUPS_DIR,path.join(path.dirname(CONFIG_FILE),"logs")],
     priorFiles:[process.env.KSESSION_MAIL_CONFIG_FILE||path.join(path.dirname(CONFIG_FILE),"mail-reminder.config.json"),
-        process.env.KSESSION_SMTP_SECRET_FILE||path.join(path.dirname(CONFIG_FILE),"runtime","secrets","smtp-pass.dpapi")]};
+        process.env.KSESSION_SMTP_SECRET_FILE||path.join(path.dirname(CONFIG_FILE),"runtime","secrets","smtp-pass.dpapi"),
+        LAN_CONFIG_FILE]};
 const startup=loadStartupState(startupOptions);
 let needsInitialization=startup.needsInitialization;
 let data=runtimeState(startup.data);
@@ -5635,16 +5644,30 @@ function buildAuthoritativeStatsReport(searchParams = new URLSearchParams()) {
     return { totalRevenue: round2(totalRevenue), totalCost: round2(totalCost), totalTax: round2(totalTax), netProfit: round2(totalRevenue - totalCost), avgProfitRate: totalRevenue > 0 ? round2((totalRevenue - totalCost) / totalRevenue * 100) : 0, byApplicant, bySupplier, monthly, appCount: rows.length, payCount: rows.length, missingActivityDates, sourceIds: rows.map(row => row.app.id), filter: { year: selectedYear, startMonth, endMonth, availableYears: availableYears.length ? availableYears : [selectedYear], availableMonths, label: startMonth === endMonth ? `${selectedYear}年${startMonth}月` : `${selectedYear}年${startMonth}月—${endMonth}月` } };
 }
 
-const bootstrapHandler=createBootstrapHandler({...startupOptions,getPort:()=>server.address()?.port,
-    onInitialized:state=>{assignDataState(runtimeState(state));needsInitialization=false;}});
+let server=null;
+let lanController=null;
+let activePort=PORT;
+let localLanStatusState=null;
+let lanMonitor=null;
+let lanReconcile=Promise.resolve();
+function hostInitializationRequired(){
+    return needsInitialization||!(users||[]).some(account=>account?.role==='admin');
+}
+function refreshLocalLanStatus(){
+    if(!localLanStatusState)return;
+    localLanStatusState=Object.freeze({...localLanStatusState,
+        status:hostInitializationRequired()?createLanStatus.HOST_INITIALIZATION_REQUIRED:localLanStatusState.baseStatus});
+}
+const bootstrapHandler=createBootstrapHandler({...startupOptions,getPort:()=>activePort,
+    onInitialized:state=>{assignDataState(runtimeState(state));needsInitialization=false;lanController?.initializationChanged();refreshLocalLanStatus();}});
 const configHandler=createConfigHandler({store:configStore,getCurrentUser,getLogs:()=>logs});
-const server = http.createServer((req,res)=>{
+function applicationHandler(req,res){
   try { handleRequest(req,res); } catch(error) {
     console.error('Request failed:',error.message);
     if(!res.headersSent)res.writeHead(error.statusCode||500,{'Content-Type':'application/json; charset=utf-8'});
     if(!res.writableEnded)res.end(JSON.stringify({error:error.statusCode?error.message:'请求处理失败，请重试；如持续失败请联系管理员。'}));
   }
-});
+}
 function handleRequest(req, res) {
     res.setHeader('X-Content-Type-Options','nosniff');
     res.setHeader('X-Frame-Options','DENY');
@@ -9587,8 +9610,88 @@ function handleRequest(req, res) {
     });
     return;
 }
-server.listen(PORT,HOST,()=>{
-    if(!needsInitialization&&process.env.KSESSION_SKIP_STARTUP_JOBS!=='1'){autoBackup();resumeInvoiceOcrQueue();}
-    console.log('K⁺-SESSION running at http://'+HOST+':'+server.address().port);
-});
-server.on('error',error=>{console.error('Unable to start server:',error.code||error.message);process.exitCode=1;});
+let startupJobsStarted=false;
+function startBackgroundJobsOnce(){
+    if(startupJobsStarted||needsInitialization||process.env.KSESSION_SKIP_STARTUP_JOBS==='1')return;
+    startupJobsStarted=true;autoBackup();resumeInvoiceOcrQueue();
+}
+function listenLegacy(baseStatus=null){
+    return new Promise((resolve,reject)=>{
+        let requestHandler=applicationHandler;
+        if(LAN_MODE){
+            localLanStatusState=Object.freeze({status:hostInitializationRequired()?createLanStatus.HOST_INITIALIZATION_REQUIRED:baseStatus,
+                baseStatus,port:null,selected:null,localListening:false,lanListening:false,localHealth:false,lanHealth:false});
+            const gate=createRequestGate({getState:()=>localLanStatusState,needsInitialization:hostInitializationRequired});
+            requestHandler=(req,res)=>gate({kind:'local',address:'127.0.0.1'},req,res,applicationHandler);
+        }
+        server=http.createServer(requestHandler);
+        const failed=error=>{server.off('listening',ready);reject(error);};
+        const ready=()=>{server.off('error',failed);activePort=server.address().port;
+            if(localLanStatusState)localLanStatusState=Object.freeze({...localLanStatusState,port:activePort,localListening:true,localHealth:true});
+            resolve();};
+        server.once('error',failed);server.once('listening',ready);
+        server.listen(PORT,HOST);
+    });
+}
+async function startServer(){
+    if(LAN_MODE){
+        let configured=false,invalidConfig=false;
+        try{configured=fs.lstatSync(LAN_CONFIG_FILE).isFile();invalidConfig=!configured;}
+        catch(error){if(error.code!=='ENOENT'){invalidConfig=true;console.error('LAN_START_FAILED');}}
+        if(configured){
+            let lanConfig;
+            try{lanConfig=createLanConfigStore({instanceDirectory:INSTANCE_DIRECTORY}).load();}
+            catch{invalidConfig=true;console.error('LAN_START_FAILED');}
+            if(lanConfig){
+            try{
+                let discovery;
+                try{discovery=discoverWindowsLan({adapterPreference:lanConfig.adapterPreference});}
+                catch{discovery={status:'LAN_START_FAILED',selected:null,candidates:[]};}
+                lanController=createLanHostController({handler:applicationHandler,needsInitialization:hostInitializationRequired});
+                activePort=lanConfig.port;
+                const state=await lanController.start(lanConfig,discovery);
+                if(!state.localListening||!state.localHealth)throw Object.assign(Error('Local listener failed'),{code:state.status});
+                const monitor=()=>{
+                    lanReconcile=(async()=>{
+                        let next;
+                        try{next=await discoverLanInWorker({adapterPreference:lanConfig.adapterPreference});}
+                        catch{next={status:'LAN_START_FAILED',selected:null,candidates:[]};}
+                        await lanController.reconcile(next,lanConfig);
+                    })().catch(()=>lanController?.healthFailed()).finally(()=>{
+                        if(lanMonitor){lanMonitor=setTimeout(monitor,5000);lanMonitor.unref?.();}
+                    });
+                };
+                lanMonitor=setTimeout(monitor,5000);
+                lanMonitor.unref?.();
+                startBackgroundJobsOnce();
+                console.log('K⁺-SESSION running at http://127.0.0.1:'+activePort);
+                console.log('K⁺-SESSION LAN status: '+state.status);
+                return;
+            }catch(error){
+                console.error('Unable to start LAN host:',error?.code||'LAN_START_FAILED');
+                process.exitCode=1;return;
+            }
+            }
+        }
+        try{
+            await listenLegacy(invalidConfig?createLanStatus.LAN_START_FAILED:createLanStatus.LOCAL_ONLY);startBackgroundJobsOnce();
+            console.log('K⁺-SESSION running at http://'+HOST+':'+activePort);
+            console.log('K⁺-SESSION LAN status: '+localLanStatusState.status);
+            server.on('error',error=>{console.error('Unable to continue server:',error.code||'LAN_START_FAILED');process.exitCode=1;});
+        }catch(error){console.error('Unable to start server:',error.code||'LAN_START_FAILED');process.exitCode=1;}
+        return;
+    }
+    try{
+        await listenLegacy();startBackgroundJobsOnce();
+        console.log('K⁺-SESSION running at http://'+HOST+':'+activePort);
+        server.on('error',error=>{console.error('Unable to continue server:',error.code||'LAN_START_FAILED');process.exitCode=1;});
+    }catch(error){console.error('Unable to start server:',error.code||'LAN_START_FAILED');process.exitCode=1;}
+}
+startServer();
+async function stopServer(){
+    if(lanMonitor){clearTimeout(lanMonitor);lanMonitor=null;}
+    await lanReconcile.catch(()=>{});
+    if(lanController)await lanController.close();
+    else if(server?.listening)await new Promise(resolve=>server.close(resolve));
+}
+for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>{stopServer().finally(()=>process.exit(0));});
