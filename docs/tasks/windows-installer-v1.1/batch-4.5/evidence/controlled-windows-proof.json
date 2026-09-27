@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "status": "FAIL",
+  "platform": "WINDOWS_10",
+  "reason": "DISCOVERY_COMMAND_FAILED",
+  "sourceCommit": "26d44ab2e0bc1859d03394b7d9461c6ef8a707b1",
+  "productionNetworkBlobSha256": "7f2ac479b3bf2f06bf90b34257aeed59db94c3b00ddf81dabd8b997b8c1e241e",
+  "P01": true,
+  "P02": false,
+  "P03": false,
+  "P04": false,
+  "P05": false,
+  "P06": false,
+  "P07": false,
+  "P08": false,
+  "privateCandidatePresent": false
+}
