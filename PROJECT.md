@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前最终停点：Full2预算止损｜2026-09-27
+
+**BLOCKED — FULL HOSTED BUDGET EXHAUSTED**。Full2 Run36294405341 / sourceac2b47de85aaac9545cf6f2a534603d7071ed5db / Artifact10923547080 FAIL于HOSTED_LAN，只有通用HOSTED_LAN_GATE，原因未唯一定位。D5及Full1后测试环境修复已越过：Portable自动门禁、LAN37/37及兼容45/45通过，候选+六fault构建完成；实际Setup/U22/U23/Registry/Firewall、26/742及最终QA未运行。冻结旧回归110PASS/1SKIP（真实8.3不可用），不记零skip。历史专项4/4、扩展D1/2、Full2/2、QA0/2；依批准第13节停止，不能挪D6/QA继续。T5确认冻结8e99b4d，其他原线程/工作树保留，唯一Master/Primary/分支不变。无beta3最终可交付Artifact，未到LAN HUMAN PENDING。只完成证据/治理收尾，等待网页版新明确决定。详见batch-4.5/HOSTED-STOPLOSS-FULL2-20260927.md、ORCHESTRATION.md及full2-stoploss/CHATGPT-HANDOFF.md；下文运行/待运行是历史。
+
 ## Full2正在运行｜2026-09-27
 
 Run36294405341 / sourceac2b47de85aaac9545cf6f2a534603d7071ed5db / job108550465763 / mode=lan-full。当前IN PROGRESS，结果PENDING，不宣称候选通过。预算历史专项4/4、Diagnostic Extension1/2、Full2/2、QA0/2；若本轮失败立即停止，不能挪D6或QA。原执行线程/工作树冻结；下文待运行及旧次数为历史。治理更新不改变本轮受测源码。

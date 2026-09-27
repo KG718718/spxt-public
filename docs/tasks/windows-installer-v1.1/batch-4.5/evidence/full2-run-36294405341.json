@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "runId": 36294405341,
+  "jobId": 108550465763,
+  "artifactId": 10923547080,
+  "artifactBytes": 1082,
+  "artifactSha256": "e77aec5c2923c6c1dbc7bdbd541bf4745a0018c0c134c20891d92efd6c034092",
+  "sourceCommit": "ac2b47de85aaac9545cf6f2a534603d7071ed5db",
+  "privacy": "PASS_FIXED_JSON_ONLY",
+  "reports": {
+    "lan-build/ci-test-environment.json": {
+      "schema": 1,
+      "kind": "k-session-lan-candidate-test-environment",
+      "qualification": "TEST_ONLY",
+      "status": "FAIL",
+      "stage": "HOSTED_LAN",
+      "reason": "PIPELINE_FAILED",
+      "sourceCommit": "ac2b47de85aaac9545cf6f2a534603d7071ed5db",
+      "inputTempClass": "NONCANONICAL",
+      "inputTmpClass": "NONCANONICAL",
+      "inputGoTmpClass": "NONLOCAL",
+      "inputGoCacheClass": "NONLOCAL",
+      "selectedRootClass": "CANONICAL",
+      "environmentRestored": true
+    },
+    "lan-build/portable/lan-node-test-environment.json": {
+      "schema": 1,
+      "kind": "k-session-lan-node-test-environment",
+      "qualification": "TEST_ONLY",
+      "status": "PASS",
+      "stage": "COMPLETE",
+      "reason": "PASS",
+      "inputTempClass": "CANONICAL",
+      "selectedRootClass": "CANONICAL",
+      "tests": 37,
+      "pass": 37,
+      "fail": 0,
+      "skipped": 0,
+      "environmentRestored": true
+    },
+    "lan-evidence/beta3-ci-stage.json": {
+      "sourceCommit": "ac2b47de85aaac9545cf6f2a534603d7071ed5db",
+      "stage": "HOSTED_LAN",
+      "status": "FAIL",
+      "mode": "FULL",
+      "schema": 1
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "schema": 1,
+  "runId": 36294405341,
+  "sourceCommit": "ac2b47de85aaac9545cf6f2a534603d7071ed5db",
+  "evidenceKind": "SANITIZED_LOG_FACTS_NOT_FINAL_ARTIFACT",
+  "portableAutomatedGate": "PASS",
+  "compatibility": {
+    "tests": 45,
+    "pass": 45,
+    "fail": 0,
+    "skipped": 0
+  },
+  "frozenHistoricalRegression": {
+    "tests": 111,
+    "pass": 110,
+    "fail": 0,
+    "skipped": 1,
+    "skipReason": "USABLE_8_3_ALIAS_UNAVAILABLE"
+  },
+  "failure": {
+    "stage": "HOSTED_LAN",
+    "code": "HOSTED_LAN_GATE",
+    "uniqueCause": "UNKNOWN"
+  },
+  "builds": [
+    {
+      "mode": "lan-candidate",
+      "sourceCommit": "ac2b47de85aaac9545cf6f2a534603d7071ed5db",
+      "sourceTree": "aaf78df3374fac48e9dac117faceee2c0dd80482",
+      "nodeVersion": "24.21.0",
+      "goVersion": "1.27.1",
+      "innoSetupVersion": "6.7.3",
+      "installedProgramFileCount": 1049,
+      "installedProgramBytes": 147494318,
+      "setupBytes": 33524169,
+      "setupSha256": "66a0d17cbdb0ee77774782e3ccffe35b95093e307aae5a3dafb698f7cc206786"
+    },
+    {
+      "mode": "fault-space",
+      "sourceCommit": "ac2b47de85aaac9545cf6f2a534603d7071ed5db",
+      "sourceTree": "aaf78df3374fac48e9dac117faceee2c0dd80482",
+      "nodeVersion": "24.21.0",
+      "goVersion": "1.27.1",
+      "innoSetupVersion": "6.7.3",
+      "installedProgramFileCount": 1049,
+      "installedProgramBytes": 147494318,
+      "setupBytes": 33524246,
+      "setupSha256": "3a927729a89bbda9cda8ad892922e7e4b6bcb0ccb8585a38dee34330a26f62bc"
+    },
+    {
+      "mode": "fault-permission",
+      "sourceCommit": "ac2b47de85aaac9545cf6f2a534603d7071ed5db",
+      "sourceTree": "aaf78df3374fac48e9dac117faceee2c0dd80482",
+      "nodeVersion": "24.21.0",
+      "goVersion": "1.27.1",
+      "innoSetupVersion": "6.7.3",
+      "installedProgramFileCount": 1049,
+      "installedProgramBytes": 147494318,
+      "setupBytes": 33524189,
+      "setupSha256": "afbf98ad584effb0fcc7860d75010957e2a3618b1290802d9aac53cb7817629b"
+    },
+    {
+      "mode": "fault-cancel",
+      "sourceCommit": "ac2b47de85aaac9545cf6f2a534603d7071ed5db",
+      "sourceTree": "aaf78df3374fac48e9dac117faceee2c0dd80482",
+      "nodeVersion": "24.21.0",
+      "goVersion": "1.27.1",
+      "innoSetupVersion": "6.7.3",
+      "installedProgramFileCount": 1049,
+      "installedProgramBytes": 147494318,
+      "setupBytes": 33524330,
+      "setupSha256": "54f0ab9fcb76667721ac496dd6a03c1bab3b00e5d8fb240a593f9909a73706eb"
+    },
+    {
+      "mode": "fault-copy",
+      "sourceCommit": "ac2b47de85aaac9545cf6f2a534603d7071ed5db",
+      "sourceTree": "aaf78df3374fac48e9dac117faceee2c0dd80482",
+      "nodeVersion": "24.21.0",
+      "goVersion": "1.27.1",
+      "innoSetupVersion": "6.7.3",
+      "installedProgramFileCount": 1049,
+      "installedProgramBytes": 147494318,
+      "setupBytes": 33524317,
+      "setupSha256": "23bed025843c8d6da5c0749e40e92bcc38882da882bdd5b9546b88097b1c8119"
+    },
+    {
+      "mode": "fault-payload-hash",
+      "sourceCommit": "ac2b47de85aaac9545cf6f2a534603d7071ed5db",
+      "sourceTree": "aaf78df3374fac48e9dac117faceee2c0dd80482",
+      "nodeVersion": "24.21.0",
+      "goVersion": "1.27.1",
+      "innoSetupVersion": "6.7.3",
+      "installedProgramFileCount": 1049,
+      "installedProgramBytes": 147494318,
+      "setupBytes": 33524156,
+      "setupSha256": "e245550c9c24e8355db381f28cf95670c7f31dca9b90a3ff50db53fc78bd16f1"
+    },
+    {
+      "mode": "fault-post-copy",
+      "sourceCommit": "ac2b47de85aaac9545cf6f2a534603d7071ed5db",
+      "sourceTree": "aaf78df3374fac48e9dac117faceee2c0dd80482",
+      "nodeVersion": "24.21.0",
+      "goVersion": "1.27.1",
+      "innoSetupVersion": "6.7.3",
+      "installedProgramFileCount": 1049,
+      "installedProgramBytes": 147494318,
+      "setupBytes": 33524012,
+      "setupSha256": "81ee8661f859364f038f0427e4cc270162f227aa5e9ae044988655032c132655"
+    }
+  ],
+  "setupLifecycle": "NOT_REACHED",
+  "full26Suites742Checks": "NOT_REACHED",
+  "finalArtifact": "NONE"
+}

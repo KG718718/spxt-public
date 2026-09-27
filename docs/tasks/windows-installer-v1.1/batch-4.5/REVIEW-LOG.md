@@ -116,3 +116,8 @@ Master对原compatibility wrapper做长owned TEMP实验曾得20/45及一次Node�
 状态RETURNED→REVIEWED→INTEGRATED；cf4848a/8e99b4d分别整合7ec9be74e1353c871c12f73a635d55871128e030/a9545783b4051f2e8358fc438efa072fa7237a94。修复只隔离并恢复ci-lan/ci-beta3及回归测试环境，增加封闭诊断和必需PASS计数，不改变产品接受条件；原T5冻结，其他原线程/工作树保持。
 
 依批准第12—13节，当前新问题已能本地安全定位和复现，无须增加专项Hosted。下一次仅setup-v3.yml / codex/lan-host-v1.1 / mode=lan-full，预留最后Full第2/2次；精确受测为包含本登记的公开HEAD，dispatch后回填run/source。当前历史专项4/4、D1/2、Full1/2、QA0/2，D6未用。Full2仍失败必须停止交网页版，不挪D6/QA续调；FullPASS后才原独立QA最终阶段。当前尚无最终beta3 Artifact或LAN HUMAN PENDING结论。
+## Full2 FAIL / 最终停止
+
+Run36294405341@ac2b47de85aaac9545cf6f2a534603d7071ed5db / Artifact10923547080（1082bytes，SHA256e77aec5c2923c6c1dbc7bdbd541bf4745a0018c0c134c20891d92efd6c034092），固定HOSTED_LAN/FAIL/FULL；三JSON来源/allowlist/privacy PASS，环境恢复true，LAN37/37 PASS。公开日志确认Portable自动门禁和兼容45/45通过、7个Setup模式构建完成；尚未执行实际Setup生命周期或后续Firewall/26/742/最终QA。旧冻结回归110PASS/1SKIP，原8.3实际别名不可用，不伪称全PASS。通用HOSTED_LAN_GATE缺少细分原因，没有唯一根因；停止后不再反例/返工/Hosted，只读证据归档。
+
+最终状态BLOCKED — FULL HOSTED BUDGET EXHAUSTED。预算历史4/4、D1/2、Full2/2、QA0/2；D6/QA不挪用。T5收到STOP并主动确认原worktree/local8e99b4d冻结，原T1—T4与QA保持既有冻结，未清理任何现场。决定与选择详见HOSTED-STOPLOSS-FULL2-20260927.md；原历史CHATGPT-HANDOFF保留，新卡full2-stoploss/CHATGPT-HANDOFF.md。唯一Master/Primary/集成分支不变，未main/tag/Release，不进入Batch5；等待新明确授权。

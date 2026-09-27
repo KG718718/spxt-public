@@ -1,5 +1,9 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## 当前最终停点：Full2预算止损｜2026-09-27
+
+**BLOCKED — FULL HOSTED BUDGET EXHAUSTED**。Full2 Run36294405341 / sourceac2b47de85aaac9545cf6f2a534603d7071ed5db / Artifact10923547080 FAIL于HOSTED_LAN，只有通用HOSTED_LAN_GATE，原因未唯一定位。D5及Full1后测试环境修复已越过：Portable自动门禁、LAN37/37及兼容45/45通过，候选+六fault构建完成；实际Setup/U22/U23/Registry/Firewall、26/742及最终QA未运行。冻结旧回归110PASS/1SKIP（真实8.3不可用），不记零skip。历史专项4/4、扩展D1/2、Full2/2、QA0/2；依批准第13节停止，不能挪D6/QA继续。T5确认冻结8e99b4d，其他原线程/工作树保留，唯一Master/Primary/分支不变。无beta3最终可交付Artifact，未到LAN HUMAN PENDING。只完成证据/治理收尾，等待网页版新明确决定。详见batch-4.5/HOSTED-STOPLOSS-FULL2-20260927.md、ORCHESTRATION.md及full2-stoploss/CHATGPT-HANDOFF.md；下文运行/待运行是历史。
+
 ## 当前：Full1返工Review PASS，Full2待运行｜2026-09-27
 
 原T5冻结8e99b4d主动回单，经Master独立环境7/原37/兼容45及异常恢复复验PASS，整合a954578。仅修测试环境和固定诊断，生产安全契约不变。D5 PASS；Full1原后续config测试FAIL和所有实验保留。预算专项4/4、D1/2、Full1/2、QA0/2，下一次仅最后Full2，受测及结果详见batch-4.5/ORCHESTRATION.md；Full2失败即按批准第13节停止，不能挪D6/QA。原线程冻结待结果，整体自动化/最终QA/Artifact仍未PASS；旧状态为历史。

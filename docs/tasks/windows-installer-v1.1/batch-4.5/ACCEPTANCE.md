@@ -56,3 +56,6 @@
 ## 当前证据层级与止损
 
 专项4 Run36288039798失败PORTABLE；上表NOT RUN表示完整候选/真实环境验收尚未闭合，不否定各任务RESULT中的局部合成测试。Master局部T1 18/18、T2 13/13、统一LAN Node37/37、Launcher最终overlay27/27+vet、T4 13顶层29子反例+vet、兼容wrapper44/44均有各自来源证据；不能拼接宣称整个集成候选PASS。最终L01—L28/C01—C15、26/742、Setup/升级/真实Firewall及最终独立QA仍未完成。安全阶段JSON的privacy PASS不能替代最终EXE/Artifact隐私审查。
+
+
+Full2止损更新：Run36294405341失败HOSTED_LAN，整体表格仍未闭合。实际阶段事实为Portable门禁/37项LAN/45兼容通过；冻结旧回归110PASS/1SKIP。Setup仅编译，无实际U22/U23/Registry/Firewall/26套742及最终QA证据。3JSON privacy PASS仅针对失败报告。无最终候选Artifact，不进入人工验收；详见HOSTED-STOPLOSS-FULL2-20260927.md。
