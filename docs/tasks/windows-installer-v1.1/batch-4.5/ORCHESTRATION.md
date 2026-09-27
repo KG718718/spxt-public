@@ -1,5 +1,10 @@
 # Batch 4.5 Orchestration
 
+## 当前唯一活动工程续行：HOSTED_LAN｜2026-09-27
+
+网页版方案A批准；历史Full2 Run36294405341@ac2b47de85aaac9545cf6f2a534603d7071ed5db FAIL于HOSTED_LAN，只有通用码，真实原因未知。原T5 thread `01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`、原b4-qa工作树/本地分支、冻结HEAD `8e99b4d9895c05fe6454d3bb20b32378c7516685`恢复为 `DISPATCHED`，准确回单Master `01a0db0e-c950-79e0-8e11-07155e0742f2`；返工卡 `tasks/B45-T5-HOSTED-LAN-DIAGNOSTIC.md`。T1—T4和QA原线程仍冻结。当前额外预算：HOSTED_LAN H0/2；H PASS后新增Full0/1；原QA Hosted0/2。历史专项4/4、D5 1/2、原Full2/2不可挪用。H1之前原T5 14项本地反例→Master Review；H1 PASS跳H2，H1 FAIL且唯一定位后修复Review再H2；H2 FAIL或新增Full FAIL立即止损。8.3旧回归110PASS/1SKIP独立待证，不混入LAN根因。未有beta.3最终Artifact，未到QA PASS或LAN HUMAN PENDING。完整新授权见 `HOSTED-LAN-CONTINUATION-APPROVAL.md`；下方旧阻塞及预算均为历史。
+
+
 方案A保持批准；当前BLOCKED — HOSTED BUDGET EXHAUSTED。唯一Master/回单01a0db0e-c950-79e0-8e11-07155e0742f2；旧Master永久只读。集成codex/lan-host-v1.1；Primary public-source。
 
 |Task|Thread|worktree/branch|状态|依赖|

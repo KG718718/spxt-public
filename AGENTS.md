@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前有界续行｜2026-09-27 Full2 HOSTED_LAN
+
+用户已批准方案A：仅原B45-T5/原工作树返工 HOSTED_LAN 安全固定诊断；新增 H1/H2 最多2次，H专项PASS后新增Full最多1次，原QA Hosted 0/2保留。H1前14项本地反例及Master Review必需；H1 PASS跳过H2，H2 FAIL或新增Full FAIL即止损。历史Full2 Run36294405341@ac2b47d 的HOSTED_LAN失败与旧预算保留，不视为当前冻结令。8.3真实alias历史110PASS/1SKIP单独闭合或提交网页版决定，不混入HOSTED_LAN。唯一Master、LAN集成分支和全部生产安全边界不变。见 `docs/tasks/windows-installer-v1.1/batch-4.5/HOSTED-LAN-CONTINUATION-APPROVAL.md`、`ORCHESTRATION.md`。以下旧BLOCKED和预算均为历史记录。
+
 ## 当前最终停点：Full2预算止损｜2026-09-27
 
 **BLOCKED — FULL HOSTED BUDGET EXHAUSTED**。Full2 Run36294405341 / sourceac2b47de85aaac9545cf6f2a534603d7071ed5db / Artifact10923547080 FAIL于HOSTED_LAN，只有通用HOSTED_LAN_GATE，原因未唯一定位。D5及Full1后测试环境修复已越过：Portable自动门禁、LAN37/37及兼容45/45通过，候选+六fault构建完成；实际Setup/U22/U23/Registry/Firewall、26/742及最终QA未运行。冻结旧回归110PASS/1SKIP（真实8.3不可用），不记零skip。历史专项4/4、扩展D1/2、Full2/2、QA0/2；依批准第13节停止，不能挪D6/QA继续。T5确认冻结8e99b4d，其他原线程/工作树保留，唯一Master/Primary/分支不变。无beta3最终可交付Artifact，未到LAN HUMAN PENDING。只完成证据/治理收尾，等待网页版新明确决定。详见batch-4.5/HOSTED-STOPLOSS-FULL2-20260927.md、ORCHESTRATION.md及full2-stoploss/CHATGPT-HANDOFF.md；下文运行/待运行是历史。
