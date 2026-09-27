@@ -100,7 +100,43 @@ test('strict JSON tokenization does not mistake key-like string content for obje
   assert.equal(parsed.text, 'the text "port":8080 is inert');
   assert.equal(parsed.nested.port, 8080);
   assert.deepEqual(parsed.array, [1, true, null]);
+  assert.equal(parseStrictJson('8.08e3'), 8080, 'general JSON parsing remains standards-compliant');
   assert.throws(() => parseStrictJson('{"text":"ok","\\u0074ext":"duplicate"}'));
+});
+
+test('LAN config requires canonical integer tokens across load and save boundaries', () => {
+  const f = fixture('canonical-numbers');
+  const attachments = path.join(f.instance, 'attachments'); fs.mkdirSync(attachments);
+  const attachment = path.join(attachments, 'synthetic.bin'); fs.writeFileSync(attachment, Buffer.from([4, 3, 2, 1, 0]));
+  const variants = [
+    `{"schema":1,"port":8080.0,"adapterPreference":"${ID}"}`,
+    `{"schema":1,"port":8.08e3,"adapterPreference":"${ID}"}`,
+    `{"schema":1,"port":8.080E+3,"adapterPreference":"${ID}"}`,
+    `{"schema":1e0,"port":8080,"adapterPreference":"${ID}"}`,
+    `{"schema":1.0,"port":8080,"adapterPreference":"${ID}"}`,
+    `{"schema":1,"port":08080,"adapterPreference":"${ID}"}`,
+    `{"schema":1,"port":-0,"adapterPreference":"${ID}"}`
+  ];
+  const cli = path.join(__dirname, '../../lan-host/config-cli.cjs');
+  try {
+    for (const source of variants) {
+      fs.writeFileSync(f.config, source);
+      const before = {config: fs.readFileSync(f.config), business: fs.readFileSync(f.business), attachment: fs.readFileSync(attachment)};
+      assert.throws(() => createLanConfigStore({instanceDirectory: f.instance}), {code: 'LAN_CONFIG_INVALID'});
+      const result = spawnSync(process.execPath, [cli, 'save', '--instance-dir', f.instance, '--port', '8083',
+        '--adapter-preference', ID], {encoding: 'utf8', windowsHide: true, timeout: 10000});
+      assert.equal(result.status, 20); assert.deepEqual(JSON.parse(result.stdout), {schema: 1, status: 'LAN_CONFIG_INVALID'});
+      assert.equal(result.stderr, '');
+      assert.deepEqual(fs.readFileSync(f.config), before.config);
+      assert.deepEqual(fs.readFileSync(f.business), before.business);
+      assert.deepEqual(fs.readFileSync(attachment), before.attachment);
+    }
+    fs.unlinkSync(f.config);
+    const store = createLanConfigStore({instanceDirectory: f.instance});
+    store.save(VALID);
+    assert.deepEqual(createLanConfigStore({instanceDirectory: f.instance}).load(), VALID);
+    assert.equal(fs.readFileSync(f.config, 'utf8'), JSON.stringify(VALID, null, 2) + '\n');
+  } finally { cleanup(f.root); }
 });
 
 test('instance path through a directory link is rejected without outside writes', () => {

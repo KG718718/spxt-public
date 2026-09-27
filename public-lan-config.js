@@ -17,7 +17,7 @@ class LanConfigError extends Error {
 function fail(code, message) { throw new LanConfigError(code, message); }
 function record(value) { return value !== null && typeof value === 'object' && !Array.isArray(value); }
 
-function parseStrictJson(source) {
+function parseStrictJson(source, options = {}) {
   if (typeof source !== 'string' || Buffer.byteLength(source, 'utf8') > MAX_CONFIG_BYTES) throw Error('invalid json');
   let offset = 0;
   const whitespace = () => { while (/[\u0009\u000a\u000d\u0020]/.test(source[offset] || '')) offset += 1; };
@@ -42,7 +42,7 @@ function parseStrictJson(source) {
     }
     throw Error('unterminated string');
   }
-  function value(depth) {
+  function value(depth, location = []) {
     if (depth > MAX_JSON_DEPTH) throw Error('json nesting limit');
     whitespace();
     if (source[offset] === '"') return string();
@@ -55,7 +55,7 @@ function parseStrictJson(source) {
         if (seen.has(key)) throw Error('duplicate key');
         seen.add(key);
         if (source[offset++] !== ':') throw Error('colon required');
-        result[key] = value(depth + 1); whitespace();
+        result[key] = value(depth + 1, [...location, key]); whitespace();
         if (source[offset] === '}') { offset += 1; return result; }
         if (source[offset++] !== ',') throw Error('comma required');
       }
@@ -66,7 +66,7 @@ function parseStrictJson(source) {
       const result = [];
       if (source[offset] === ']') { offset += 1; return result; }
       while (offset < source.length) {
-        result.push(value(depth + 1)); whitespace();
+        result.push(value(depth + 1, [...location, result.length])); whitespace();
         if (source[offset] === ']') { offset += 1; return result; }
         if (source[offset++] !== ',') throw Error('comma required');
       }
@@ -78,6 +78,7 @@ function parseStrictJson(source) {
     const number = source.slice(offset).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
     if (!number) throw Error('value required');
     offset += number[0].length;
+    if (typeof options.onNumber === 'function') options.onNumber(location, number[0]);
     return JSON.parse(number[0]);
   }
   whitespace();
@@ -131,7 +132,15 @@ function readSource(file, fs) {
 
 function parseSource(source) {
   if (source === null) return null;
-  try { return validateLanConfig(parseStrictJson(source)); }
+  try {
+    let schemaToken = null, portToken = null;
+    const parsed = parseStrictJson(source, {onNumber(location, token) {
+      if (location.length === 1 && location[0] === 'schema') schemaToken = token;
+      if (location.length === 1 && location[0] === 'port') portToken = token;
+    }});
+    if (schemaToken !== '1' || !/^80(?:8\d|9\d)$/.test(portToken || '')) throw Error('non-canonical config number');
+    return validateLanConfig(parsed);
+  }
   catch (error) {
     if (error instanceof LanConfigError) throw error;
     fail('LAN_CONFIG_INVALID', 'LAN 配置损坏或结构非法；原文件不会被覆盖。');

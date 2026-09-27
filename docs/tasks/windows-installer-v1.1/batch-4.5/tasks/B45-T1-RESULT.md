@@ -14,6 +14,15 @@
 - 配置上限 4096 UTF-8 bytes、嵌套上限 16；解析或 schema 失败统一 `LAN_CONFIG_INVALID`，不进入保存流程、不覆盖原文件。
 - 反例同时固定 `lan-deployment.json`、`data.json` 与合成附件 bytes；直接 load 和受限 CLI save 均失败且三者逐字节不变。
 
+## R3 canonical 数字词法返工
+
+QA 双端 corpus 证明 `8080.0`、`8.08e3`、`schema:1e0` 会被 Node 解析为整数值，但 Go helper 按整数 token 拒绝。R3 保持通用 `parseStrictJson()` 接受标准 JSON 数字，只由 token parser 在解析数字时向配置边界报告位置和原始 token；根级配置随后强制：
+
+- `schema` 原始 token 必须精确为 `1`。
+- `port` 原始 token 必须精确为 `8080`—`8099` 的四位十进制整数。
+- 小数、指数、负零、前导零及非 canonical 拼写全部 `LAN_CONFIG_INVALID`；quoted string 内容不参与数字检查。
+- 对每个变体分别验证 load 与 CLI save 均拒绝，且原配置、业务数据和合成附件 bytes 不变；合法 `save()` 生成 canonical JSON 后重新 load 一致。
+
 ## 已完成
 
 - `public-lan-network.js`
@@ -43,7 +52,7 @@
 
 `node --test --test-reporter=spec tools/tests/lan-host/network.test.cjs tools/tests/lan-host/config.test.cjs`
 
-结果：**17 tests / pass 17 / fail 0 / skipped 0**。在原 15 项网络/配置覆盖上新增严格 JSON 反例：原生 last-wins 旧行为实证、直接/转义等价/嵌套重复键、未知字段、尾随第二对象/literal、字符串内 key-like 文本不误伤，以及损坏配置下 load/CLI save 对配置/业务数据/附件的逐字节保持。原覆盖仍包括 RFC1918、adapter/route/profile、固定系统 PowerShell、真实端口 bind/.NET 对抗、原子保存及链接边界。
+结果：**18 tests / pass 18 / fail 0 / skipped 0**。在原网络/配置覆盖上新增严格 JSON 与 canonical 数字反例：原生 duplicate-key last-wins、直接/转义等价/嵌套重复键、未知字段、尾随第二值、字符串 key-like 文本不误伤，以及 `8080.0`、`8.08e3`、`8.080E+3`、`schema:1e0`、`schema:1.0`、前导零、负零拒绝；损坏配置下 load/CLI save 对配置/业务数据/附件逐字节保持，合法 save/reload 一致。原网络、PowerShell、真实 bind/.NET 对抗、原子保存及链接边界覆盖保持。
 
 Node 24.21.0 官方文档说明 `exclusive:true` 的定义是 cluster handle 不共享及端口共享尝试报错，并非 `SO_EXCLUSIVEADDRUSE` 名称承诺：<https://r2.nodejs.org/docs/latest-v24.x/api/net.html>。因此本结论依据实际 bind 与持续持有 handle；不声称能够抵抗已攻陷本机的所有恶意内核/进程行为。
 
@@ -51,7 +60,7 @@ Node 24.21.0 官方文档说明 `exclusive:true` 的定义是 cluster handle 不
 
 `node --test --test-reporter=spec tools/tests/public-startup.test.js tools/tests/public-startup-filesystem.test.js tools/tests/windows-installer/upgrade-preflight/preflight.test.cjs`
 
-结果：Node 汇总 **23 tests / pass 22 / fail 0 / skipped 1**，同时 `public-startup.test.js` 自报 **80 checks PASS**。唯一 skip 是既有 Windows file-symlink privilege 分支；真实 junction 覆盖通过。本任务自身最新 17 项无 skip；R2 未修改启动或预检文件，按返工卡未重复运行该相关回归。
+结果：Node 汇总 **23 tests / pass 22 / fail 0 / skipped 1**，同时 `public-startup.test.js` 自报 **80 checks PASS**。唯一 skip 是既有 Windows file-symlink privilege 分支；真实 junction 覆盖通过。本任务自身最新 18 项无 skip；R2/R3 未修改启动或预检文件，按返工卡未重复运行该相关回归。
 
 静态：四个新增 CLI/模块 `node --check` 通过；`git diff --check` 通过。
 
