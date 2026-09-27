@@ -4,7 +4,7 @@ IN PROGRESS。方案A已正式批准：仅受验F3 beta.2精确安装后身份�
 
 Batch4用户Win10人工1—10 PASS已记录并推送9eaad01，受验Run36246132535/Artifact10907910968/source c8886e6b6d413c2fd73d6716621d07a80b337e58未修改。
 
-T1网络发现/固定端口/config及严格JSON返工已Review整合，最新864e8f5，Master独立18/18 PASS。T2双listener/首Admin/selected subnet guard整合4b83380，Master13/13 PASS。T4 helper及R1—R3返工已整合b0e51b5，Master13顶层/29子用例、go vet PASS。T3 Launcher与原T5独立beta.3升级路由/构建正在实施。上述仅局部工程结论，真实LAN/Firewall/UAC未验证。
+T1网络发现/固定端口/config及严格JSON返工已Review整合，最新864e8f5，Master独立18/18 PASS。T2双listener/首Admin/selected subnet guard整合4b83380，Master13/13 PASS。T4 helper及R1—R3返工已整合b0e51b5，Master13顶层/29子用例、go vet PASS。T3 Launcher及R1已Review整合d623cdf/bf6f87d，Master在该统一HEAD独立Node37/37、Go25顶层+11子反例及vet PASS，fail0skip0。原T5独立beta.3升级路由/构建仍返工中。上述仅局部工程结论，真实LAN/Firewall/UAC未验证。
 
 专项1 Run36280286553@bb497a8失败STATIC_GATE；专项2 Run36280914931@a55395d失败CLEANUP_VERIFY，历史安全报告保留。修复并Review后专项3 Run36281720897@tested b23eb269ecd0509e6dfde6f6bfb111d6d356ada2 PASS，Artifact10919206400。Master核验精确F3来源、五个非敏感身份锚及cleanup，证据固化0897383；原T5据此实现运行时离线可信bundle。预算专项3/4、Full0/2、QA0/2；剩余专项留待集成Review，不无修改retry。
 

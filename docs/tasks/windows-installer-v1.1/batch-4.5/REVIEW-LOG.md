@@ -2,6 +2,12 @@
 
 当前均为实施中的提前Review，未形成最终验收。
 
+## T3 R1正式整合与T5独立QA
+
+T3主动返回6919bcdcd326bfe36ee316a977c6ffda930f4fc4（parent a05d39d）；环境失败关闭、UI消费pending前保持串行、worker独立controller及旧配置/端口恢复经Review通过，整合d623cdfffb2e916890b770d6297fdf9839a3a412与bf6f87ded76b8591899accdbfb47cfde746c9f3a。Master在统一树实际运行Node六文件37/37 fail0skip0，固定Go1.27.1选定25顶层+11子用例、go vet PASS；仅合成及自有loopback，没有真实LAN/UAC/Firewall操作。T5已获统一HEAD用于依赖接线。
+
+独立QA T5冻结阶段报告19e8abe51135ae8909f469a462662bc9a4892f6d已整合0e666db：两P2分别为登记只恢复六值且不验返回，以及finalize递归清理恢复副本失败后仍进入rollback。已退原T5补完整登记恢复/readback及持久commit point/清理故障反例，尚未闭合。原报告是静态证据，不假称真实Windows复现。无新Hosted消费。
+
 ## 冻结阶段 Review / 2026-09-27
 
 T3主动返回a05d39d6ba6d112e4ba0d0a291dfe3df93132248；主控退回原线程R1：helper环境失败必须拒绝启动，worker结果直到UI消费前保持串行，设置过渡清除旧URL并消除child/config共享竞态；已有配置切换后启动失败须安全恢复原配置，不能引入未批准的自动换口。

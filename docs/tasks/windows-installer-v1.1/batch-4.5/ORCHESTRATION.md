@@ -8,10 +8,10 @@
 |B45-T5-IDENTITY|01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9|b4-qa/codex/b45-t5|PASS / 固化0897383|专项3取证PASS|
 |B45-T1|01a0e002-cbb8-77f1-bf0b-505a7a327007|f8bd/codex/b45-t1|INTEGRATED 864e8f5 / 冻结ca454f1|Master18/18；QA复验中|
 |B45-T2|01a0e01c-ad06-7413-8572-bf1dbf2fbd11|lan-server/codex/b45-t2|INTEGRATED 4b83380 / 冻结30a1351|Master13/13 PASS|
-|B45-T3|01a0e035-3eca-7993-9db1-795373d92537|lan-launcher/codex/b45-t3|RETURNED a05d39d / REWORK R1|异步串行、环境失败关闭及失败恢复|
+|B45-T3|01a0e035-3eca-7993-9db1-795373d92537|lan-launcher/codex/b45-t3|INTEGRATED d623cdf/bf6f87d / 冻结6919bcd|Master Node37、Go25+11、vet PASS|
 |B45-T4|01a0e004-98a3-75b2-a2a1-3ffd0c6506c9|lan-firewall/codex/b45-t4|INTEGRATED b0e51b5 / 冻结aea2474|Master13+29、vet PASS；QA复验中|
 |B45-T5-INTEGRATION|同T5|b4-qa/codex/b45-t5-integration|RETURNED fe7cb3c/f053b90/dc45119 / REWORK R1|版本化Go harness及CI接线；待T3整合|
-|B45-QA|01a0e03a-15c9-7833-af1c-c05a8eca2126|lan-qa/codex/b45-qa-r1|EARLY RETEST PASS；T5冻结阶段只读Review中|旧305344e FAIL历史保留；最终QA待候选|
+|B45-QA|01a0e03a-15c9-7833-af1c-c05a8eca2126|lan-qa/codex/b45-qa-r1|EARLY RETEST PASS；T5阶段FAIL 19e8abe整合0e666db|两项回滚P2退T5；最终QA待候选|
 
 预算：专项3/4、Full0/2、QA0/2。身份取证计专项；不得运行无关Full。每次run前登记精确source/mode/budget，后记录result/Artifact，无修改不retry。
 
