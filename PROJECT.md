@@ -1,5 +1,17 @@
 # K⁺-SESSION｜项目状态
 
+## 当前有界续行｜2026-09-27 Git恢复→M03
+
+网页版批准先恢复公共仓库`.git`写入与GitHub认证、整合/push已Review的T5三笔local和治理文件；仅同步完成后才可执行一次M03同进程对照，先合成T01—T08与Master Review。当前Windows本机身份、`.git`写入和`gh`登录已恢复，普通Git HTTPS fetch因连接故障未成功；已认证API确认远端仍`73952c1`。整合/push尚未完成，M03未开始，原T5冻结，生产/Hosted/Final Full/QA均不动。详见`docs/tasks/windows-installer-v1.1/batch-4.5/GIT-RECOVERY-M03-APPROVAL.md`。
+
+## 当前止损｜2026-09-27 M02 Utility序列化路径
+
+唯一获批的真实Win10 M00—M02链结果：M00 PASS、M01 PASS、M02 FAIL/UTILITY_SERIALIZATION；旧S01只证明网络命令前stderr。M01/M02是独立进程，不能唯一归因ConvertTo-Json内部或自动加载，完整生产P02仍FAIL、P03—P08 NOT_REACHED。T5 local结果已Master Review，生产blob未改，H1/H2 2/2、Final Full0/1、QA0/1冻结。主控本地Git写入被工作区权限拒绝、GitHub写认证401，本轮治理及T5 local commits尚未公开整合；远端HEAD仍73952c1。停止并等网页版与写入恢复，见`docs/tasks/windows-installer-v1.1/batch-4.5/PRE-NETWORK-UTILITY-DECISION.md`。下方M00授权为已执行历史。
+
+## 当前解释更正与有限授权｜2026-09-27 M00—M02
+
+上一轮S01含`ConvertTo-Json`，历史STARTUP标签只证明网络命令前stderr，不能证明纯PowerShell启动本身失败。旧证据不改，当前状态`BLOCKED — PRE-NETWORK STDERR SOURCE UNRESOLVED`。网页版仅新增一次本机只读M00→条件M01→条件M02链，先合成测试与Master Review；原T5/原工作树，Sol/Medium，不用Astra。生产与stderr fail-closed冻结；不增Hosted，Final Full0/1、Final QA0/1保留。详见`docs/tasks/windows-installer-v1.1/batch-4.5/CORRECTED-PRE-NETWORK-STDERR-APPROVAL.md`和`PRE-NETWORK-STDERR-INTERPRETATION.md`；下方STARTUP状态为历史标签。
+
 ## 当前止损｜2026-09-27 S01 STARTUP
 
 唯一获批本机S01—S03链在无网络cmdlet的S01常量payload即FAIL/STARTUP，S02/S03未运行；原T5冻结。此证据说明网络查询不是发生stderr的必要条件，但底层来源与是否无害仍未知；不改生产或PowerShell安全环境。Master已核验固定七字段/合成28/28并整合`ebd2145`。P02 FAIL，P03—P08 NOT_REACHED；H1/H2 2/2，Final Full0/1、Final QA0/1未用，无最终beta.3 Artifact。按批准第12节情况A返回网页版，见`docs/tasks/windows-installer-v1.1/batch-4.5/STDERR-STARTUP-DECISION.md`；下方有限诊断阶段为历史。

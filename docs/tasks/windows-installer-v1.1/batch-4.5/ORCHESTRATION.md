@@ -1,5 +1,17 @@
 # Batch 4.5 Orchestration
 
+## 当前BLOCKED：M02 Utility序列化路径stderr｜2026-09-27
+
+原T5主动FAIL/UTILITY_SERIALIZATION回单local`2a36277003060e132032831bdf8a312cabec8f1e`；Master审查原branch/生产blob/唯一安全六字段JSON并独立验证白名单，原thread/worktree再次冻结。合成local`a9abd82`/`69cd3d1`已Master独立41/41 Review PASS，但因主控`.git`写权限拒绝及GitHub API写401，三笔local均**未整合、未push**；原文件留存。M00纯.NET PASS、M01显式Utility加载PASS、M02旧S01等价ConvertTo-Json路径FAIL；独立进程比较不能唯一定位自动加载/序列化，完整P02仍FAIL。H1/H2 2/2、Final Full0/1、QA0/1冻结，不加探针/Hosted或生产修复。见`PRE-NETWORK-UTILITY-STOP-20260927.md`、`PRE-NETWORK-UTILITY-DECISION.md`。下方DISPATCHED为历史。
+
+## 当前：M00—M02合成Review PASS；唯一真实链已派｜2026-09-27
+
+原T5主动RETURNED local`a9abd822ad94ad756d23680a64484451d0e793e5`/`69cd3d1861523bc84881aa90b50333a2e5a29c06`。Master独立相关41/41、M00纯.NET/M01显式Utility/M02精确旧S01、安全执行器、六字段隐私/生产blob Review PASS。只派同原T5 thread/worktree/branch一次真实M00→条件M01→条件M02链，卡`tasks/B45-T5-M00-M02-LIVE.md`；结果PENDING。主控本地Git索引权限与GitHub写入认证暂失败，整合/公开push PENDING，不能称已同步；review与本机获批诊断仍可执行。H1/H2 2/2、Final Full0/1、QA0/1冻结，无Hosted。下方合成DISPATCHED为历史。
+
+## 当前DISPATCHED：M00—M02合成门禁｜2026-09-27
+
+网页版已明确更正：历史S01含ConvertTo-Json，固定`STARTUP`标签仅解释为`PRE_NETWORK_UTILITY_SERIALIZATION_STAGE`，旧证据不改。当前`BLOCKED — PRE-NETWORK STDERR SOURCE UNRESOLVED`；只有限解冻原T5 thread`01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`、原b4-qa worktree/`codex/b45-t5-integration`、冻结local`150ef216f91708f2af0041d832edabf94b6442f3`，准确回单Master`01a0db0e-c950-79e0-8e11-07155e0742f2`。本阶段仅M00—M02合成门禁DISPATCHED，Master Review后才派唯一真实链。生产blob不变；H1/H2 2/2，Final Full0/1、QA0/1冻结，无Hosted。正式授权`CORRECTED-PRE-NETWORK-STDERR-APPROVAL.md`，卡`tasks/B45-T5-M00-M02-SYNTHETIC.md`；下方STARTUP是历史标签。
+
 ## 当前BLOCKED：S01 STARTUP stderr｜2026-09-27
 
 原T5主动FAIL/STARTUP回单local`150ef21`；Master核验一次真实链只到S01、七字段固定证据、生产blob及diff，整合并push`ebd214527df7742b623ad396819735bdb0b85193`，原thread/worktree再次冻结。S01无网络cmdlet/查询仍stderr非空；S02/S03 NOT_RUN，不改network discovery查询或忽略stderr，不追加本机/Hosted探针。P02 FAIL、P03—P08 NOT_REACHED；H1/H2 2/2、Final Full0/1、QA0/1。按批准第12节情况A整理四项决策摘要，见`STDERR-STARTUP-STOP-20260927.md`与`STDERR-STARTUP-DECISION.md`，等网页版新明确决定。下方DISPATCHED为历史。

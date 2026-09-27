@@ -1,5 +1,17 @@
 # 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
+## 当前结论｜2026-09-27 M02失败
+
+**BLOCKED — UTILITY SERIALIZATION PATH STDERR; ROOT CAUSE NOT UNIQUE。** 真实一次M00 PASS/M01 PASS/M02 FAIL，M02与旧S01序列化payload等价且stderr非空；它不证明完整生产脚本只有同一故障，亦不证明stderr无害。旧S01历史STARTUP字段不改，解释收窄为网络命令前的Utility序列化阶段。Master核验T5 local合成41/41与live六字段证据，生产blob未改，P02 FAIL、P03—P08未到达。H1/H2 2/2、Final Full0/1、QA0/1冻结。当前工作区Git写权限与GitHub写认证故障阻止公开整合；本轮结果仅在local提交/文件，不宣称已push。见`PRE-NETWORK-UTILITY-STOP-20260927.md`和`PRE-NETWORK-UTILITY-DECISION.md`；下方M00诊断状态为历史。
+
+## 当前阶段｜2026-09-27
+
+原T5 M00—M02合成13/13、相关41/41已由Master独立复验并Review PASS；真实链此前未运行，现在仅派一次M00→条件M01→条件M02。生产blob不变，历史S01解释为PRE_NETWORK_UTILITY_SERIALIZATION_STAGE而非纯启动；P02仍FAIL、P03—P08 NOT REACHED。由于主控Git写入权限及GitHub认证失败，合成local commit可复核但公开整合/推送PENDING；不冒充完成。H1/H2 2/2、Final Full0/1、QA0/1仍冻结。
+
+## 当前更正与有限诊断授权｜2026-09-27
+
+历史S01固定`STARTUP`不改；因其payload调用ConvertTo-Json，已证事实仅为`PRE_NETWORK_UTILITY_SERIALIZATION_STAGE`产生stderr，不能把PowerShell启动本身写成根因。P02仍FAIL，P03—P08 NOT REACHED。网页版仅批准一次本机M00纯.NET→条件M01 Utility加载→条件M02序列化链；目前只派原T5合成门禁，真实链未运行。生产与Windows不改，H1/H2 2/2，Final Full0/1、QA0/1不动。详见`CORRECTED-PRE-NETWORK-STDERR-APPROVAL.md`和`PRE-NETWORK-STDERR-INTERPRETATION.md`；下方STARTUP止损按新解释读取。
+
 ## 当前结论｜2026-09-27 S01 STARTUP
 
 **BLOCKED — S01 STARTUP STDERR; SOURCE STILL UNRESOLVED。** 授权的唯一真实链只执行S01；无网络cmdlet的常量JSON脚本已产生stderr，固定`schema1/status FAIL/layer STARTUP/S01 FAIL/S02 NOT_RUN/S03 NOT_RUN/stderrEmpty false`。底层来源未能进一步区分；不得宣称无害或修改生产。Master核验七字段与合成28/28，整合`ebd2145`，原T5冻结。P02仍FAIL、P03—P08未到达；H1/H2 2/2、Final Full0/1、QA0/1未用，无最终beta.3 Artifact。按批准第12节情况A交网页版，详见`STDERR-STARTUP-DECISION.md`；下方状态为历史。

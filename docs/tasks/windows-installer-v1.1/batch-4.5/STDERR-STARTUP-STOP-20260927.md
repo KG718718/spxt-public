@@ -1,5 +1,7 @@
 # Batch 4.5 — S01 STARTUP止损记录｜2026-09-27
 
+> 解释更正：此标题及证据中的 STARTUP 是当时分类器的历史标签。S01 使用 ConvertTo-Json，故只能证明网络命令之前已有 stderr，不能证明纯 PowerShell 启动本身产生 stderr。证据原样保留；见 `PRE-NETWORK-STDERR-INTERPRETATION.md`。
+
 **BLOCKED — S01 STARTUP STDERR; SOURCE STILL UNRESOLVED。** 网页版只批准的一次本机S01—S03链已完成，结果在S01即FAIL/STARTUP，S02/S03均NOT_RUN。唯一Master`01a0db0e-c950-79e0-8e11-07155e0742f2`、原T5线程与原工作树保留，原T5已冻结；旧Master只读历史。
 
 ## 当前事实

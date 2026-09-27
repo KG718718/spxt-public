@@ -1,5 +1,17 @@
 # K⁺-SESSION 协作边界
 
+## 当前有界续行｜2026-09-27 Git恢复后唯一M03
+
+网页版已批准先恢复公共仓库Git元数据写入、Review并整合/push原T5三笔local及主控治理，再由原T5进行M03合成门禁→Master Review→唯一一次真实Win10同进程Utility显式加载/序列化对照。**Git同步完成前不得执行M03。** 当前已恢复Windows本机身份、`.git`可写及`gh`登录；普通Git HTTPS fetch仍被网络空响应/连接失败阻断，远端ref已通过已认证GitHub API核对。当前整合/push尚未完成，M03未开始，Final Full/QA冻结；见`docs/tasks/windows-installer-v1.1/batch-4.5/GIT-RECOVERY-M03-APPROVAL.md`。下方旧止损是此次有限授权的起点。
+
+## 当前止损｜2026-09-27 M00—M02 Utility序列化路径
+
+**BLOCKED — UTILITY SERIALIZATION PATH STDERR; ROOT CAUSE NOT UNIQUE。** 网页版只批准的一次真实Win10 M00—M02链已用：M00纯.NET固定输出PASS，M01独立进程显式Utility加载PASS，M02旧S01等价ConvertTo-Json路径FAIL/非空stderr。历史S01证据仍标STARTUP，但正式解释是`PRE_NETWORK_UTILITY_SERIALIZATION_STAGE`；三阶段各独立进程，M01通过不证明M02自动加载无错，也不证明完整生产脚本只有此故障。生产blob不变，P02仍FAIL，P03—P08未到达；原T5再次冻结。Master独立核验合成41/41、六字段live证据和diff，T5 local`a9abd82`/`69cd3d1`/`2a36277`保留。H1/H2 2/2，Final Full0/1、QA0/1未用；不得忽略stderr、改生产或再跑本机/Hosted诊断。主控本地`.git`写入受新权限阻止，GitHub写入认证401，本轮文档与T5提交尚未整合/推送；公开HEAD仍`73952c1`，不能冒充GitHub验收。当前只做交接等待网页版及写入恢复，详见`docs/tasks/windows-installer-v1.1/batch-4.5/PRE-NETWORK-UTILITY-STOP-20260927.md`和`PRE-NETWORK-UTILITY-DECISION.md`；下方M00有限授权已执行完毕。
+
+## 当前解释更正与有限授权｜2026-09-27 M00—M02
+
+历史S01七字段`layer=STARTUP`原样保留，但S01用了`ConvertTo-Json`，可触发`Microsoft.PowerShell.Utility`模块自动加载。正式解释收窄为`PRE_NETWORK_UTILITY_SERIALIZATION_STAGE`：已证stderr在网络cmdlet/查询之前出现，**未证**纯powershell.exe启动报错。当前状态`BLOCKED — PRE-NETWORK STDERR SOURCE UNRESOLVED`。网页版仅批准原B45-T5/原worktree在当前Win10做一次M00纯.NET固定输出→条件M01显式Utility模块加载→条件M02旧序列化的只读链；先合成门禁与Master Review，任一阶段失败即停，不重跑。生产blob`4e13e944472f845675fe73d176f063c4fe97f6ed`及stderr fail-closed冻结；沿用系统PowerShell安全执行器，只换payload。不增Hosted、Final Full0/1、Final QA0/1，不用Astra，不进Batch5/OCR/main/tag/Release。详见`docs/tasks/windows-installer-v1.1/batch-4.5/CORRECTED-PRE-NETWORK-STDERR-APPROVAL.md`与`PRE-NETWORK-STDERR-INTERPRETATION.md`；下方STARTUP止损是经解释更正的历史记录。
+
 ## 当前止损｜2026-09-27 S01 STARTUP stderr
 
 **BLOCKED — S01 STARTUP STDERR; SOURCE STILL UNRESOLVED。** 网页版仅批准的一次真实Win10 S01—S03链已用：S01纯常量、无网络cmdlet/查询却`stderrEmpty=false`，固定层级STARTUP；S02/S03按规则NOT_RUN。原T5再次冻结。Master已Review合成28/28及live七字段证据，生产blob未改，结果整合`ebd2145`。这是网络cmdlet之前出现stderr的证据，不证明具体是PowerShell启动、基础环境或常量序列化，更不证明stderr无害；不得修改network discovery查询、忽略stderr或再跑本机探针。P02仍FAIL、P03—P08未到达；H1/H2 2/2，Final Full0/1、QA0/1未用，无beta.3最终Artifact。按正式批准第12节情况A交网页版决定；详见`docs/tasks/windows-installer-v1.1/batch-4.5/STDERR-STARTUP-STOP-20260927.md`与`STDERR-STARTUP-DECISION.md`。下方有限授权已执行完毕。
