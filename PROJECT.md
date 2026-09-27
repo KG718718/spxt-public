@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前止损｜2026-09-27 生产discovery stderr来源未闭合
+
+Batch4.5获批的一次真实Win10只读根因诊断已完成：原生产P02仍FAIL，首次与唯一复核均`STDERR_NONEMPTY`，N01—N05各一次也同类；P03—P08未到达。stderr产生层及安全性未证，不能改生产忽略。原T5再次冻结；H1/H2 2/2，Final Full0/1、Final QA0/1未用，任何新本机探针需网页版新授权。Master已核验合成14/14及固定隐私证据，生产blob未变，整合`35f4b3d`；没有最终beta.3 Artifact。见`docs/tasks/windows-installer-v1.1/batch-4.5/DISCOVERY-STDERR-STOP-20260927.md`和`DISCOVERY-STDERR-DECISION.md`；下方续行状态为历史。
+
 ## 当前授权｜2026-09-27 完整受控Win10根因任务书
 
 前次P02 `NETWORK_DISCOVERY_FAILED` 保持真实失败，P03—P08未到达。网页版第0—31节完整任务书仅解除原T5有限冻结：先R01—R10合成反例→Master Review→本机严格只读生产spawn/必要N01—N05诊断→经证实的最小普通修复→唯一真实P01—P08 proof。H3/H4及任何等价Hosted网络诊断禁止；Final Full0/1、Final QA0/1待proof PASS后才可启用，任一FAIL即停。8.3额外能力缺失经双环境核实可记环境不可用、不算PASS；核心26/742仍须零fail零skip。无beta.3最终Artifact，未到LAN人工验收。完整边界见`docs/tasks/windows-installer-v1.1/batch-4.5/CONTROLLED-DISCOVERY-ROOT-CAUSE-APPROVAL.md`；下方停止点是历史。

@@ -1,5 +1,9 @@
 # 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
+## 当前结论｜2026-09-27
+
+**BLOCKED — PRODUCTION DISCOVERY STDERR SOURCE UNRESOLVED。** 已用完新获批的一次本机只读诊断：首次与唯一复核均`STDERR_NONEMPTY`，N01—N05均`FAIL/STDERR_NONEMPTY`；进程exit0、stdout JSON可解析，但stderr来源与安全性未证。生产拒绝不能放宽。原T5 `285b9c2` 经Master固定证据及14/14 Review整合`35f4b3d`，生产blob未变。P02 FAIL、P03—P08 NOT REACHED；H1/H2 2/2，Final Full0/1、Final QA0/1未用，无beta.3最终Artifact。见`DISCOVERY-STDERR-STOP-20260927.md`和`DISCOVERY-STDERR-DECISION.md`；须网页版决定是否批准下一次本机分层只读诊断，下方任务状态为历史。
+
 ## 当前阶段结果｜2026-09-27
 
 第一阶段原T5合成固定分类R01—R10经Master独立12/12 PASS、隐私白名单及未改生产blob Review PASS，已整合并push `13f483f`。这是合成harness结论，真实Win10 P02历史FAIL及P03—P08 NOT REACHED不变。第二阶段仅原T5一次真实只读spawn分类/条件性N01—N05已派，根因与后续修复PENDING；H1/H2 2/2，Final Full0/1、Final QA0/1未用。无beta.3最终Artifact。

@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前BLOCKED：真实Win10 stderr来源未闭合｜2026-09-27
+
+原T5主动BLOCKED回单local`285b9c2`，Master独立复验14/14、代码/证据隐私/生产blob Review PASS，整合并push`35f4b3de965b97570e9139d5ac9f92ed8ed50c07`；原thread/worktree再次冻结。首次生产spawn与唯一完整复核均`STDERR_NONEMPTY`，N01—N05各一次同类；直接拒绝条件确定，底层来源未唯一定位。P02 FAIL，P03—P08 NOT REACHED。H1/H2 2/2，不增Hosted discovery；Final Full0/1、Final QA0/1未用。只做止损治理与网页版决策卡，不追加探针、生产修复或Hosted。见`DISCOVERY-STDERR-STOP-20260927.md`、`DISCOVERY-STDERR-DECISION.md`和`tasks/B45-T5-WIN10-DISCOVERY-LIVE-RESULT.md`。下方DISPATCHED是历史。
+
 ## 当前：合成分类Review PASS；真实Win10只读诊断已派｜2026-09-27
 
 原T5主动回单第一阶段PASS：local `4f77a8e`/`800c1e2`，Master独立复验R01—R10与固定契约12/12、隐私JSON白名单、生产blob、diff均PASS；整合`1fb36ae`/`13f483f`并push，仅开发分支，无Hosted。现同原T5 thread/worktree/branch派第二阶段`tasks/B45-T5-WIN10-DISCOVERY-LIVE.md`：一次真实Win10只读spawn分类，条件性N01—N05及最多一次完整脚本复核；生产代码仍不得改。此阶段根因PENDING，未授权Final Full或QA。H1/H2 2/2，Final Full0/1，Final QA0/1。下方早期DISPATCHED合成阶段是历史。

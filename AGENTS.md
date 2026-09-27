@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-09-27 真实Win10 stderr来源未闭合
+
+**BLOCKED — PRODUCTION DISCOVERY STDERR SOURCE UNRESOLVED。** 完整第0—31节批准的一次真实Win10只读诊断已完成；首次与唯一完整复核均`STDERR_NONEMPTY`（进程存在、exit0、stdout JSON可解析），N01—N05各一次同类。原T5冻结；直接生产拒绝条件已知，但stderr底层来源及安全性未证，不能忽略stderr或修改生产。H1/H2 2/2，Final Full0/1、Final QA0/1未用；禁止新增Hosted discovery或将其挪作调试。P02仍FAIL，P03—P08 NOT REACHED，无beta.3最终Artifact。Master已Review合成12/12和后续14/14、固定证据及生产blob并整合至`35f4b3d`；下一步需网页版决定是否新增有界本机只读分层诊断，详见`docs/tasks/windows-installer-v1.1/batch-4.5/DISCOVERY-STDERR-STOP-20260927.md`与`DISCOVERY-STDERR-DECISION.md`。以下有限续行授权现为已执行历史，不允许继续试跑。
+
 ## 当前授权｜2026-09-27 完整受控Win10根因任务书
 
 网页版已用完整第0—31节任务书解除前次P02停止点的有限冻结；仅原B45-T5/原工作树先做R01—R10合成分类反例，Master Review后才做当前真实Win10只读production discovery定点诊断。根因未证明前不改生产；普通兼容修复仍须原T5执行、Master Review，随后唯一一次P01—P08真实proof全部PASS且privateCandidatePresent=true。H1/H2 2/2历史保持，不增H3/H4或等价Hosted诊断；Final Full0/1与Final QA0/1只在proof PASS后按序使用，FAIL即停。8.3额外环境能力缺失须双环境核实且不记PASS、不阻塞Batch；核心26/742仍fail0skip0。Master/T5普通工作GPT-6 Sol/Medium，最终独立QA Sol/High。唯一Master、public-source、codex/lan-host-v1.1不变；旧Master只读。无最终beta.3 Artifact或LAN人工验收。详见`docs/tasks/windows-installer-v1.1/batch-4.5/CONTROLLED-DISCOVERY-ROOT-CAUSE-APPROVAL.md`，下方P02 BLOCKED是本次有限授权前的历史状态。
