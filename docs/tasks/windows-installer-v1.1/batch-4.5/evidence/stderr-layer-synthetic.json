@@ -1,0 +1,6 @@
+[
+  {"schema":1,"status":"FAIL","layer":"STARTUP","S01":"FAIL","S02":"NOT_RUN","S03":"NOT_RUN","stderrEmpty":false},
+  {"schema":1,"status":"FAIL","layer":"MODULE","S01":"PASS","S02":"FAIL","S03":"NOT_RUN","stderrEmpty":false},
+  {"schema":1,"status":"FAIL","layer":"QUERY","S01":"PASS","S02":"PASS","S03":"FAIL","stderrEmpty":false},
+  {"schema":1,"status":"PASS","layer":"PASS","S01":"PASS","S02":"PASS","S03":"PASS","stderrEmpty":true}
+]
