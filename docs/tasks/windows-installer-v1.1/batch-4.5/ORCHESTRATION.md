@@ -10,7 +10,7 @@
 |B45-T2|01a0e01c-ad06-7413-8572-bf1dbf2fbd11|lan-server/codex/b45-t2|INTEGRATED 4b83380 / 冻结30a1351|Master13/13 PASS|
 |B45-T3|01a0e035-3eca-7993-9db1-795373d92537|lan-launcher/codex/b45-t3|INTEGRATED a226ed1 / 冻结6a2cae6|stale地址QA闭合；stop有界重试2/2+vet PASS|
 |B45-T4|01a0e004-98a3-75b2-a2a1-3ffd0c6506c9|lan-firewall/codex/b45-t4|INTEGRATED b0e51b5 / 冻结aea2474|Master13+29、vet PASS；QA复验中|
-|B45-T5-INTEGRATION|同T5|b4-qa/codex/b45-t5-integration|阶段INTEGRATED d9dae20—eaebaf6；最后CI名单/RESULT进行中|Master44/44；真实Setup/Registry待Hosted|
+|B45-T5-INTEGRATION|同T5|b4-qa/codex/b45-t5-integration|INTEGRATED 至1ec4678 / 冻结17aba5d|Master44/44、四文件overlay Go27/27+vet；真实Setup/Registry待Hosted|
 |B45-QA|01a0e03a-15c9-7833-af1c-c05a8eca2126|lan-qa/阶段分支历史保留|T1/T4/T3缺陷复验PASS；T5设计及本地复验PASS|T3报告137e526、T5报告d485b36；真实Hosted与最终QA未完成|
 
 预算：专项3/4、Full0/2、QA0/2。身份取证计专项；不得运行无关Full。每次run前登记精确source/mode/budget，后记录result/Artifact，无修改不retry。
@@ -55,3 +55,11 @@ T5-INTEGRATION原线程/原worktree继续，保留旧codex/b45-t5@4b08d35，按0
 独立B45-QA早期安全审查已派：thread01a0e03a-15c9-7833-af1c-c05a8eca2126，model gpt-5.6-sol/medium，专属lan-qa工作树/branch，baseline582569083fe9773ddd11115ba9ba698f7f2c8d29。禁止生产修改和Hosted，只回可复现缺陷及文档，整体QA不得提前PASS。T3构建接口已确认并转T5：可选FirewallHelperSha256严格64lowercasehex，beta3必传真实helperhash；历史Local为空保持闭合。
 
 早期QA回单305344e已Review整合704a9bd，结论FAIL保留。T1 R2/R3 ff1f6fd/ca454f1整合aeac5fe/864e8f5；T4 R2/R3 ba399b8/aea2474整合48934de/b0e51b5。Master独立Node18/18、Go13顶层29子用例及vet PASS。同一QA线程/工作树保存旧分支，阶段分支codex/b45-qa-r1精确baseline b0e51b54744c944ce68a5730d9b8d279b72db9a0继续原缺陷corpus/mock复验；无新Hosted，无真实NIC/firewall/registry操作。
+
+## 专项4预登记：最后集成诊断
+
+原T5正式返回最终代码ae92ed6b660dea514f35725e7ecd0a64d8a2ff92与报告17aba5da455838d7a20e75e4160f597d291200a0，经Review整合50ad515/1ec4678。Master在统一树实际生成四文件版本化Go overlay、固定Go1.27.1精确Launcher27/27 fail0skip0及overlay vet PASS；此前兼容wrapper44/44及T4/Node证据保留。原beta.1历史源码未重写，appVersion/DC1/Runtime schema/业务schema不变。
+
+下一次仅已注册setup-v3.yml / codex/lan-host-v1.1 / mode=lan-diagnostic，调用本分支LAN reusable workflow。只构建candidate、fault-payload-hash、fault-post-copy，验证目标Runtime/Launcher/Portable、实际U22拒绝/U23回滚/受验F3成功升级以及受控Hosted网络与NetSecurity API。真实物理LAN/第二设备仍人工门禁；不因runner合成adapter替代而宣称真实LAN PASS。
+
+当前已用专项3/4，预留最后第4次；Full0/2、QA0/2。受测为含本预登记的精确公开HEAD，dispatch后记录run/source。失败先保留证据，不无修改retry、不挪Full/QA预算绕过专项止损。成功后才按批准范围继续Full与最终QA。T3/T5当前冻结等待实际诊断；尚未宣称本Batch自动化PASS。

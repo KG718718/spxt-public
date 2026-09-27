@@ -15,7 +15,7 @@
 
 - 集成经主控 Review 的 T1/T2/T3/T4 接口，建立隔离 beta.2→beta.3 路由、固定 F3 身份、LAN Runtime/Launcher/Firewall helper/Portable/Setup/CI；旧 beta.1→beta.2 实现保持冻结。
 - U22 在旧 program swap 前拒绝错误 manifest hash；U23 文件回滚后才恢复完整 32/64 位 registration/binding 快照。快照在任何删除/导入前检查存在、普通非 reparse 文件及 SHA-256。
-- COMMITTED 与 ROLLED_BACK 均使用 installRoot 外置严格 marker；recovery 改名、递归删除或内部 journal 部分丢失后，可区分“已提交仅待清理”和“文件已回滚、注册表/清理待完成”，避免恢复混合状态。
+- COMMITTED 与 ROLLED_BACK 均使用 installRoot 内、recovery 目录外的严格 marker；recovery 改名、递归删除或内部 journal 部分丢失后，可区分“已提交仅待清理”和“文件已回滚、注册表/清理待完成”，避免恢复混合状态。
 - 固定 Go 测试策略闭合 Launcher 27 项及 Firewall 13 项；JSON reporter 对缺失、额外、fail、skip、package 未通过均拒绝。build 和 Artifact verifier 核对完整名字数组，不以单一数字代替测试身份。
 - `integration.json` 固定核对 23 个 Launcher EXE 检查 ID、顺序、PASS 和非零计数，并把闭合摘要写入 portable report；实际 EXE 运行仍由 Hosted 产生。
 - 已注册的 `setup-v3.yml` 仅新增 `lan-diagnostic`、`lan-full`、`lan-qa` 手动入口，并在 `codex/lan-host-v1.1` 上调用本地 reusable workflow；映射为 diagnostic/full/qa，权限仅 contents/actions read。旧 job 条件未修改，无 push 触发用于注册。
