@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前DISPATCHED：S01—S03合成门禁｜2026-09-27
+
+网页版批准且仅批准一次当前真实Win10 S01—S03有界只读分层链，完整第0—18节见`FINAL-LOCAL-STDERR-LAYER-APPROVAL.md`。原T5 thread`01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`、原b4-qa worktree/`codex/b45-t5-integration`、冻结local`285b9c2deebc3ab1276a370d0579a3d007356927`恢复为**仅D01—D12合成门禁DISPATCHED**；准确回单Master`01a0db0e-c950-79e0-8e11-07155e0742f2`。Master Review后才派唯一真实链；原生产blob`4e13e944472f845675fe73d176f063c4fe97f6ed`冻结。不得忽略stderr、增H3/H4、提前用Final Full0/1或QA0/1。下方BLOCKED结论为当前诊断前事实，底层来源仍PENDING。
+
 ## 当前BLOCKED：真实Win10 stderr来源未闭合｜2026-09-27
 
 原T5主动BLOCKED回单local`285b9c2`，Master独立复验14/14、代码/证据隐私/生产blob Review PASS，整合并push`35f4b3de965b97570e9139d5ac9f92ed8ed50c07`；原thread/worktree再次冻结。首次生产spawn与唯一完整复核均`STDERR_NONEMPTY`，N01—N05各一次同类；直接拒绝条件确定，底层来源未唯一定位。P02 FAIL，P03—P08 NOT REACHED。H1/H2 2/2，不增Hosted discovery；Final Full0/1、Final QA0/1未用。只做止损治理与网页版决策卡，不追加探针、生产修复或Hosted。见`DISCOVERY-STDERR-STOP-20260927.md`、`DISCOVERY-STDERR-DECISION.md`和`tasks/B45-T5-WIN10-DISCOVERY-LIVE-RESULT.md`。下方DISPATCHED是历史。

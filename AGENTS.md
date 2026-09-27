@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前有限授权｜2026-09-27 S01—S03 stderr分层
+
+网页版仅批准原B45-T5/原工作树在当前真实Win10进行**一次**S01→条件S02→条件S03只读分层链；先D01—D12合成门禁，Master Review后才执行真实S01，任一失败即停，不重复。生产`public-lan-network.js`及stderr fail-closed保持冻结；仅换诊断payload，沿用安全系统PowerShell及原args/cwd/env/timeout/maxBuffer。只输出固定层级STARTUP/MODULE/QUERY/PASS/UNRESOLVED、阶段PASS/FAIL/NOT_RUN及安全布尔，不保存输出、网络身份、路径或其hash/长度。无Hosted H3/H4、Final Full/QA提前运行或Astra。诊断完成立即冻结T5；STARTUP必须回网页版，其他层按正式第12节判断，无充分普通工程证据仍回网页版。H1/H2 2/2、Final Full0/1、QA0/1不变；P02仍FAIL、P03—P08未到达。唯一Master、Primary、分支不变。完整决定见`docs/tasks/windows-installer-v1.1/batch-4.5/FINAL-LOCAL-STDERR-LAYER-APPROVAL.md`；下方BLOCKED事实未被改写，只在此有限诊断范围内解除冻结。
+
 ## 当前止损｜2026-09-27 真实Win10 stderr来源未闭合
 
 **BLOCKED — PRODUCTION DISCOVERY STDERR SOURCE UNRESOLVED。** 完整第0—31节批准的一次真实Win10只读诊断已完成；首次与唯一完整复核均`STDERR_NONEMPTY`（进程存在、exit0、stdout JSON可解析），N01—N05各一次同类。原T5冻结；直接生产拒绝条件已知，但stderr底层来源及安全性未证，不能忽略stderr或修改生产。H1/H2 2/2，Final Full0/1、Final QA0/1未用；禁止新增Hosted discovery或将其挪作调试。P02仍FAIL，P03—P08 NOT REACHED，无beta.3最终Artifact。Master已Review合成12/12和后续14/14、固定证据及生产blob并整合至`35f4b3d`；下一步需网页版决定是否新增有界本机只读分层诊断，详见`docs/tasks/windows-installer-v1.1/batch-4.5/DISCOVERY-STDERR-STOP-20260927.md`与`DISCOVERY-STDERR-DECISION.md`。以下有限续行授权现为已执行历史，不允许继续试跑。

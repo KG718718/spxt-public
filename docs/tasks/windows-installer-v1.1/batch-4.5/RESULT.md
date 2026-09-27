@@ -1,5 +1,9 @@
 # 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
+## 当前有限诊断授权｜2026-09-27
+
+网页版正式批准原T5一次本机S01—S03只读stderr层级诊断，先D01—D12合成反例与Master Review；本轮不得改生产、忽略stderr、增Hosted或提前运行Final Full/QA。此前两次完整命令及N01—N05均`STDERR_NONEMPTY`、P02 FAIL、P03—P08 NOT REACHED保持事实；新分层结果尚PENDING。H1/H2 2/2、Final Full0/1、QA0/1不变。完整授权见`FINAL-LOCAL-STDERR-LAYER-APPROVAL.md`；下方BLOCKED在本次有限授权范围内是历史停止点。
+
 ## 当前结论｜2026-09-27
 
 **BLOCKED — PRODUCTION DISCOVERY STDERR SOURCE UNRESOLVED。** 已用完新获批的一次本机只读诊断：首次与唯一复核均`STDERR_NONEMPTY`，N01—N05均`FAIL/STDERR_NONEMPTY`；进程exit0、stdout JSON可解析，但stderr来源与安全性未证。生产拒绝不能放宽。原T5 `285b9c2` 经Master固定证据及14/14 Review整合`35f4b3d`，生产blob未变。P02 FAIL、P03—P08 NOT REACHED；H1/H2 2/2，Final Full0/1、Final QA0/1未用，无beta.3最终Artifact。见`DISCOVERY-STDERR-STOP-20260927.md`和`DISCOVERY-STDERR-DECISION.md`；须网页版决定是否批准下一次本机分层只读诊断，下方任务状态为历史。

@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前有限授权｜2026-09-27 S01—S03
+
+P02真实失败与stderr来源未闭合的事实保持。网页版新增**一次本机**S01启动常量→条件S02网络cmdlet解析→条件S03最小只读查询的安全分层诊断；先D01—D12合成反例和Master Review，之后只运行一次真实链，任一失败立即停。不改生产或Windows，不忽略stderr，不用Hosted/Final Full/QA。原T5/工作树续行，Sol/Medium，完成后冻结。H1/H2 2/2，Final Full0/1、QA0/1保持。详见`docs/tasks/windows-installer-v1.1/batch-4.5/FINAL-LOCAL-STDERR-LAYER-APPROVAL.md`，下方止损为获新有限授权前历史状态。
+
 ## 当前止损｜2026-09-27 生产discovery stderr来源未闭合
 
 Batch4.5获批的一次真实Win10只读根因诊断已完成：原生产P02仍FAIL，首次与唯一复核均`STDERR_NONEMPTY`，N01—N05各一次也同类；P03—P08未到达。stderr产生层及安全性未证，不能改生产忽略。原T5再次冻结；H1/H2 2/2，Final Full0/1、Final QA0/1未用，任何新本机探针需网页版新授权。Master已核验合成14/14及固定隐私证据，生产blob未变，整合`35f4b3d`；没有最终beta.3 Artifact。见`docs/tasks/windows-installer-v1.1/batch-4.5/DISCOVERY-STDERR-STOP-20260927.md`和`DISCOVERY-STDERR-DECISION.md`；下方续行状态为历史。

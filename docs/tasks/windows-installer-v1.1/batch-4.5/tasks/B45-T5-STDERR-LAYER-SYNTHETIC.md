@@ -1,0 +1,9 @@
+# B45-T5 — S01—S03 stderr分层诊断·合成门禁
+
+你是执行任务，不是项目主控。TASK ID `B45-T5-STDERR-LAYER-SYNTHETIC`；PARENT Batch4.5；唯一Master与准确回单目标 `01a0db0e-c950-79e0-8e11-07155e0742f2`。公开仓库 `KG718718/spxt-public`，继续原T5线程、原 `E:\CodexWorkspace\CodexWorktrees\b4-qa\public-source`、原本地 `codex/b45-t5-integration`，冻结HEAD `285b9c2deebc3ab1276a370d0579a3d007356927`。集成基线由Master派单SHA提供。先读原树AGENTS.md、PROJECT.md、Batch4.5 SPEC/PLAN/ACCEPTANCE，并以派单SHA读取本任务卡及`FINAL-LOCAL-STDERR-LAYER-APPROVAL.md`完整第0—18节。不checkout/cherry-pick集成治理，不新建线程、工作树或分支。
+
+当前生产`public-lan-network.js` Git blob `4e13e944472f845675fe73d176f063c4fe97f6ed`必须保持。历史真实Win10 P01 PASS、P02 `NETWORK_DISCOVERY_FAILED`；两次完整命令与N01—N05均`STDERR_NONEMPTY`，stderr底层来源未证。**本卡仅解冻合成门禁**：在`tools/tests/lan-host/`新增/改窄S01—S03只读harness与D01—D12合成反例、固定白名单验证、本任务RESULT/纯合成证据。严禁运行真实S01/S02/S03；严禁修改生产代码/Windows/Firewall/Registry/Service/Network/Profile/Policy、运行Hosted/Final Full/QA或清理历史证据。
+
+未来真实harness的执行器必须原样使用生产安全系统PowerShell解析、exe、`-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden`、cwd、env、timeout、maxBuffer，仅替换PowerShell payload；脚本必须短命只读、原始输出只在内存判定，不打印/保存。S01固定常量且不加载任何网络cmdlet；S02只解析四个生产网络cmdlet存在性、不查询网络；S03只执行一个最小`Get-NetConnectionProfile`查询且在进程内部丢弃结果。真实链顺序S01→条件S02→条件S03，任一失败立即停止，每阶段至多一次；但此阶段**不执行真实链**。
+
+至少合成D01 S01干净→STARTUP PASS、D02 S01 stderr非空→STARTUP、D03 S01 PASS/S02 stderr非空→MODULE、D04 S01/S02 PASS/S03 stderr非空→QUERY、D05三层干净→PASS、D06 exit nonzero不得当stderr-only、D07 timeout、D08 spawn failure、D09 invalid JSON、D10未知异常→UNRESOLVED、D11额外报告字段拒绝、D12 stdout/stderr正文不保存。仅允许最终JSON含固定schema/status/layer/S01/S02/S03/stderrEmpty及批准枚举/布尔；不保存stdout/stderr/exception/stack、IP/subnet/gateway/DNS/route/adapter/GUID/MAC/hostname/InterfaceIndex/NetworkCategory、系统/用户路径或其hash/长度。测试fail0/skip0、Node syntax与diff-check PASS。保留local commit与RESULT；主动`send_message_to_thread`向准确Master ID提交结构化回单并核对返回目标，失败按AGENTS记DELIVERY FAILED。合成完成后再次冻结，待Master独立Review并**另行明确派单**才可执行唯一真实链。本轮GPT-6 Sol/Medium，不用Astra；H1/H2耗尽、Final Full0/1和QA0/1不动。
