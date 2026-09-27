@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-09-27 M03 PASS 后待生产方案决定
+
+唯一真实Win10进程级M03已经完成1/1，固定结果`EXPLICIT_IMPORT_SERIALIZATION_PASS`、`stderrEmpty=true`（按现有生产trim判定）；原T5主动回单，Master核验四字段、唯一调用和生产blob后将local`26ec72a`整合为`c1ae5a0`。这只证明一次显式Utility导入+最小序列化组合干净，不证明唯一根因或完整production discovery恢复。原T5冻结，不再M04/M05/新S/Hosted微诊断；生产未改，P02仍FAIL、P03—P08未到达，Final Full0/1和QA0/1冻结。最小生产修复**仅提案、未实施**，等待网页版决定；见`docs/tasks/windows-installer-v1.1/batch-4.5/M03-PROCESS-PASS-DECISION.md`。下方M03待运行授权现为历史。
+
 ## 当前有限授权｜2026-09-27 最后一次进程级 M03
 
 网页版批准方案 A，取代下方已阻塞的 M03 阶段归因目标；方案 B 未批准。原T5已完成新进程级T01—T08合成门禁，Master独立Review并整合`51e2509`/`bdc7c8c`，真实M03尚未运行，额度0/1。仅在公共开发分支本地HEAD、origin跟踪和GitHub远端再次一致后，允许原T5一次真实Win10同进程显式Utility导入+固定ConvertTo-Json；只判断整进程固定输出与聚合stderr。干净报`EXPLICIT_IMPORT_SERIALIZATION_PASS`，其他均`UNRESOLVED`，不再做内部阶段归因。之后无论结果都冻结T5并交网页版，不追加M04/M05/新S探针/Hosted，不立即改生产或运行Final Full/QA。生产blob`4e13e944472f845675fe73d176f063c4fe97f6ed`及stderr fail-closed不变；详见`docs/tasks/windows-installer-v1.1/batch-4.5/M03-PROCESS-CONTROL-APPROVAL.md`。下方M03阶段归因BLOCKED为历史停点。

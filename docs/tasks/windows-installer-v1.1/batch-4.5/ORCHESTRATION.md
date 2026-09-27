@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前BLOCKED：M03 PASS，生产方案待网页版｜2026-09-27
+
+原T5在真实Win10只调用一次已Review的M03入口，固定证据`schema1/PASS/EXPLICIT_IMPORT_SERIALIZATION_PASS/stderrEmpty=true`，真实额度1/1；主动回单local`26ec72a`，Master核对thread唯一调用、证据四字段、两文件diff、生产blob未变，并整合`c1ae5a0`。T5现冻结。M00/M01历史PASS、M02历史FAIL；M03支持自动加载路径相关推断但不证明唯一根因或完整生产发现恢复。生产P02仍FAIL、P03—P08未到达；H1/H2 2/2、Final Full0/1、QA0/1。禁止追加微诊断、Hosted、生产修复或Full/QA；先就`M03-PROCESS-PASS-DECISION.md`的最小生产方案取得网页版决定。下方M03待派为历史。
+
 ## 当前Review PASS，唯一真实M03待派｜2026-09-27
 
 网页版批准进程级非对称方案A、拒绝B。原T5 local`9810f29`/`d1da5ad`仅合成与RESULT，Master检查payload/固定四字段/生产blob/范围，独立复验新增10/10、相关31/31、语法与diff-check PASS，整合`51e2509`/`bdc7c8c`。当前必须先同步并核对公共开发分支本地HEAD、origin跟踪及GitHub远端相等，才另派一次真实Win10 M03（当前0/1）；不能把合成PASS写成实机PASS。实机后不论结果停止所有stderr微诊断，Master Review证据、整合/push并返回网页版生产方案决定。原T5工作树不重建；生产与Final Full0/1、QA0/1冻结，H1/H2 2/2、P02 FAIL、P03—P08未到达。详见`M03-PROCESS-CONTROL-APPROVAL.md`。下方旧阶段归因BLOCKED为历史。
