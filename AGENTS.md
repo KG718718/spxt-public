@@ -1,5 +1,13 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-09-27 M03阶段归因门禁未通过
+
+**BLOCKED — M03 PHASE ATTRIBUTION NOT PROVEN。** 原T5在原thread/worktree仅做合成反例并主动回单；Master独立Review新增8/8、相关49/49 fail0skip0及四文件diff后，将来源local`c1c1019`/`c1fdf25`的最小证据整合为`8006d3c`。现有`spawnSync`仅返回整次PowerShell进程stderr，合成T02模块阶段与T03序列化阶段可产生相同可见结果；两项获批分类验收**未通过**，不能以测试49/49声称M03门禁PASS。未创建或运行真实M03、未改生产、未用Hosted/Final Full/QA；原T5冻结。P02仍FAIL，H1/H2 2/2、Final Full0/1、QA0/1不变。下一步需网页版决定是否把唯一M03改为进程级非对称判定，或另批有可靠阶段归因的观察设计；见`docs/tasks/windows-installer-v1.1/batch-4.5/M03-ATTRIBUTION-DECISION.md`。下节DISPATCHED为历史。
+
+## 当前M03合成阶段｜2026-09-27
+
+Git控制面已恢复：原T5三笔local与主控治理经Review整合，公共分支本地HEAD、远端开发ref及本地origin跟踪ref均为`c9ff0f8c519b9f7ac2ce1de05555d5b6be87571d`。普通Git HTTPS fetch/push受网络连接阻断，本轮以已认证GitHub API逐项验证相同blob/tree/commit SHA后，对唯一开发分支做非force快进；未操作main/tag/Release、未触发Hosted。现只派原B45-T5在原thread/worktree做M03-T01—T08**合成**反例与同进程阶段隔离设计，禁止真实M03，待Master Review另派。生产/Final Full/QA均冻结，P02仍FAIL；详见`docs/tasks/windows-installer-v1.1/batch-4.5/GIT-RECOVERY-M03-APPROVAL.md`。下节的Git待恢复状态为历史。
+
 ## 当前有界续行｜2026-09-27 Git恢复后唯一M03
 
 网页版已批准先恢复公共仓库Git元数据写入、Review并整合/push原T5三笔local及主控治理，再由原T5进行M03合成门禁→Master Review→唯一一次真实Win10同进程Utility显式加载/序列化对照。**Git同步完成前不得执行M03。** 当前已恢复Windows本机身份、`.git`可写及`gh`登录；普通Git HTTPS fetch仍被网络空响应/连接失败阻断，远端ref已通过已认证GitHub API核对。当前整合/push尚未完成，M03未开始，Final Full/QA冻结；见`docs/tasks/windows-installer-v1.1/batch-4.5/GIT-RECOVERY-M03-APPROVAL.md`。下方旧止损是此次有限授权的起点。

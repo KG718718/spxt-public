@@ -1,5 +1,13 @@
 # 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
+## 当前结论｜2026-09-27 M03合成阻塞
+
+**BLOCKED — M03 PHASE ATTRIBUTION NOT PROVEN。** Master已Review并整合T5纯合成歧义反例`8006d3c`。相关49/49、fail0skip0仅证明保守闭合；T02/T03获批阶段归因不满足。真实M03未创建或执行，生产/历史证据不变。P02仍FAIL、P03—P08 NOT_REACHED；H1/H2 2/2、Final Full0/1、QA0/1。待网页版新明确决定；见`M03-ATTRIBUTION-DECISION.md`。
+
+## 当前阶段｜2026-09-27 M03合成门禁
+
+公共开发HEAD与远端ref已同步`c9ff0f8c519b9f7ac2ce1de05555d5b6be87571d`；历史M00 PASS/M01 PASS/M02 FAIL证据及旧S01解释不变。原T5只被派M03-T01—T08合成反例，真实M03未运行；Master Review前不可live。生产/P02、Hosted预算及Final Full0/1、QA0/1状态不变。
+
 ## 当前结论｜2026-09-27 M02失败
 
 **BLOCKED — UTILITY SERIALIZATION PATH STDERR; ROOT CAUSE NOT UNIQUE。** 真实一次M00 PASS/M01 PASS/M02 FAIL，M02与旧S01序列化payload等价且stderr非空；它不证明完整生产脚本只有同一故障，亦不证明stderr无害。旧S01历史STARTUP字段不改，解释收窄为网络命令前的Utility序列化阶段。Master核验T5 local合成41/41与live六字段证据，生产blob未改，P02 FAIL、P03—P08未到达。H1/H2 2/2、Final Full0/1、QA0/1冻结。当前工作区Git写权限与GitHub写认证故障阻止公开整合；本轮结果仅在local提交/文件，不宣称已push。见`PRE-NETWORK-UTILITY-STOP-20260927.md`和`PRE-NETWORK-UTILITY-DECISION.md`；下方M00诊断状态为历史。

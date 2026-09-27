@@ -1,5 +1,13 @@
 # Batch 4.5 Orchestration
 
+## 当前BLOCKED：M03阶段归因合成门禁｜2026-09-27
+
+原T5 thread`01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`主动回单`BLOCKED / NEED PARENT DECISION`，local`c1c1019`/`c1fdf25`。Master独立Review四文件范围、固定证据、生产blob`4e13e944472f845675fe73d176f063c4fe97f6ed`及49/49相关合成PASS，整合`8006d3c`。T02与T03仅靠同步子进程stderr汇总不可区分，所要求的两项分类未通过；不创建或运行live M03，不改生产，不跑Hosted/Full/QA。原T5冻结；详见`M03-ATTRIBUTION-STOP-20260927.md`和`M03-ATTRIBUTION-DECISION.md`。下方DISPATCHED为历史。
+
+## 当前DISPATCHED：M03合成门禁｜2026-09-27
+
+Git控制面恢复后Master已整合治理`7ae3cae`与原T5三笔来源的精确七文件`c9ff0f8`，本地HEAD、已认证GitHub远端ref、本地origin跟踪ref一致`c9ff0f8c519b9f7ac2ce1de05555d5b6be87571d`。普通Git HTTPS fetch/push失败于网络传输；API上传的blob/tree/commit SHA均与本地一致，远端仅非force快进，没有Hosted。原T5 thread`01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`/原b4-qa worktree/`codex/b45-t5-integration`已派**仅M03合成**T01—T08和可靠同进程阶段隔离设计，回单Master`01a0db0e-c950-79e0-8e11-07155e0742f2`；真实M03 PENDING，不得提前运行。生产、H1/H2 2/2、Final Full0/1、QA0/1不变。
+
 ## 当前BLOCKED：M02 Utility序列化路径stderr｜2026-09-27
 
 原T5主动FAIL/UTILITY_SERIALIZATION回单local`2a36277003060e132032831bdf8a312cabec8f1e`；Master审查原branch/生产blob/唯一安全六字段JSON并独立验证白名单，原thread/worktree再次冻结。合成local`a9abd82`/`69cd3d1`已Master独立41/41 Review PASS，但因主控`.git`写权限拒绝及GitHub API写401，三笔local均**未整合、未push**；原文件留存。M00纯.NET PASS、M01显式Utility加载PASS、M02旧S01等价ConvertTo-Json路径FAIL；独立进程比较不能唯一定位自动加载/序列化，完整P02仍FAIL。H1/H2 2/2、Final Full0/1、QA0/1冻结，不加探针/Hosted或生产修复。见`PRE-NETWORK-UTILITY-STOP-20260927.md`、`PRE-NETWORK-UTILITY-DECISION.md`。下方DISPATCHED为历史。

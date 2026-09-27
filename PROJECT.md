@@ -1,5 +1,13 @@
 # K⁺-SESSION｜项目状态
 
+## 当前止损｜2026-09-27 M03合成阻塞
+
+Master已整合原T5的M03纯合成不可区分性证据`8006d3c`：新增8/8、相关49/49 PASS是保守分类器测试结果，**不代表**要求的T02 MODULE_LOAD_FAIL/T03 SERIALIZATION_FAIL能被可靠区分。真实M03未运行，生产不变，原T5冻结；P02 FAIL、Final Full0/1、QA0/1不动。待网页版决定观察目标/机制，见`docs/tasks/windows-installer-v1.1/batch-4.5/M03-ATTRIBUTION-DECISION.md`。
+
+## 当前M03合成阶段｜2026-09-27
+
+公共开发分支本地/远端/本地origin跟踪均为`c9ff0f8c519b9f7ac2ce1de05555d5b6be87571d`，Git同步完成。原T5仅获派M03同进程阶段隔离的合成反例T01—T08；真实Win10 M03尚未获派或运行。普通Git HTTPS不可达，本次通过已认证GitHub API在精确SHA核对后非force快进。生产/Hosted/Final Full/QA冻结；P02仍FAIL。
+
 ## 当前有界续行｜2026-09-27 Git恢复→M03
 
 网页版批准先恢复公共仓库`.git`写入与GitHub认证、整合/push已Review的T5三笔local和治理文件；仅同步完成后才可执行一次M03同进程对照，先合成T01—T08与Master Review。当前Windows本机身份、`.git`写入和`gh`登录已恢复，普通Git HTTPS fetch因连接故障未成功；已认证API确认远端仍`73952c1`。整合/push尚未完成，M03未开始，原T5冻结，生产/Hosted/Final Full/QA均不动。详见`docs/tasks/windows-installer-v1.1/batch-4.5/GIT-RECOVERY-M03-APPROVAL.md`。
