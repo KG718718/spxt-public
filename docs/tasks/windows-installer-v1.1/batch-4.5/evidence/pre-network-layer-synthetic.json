@@ -1,0 +1,6 @@
+[
+  {"schema":1,"status":"FAIL","layer":"SHELL_OR_ENVIRONMENT","M00":"FAIL","M01":"NOT_RUN","M02":"NOT_RUN"},
+  {"schema":1,"status":"FAIL","layer":"UTILITY_MODULE_LOAD","M00":"PASS","M01":"FAIL","M02":"NOT_RUN"},
+  {"schema":1,"status":"FAIL","layer":"UTILITY_SERIALIZATION","M00":"PASS","M01":"PASS","M02":"FAIL"},
+  {"schema":1,"status":"PASS","layer":"PRE_NETWORK_PASS","M00":"PASS","M01":"PASS","M02":"PASS"}
+]
