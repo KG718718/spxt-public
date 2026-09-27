@@ -603,6 +603,14 @@ func verifiedFreshLANEndpoint(result *lanRefreshResult) (*lanCandidate, int, boo
 	return fresh, result.config.Port, true
 }
 
+func freshLANPresentation(result *lanRefreshResult) (string, string, string) {
+	fresh, port, ok := verifiedFreshLANEndpoint(result)
+	if !ok {
+		return "-", "-", ""
+	}
+	return fresh.Address, fresh.Subnet, privateLANURL(fresh.Address, port)
+}
+
 func (c *controller) applyLANRefresh() {
 	result := c.consumeLANResult()
 	if result == nil || c.closing {
@@ -659,14 +667,8 @@ func (c *controller) applyLANRefresh() {
 		if result.state.Port != nil {
 			port = *result.state.Port
 		}
-		if result.state.Selected != nil {
-			address = result.state.Selected.Address
-			subnet = result.state.Selected.Subnet
-		}
 	}
-	if fresh, freshPort, ok := verifiedFreshLANEndpoint(result); ok {
-		c.lanURL = privateLANURL(fresh.Address, freshPort)
-	}
+	address, subnet, c.lanURL = freshLANPresentation(result)
 	localURL := "-"
 	if c.child != nil {
 		localURL = fmt.Sprintf("http://127.0.0.1:%d/login.html", c.child.port)

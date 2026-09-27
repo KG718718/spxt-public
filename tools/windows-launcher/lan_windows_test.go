@@ -270,6 +270,9 @@ func TestFreshDiscoveryMismatchRevokesCopyURL(t *testing.T) {
 	if c.currentLANURL() != "" {
 		t.Fatal("stale server-selected IP remained copyable without a matching fresh discovery candidate")
 	}
+	if address, subnet, url := freshLANPresentation(&lanRefreshResult{config: c.lanConfig, discovery: &lanDiscovery{Schema: 1, Status: "NETWORK_CHANGED"}, state: &lanServerState{Schema: 1, Port: &port, Selected: stale}}); address != "-" || subnet != "-" || url != "" {
+		t.Fatalf("stale server-selected endpoint remained presented as current: address=%q subnet=%q url=%q", address, subnet, url)
+	}
 }
 
 func TestFreshDiscoveryMatchPublishesURLWhenFirewallBlocked(t *testing.T) {
@@ -289,6 +292,10 @@ func TestFreshDiscoveryMatchPublishesURLWhenFirewallBlocked(t *testing.T) {
 	c.applyLANRefresh()
 	if got, want := c.currentLANURL(), "http://192.168.40.11:8083/login.html"; got != want {
 		t.Fatalf("verified fresh address was not published for a non-address firewall gate: got %q want %q", got, want)
+	}
+	result := &lanRefreshResult{config: &lanConfig{Schema: 1, Port: port, AdapterPreference: syntheticGUID}, discovery: &lanDiscovery{Schema: 1, Status: "SELECTED", Selected: fresh}, state: &lanServerState{Schema: 1, Port: &port, Selected: &server}}
+	if address, subnet, url := freshLANPresentation(result); address != fresh.Address || subnet != fresh.Subnet || url != "http://192.168.40.11:8083/login.html" {
+		t.Fatalf("verified fresh endpoint was hidden: address=%q subnet=%q url=%q", address, subnet, url)
 	}
 }
 

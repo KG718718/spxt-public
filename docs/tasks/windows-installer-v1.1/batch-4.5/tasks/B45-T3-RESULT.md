@@ -17,7 +17,7 @@
 - 保存 port 被占用时不静默换号、不杀外部进程、不新增临时 Local 端口；Launcher 控制窗口保留并显示保存 port，只有用户确认“重新寻找可用端口”才更改。设置过渡在后台串行，先停止自己的 child，UI 消息线程不等待 CLI/重启。
 - R1 Review 增量闭合：Firewall status 的命令环境构造失败时 fail closed，不允许 `cmd.Env=nil` 继承宿主环境；refresh/transition/UAC worker 到 UI 实际消费 pending result 前持续占有单任务串行权，旧复制 URL 在 transition 启动即撤销，worker 不再写 UI 所有的 `child/ready/lanConfig`。新配置启动失败且存在旧配置时先恢复精确旧配置、只尝试旧服务；首次配置无旧状态时保留已确定持久端口并明确失败，不自动换口。
 - WM_ENDSESSION 期间尚未由 UI 接收的 worker-owned child 继续依赖既有 per-child Job `KILL_ON_JOB_CLOSE` 与 launcher 进程句柄关闭边界；已有 `TestJobOwnsOnlyChild` 合成证据，本次未扩大或重新定义系统关机退出行为。
-- R2 Review 增量闭合：可复制 LAN URL 必须由同轮 fresh discovery 的 `SELECTED` 候选与 Server state 在 GUID/private IPv4/prefix/subnet 上精确一致，并与持久配置 adapter/port 一致后发布。`NETWORK_CHANGED`、fresh 候选消失或 mismatch 时旧 Server state 仅作诊断显示，不再恢复可复制旧 URL；fresh 地址仍可信而仅 Firewall 等其他门禁失败时不误删地址。
+- R2 Review 增量闭合：当前 Private IPv4/Subnet 与可复制 LAN URL 必须由同轮 fresh discovery 的 `SELECTED` 候选与 Server state 在 GUID/private IPv4/prefix/subnet 上精确一致，并与持久配置 adapter/port 一致后发布。`NETWORK_CHANGED`、fresh 候选消失或 mismatch 时不再把旧 Server state 显示成当前地址，IPv4/Subnet 回到 `-` 且 copy URL 为空；fresh 地址仍可信而仅 Firewall 等其他门禁失败时不误删地址。
 - helper 固定 `program/K-SESSION-Firewall.exe`，调用前校验真实普通文件、无 reparse、SHA 与 Launcher 内嵌值一致。普通刷新只执行 `status`；只有用户点击才单次 `ShellExecuteExW runas enable`。UAC 拒绝不重试且不停止 Local child；不接受任意 exe/remote/script/PowerShell 参数。
 
 ## 修改文件
