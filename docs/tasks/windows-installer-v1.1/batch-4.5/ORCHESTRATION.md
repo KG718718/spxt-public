@@ -91,3 +91,13 @@ Run36292597156 / source98b030d1fa5c2ca091ac266069ea9d624d3177a5 / Artifact109221
 Master确认当前Firewall fixture/build阻塞已越过。T1—T5已整合，局部QA缺陷已关闭，D5修改仅测试环境/诊断，生产五文件冻结；完整candidate的真实Runtime→helper→Launcher构建身份链、固定F3五锚/离线升级、既有U30与C15及全26/742门禁未削弱。F3 Artifact10907910968 API仍expired=false且原Run/source/大小一致；只在Hosted下载原包，不fresh rebuild。满足Full1工程准入，不等于候选PASS。
 
 下一次仅setup-v3.yml / codex/lan-host-v1.1 / mode=lan-full，预留Full第1/2次，精确受测为包含本登记的公开HEAD，dispatch后回填。历史专项4/4、Diagnostic Extension1/2（D6未用）、Full当前0/2、QA0/2。Full1若有此前未到达的纯工程失败，按批准第12节本地反例→最小修复→Review后再Full2，不借预算；若失败性质不在授权内或需额外诊断而无相应额度则停止决策。仅FullPASS后启动原独立QA最终阶段。未运行真实Win10物理LAN/第二设备，不提前标LAN HUMAN PENDING。
+
+Full1已dispatch：Run36292822541 / sourcef139a429b56aab53b84727fad58838619e40f4ee / setup-v3.yml / mode=lan-full / attempt1。local/origin/API远端精确一致后启动，Full正式使用1/2；历史专项4/4、扩展D1/2、QA0/2。结果PENDING，不预判真实Setup或最终候选通过。
+
+## Full1 FAIL / 原T5有界返工
+
+Run36292822541 / sourcef139a429b56aab53b84727fad58838619e40f4ee / Artifact10922344270，296bytes，SHA25631c53b74b3b6ff76784578ed41e7dfef8ec495421535ff2797614b03d37bcbcc。Master内存解包唯一stage.json、闭合schema/source/FULL/FAIL/PORTABLE与privacy PASS。Firewall测试及compile、Launcher测试及build已越过；后续原LAN Node37项31PASS/6FAIL/skip0，六个config fixture为LAN_CONFIG_PATH_INVALID；尚未Setup/U22/U23/Registry/Firewall/最终回归。此为此前未到达的后续L/config门禁工程失败，不撤销D5结论。
+
+Master在同一f139a42原37名单、本地Node24.14.0独立对照：规范physical TEMP/TMP为37/37 PASS；指向同一自有合成根的junction为31PASS6FAIL，六个失败名称与Hosted一致，仍固定LAN_CONFIG_PATH_INVALID。原业务合成字节/夹具保护测试未改，生产safeInstance拒绝符合契约。Hosted具体映射值仍未知，不写成唯一根因。证据evidence/full1-master-config-counterexample.json。初次只选五文件31项对照亦精确复现，随后补齐Launcher6项得到实际37，未隐藏初测范围。
+
+按用户批准第12节，B45-T5原thread01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9/原b4-qa/codex/b45-t5-integration从冻结b67cbb6继续REWORK，完整卡tasks/B45-T5-FULL1-REWORK.md，准确return target01a0db0e-c950-79e0-8e11-07155e0742f2。本地baseline的tools/.github/生产config与受测f139a42无diff。只处理测试环境/CI接线，生产路径及安全契约冻结，禁止直接Hosted或amend已返回SHA。先本地对照→最小修复→Master Review，证据充分才Full2；否则止损。当前历史专项4/4、扩展D1/2、Full1/2、QA0/2；未使用D6或Full2，最终QA仍冻结。

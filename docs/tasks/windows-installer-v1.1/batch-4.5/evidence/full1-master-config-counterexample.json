@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "sourceCommit": "f139a429b56aab53b84727fad58838619e40f4ee",
+  "nodeVersion": "v24.14.0",
+  "scope": "SYNTHETIC_LOCAL_FIXTURES",
+  "results": [
+    {
+      "kind": "PHYSICAL",
+      "exitCode": 0,
+      "tests": 37,
+      "pass": 37,
+      "fail": 0,
+      "skipped": 0,
+      "pathRejected": false,
+      "failedTests": []
+    },
+    {
+      "kind": "JUNCTION",
+      "exitCode": 1,
+      "tests": 37,
+      "pass": 31,
+      "fail": 6,
+      "skipped": 0,
+      "pathRejected": true,
+      "failedTests": [
+        "save and reload are isolated from byte-identical business data",
+        "damaged or linked config is rejected and never overwritten",
+        "strict JSON rejects duplicate decoded keys recursively and trailing values without changing files",
+        "LAN config requires canonical integer tokens across load and save boundaries",
+        "atomic staging failure and external change both preserve the previous bytes",
+        "restricted config CLI reuses the schema and never echoes the instance path"
+      ]
+    }
+  ]
+}

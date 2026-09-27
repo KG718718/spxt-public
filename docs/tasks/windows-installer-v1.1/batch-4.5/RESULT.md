@@ -1,3 +1,7 @@
+# 当前结果：Full1 FAIL，按批准第12节本地返工
+
+D5 PASS保持；Full1 Run36292822541在后续LAN配置测试31/37失败，固定PORTABLE。规范physical/junction独立对照37/37与31/37复现；生产路径拒绝不放宽，原T5仅做测试环境修复。预算专项4/4、D1/2、Full1/2、QA0/2，尚未Full2/最终QA/候选Artifact。详见最新ORCHESTRATION及安全证据；下文为历史阶段记录。
+
 # Batch 4.5 最新有界续行结果
 
 ## 最新状态：D5 PASS，Full1待运行｜2026-09-27

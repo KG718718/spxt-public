@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "runId": 36292822541,
+  "artifactId": 10922344270,
+  "artifactSha256": "31c53b74b3b6ff76784578ed41e7dfef8ec495421535ff2797614b03d37bcbcc",
+  "privacy": "PASS",
+  "report": {
+    "stage": "PORTABLE",
+    "mode": "FULL",
+    "status": "FAIL",
+    "sourceCommit": "f139a429b56aab53b84727fad58838619e40f4ee",
+    "schema": 1
+  }
+}
