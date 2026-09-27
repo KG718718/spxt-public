@@ -2,6 +2,11 @@
 
 ## 当前唯一活动工程续行：HOSTED_LAN｜2026-09-27
 
+### H1准入 Review 与预登记
+
+原T5主动RETURNED：实现526f215、报告b81d93d；Master发现exact-source缺口退回原线程，返工4a5c7aa、报告6580002主动RETURNED。Master独立Review确认只改手动CI入口、Hosted测试门禁/专项反例、最终Artifact测试verifier及任务RESULT，生产网络/Server/Firewall/升级/身份零改；复验LAN含专项56/56、兼容事务45/45 fail0skip0，Node syntax及diff check PASS。四提交按序整合为b024df8、8fd929a、76b1bd7、bd26672，四个代码文件blob与T5冻结HEAD精确一致。T5状态 `INTEGRATED`，原工作树保留。当前H0/2、新Full0/1、QA0/2；H1仅可用已注册setup-v3.yml手动 `lan-hosted-diagnostic` / LAN分支，精确受测source为本次预登记最终治理HEAD，待push与三方HEAD一致后dispatch，随后回填Run/Artifact。H1不等于真实企业LAN验收；H1失败按固定stage/reason返原T5本地反例与最小修复，禁止无修改retry。
+
+
 网页版方案A批准；历史Full2 Run36294405341@ac2b47de85aaac9545cf6f2a534603d7071ed5db FAIL于HOSTED_LAN，只有通用码，真实原因未知。原T5 thread `01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`、原b4-qa工作树/本地分支、冻结HEAD `8e99b4d9895c05fe6454d3bb20b32378c7516685`恢复为 `DISPATCHED`，准确回单Master `01a0db0e-c950-79e0-8e11-07155e0742f2`；返工卡 `tasks/B45-T5-HOSTED-LAN-DIAGNOSTIC.md`。T1—T4和QA原线程仍冻结。当前额外预算：HOSTED_LAN H0/2；H PASS后新增Full0/1；原QA Hosted0/2。历史专项4/4、D5 1/2、原Full2/2不可挪用。H1之前原T5 14项本地反例→Master Review；H1 PASS跳H2，H1 FAIL且唯一定位后修复Review再H2；H2 FAIL或新增Full FAIL立即止损。8.3旧回归110PASS/1SKIP独立待证，不混入LAN根因。未有beta.3最终Artifact，未到QA PASS或LAN HUMAN PENDING。完整新授权见 `HOSTED-LAN-CONTINUATION-APPROVAL.md`；下方旧阻塞及预算均为历史。
 
 
