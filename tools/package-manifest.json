@@ -31,11 +31,17 @@
     "public-bootstrap-http.js",
     "public-config-http.js",
     "public-config-store.js",
+    "public-lan-config.js",
+    "public-lan-network.js",
+    "public-lan-server.js",
     "public-runtime-state.js",
     "public-startup.js",
     "service-fee-config.js",
     "smtp-secret-store.js",
     "tax-config.js",
+    "tools/lan-host/config-cli.cjs",
+    "tools/lan-host/launcher-cli.cjs",
+    "tools/lan-host/network-cli.cjs",
     "tools/ocr/ocr_invoice.py",
     "tools/ocr/requirements.txt"
   ]

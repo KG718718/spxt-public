@@ -29,7 +29,7 @@ try {
   if(entries.length!==policy.productionPackageCount||entries.some(e=>/canvas|skia|pdf-parse/i.test(e.path)))throw Error('Reviewed production graph mismatch');
   for(const e of entries){const opts=e.optionalDependencies||{};if(Object.keys(opts).length&&(e.path!=='node_modules/pdfjs-dist'||JSON.stringify(opts)!==JSON.stringify({'@napi-rs/canvas':'^0.1.65'})))throw Error('Unreviewed optional declaration');
     for(const dep of Object.keys(e.dependencies||{})){let at=e.path,found=false;while(at){const candidate=at+'/node_modules/'+dep;if(entries.some(x=>x.path===candidate)){found=true;break;}at=at.includes('/node_modules/')?at.slice(0,at.lastIndexOf('/node_modules/')):'';}if(!found&&!entries.some(x=>x.path==='node_modules/'+dep))throw Error('Required dependency omitted: '+dep);}}
-  if(spec.applicationFiles.length!==32)throw Error('Application allowlist changed');
+  if(spec.applicationFiles.length!==38)throw Error('Application allowlist changed');
   for(const name of spec.applicationFiles)writeNew(path.join(app,safePath(name)),blob(name));
   const pkg=JSON.parse(fs.readFileSync(path.join(app,'package.json')));
   if(JSON.stringify(pkg.dependencies)!==JSON.stringify(lock.packages[''].dependencies))throw Error('Root dependencies/lock mismatch');
