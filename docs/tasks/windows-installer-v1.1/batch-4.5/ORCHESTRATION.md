@@ -67,3 +67,7 @@ T5-INTEGRATION原线程/原worktree继续，保留旧codex/b45-t5@4b08d35，按0
 专项4已dispatch：Run36288039798 / job108532480363 / source 4f52e8759d8ddd20b2a9883fd267a98ced27fba1 / setup-v3.yml / mode=lan-diagnostic / attempt1。API确认远端与本地受测HEAD一致，原F3 Artifact10907910968 expired=false、大小32538249及原Run/source匹配。预算正式专项4/4、Full0/2、QA0/2；当前IN PROGRESS，结果及Artifact待回填，不预判PASS。
 
 专项4结果FAIL：Run36288039798/job108532480363，固定PORTABLE。Firewall build.ps1的Go测试在三个有效夹具失败（HELPER_PATH_INVALID / INSTANCE_BINDING_INVALID / REGISTRATION_INVALID），尚未编译helper或进行Launcher/Setup/真实升级。Artifact10920906716仅lan-evidence/beta3-ci-stage.json，304bytes，ZIP SHA256 f2f304399b124fcc0d0c62c8dc3a53945b84a7681f488bbfc77df2f616c576d4，Master内存解包、唯一文件、封闭schema/source/status/mode/stage及privacy PASS。专项4/4、Full0/2、QA0/2；全体原线程/工作树冻结，T5/T3/QA已发停止通知，T1/T2/T4此前已冻结。只做证据与治理收尾，无生产返工、无额外测试/Hosted。等待网页版明确有界续行决定。
+
+## Diagnostic Extension：D5/D6授权
+
+用户明确批准19节续行决定，原专项4/4历史保留；新增D5/D6合计0/2，Full0/2、QA0/2。当前BLOCKED历史结论不改为PASS，但原T5按tasks/B45-T5-DIAGNOSTIC-EXTENSION.md恢复本地定位/测试环境/白名单诊断，其他任务冻结待需要。T5 thread01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9，原b4-qa/public-source，原codex/b45-t5-integration，baseline17aba5da455838d7a20e75e4160f597d291200a0；Master核验其tools/.github/核心LAN代码与公开0e9543479bce2e41eae75d15b6e332179e1d0101无差异。准确return target01a0db0e-c950-79e0-8e11-07155e0742f2。状态DISPATCHED；尚未Hosted。规则以DIAGNOSTIC-EXTENSION-APPROVAL.md为准，先原入口本地反例/Go全测/vet/diff/privacy/生产契约逐字节Review，再决定D5。

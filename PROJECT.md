@@ -1,5 +1,10 @@
 # K⁺-SESSION｜项目状态
 
+## D5/D6 有界工程续行已批准｜2026-09-27
+
+用户批准DIAGNOSTIC-EXTENSION-APPROVAL.md第1—19节。当前历史止损结论仍BLOCKED — HOSTED BUDGET EXHAUSTED，但允许原T5主责、必要时原T4协作，仅针对PORTABLE / Firewall Go fixture校验完成本地反例、固定白名单诊断和测试环境修复；未证实唯一原因前不得改生产接受条件。原专项4/4保留，新Diagnostic Extension D5/D6最多2次，当前0/2；Full0/2、QA0/2保持，禁止挪用和无修改retry。Master独立Review通过才D5；专项越过当前阻塞且候选条件具备后自动Full→独立QA→Artifact，不需重复确认。D6或Full2仍失败、新问题必须追加诊断、产品/安全改变或无法安全恢复时按批准决定再次停止。唯一Master/原线程/原worktree/集成分支不变，其他任务暂冻结；旧停止文字不撤销此有限授权。最终仍停AUTOMATION PASS / QA PASS / LAN HUMAN PENDING。
+
+
 ## 当前止损停点｜2026-09-27
 
 **BLOCKED — HOSTED BUDGET EXHAUSTED**。专项4 Run36288039798 / source 4f52e8759d8ddd20b2a9883fd267a98ced27fba1 / Artifact10920906716 为FAIL，固定阶段PORTABLE。Firewall构建中的Go测试有效路径夹具被拒绝，实际Setup/U22/U23/Registry/Firewall尚未运行。专项4/4、Full0/2、QA0/2；不得挪预算或无修改retry。T1—T5及QA冻结原线程/工作树；等待网页版新预算与有界续行决定。现有方案A和产品安全契约不变，不是兼容授权撤回。唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2、Primary public-source、集成codex/lan-host-v1.1不变。尚无beta.3最终Artifact，未到AUTOMATION PASS / QA PASS / LAN HUMAN PENDING。详见batch-4.5/HOSTED-STOPLOSS-20260927.md、RESULT.md与ORCHESTRATION.md；下文继续执行和旧预算均为历史。
