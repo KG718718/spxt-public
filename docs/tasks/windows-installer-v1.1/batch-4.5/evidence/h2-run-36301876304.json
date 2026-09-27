@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "run": 36301876304,
+  "job": 108570884334,
+  "artifact": 10925513024,
+  "sourceCommit": "80ee1a88275a0ef631cef17d68ace8a69ceaacfa",
+  "zipBytes": 461,
+  "zipSha256": "1aca7cd4d285e1eb8ed2e63193ff1a4f9b2e81b72c6773d92b0bb13597fbd0b4",
+  "archiveAllowlist": ["hosted-lan-gate.json"],
+  "identityAndPrivacyReview": "PASS",
+  "workflowConclusion": "FAIL",
+  "gateStatus": "FAIL",
+  "stage": "PRODUCTION_DISCOVERY_REJECT",
+  "reason": "DISCOVERY_COMMAND_FAILED",
+  "underlyingProductionCode": "NETWORK_DISCOVERY_FAILED",
+  "runnerCandidateCount": 0,
+  "portsAttempted": 0,
+  "laterGatesReached": false,
+  "rootCause": "UNKNOWN"
+}

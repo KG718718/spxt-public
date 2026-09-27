@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前止损｜2026-09-27
+
+Batch4.5 HOSTED_LAN H1/H2 2/2已用，H2 Run36301876304固定失败 `PRODUCTION_DISCOVERY_REJECT/DISCOVERY_COMMAND_FAILED`；新增Full0/1、QA Hosted0/2未用，不得挪用。T1—T5及QA原线程/工作树冻结；无beta.3最终Artifact或真实LAN验收。等网页版新预算/范围决定，见 `docs/tasks/windows-installer-v1.1/batch-4.5/HOSTED-STOPLOSS-H2-20260927.md`。下方旧运行和停止状态是历史。
+
 ## 当前有界续行｜2026-09-27
 
 Batch4.5 Full2仅在HOSTED_LAN通用门禁失败，用户批准原B45-T5有界诊断H1/H2最多2次；H门禁PASS后新增Full最多1次，QA Hosted原0/2。8.3真实alias额外历史回归单独处理。当前未有beta.3最终Artifact，未到LAN HUMAN PENDING；详见 `docs/tasks/windows-installer-v1.1/batch-4.5/HOSTED-LAN-CONTINUATION-APPROVAL.md`。旧Full2止损文字保留历史。

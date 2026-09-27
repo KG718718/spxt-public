@@ -1,5 +1,10 @@
 # Batch 4.5 Orchestration
 
+## 当前最终停点：H2预算止损｜2026-09-27
+
+**BLOCKED — HOSTED_LAN DIAGNOSTIC BUDGET EXHAUSTED**。H2 Run36301876304@80ee1a88275a0ef631cef17d68ace8a69ceaacfa / job108570884334 / Artifact10925513024 FAIL，固定 `PRODUCTION_DISCOVERY_REJECT/DISCOVERY_COMMAND_FAILED`；JSON受测SHA/allowlist/privacy/哈希核验PASS。H1+H2专项2/2已耗尽，新增Full0/1和原QA0/2不得挪用；未到runner地址/双bind，未有最终beta.3 Setup Artifact/QA PASS。T5已收到STOP、冻结原thread/worktree/local b8e3440；T1—T4/QA维持冻结。详见 `HOSTED-STOPLOSS-H2-20260927.md` 与 `evidence/h2-run-36301876304.json`。下文H1/H2准入与运行文字为历史。
+
+
 ## 当前唯一活动工程续行：HOSTED_LAN｜2026-09-27
 
 ### H1准入 Review 与预登记

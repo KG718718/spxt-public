@@ -1,3 +1,7 @@
+# 当前最终停点：H2预算止损｜2026-09-27
+
+**BLOCKED — HOSTED_LAN DIAGNOSTIC BUDGET EXHAUSTED**。H2 Run36301876304@80ee1a88275a0ef631cef17d68ace8a69ceaacfa / Artifact10925513024固定 `PRODUCTION_DISCOVERY_REJECT/DISCOVERY_COMMAND_FAILED`；Master单JSON/schema/source/privacy PASS。H1/H2 2/2用尽，新增Full0/1、QA0/2未动，原线程/工作树冻结。尚无真实Setup/U22/U23/Registry/Firewall、26套742项、最终QA或beta.3最终Artifact。旧8.3 110PASS/1SKIP独立待证。等网页版新决定；详见 `HOSTED-STOPLOSS-H2-20260927.md`，以下续行是历史。
+
 # 当前有界工程续行｜2026-09-27
 
 H2最后专项已启动：Run36301876304@80ee1a88275a0ef631cef17d68ace8a69ceaacfa，H预算2/2、新Full0/1、QA0/2；结果PENDING。若H2 FAIL按网页批准立即止损，不借Full或QA重试。

@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损停点｜2026-09-27 HOSTED_LAN H2
+
+**BLOCKED — HOSTED_LAN DIAGNOSTIC BUDGET EXHAUSTED**。H1 Run36301442048 / Artifact10925263790 FAIL于生产发现粗分类；H2 Run36301876304@80ee1a88275a0ef631cef17d68ace8a69ceaacfa / Artifact10925513024 固定 `PRODUCTION_DISCOVERY_REJECT/DISCOVERY_COMMAND_FAILED`，仍未到runner地址或双bind。H1/H2 2/2耗尽；新增Full0/1、QA0/2未动，不能挪作诊断。原T5/T1—T4/QA线程与工作树冻结，等待网页版新决定；未有beta.3最终Artifact、未到LAN HUMAN PENDING。详见 `docs/tasks/windows-installer-v1.1/batch-4.5/HOSTED-STOPLOSS-H2-20260927.md`。下文有界续行文字为历史，不授权继续工程或Hosted。
+
 ## 当前有界续行｜2026-09-27 Full2 HOSTED_LAN
 
 用户已批准方案A：仅原B45-T5/原工作树返工 HOSTED_LAN 安全固定诊断；新增 H1/H2 最多2次，H专项PASS后新增Full最多1次，原QA Hosted 0/2保留。H1前14项本地反例及Master Review必需；H1 PASS跳过H2，H2 FAIL或新增Full FAIL即止损。历史Full2 Run36294405341@ac2b47d 的HOSTED_LAN失败与旧预算保留，不视为当前冻结令。8.3真实alias历史110PASS/1SKIP单独闭合或提交网页版决定，不混入HOSTED_LAN。唯一Master、LAN集成分支和全部生产安全边界不变。见 `docs/tasks/windows-installer-v1.1/batch-4.5/HOSTED-LAN-CONTINUATION-APPROVAL.md`、`ORCHESTRATION.md`。以下旧BLOCKED和预算均为历史记录。
