@@ -5,7 +5,7 @@ const {FIREWALL:firewallUnitExpected,LAUNCHER:launcherUnitExpected,INTEGRATION_I
 const [root,commit]=process.argv.slice(2);
 const names=['K-SESSION-Setup-1.1.0-beta.3.exe','K-SESSION-Setup-1.1.0-beta.3.exe.sha256','build-info.json',
  'installer-manifest.json','LICENSE-Inno-Setup.txt','license-summary.json','portable-test-report.json',
- 'toolchain-verification.json','beta3-compatibility-report.json','BETA3-INSTALLER-TEST-REPORT.json',
+ 'toolchain-verification.json','beta3-compatibility-report.json','ci-test-environment.json','BETA3-INSTALLER-TEST-REPORT.json',
  'BETA3-UPGRADE-TEST-REPORT.json','offline-network.json','hosted-lan-gate.json','public-regression.json'];
 names.push('firewall-hosted-gate.json');
 names.push('beta3-ci-stage.json');
@@ -20,6 +20,7 @@ for(const key of ['runtimeManifestSha256','launcherSha256','firewallHelperSha256
 assert.equal(info.setupSha256,sha(read('K-SESSION-Setup-1.1.0-beta.3.exe')));
 const stage=json('beta3-ci-stage.json');assert.equal(stage.status,'PASS');assert.equal(stage.stage,'COMPLETE');
 assert.equal(stage.sourceCommit,commit);assert.equal(stage.mode,'FULL');
+const ciEnvironment=json('ci-test-environment.json');assert.equal(ciEnvironment.qualification,'TEST_ONLY');assert.equal(ciEnvironment.status,'PASS');assert.equal(ciEnvironment.stage,'COMPLETE');assert.equal(ciEnvironment.reason,'PASS');assert.equal(ciEnvironment.sourceCommit,commit);assert.equal(ciEnvironment.selectedRootClass,'CANONICAL');assert.equal(ciEnvironment.environmentRestored,true);
 const manifest=json('installer-manifest.json');
 assert.equal(manifest.version,'1.1.0-beta.3');assert.equal(manifest.sourceCommit,commit);
 assert.ok(manifest.payload.some(file=>file.path==='K-SESSION-Firewall.exe'));
@@ -33,6 +34,7 @@ const portable=json('portable-test-report.json');assert.equal(portable.status,'P
 for(const phase of ['staging','extracted']){assert.equal(portable[phase]?.status,'PASS');assert.equal(portable[phase]?.sourceCommit,commit);assert.equal(portable[phase]?.checks?.length,27);}
 assert.equal(portable.firewallUnit?.status,'PASS');assert.deepEqual(portable.firewallUnit?.expectedTests,firewallUnitExpected);assert.equal(portable.firewallUnit?.pass,firewallUnitExpected.length);assert.equal(portable.firewallUnit?.fail,0);assert.equal(portable.firewallUnit?.skipped,0);
 assert.equal(portable.firewallBuild?.qualification,'TEST_BUILD_ONLY');assert.equal(portable.firewallBuild?.fixtureRootSource,'OWNED_PHYSICAL');assert.equal(portable.firewallBuild?.status,'PASS');assert.equal(portable.firewallBuild?.stage,'COMPLETE');assert.equal(portable.firewallBuild?.reason,'PASS');assert.equal(portable.firewallBuild?.sourceCommit,commit);assert.equal(portable.firewallBuild?.testsPass,13);assert.equal(portable.firewallBuild?.testsFail,0);assert.equal(portable.firewallBuild?.testsSkipped,0);assert.equal(portable.firewallBuild?.packagePass,true);assert.equal(portable.firewallBuild?.compileReached,true);
+assert.equal(portable.nodeTestEnvironment?.qualification,'TEST_ONLY');assert.equal(portable.nodeTestEnvironment?.status,'PASS');assert.equal(portable.nodeTestEnvironment?.stage,'COMPLETE');assert.equal(portable.nodeTestEnvironment?.reason,'PASS');assert.equal(portable.nodeTestEnvironment?.selectedRootClass,'CANONICAL');assert.equal(portable.nodeTestEnvironment?.tests,37);assert.equal(portable.nodeTestEnvironment?.pass,37);assert.equal(portable.nodeTestEnvironment?.fail,0);assert.equal(portable.nodeTestEnvironment?.skipped,0);assert.equal(portable.nodeTestEnvironment?.environmentRestored,true);
 assert.equal(portable.launcherUnit?.status,'PASS');assert.deepEqual(portable.launcherUnit?.expectedTests,launcherUnitExpected);assert.equal(portable.launcherUnit?.pass,launcherUnitExpected.length);assert.equal(portable.launcherUnit?.fail,0);assert.equal(portable.launcherUnit?.skipped,0);
 assert.equal(portable.launcherIntegration?.status,'PASS');assert.deepEqual(portable.launcherIntegration?.expectedChecks,integrationExpected);assert.equal(portable.launcherIntegration?.pass,integrationExpected.length);assert.equal(portable.launcherIntegration?.fail,0);assert.equal(portable.launcherIntegration?.skipped,0);
 const regression=json('public-regression.json');

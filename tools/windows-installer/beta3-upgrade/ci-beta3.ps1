@@ -26,6 +26,16 @@ if($taskWork -notmatch '^E:\\' -or (Test-Path -LiteralPath $taskWork)){throw 'Fr
 if((git -C $taskRepo rev-parse HEAD).Trim() -ne $Commit){throw 'Must build checkout HEAD'}
 if(git -C $taskRepo status --porcelain --untracked-files=no){throw 'Tracked changes cannot enter beta3 candidate'}
 New-Item -ItemType Directory -Path $taskWork|Out-Null
+. (Join-Path $taskRepo 'tools/tests/lan-host/node-test-environment.ps1')
+$taskCandidateEnvironment=$null;$taskCandidatePipelinePass=$false
+$taskCandidateEnvironmentReportPath=Join-Path $taskWork 'ci-test-environment.json'
+$taskCandidateOuterEnvironment=Save-KSessionProcessEnvironment @('TEMP','TMP','GOTMPDIR','GOCACHE')
+$taskCandidateEnvironmentReport=[ordered]@{schema=1;kind='k-session-lan-candidate-test-environment';qualification='TEST_ONLY';status='RUNNING';stage='PREFLIGHT';reason='RUNNING';sourceCommit=$Commit;inputTempClass=(Get-KSessionFirewallTestPathClass $env:TEMP);inputTmpClass=(Get-KSessionFirewallTestPathClass $env:TMP);inputGoTmpClass=(Get-KSessionFirewallTestPathClass $env:GOTMPDIR);inputGoCacheClass=(Get-KSessionFirewallTestPathClass $env:GOCACHE);selectedRootClass='PENDING';environmentRestored=$false}
+function Write-Candidate-Environment-Report(){[IO.File]::WriteAllText($taskCandidateEnvironmentReportPath,($taskCandidateEnvironmentReport|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
+Write-Candidate-Environment-Report
+try{
+$taskCandidateEnvironment=Enter-KSessionLanCandidateTestEnvironment (Resolve-KSessionFirewallPhysicalPath $env:TEMP) ('candidate-full-'+$PID+'-'+[guid]::NewGuid().ToString('N')+'-env')
+$taskCandidateEnvironmentReport.selectedRootClass=$taskCandidateEnvironment.SelectedRootClass;$taskCandidateEnvironmentReport.stage='PORTABLE';Write-Candidate-Environment-Report
 $taskPortable=Join-Path $taskWork 'portable'
 Set-FixedStage 'PORTABLE'
 & (Join-Path $taskRepo 'tools/windows-portable/ci-lan.ps1') -Work $taskPortable -Commit $Commit
@@ -122,4 +132,16 @@ Copy-Item -LiteralPath $taskStageReport -Destination $taskArtifact
 Set-FixedStage 'COMPLETE' 'PASS'
 # Refresh the artifact copy after the final state transition.
 Copy-Item -LiteralPath $taskStageReport -Destination (Join-Path $taskArtifact (Split-Path $taskStageReport -Leaf)) -Force
+$taskCandidatePipelinePass=$true
+}finally{
+  if($null-ne$taskCandidateEnvironment){Exit-KSessionLanCandidateTestEnvironment $taskCandidateEnvironment}
+  else{Restore-KSessionProcessEnvironment $taskCandidateOuterEnvironment}
+  $taskCandidateEnvironmentReport.environmentRestored=Test-KSessionProcessEnvironmentRestored $taskCandidateOuterEnvironment
+  if($taskCandidatePipelinePass-and$taskCandidateEnvironmentReport.environmentRestored){$taskCandidateEnvironmentReport.status='PASS';$taskCandidateEnvironmentReport.stage='COMPLETE';$taskCandidateEnvironmentReport.reason='PASS'}
+  elseif(!$taskCandidateEnvironmentReport.environmentRestored){$taskCandidateEnvironmentReport.status='FAIL';$taskCandidateEnvironmentReport.stage=$script:taskStage;$taskCandidateEnvironmentReport.reason='ENV_RESTORE_FAILED'}
+  else{$taskCandidateEnvironmentReport.status='FAIL';$taskCandidateEnvironmentReport.stage=$script:taskStage;$taskCandidateEnvironmentReport.reason='PIPELINE_FAILED'}
+  Write-Candidate-Environment-Report
+}
+if(!$taskCandidateEnvironmentReport.environmentRestored){Set-FixedStage $script:taskStage 'FAIL';throw 'Candidate test environment restoration failed'}
+Copy-Item -LiteralPath $taskCandidateEnvironmentReportPath -Destination (Join-Path $taskArtifact 'ci-test-environment.json')
 Write-Output 'BETA3 LAN CANDIDATE BUILT; actual accepted-F3 upgrade lifecycle and real LAN acceptance remain pending'

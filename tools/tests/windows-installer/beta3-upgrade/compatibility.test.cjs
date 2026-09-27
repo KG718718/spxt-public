@@ -153,7 +153,24 @@ test('LAN test subprocess resolves dependencies only from the built Runtime tree
   assert.equal(resolved.status, 0);
   const ci = fs.readFileSync(path.join(repo, 'tools/windows-portable/ci-lan.ps1'), 'utf8');
   assert.match(ci, /\$taskRuntimeModules=Join-Path \$taskRoot 'app\/node_modules'/);
-  assert.match(ci, /try\{[\s\S]+--test[\s\S]+\}finally\{[\s\S]+NODE_PATH/);
+  assert.match(ci, /Enter-KSessionLanNodeTestEnvironment[\s\S]+--test-reporter=tap[\s\S]+Exit-KSessionLanNodeTestEnvironment/);
+  assert.match(ci, /Tests-ne37-or\$taskNodeSummary\.Pass-ne37-or\$taskNodeSummary\.Fail-ne0-or\$taskNodeSummary\.Skipped-ne0/);
+  assert.match(ci, /Restore-KSessionProcessEnvironment \$taskNodePathState/);
+  const beta3=fs.readFileSync(path.join(repo,'tools/windows-installer/beta3-upgrade/ci-beta3.ps1'),'utf8');
+  const helper=fs.readFileSync(path.join(repo,'tools/tests/lan-host/node-test-environment.ps1'),'utf8');
+  const workflow=fs.readFileSync(path.join(repo,'.github/workflows/lan-host-v1.1.yml'),'utf8');
+  assert.match(ci,/Invoke-KSessionWithRestoredEnvironment \$taskLauncherBuildVariables[\s\S]+tools\/windows-launcher\/build\.ps1/);
+  for(const name of ['TEMP','TMP','GOTMPDIR','GOCACHE'])assert.match(ci,new RegExp("'"+name+"'"));
+  assert.match(helper,/Resolve-KSessionFirewallPhysicalPath \$OwnedParent/);
+  assert.match(helper,/Get-KSessionFirewallTestPathClass \$root\)-ne'CANONICAL'/);
+  assert.match(ci,/lan-node-test-environment\.json/);
+  assert.match(workflow,/E:\/lan-build\/portable\/lan-node-test-environment\.json/);
+  assert.ok(beta3.indexOf('Enter-KSessionLanCandidateTestEnvironment') < beta3.indexOf("'tools/windows-portable/ci-lan.ps1'"));
+  assert.ok(beta3.indexOf('Exit-KSessionLanCandidateTestEnvironment') > beta3.indexOf("'FROZEN_REGRESSION'"));
+  assert.match(beta3,/ci-test-environment\.json[\s\S]+environmentRestored/);
+  assert.match(beta3,/if\(!\$taskCandidateEnvironmentReport\.environmentRestored\)\{Set-FixedStage \$script:taskStage 'FAIL';throw/);
+  assert.match(workflow,/E:\/lan-build\/ci-test-environment\.json/);
+  assert.match(workflow,/Same-commit frozen public regression[\s\S]+Enter-KSessionLanNodeTestEnvironment[\s\S]+Exit-KSessionLanNodeTestEnvironment/);
 });
 
 test('workflow initializes fixed evidence before checkout and closes early source or F3 failures', () => {

@@ -172,6 +172,8 @@ jobs:
             E:/lan-build/offline-gate/offline-network.json
             E:/lan-build/hosted-lan/hosted-lan-gate.json
             E:/lan-build/firewall-tests/firewall-hosted-gate.json
+            E:/lan-build/portable/lan-node-test-environment.json
+            E:/lan-build/ci-test-environment.json
             E:/lan-evidence/beta3-ci-stage.json
           if-no-files-found: warn
           retention-days: 30
@@ -235,8 +237,9 @@ jobs:
         run: |
           $taskNode='E:/lan-build/portable/node-tool/node-v24.21.0-win-x64/node.exe'
           $taskNpm='E:/lan-build/portable/node-tool/node-v24.21.0-win-x64/node_modules/npm/bin/npm-cli.js'
-          $env:TEMP='E:/lan-build/regression-temp';$env:TMP=$env:TEMP
-          New-Item -ItemType Directory -Force -Path $env:TEMP | Out-Null
+          . E:/lan-source/tools/tests/lan-host/node-test-environment.ps1
+          $taskRegressionEnvironment=Enter-KSessionLanNodeTestEnvironment (Resolve-KSessionFirewallPhysicalPath 'E:/lan-build') ('node-regression-'+$PID+'-'+[guid]::NewGuid().ToString('N')+'-env')
+          try {
           Set-Location E:/lan-source
           & $taskNode tools/tests/windows-runtime/hosted-gate.cjs preflight
           if ($LASTEXITCODE -ne 0) { throw 'Symlink gate failed' }
@@ -247,6 +250,7 @@ jobs:
           $taskReport=Get-Content -Raw .test-work/r5a-gate/regression.json | ConvertFrom-Json
           if ($taskReport.testTotal -ne 742 -or $taskReport.suitePass -ne 26 -or $taskReport.fail -ne 0 -or $taskReport.skipped -ne 0) { throw 'Exact frozen regression count failed' }
           Copy-Item .test-work/r5a-gate/regression.json E:/lan-build/candidate/artifact/public-regression.json
+          } finally {Exit-KSessionLanNodeTestEnvironment $taskRegressionEnvironment}
       - name: Artifact privacy and identity allowlist
         shell: pwsh
         run: |
@@ -278,6 +282,8 @@ jobs:
             E:/lan-build/hosted-lan/hosted-lan-gate.json
             E:/lan-build/hosted-lan/production-sessions.json
             E:/lan-build/firewall-tests/firewall-hosted-gate.json
+            E:/lan-build/portable/lan-node-test-environment.json
+            E:/lan-build/ci-test-environment.json
             E:/lan-evidence/beta3-ci-stage.json
             E:/lan-source/.test-work/r5a-gate/regression.json
           if-no-files-found: warn
