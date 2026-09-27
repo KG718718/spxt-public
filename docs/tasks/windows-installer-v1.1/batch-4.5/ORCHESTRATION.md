@@ -108,3 +108,5 @@ Master在同一f139a42原37名单、本地Node24.14.0独立对照：规范physic
 状态RETURNED→REVIEWED→INTEGRATED；cf4848a/8e99b4d分别整合7ec9be74e1353c871c12f73a635d55871128e030/a9545783b4051f2e8358fc438efa072fa7237a94。修复只隔离并恢复ci-lan/ci-beta3及回归测试环境，增加封闭诊断和必需PASS计数，不改变产品接受条件；原T5冻结，其他原线程/工作树保持。
 
 依批准第12—13节，当前新问题已能本地安全定位和复现，无须增加专项Hosted。下一次仅setup-v3.yml / codex/lan-host-v1.1 / mode=lan-full，预留最后Full第2/2次；精确受测为包含本登记的公开HEAD，dispatch后回填run/source。当前历史专项4/4、D1/2、Full1/2、QA0/2，D6未用。Full2仍失败必须停止交网页版，不挪D6/QA续调；FullPASS后才原独立QA最终阶段。当前尚无最终beta3 Artifact或LAN HUMAN PENDING结论。
+
+Full2已dispatch：Run36294405341 / sourceac2b47de85aaac9545cf6f2a534603d7071ed5db / setup-v3.yml / mode=lan-full / attempt1。local/origin/API远端精确一致后启动，Full正式2/2；历史专项4/4、Diagnostic Extension1/2、QA0/2。当前PENDING；失败即停止，未授权第三次Full，不能挪用D6或QA。

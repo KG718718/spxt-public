@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## Full2正在运行｜2026-09-27
+
+Run36294405341 / sourceac2b47de85aaac9545cf6f2a534603d7071ed5db / job108550465763 / mode=lan-full。当前IN PROGRESS，结果PENDING，不宣称候选通过。预算历史专项4/4、Diagnostic Extension1/2、Full2/2、QA0/2；若本轮失败立即停止，不能挪D6或QA。原执行线程/工作树冻结；下文待运行及旧次数为历史。治理更新不改变本轮受测源码。
+
 ## 当前：Full1返工Review PASS，Full2待运行｜2026-09-27
 
 原T5冻结8e99b4d主动回单，经Master独立环境7/原37/兼容45及异常恢复复验PASS，整合a954578。仅修测试环境和固定诊断，生产安全契约不变。D5 PASS；Full1原后续config测试FAIL和所有实验保留。预算专项4/4、D1/2、Full1/2、QA0/2，下一次仅最后Full2，受测及结果详见batch-4.5/ORCHESTRATION.md；Full2失败即按批准第13节停止，不能挪D6/QA。原线程冻结待结果，整体自动化/最终QA/Artifact仍未PASS；旧状态为历史。
