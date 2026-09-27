@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前BLOCKED：S01 STARTUP stderr｜2026-09-27
+
+原T5主动FAIL/STARTUP回单local`150ef21`；Master核验一次真实链只到S01、七字段固定证据、生产blob及diff，整合并push`ebd214527df7742b623ad396819735bdb0b85193`，原thread/worktree再次冻结。S01无网络cmdlet/查询仍stderr非空；S02/S03 NOT_RUN，不改network discovery查询或忽略stderr，不追加本机/Hosted探针。P02 FAIL、P03—P08 NOT_REACHED；H1/H2 2/2、Final Full0/1、QA0/1。按批准第12节情况A整理四项决策摘要，见`STDERR-STARTUP-STOP-20260927.md`与`STDERR-STARTUP-DECISION.md`，等网页版新明确决定。下方DISPATCHED为历史。
+
 ## 当前：S01—S03合成Review PASS；唯一真实链已派｜2026-09-27
 
 原T5主动RETURNED合成local`690e007`/`29ececa`；Master独立28/28、payload只读/安全执行器、七字段白名单、未改生产blob Review PASS，整合`8d6c3c2`/`9ce5890`。同原T5 thread/worktree/branch派`tasks/B45-T5-STDERR-LAYER-LIVE.md`，只授权一次S01→条件S02→条件S03真实Win10短命只读链，任一失败立即停，结束冻结。真实结果PENDING；不得忽略stderr或修改生产，H1/H2 2/2、Final Full0/1、QA0/1不变。下方合成DISPATCHED是历史。

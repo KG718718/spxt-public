@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前止损｜2026-09-27 S01 STARTUP
+
+唯一获批本机S01—S03链在无网络cmdlet的S01常量payload即FAIL/STARTUP，S02/S03未运行；原T5冻结。此证据说明网络查询不是发生stderr的必要条件，但底层来源与是否无害仍未知；不改生产或PowerShell安全环境。Master已核验固定七字段/合成28/28并整合`ebd2145`。P02 FAIL，P03—P08 NOT_REACHED；H1/H2 2/2，Final Full0/1、Final QA0/1未用，无最终beta.3 Artifact。按批准第12节情况A返回网页版，见`docs/tasks/windows-installer-v1.1/batch-4.5/STDERR-STARTUP-DECISION.md`；下方有限诊断阶段为历史。
+
 ## 当前有限授权｜2026-09-27 S01—S03
 
 P02真实失败与stderr来源未闭合的事实保持。网页版新增**一次本机**S01启动常量→条件S02网络cmdlet解析→条件S03最小只读查询的安全分层诊断；先D01—D12合成反例和Master Review，之后只运行一次真实链，任一失败立即停。不改生产或Windows，不忽略stderr，不用Hosted/Final Full/QA。原T5/工作树续行，Sol/Medium，完成后冻结。H1/H2 2/2，Final Full0/1、QA0/1保持。详见`docs/tasks/windows-installer-v1.1/batch-4.5/FINAL-LOCAL-STDERR-LAYER-APPROVAL.md`，下方止损为获新有限授权前历史状态。

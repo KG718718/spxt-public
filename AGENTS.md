@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-09-27 S01 STARTUP stderr
+
+**BLOCKED — S01 STARTUP STDERR; SOURCE STILL UNRESOLVED。** 网页版仅批准的一次真实Win10 S01—S03链已用：S01纯常量、无网络cmdlet/查询却`stderrEmpty=false`，固定层级STARTUP；S02/S03按规则NOT_RUN。原T5再次冻结。Master已Review合成28/28及live七字段证据，生产blob未改，结果整合`ebd2145`。这是网络cmdlet之前出现stderr的证据，不证明具体是PowerShell启动、基础环境或常量序列化，更不证明stderr无害；不得修改network discovery查询、忽略stderr或再跑本机探针。P02仍FAIL、P03—P08未到达；H1/H2 2/2，Final Full0/1、QA0/1未用，无beta.3最终Artifact。按正式批准第12节情况A交网页版决定；详见`docs/tasks/windows-installer-v1.1/batch-4.5/STDERR-STARTUP-STOP-20260927.md`与`STDERR-STARTUP-DECISION.md`。下方有限授权已执行完毕。
+
 ## 当前有限授权｜2026-09-27 S01—S03 stderr分层
 
 网页版仅批准原B45-T5/原工作树在当前真实Win10进行**一次**S01→条件S02→条件S03只读分层链；先D01—D12合成门禁，Master Review后才执行真实S01，任一失败即停，不重复。生产`public-lan-network.js`及stderr fail-closed保持冻结；仅换诊断payload，沿用安全系统PowerShell及原args/cwd/env/timeout/maxBuffer。只输出固定层级STARTUP/MODULE/QUERY/PASS/UNRESOLVED、阶段PASS/FAIL/NOT_RUN及安全布尔，不保存输出、网络身份、路径或其hash/长度。无Hosted H3/H4、Final Full/QA提前运行或Astra。诊断完成立即冻结T5；STARTUP必须回网页版，其他层按正式第12节判断，无充分普通工程证据仍回网页版。H1/H2 2/2、Final Full0/1、QA0/1不变；P02仍FAIL、P03—P08未到达。唯一Master、Primary、分支不变。完整决定见`docs/tasks/windows-installer-v1.1/batch-4.5/FINAL-LOCAL-STDERR-LAYER-APPROVAL.md`；下方BLOCKED事实未被改写，只在此有限诊断范围内解除冻结。
