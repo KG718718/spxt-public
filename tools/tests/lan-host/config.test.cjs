@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {spawnSync} = require('node:child_process');
-const {CONFIG_FILENAME, validateLanConfig, createLanConfigStore} = require('../../../public-lan-config');
+const {CONFIG_FILENAME, parseStrictJson, validateLanConfig, createLanConfigStore} = require('../../../public-lan-config');
 
 const ID = 'abcdef01-2345-6789-abcd-ef0123456789';
 const VALID = Object.freeze({schema: 1, port: 8083, adapterPreference: ID});
@@ -57,6 +57,50 @@ test('damaged or linked config is rejected and never overwritten', t => {
     assert.throws(() => createLanConfigStore({instanceDirectory: linked.instance}), {code: 'LAN_CONFIG_UNREADABLE'});
     assert.deepEqual(JSON.parse(fs.readFileSync(target, 'utf8')), VALID);
   } finally { cleanup(linked.root); }
+});
+
+test('strict JSON rejects duplicate decoded keys recursively and trailing values without changing files', () => {
+  const f = fixture('strict-json');
+  const attachments = path.join(f.instance, 'attachments'); fs.mkdirSync(attachments);
+  const attachment = path.join(attachments, 'synthetic.bin'); fs.writeFileSync(attachment, Buffer.from([9, 8, 7, 0, 255]));
+  const sources = [
+    `{"schema":1,"port":8080,"port":8099,"adapterPreference":"${ID}"}`,
+    `{"schema":1,"port":8080,"po\\u0072t":8099,"adapterPreference":"${ID}"}`,
+    `{"schema":1,"port":8080,"adapterPreference":"${ID}","extra":{"x":1,"\\u0078":2}}`,
+    `{"schema":1,"port":8080,"adapterPreference":"${ID}","extra":[{"x":1,"x":2}]}`,
+    `{"schema":1,"port":8080,"adapterPreference":"${ID}","unknown":true}`,
+    `{"schema":1,"port":8080,"adapterPreference":"${ID}"}{"schema":1}`,
+    `{"schema":1,"port":8080,"adapterPreference":"${ID}"} true`
+  ];
+  try {
+    assert.equal(JSON.parse(sources[0]).port, 8099, 'native JSON.parse demonstrates the old last-wins counterexample');
+    for (const source of sources) {
+      fs.writeFileSync(f.config, source);
+      const before = {config: fs.readFileSync(f.config), business: fs.readFileSync(f.business), attachment: fs.readFileSync(attachment)};
+      assert.throws(() => createLanConfigStore({instanceDirectory: f.instance}), {code: 'LAN_CONFIG_INVALID'});
+      assert.deepEqual(fs.readFileSync(f.config), before.config);
+      assert.deepEqual(fs.readFileSync(f.business), before.business);
+      assert.deepEqual(fs.readFileSync(attachment), before.attachment);
+    }
+    fs.writeFileSync(f.config, sources[0]);
+    const beforeSave = {config: fs.readFileSync(f.config), business: fs.readFileSync(f.business), attachment: fs.readFileSync(attachment)};
+    const cli = path.join(__dirname, '../../lan-host/config-cli.cjs');
+    const result = spawnSync(process.execPath, [cli, 'save', '--instance-dir', f.instance, '--port', '8083',
+      '--adapter-preference', ID], {encoding: 'utf8', windowsHide: true, timeout: 10000});
+    assert.equal(result.status, 20); assert.deepEqual(JSON.parse(result.stdout), {schema: 1, status: 'LAN_CONFIG_INVALID'});
+    assert.equal(result.stderr, '');
+    assert.deepEqual(fs.readFileSync(f.config), beforeSave.config);
+    assert.deepEqual(fs.readFileSync(f.business), beforeSave.business);
+    assert.deepEqual(fs.readFileSync(attachment), beforeSave.attachment);
+  } finally { cleanup(f.root); }
+});
+
+test('strict JSON tokenization does not mistake key-like string content for object members', () => {
+  const parsed = parseStrictJson('{"text":"the text \\\"port\\\":8080 is inert","nested":{"port":8080},"array":[1,true,null]}');
+  assert.equal(parsed.text, 'the text "port":8080 is inert');
+  assert.equal(parsed.nested.port, 8080);
+  assert.deepEqual(parsed.array, [1, true, null]);
+  assert.throws(() => parseStrictJson('{"text":"ok","\\u0074ext":"duplicate"}'));
 });
 
 test('instance path through a directory link is rejected without outside writes', () => {

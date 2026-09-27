@@ -4,6 +4,16 @@
 
 **PASS（限 B45-T1 独立模块与本地反例范围）**。实现提交：`24a909561906bfaf9c31d32c0b8c5d9bb34accde`。未修改 `server.js`、`public-startup.js`、`public-bootstrap-http.js`、Go Launcher 核心、Setup、CI、版本或依赖；未运行 Hosted，未读取或输出开发机真实 NIC 信息，未连接真实业务，未修改注册表、防火墙或路由。
 
+## R2 严格 JSON 返工
+
+独立 QA 证明 Node `JSON.parse` 对 `{"port":8080,"port":8099}` 采用 last-wins，可能与 Firewall helper 的严格配置解析形成边界分歧。R2 在 `public-lan-config.js` 内增加无依赖、可审查的 JSON token/parser：
+
+- 按 JSON grammar 解析 string/object/array/number/literal，不用正则扫描完整文本；字符串中的 `"port":...` 只是值内容，不会误判为键。
+- 对对象键先完成 JSON escape 解码，再用 decoded key 递归判重；因此 `"port"` 与 `"po\u0072t"` 等价且重复时拒绝，嵌套对象/数组内重复键同样拒绝。
+- 完整消费唯一 JSON value；尾随第二对象、literal 或其他非空内容拒绝。解析后继续使用原固定三字段 schema，未知/额外字段拒绝。
+- 配置上限 4096 UTF-8 bytes、嵌套上限 16；解析或 schema 失败统一 `LAN_CONFIG_INVALID`，不进入保存流程、不覆盖原文件。
+- 反例同时固定 `lan-deployment.json`、`data.json` 与合成附件 bytes；直接 load 和受限 CLI save 均失败且三者逐字节不变。
+
 ## 已完成
 
 - `public-lan-network.js`
@@ -33,7 +43,7 @@
 
 `node --test --test-reporter=spec tools/tests/lan-host/network.test.cjs tools/tests/lan-host/config.test.cjs`
 
-结果：**15 tests / pass 15 / fail 0 / skipped 0**。覆盖 RFC1918 边界、APIPA/Public/mapped/非法 prefix、虚拟/断线/未确认 profile、无 gateway 但 on-link 有效、多 NIC、不猜测、多 IPv4、偏好消失、DHCP 地址变化、固定 PowerShell 参数与语法、受限 PATH 下完整系统 PowerShell 定位、空/伪造/缺失/重定向 SystemRoot 拒绝、封闭子进程环境、8080—8099 真实顺序 bind、实际第二 Node bind 失败，以及独立 .NET Socket 对抗：先在空闲端口取得 `BOUND` 阳性对照，再显式设置并读回 `ExclusiveAddressUse=false` / `ReuseAddress=true`，仅以 BIND/LISTEN 阶段 Windows 10048/10013 作为抢占被拒证据。另覆盖保存端口冲突不换号、明确重新搜索、范围耗尽、损坏/未知配置、真实目录 junction、配置 hardlink、原子 rename 失败、外部变更及业务文件不变。
+结果：**17 tests / pass 17 / fail 0 / skipped 0**。在原 15 项网络/配置覆盖上新增严格 JSON 反例：原生 last-wins 旧行为实证、直接/转义等价/嵌套重复键、未知字段、尾随第二对象/literal、字符串内 key-like 文本不误伤，以及损坏配置下 load/CLI save 对配置/业务数据/附件的逐字节保持。原覆盖仍包括 RFC1918、adapter/route/profile、固定系统 PowerShell、真实端口 bind/.NET 对抗、原子保存及链接边界。
 
 Node 24.21.0 官方文档说明 `exclusive:true` 的定义是 cluster handle 不共享及端口共享尝试报错，并非 `SO_EXCLUSIVEADDRUSE` 名称承诺：<https://r2.nodejs.org/docs/latest-v24.x/api/net.html>。因此本结论依据实际 bind 与持续持有 handle；不声称能够抵抗已攻陷本机的所有恶意内核/进程行为。
 
@@ -41,7 +51,7 @@ Node 24.21.0 官方文档说明 `exclusive:true` 的定义是 cluster handle 不
 
 `node --test --test-reporter=spec tools/tests/public-startup.test.js tools/tests/public-startup-filesystem.test.js tools/tests/windows-installer/upgrade-preflight/preflight.test.cjs`
 
-结果：Node 汇总 **23 tests / pass 22 / fail 0 / skipped 1**，同时 `public-startup.test.js` 自报 **80 checks PASS**。唯一 skip 是既有 Windows file-symlink privilege 分支；真实 junction 覆盖通过。本任务自身 15 项无 skip。
+结果：Node 汇总 **23 tests / pass 22 / fail 0 / skipped 1**，同时 `public-startup.test.js` 自报 **80 checks PASS**。唯一 skip 是既有 Windows file-symlink privilege 分支；真实 junction 覆盖通过。本任务自身最新 17 项无 skip；R2 未修改启动或预检文件，按返工卡未重复运行该相关回归。
 
 静态：四个新增 CLI/模块 `node --check` 通过；`git diff --check` 通过。
 
