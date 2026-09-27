@@ -21,6 +21,7 @@ on:
           - qa-static
           - full
           - lan-diagnostic
+          - lan-diagnostic-extension
           - lan-full
           - lan-qa
 permissions:
@@ -333,13 +334,13 @@ jobs:
           $taskReport=Get-Content -LiteralPath $env:KSESSION_BETA2_IDENTITY_REPORT -Raw | ConvertFrom-Json
           "Beta.2 identity capture: $($taskReport.status) / $($taskReport.stage) / $($taskReport.reason)" >> $env:GITHUB_STEP_SUMMARY
   lan-host-v1-1:
-    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-host-v1.1' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'lan-diagnostic' || inputs.mode == 'lan-full' || inputs.mode == 'lan-qa')
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-host-v1.1' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'lan-diagnostic' || inputs.mode == 'lan-diagnostic-extension' || inputs.mode == 'lan-full' || inputs.mode == 'lan-qa')
     permissions:
       contents: read
       actions: read
     uses: ./.github/workflows/lan-host-v1.1.yml
     with:
-      mode: ${{ inputs.mode == 'lan-diagnostic' && 'diagnostic' || inputs.mode == 'lan-full' && 'full' || 'qa' }}
+      mode: ${{ inputs.mode == 'lan-diagnostic' && 'diagnostic' || inputs.mode == 'lan-diagnostic-extension' && 'diagnostic-extension' || inputs.mode == 'lan-full' && 'full' || 'qa' }}
   historical-identity:
     if: github.event_name == 'workflow_dispatch' && inputs.mode == 'full' && github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1'
     permissions:

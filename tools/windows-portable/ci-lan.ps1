@@ -43,18 +43,25 @@ $taskManifest=Join-Path $taskRoot 'manifest/runtime-manifest.json'
 $taskRuntimeHash=(Get-FileHash -LiteralPath $taskManifest -Algorithm SHA256).Hash.ToLower()
 $taskNodeHash=(Get-FileHash -LiteralPath (Join-Path $taskRoot 'runtime/node.exe') -Algorithm SHA256).Hash.ToLower()
 $taskHelper=Join-Path $taskWork 'firewall-helper-output'
-& (Join-Path $taskRepo 'tools/windows-firewall/build.ps1') -OutputDir $taskHelper -SourceCommit $Commit `
-  -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.3' -GoExe $taskGo
+$taskFirewallBuildReport=Join-Path $taskWork 'firewall-build-diagnostic.json'
+$taskFirewallBuildLog=Join-Path $taskWork 'firewall-build-entry.log'
+& pwsh -NoLogo -NoProfile -File (Join-Path $taskRepo 'tools/windows-firewall/build.ps1') -OutputDir $taskHelper -SourceCommit $Commit `
+  -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.3' -GoExe $taskGo -DiagnosticReport $taskFirewallBuildReport *> $taskFirewallBuildLog
 if($LASTEXITCODE -ne 0){throw 'Firewall helper build failed'}
 $taskGoTestPolicy=Join-Path $taskRepo 'tools/tests/lan-host/expected-go-tests.cjs'
 $taskFirewallTests=@(& $taskNode $taskGoTestPolicy 'FIREWALL'|ConvertFrom-Json)
 if($LASTEXITCODE -ne 0){throw 'Fixed firewall test policy failed'}
 $taskFirewallRaw=Join-Path $taskWork 'firewall-tests.jsonl';$taskFirewallReport=Join-Path $taskWork 'firewall-unit-report.json'
-Push-Location (Join-Path $taskRepo 'tools/windows-firewall')
+$taskFirewallEnvironment=$null
+. (Join-Path $taskRepo 'tools/windows-firewall/test-environment.ps1')
 try{
-  & $taskGo test -json -count=1 -run ('^(' + ($taskFirewallTests -join '|') + ')$') . | Set-Content -Encoding utf8 -LiteralPath $taskFirewallRaw
-  if($LASTEXITCODE -ne 0){throw 'Explicit firewall unit and isolated cmdlet tests failed'}
-}finally{Pop-Location}
+  $taskFirewallEnvironment=Enter-KSessionFirewallTestEnvironment (Resolve-KSessionFirewallPhysicalPath $taskWork) 'firewall-unit-test-env'
+  Push-Location (Join-Path $taskRepo 'tools/windows-firewall')
+  try{
+    & $taskGo test -json -count=1 -run ('^(' + ($taskFirewallTests -join '|') + ')$') . | Set-Content -Encoding utf8 -LiteralPath $taskFirewallRaw
+    if($LASTEXITCODE -ne 0){throw 'Explicit firewall unit and isolated cmdlet tests failed'}
+  }finally{Pop-Location}
+}finally{if($null-ne$taskFirewallEnvironment){Exit-KSessionFirewallTestEnvironment $taskFirewallEnvironment}}
 Run-Checked $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),$taskFirewallRaw,$taskFirewallReport,'FIREWALL')+$taskFirewallTests)
 $taskHelperHash=(Get-FileHash -LiteralPath (Join-Path $taskHelper 'K-SESSION-Firewall.exe') -Algorithm SHA256).Hash.ToLower()
 $taskLauncher=Join-Path $taskWork 'launcher-output'
@@ -118,6 +125,7 @@ $taskStaging=Get-Content -Raw (Join-Path $taskWork 'portable-staging/portable-te
 $taskExtracted=Get-Content -Raw (Join-Path $taskWork 'portable-extracted/portable-test-report.json')|ConvertFrom-Json
 $taskIdentity=Get-Content -Raw (Join-Path $taskArtifact 'zip-identity.json')|ConvertFrom-Json
 $taskFirewallUnit=Get-Content -Raw $taskFirewallReport|ConvertFrom-Json
+$taskFirewallBuild=Get-Content -Raw $taskFirewallBuildReport|ConvertFrom-Json
 $taskLauncherUnit=Get-Content -Raw $taskLauncherReport|ConvertFrom-Json
 $taskLauncherIntegration=Get-Content -Raw (Join-Path $taskWork 'launcher-integration/integration.json')|ConvertFrom-Json
 $taskIntegrationExpected=@(& $taskNode $taskGoTestPolicy 'INTEGRATION_IDS'|ConvertFrom-Json)
@@ -127,7 +135,7 @@ if($taskLauncherIntegration.status -ne 'PASS' -or
    (Compare-Object -SyncWindow 0 $taskIntegrationExpected $taskIntegrationActual)){throw 'Launcher integration evidence is incomplete'}
 $taskIntegrationSummary=[ordered]@{status='PASS';expectedChecks=$taskIntegrationExpected;pass=$taskIntegrationActual.Count;fail=0;skipped=0}
 @{status='PASS';sourceCommit=$Commit;zipSha256=$taskIdentity.zipSha256;firewallHelperSha256=$taskHelperHash;
-  staging=$taskStaging;extracted=$taskExtracted;firewallUnit=$taskFirewallUnit;launcherUnit=$taskLauncherUnit;launcherIntegration=$taskIntegrationSummary;
+  staging=$taskStaging;extracted=$taskExtracted;firewallBuild=$taskFirewallBuild;firewallUnit=$taskFirewallUnit;launcherUnit=$taskLauncherUnit;launcherIntegration=$taskIntegrationSummary;
   humanWin10='PENDING; no real LAN or browser claim'}|ConvertTo-Json -Depth 30|
   Set-Content -Encoding utf8 (Join-Path $taskArtifact 'portable-test-report.json')
 Copy-Item -LiteralPath (Join-Path $taskRoot 'build-info.json') -Destination $taskArtifact

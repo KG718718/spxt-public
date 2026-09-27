@@ -158,11 +158,13 @@ test('LAN test subprocess resolves dependencies only from the built Runtime tree
 
 test('workflow initializes fixed evidence before checkout and closes early source or F3 failures', () => {
   const workflow = fs.readFileSync(path.join(repo, '.github/workflows/lan-host-v1.1.yml'), 'utf8');
-  assert.ok(workflow.indexOf('Initialize fixed diagnostic stage evidence') < workflow.indexOf('uses: actions/checkout@'));
-  assert.ok(workflow.indexOf('Initialize fixed candidate stage evidence') < workflow.lastIndexOf('uses: actions/checkout@'));
+  const diagnostic = workflow.slice(workflow.indexOf('\n  diagnostic:\n'), workflow.indexOf('\n  candidate:\n'));
+  const candidate = workflow.slice(workflow.indexOf('\n  candidate:\n'));
+  assert.ok(diagnostic.indexOf('Initialize fixed diagnostic stage evidence') < diagnostic.indexOf('uses: actions/checkout@'));
+  assert.ok(candidate.indexOf('Initialize fixed candidate stage evidence') < candidate.indexOf('uses: actions/checkout@'));
   for (const stage of ['ENV', 'SOURCE', 'DOWNLOAD', 'VERIFY']) assert.match(workflow, new RegExp("stage='" + stage + "'", 'i'));
   assert.equal((workflow.match(/name: Finalize fixed failure stage/g) || []).length, 2);
-  assert.equal((workflow.match(/status='FAIL';stage=\$taskStage/g) || []).length, 2);
+  assert.equal(((diagnostic + candidate).match(/status='FAIL';stage=\$taskStage/g) || []).length, 2);
   assert.match(workflow, /E:\/lan-evidence\/beta3-ci-stage\.json/);
   assert.doesNotMatch(workflow, /compiler-stdout|compiler-stderr|server\.log/);
 });
@@ -170,11 +172,27 @@ test('workflow initializes fixed evidence before checkout and closes early sourc
 test('registered Setup dispatcher calls only the bounded LAN reusable modes on the LAN branch', () => {
   const setup=fs.readFileSync(path.join(repo,'.github/workflows/setup-v3.yml'),'utf8');
   const lan=fs.readFileSync(path.join(repo,'.github/workflows/lan-host-v1.1.yml'),'utf8');
-  for(const mode of ['lan-diagnostic','lan-full','lan-qa'])assert.match(setup,new RegExp('          - '+mode+'$','m'));
+  for(const mode of ['lan-diagnostic','lan-diagnostic-extension','lan-full','lan-qa'])assert.match(setup,new RegExp('          - '+mode+'$','m'));
   assert.match(setup,/lan-host-v1-1:[\s\S]+github\.ref == 'refs\/heads\/codex\/lan-host-v1\.1'[\s\S]+github\.event_name == 'workflow_dispatch'/);
-  assert.match(setup,/uses: \.\/\.github\/workflows\/lan-host-v1\.1\.yml[\s\S]+mode: \$\{\{ inputs\.mode == 'lan-diagnostic' && 'diagnostic' \|\| inputs\.mode == 'lan-full' && 'full' \|\| 'qa' \}\}/);
+  assert.match(setup,/uses: \.\/\.github\/workflows\/lan-host-v1\.1\.yml[\s\S]+mode: \$\{\{ inputs\.mode == 'lan-diagnostic' && 'diagnostic' \|\| inputs\.mode == 'lan-diagnostic-extension' && 'diagnostic-extension' \|\| inputs\.mode == 'lan-full' && 'full' \|\| 'qa' \}\}/);
   assert.match(lan,/workflow_call:[\s\S]+mode:[\s\S]+required: true[\s\S]+type: string/);
   assert.equal((setup.match(/uses: \.\/\.github\/workflows\/lan-host-v1\.1\.yml/g)||[]).length,1);
+});
+
+test('D5 is a bounded test-only diagnostic with fixed safe evidence', () => {
+  const workflow=fs.readFileSync(path.join(repo,'.github/workflows/lan-host-v1.1.yml'),'utf8');
+  const d5=workflow.slice(workflow.indexOf('\n  diagnostic-extension:\n'),workflow.indexOf('\n  diagnostic:\n'));
+  assert.match(d5,/github\.repository == 'KG718718\/spxt-public'[\s\S]+github\.ref == 'refs\/heads\/codex\/lan-host-v1\.1'[\s\S]+inputs\.mode == 'diagnostic-extension'/);
+  assert.ok(d5.indexOf('Initialize fixed D5 evidence') < d5.indexOf('uses: actions/checkout@'));
+  assert.match(d5,/qualification-ne'TEST_BUILD_ONLY'[\s\S]+fixtureRootSource-ne'OWNED_PHYSICAL'[\s\S]+testsPass-ne13[\s\S]+packagePass/);
+  const upload=d5.slice(d5.indexOf('- uses: actions/upload-artifact@'));
+  for(const file of ['stage.json','test-environment.json','build-driver.json','firewall-build.json'])assert.match(upload,new RegExp('E:/lan-d5-evidence/'+file.replace('.','\\.')));
+  assert.doesNotMatch(upload,/\.log|\.exe|\.zip|\.jsonl/);
+  const build=fs.readFileSync(path.join(repo,'tools/windows-firewall/build.ps1'),'utf8');
+  assert.ok(build.indexOf('$taskInputTempClass=') < build.indexOf('Enter-KSessionFirewallTestEnvironment'));
+  assert.ok(build.indexOf('$taskInputTmpClass=') < build.indexOf('Enter-KSessionFirewallTestEnvironment'));
+  assert.ok(build.indexOf('$taskInputGoTmpClass=') < build.indexOf('Enter-KSessionFirewallTestEnvironment'));
+  assert.match(build,/Compare-Object -ReferenceObject \$taskExpectedSorted -DifferenceObject \$taskPassedSorted/);
 });
 
 test('versioned Go overlay rewires LAN package verification and injects the reviewed helper identity', () => {

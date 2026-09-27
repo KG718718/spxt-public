@@ -113,9 +113,31 @@ func utf16LE(text string) []byte {
 	return data
 }
 
+func fixtureDir(t *testing.T) string {
+	t.Helper()
+	base := os.Getenv("KSESSION_FIREWALL_TEST_ROOT")
+	marker := filepath.Join(filepath.Dir(base), ".ksession-firewall-test-root")
+	markerBytes, markerErr := os.ReadFile(marker)
+	clean, cleanErr := cleanLocal(base)
+	if base == "" || cleanErr != nil || clean != base || noReparse(base) != nil ||
+		markerErr != nil || string(markerBytes) != "KSESSION_FIREWALL_TEST_ROOT_V1\n" {
+		t.Fatal("FIXTURE_TEST_ROOT_INVALID")
+	}
+	root, err := os.MkdirTemp(base, "fixture-")
+	if err != nil || !within(base, root) || noReparse(root) != nil {
+		t.Fatal("FIXTURE_TEST_ROOT_INVALID")
+	}
+	t.Cleanup(func() {
+		if within(base, root) && noReparse(base) == nil {
+			_ = os.RemoveAll(root)
+		}
+	})
+	return root
+}
+
 func fixture(t *testing.T) (string, trustedInstall, installAnchors) {
 	t.Helper()
-	root := filepath.Join(t.TempDir(), "K-SESSION-Beta")
+	root := filepath.Join(fixtureDir(t), "K-SESSION-Beta")
 	program := filepath.Join(root, "program")
 	exe := filepath.Join(program, helperName)
 	node := []byte("synthetic node fixture")
@@ -150,10 +172,15 @@ func TestInstallIdentityAndTampering(t *testing.T) {
 	if _, err := verifyInstall(filepath.Join(filepath.Dir(exe), "renamed.exe"), anchors); err == nil {
 		t.Fatal("renamed helper accepted")
 	}
+	wrongLevel := filepath.Join(filepath.Dir(install.InstallRoot), helperName)
+	put(t, wrongLevel, []byte("synthetic helper"))
+	if _, err := verifyInstall(wrongLevel, anchors); err == nil {
+		t.Fatal("correctly named helper outside program directory accepted")
+	}
 }
 
 func TestReparseResolutionMismatchIsRejected(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "plain-file")
+	path := filepath.Join(fixtureDir(t), "plain-file")
 	put(t, path, []byte("fixture"))
 	err := noReparseWith(path, func(string) (string, error) { return filepath.Join(filepath.Dir(path), "different-file"), nil })
 	if err == nil {
@@ -162,7 +189,7 @@ func TestReparseResolutionMismatchIsRejected(t *testing.T) {
 }
 
 func TestCleanPathComparisonRejectsLexicalAliases(t *testing.T) {
-	root := t.TempDir()
+	root := fixtureDir(t)
 	if !sameCleanLocalPath(root, root) {
 		t.Fatal("identical clean paths differ")
 	}
@@ -172,11 +199,15 @@ func TestCleanPathComparisonRejectsLexicalAliases(t *testing.T) {
 	if sameCleanLocalPath(root, root+":stream") {
 		t.Fatal("alternate data stream accepted")
 	}
+	shortAlias := filepath.Join(filepath.Dir(root), "FIXTUR~1")
+	if noReparseWith(shortAlias, func(string) (string, error) { return root, nil }) == nil {
+		t.Fatal("short-path identity alias accepted")
+	}
 }
 
 func TestBoundConfigMustMatchRequest(t *testing.T) {
 	_, install, _ := fixture(t)
-	instance := filepath.Join(t.TempDir(), "instance")
+	instance := filepath.Join(fixtureDir(t), "instance")
 	put(t, filepath.Join(instance, configName), []byte(`{"schema":1,"port":8083,"adapterPreference":"`+testGUID+`"}`))
 	if err := verifyBoundConfig(instance, install, request{Action: "enable", Port: 8083, AdapterGUID: testGUID}); err != nil {
 		t.Fatal(err)
@@ -187,10 +218,18 @@ func TestBoundConfigMustMatchRequest(t *testing.T) {
 	if err := verifyBoundConfig(instance, install, request{Action: "enable", Port: 8083, AdapterGUID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}); err == nil {
 		t.Fatal("mismatched adapter accepted")
 	}
-	err := verifyBoundConfig(install.InstallRoot, install, request{Action: "enable", Port: 8083, AdapterGUID: testGUID})
-	var coded *codedError
-	if !errors.As(err, &coded) || coded.Code != "INSTANCE_BINDING_INVALID" {
-		t.Fatalf("equal instance/install root not explicitly rejected: %v", err)
+	insideInstall := filepath.Join(install.InstallRoot, "instance")
+	put(t, filepath.Join(insideInstall, configName), []byte(`{"schema":1,"port":8083,"adapterPreference":"`+testGUID+`"}`))
+	for name, overlapping := range map[string]string{
+		"equal":            install.InstallRoot,
+		"inside install":   insideInstall,
+		"contains install": filepath.Dir(install.InstallRoot),
+	} {
+		err := verifyBoundConfig(overlapping, install, request{Action: "enable", Port: 8083, AdapterGUID: testGUID})
+		var coded *codedError
+		if !errors.As(err, &coded) || coded.Code != "INSTANCE_BINDING_INVALID" {
+			t.Fatalf("%s overlap not explicitly rejected: %v", name, err)
+		}
 	}
 }
 
@@ -219,7 +258,7 @@ func (f *fakeRegistry) access() registryAccess {
 func registrationFixture(t *testing.T) (trustedInstall, string, *fakeRegistry) {
 	t.Helper()
 	_, install, _ := fixture(t)
-	instance := filepath.Join(t.TempDir(), "instance")
+	instance := filepath.Join(fixtureDir(t), "instance")
 	if err := os.MkdirAll(instance, 0700); err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +318,7 @@ func TestRegistrationAndINIContracts(t *testing.T) {
 	})
 	t.Run("INI and registry instance mismatch rejected", func(t *testing.T) {
 		install, instance, _ := registrationFixture(t)
-		other := filepath.Join(t.TempDir(), "other")
+		other := filepath.Join(fixtureDir(t), "other")
 		data := utf16LE("[Installation]\r\nSchema=1\r\nInstallRoot=" + install.InstallRoot + "\r\nInstance=" + other + "\r\n")
 		if err := verifyInstanceBindingFileWith(install, instance, func(string) ([]byte, error) { return data, nil }); err == nil {
 			t.Fatal("mismatched INI accepted")

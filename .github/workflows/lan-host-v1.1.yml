@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - diagnostic
+          - diagnostic-extension
           - full
           - qa
   workflow_call:
@@ -24,6 +25,76 @@ concurrency:
   group: lan-host-v1.1-${{ github.ref }}-${{ inputs.mode }}
   cancel-in-progress: false
 jobs:
+  diagnostic-extension:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-host-v1.1' && inputs.mode == 'diagnostic-extension'
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Initialize fixed D5 evidence
+        shell: pwsh
+        run: |
+          if (!(Test-Path E:/)) {$taskDrive=Join-Path $env:RUNNER_TEMP 'ksession-lan-d5-e';New-Item -ItemType Directory -Path $taskDrive|Out-Null;subst E: $taskDrive;if($LASTEXITCODE){throw 'E isolation unavailable'}}
+          New-Item -ItemType Directory -Path E:/lan-d5-evidence,E:/lan-d5-work|Out-Null
+          [IO.File]::WriteAllText('E:/lan-d5-evidence/stage.json',(@{schema=1;status='RUNNING';stage='SOURCE';reason='RUNNING';sourceCommit='${{ github.sha }}';mode='DIAGNOSTIC_EXTENSION'}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))
+      - name: Exact public Git bytes
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fixed Go and actual Firewall build entry
+        shell: pwsh
+        run: |
+          $taskStage='TOOLCHAIN'
+          try {
+            if((git rev-parse HEAD)-cne'${{ github.sha }}'){throw 'source mismatch'}
+            $pin=Get-Content -Raw tools/windows-launcher/toolchain.json|ConvertFrom-Json
+            Invoke-WebRequest -Uri $pin.goWindowsZip -OutFile E:/lan-d5-work/go.zip -TimeoutSec 240
+            if((Get-FileHash E:/lan-d5-work/go.zip -Algorithm SHA256).Hash.ToLower()-cne$pin.sha256){throw 'toolchain identity mismatch'}
+            Expand-Archive E:/lan-d5-work/go.zip E:/lan-d5-work/go-tool
+            $taskGo='E:/lan-d5-work/go-tool/go/bin/go.exe'
+            $taskStage='ENVIRONMENT'
+            . ./tools/windows-firewall/test-environment.ps1
+            $taskPhysical=Resolve-KSessionFirewallPhysicalPath 'E:/lan-d5-work'
+            & pwsh -NoLogo -NoProfile -File tools/tests/lan-host/firewall-test-environment.test.ps1 -RepositoryRoot $env:GITHUB_WORKSPACE -Work (Join-Path $taskPhysical 'environment-contract') -Report E:/lan-d5-evidence/test-environment.json *> E:/lan-d5-work/environment-test.log
+            if($LASTEXITCODE){throw 'environment contract failed'}
+            $environment=Get-Content -Raw E:/lan-d5-evidence/test-environment.json|ConvertFrom-Json
+            if($environment.status-ne'PASS'-or$environment.stage-ne'COMPLETE'-or$environment.reason-ne'PASS'-or$environment.checksPass-ne13-or$environment.shortPathEvidence-notin@('UNAVAILABLE','EXPANDED')){throw 'environment report invalid'}
+            & pwsh -NoLogo -NoProfile -File tools/tests/lan-host/firewall-build-driver.test.ps1 -RepositoryRoot $env:GITHUB_WORKSPACE -Work (Join-Path $taskPhysical 'driver-contract') -Report E:/lan-d5-evidence/build-driver.json *> E:/lan-d5-work/driver-test.log
+            if($LASTEXITCODE){throw 'build driver contract failed'}
+            $driver=Get-Content -Raw E:/lan-d5-evidence/build-driver.json|ConvertFrom-Json
+            if($driver.status-ne'PASS'-or$driver.stage-ne'COMPLETE'-or$driver.reason-ne'PASS'-or$driver.checksPass-ne5){throw 'build driver report invalid'}
+            $taskStage='BUILD'
+            & pwsh -NoLogo -NoProfile -File ./tools/windows-firewall/build.ps1 -OutputDir E:/lan-d5-work/helper-output -SourceCommit '${{ github.sha }}' -RuntimeManifestSha256 ('a'*64) -NodeSha256 'ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32' -InstallerVersion '1.1.0-beta.3' -GoExe $taskGo -DiagnosticReport E:/lan-d5-evidence/firewall-build.json *> E:/lan-d5-work/build-entry.log
+            if($LASTEXITCODE){throw 'build entry failed'}
+            $report=Get-Content -Raw E:/lan-d5-evidence/firewall-build.json|ConvertFrom-Json
+            $classes=@('CANONICAL','NONLOCAL','INVALID','NONCANONICAL','MISSING','SUBST','ALIAS','REPARSE')
+            if($report.qualification-ne'TEST_BUILD_ONLY'-or$report.status-ne'PASS'-or$report.stage-ne'COMPLETE'-or$report.reason-ne'PASS'-or$report.sourceCommit-cne'${{ github.sha }}'-or$report.fixtureRootSource-ne'OWNED_PHYSICAL'-or$report.inputTempClass-notin$classes-or$report.inputTmpClass-notin$classes-or$report.inputGoTmpClass-notin$classes-or$report.testsPass-ne13-or$report.testsFail-ne0-or$report.testsSkipped-ne0-or!$report.packagePass-or!$report.compileReached){throw 'build report invalid'}
+            [IO.File]::WriteAllText('E:/lan-d5-evidence/stage.json',(@{schema=1;status='PASS';stage='COMPLETE';reason='PASS';sourceCommit='${{ github.sha }}';mode='DIAGNOSTIC_EXTENSION'}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))
+          } catch {
+            $reason=if($taskStage-eq'TOOLCHAIN'){'TOOLCHAIN'}elseif($taskStage-eq'ENVIRONMENT'){'TEST_ENVIRONMENT'}else{'FIREWALL_BUILD'}
+            [IO.File]::WriteAllText('E:/lan-d5-evidence/stage.json',(@{schema=1;status='FAIL';stage=$taskStage;reason=$reason;sourceCommit='${{ github.sha }}';mode='DIAGNOSTIC_EXTENSION'}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))
+            Write-Output ('D5_FAILED stage='+$taskStage+' reason='+$reason);exit 71
+          }
+      - name: Finalize fixed D5 early failure
+        if: failure()
+        shell: pwsh
+        run: |
+          $file='E:/lan-d5-evidence/stage.json'
+          if(Test-Path -LiteralPath $file){$report=Get-Content -Raw $file|ConvertFrom-Json;if($report.status-eq'RUNNING'){[IO.File]::WriteAllText($file,(@{schema=1;status='FAIL';stage='SOURCE';reason='SOURCE';sourceCommit='${{ github.sha }}';mode='DIAGNOSTIC_EXTENSION'}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: lan-firewall-diagnostic-extension-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            E:/lan-d5-evidence/stage.json
+            E:/lan-d5-evidence/test-environment.json
+            E:/lan-d5-evidence/build-driver.json
+            E:/lan-d5-evidence/firewall-build.json
+          if-no-files-found: warn
+          retention-days: 30
+
   diagnostic:
     if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-host-v1.1' && inputs.mode == 'diagnostic'
     runs-on: windows-2025
