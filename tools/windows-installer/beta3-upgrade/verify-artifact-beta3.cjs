@@ -2,6 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {sha,inventory}=require('../../windows-runtime/common.cjs');
 const {FIREWALL:firewallUnitExpected,LAUNCHER:launcherUnitExpected,INTEGRATION_IDS:integrationExpected}=require('../../tests/lan-host/expected-go-tests.cjs');
+const {validateReport:validateHostedLanReport}=require('../../tests/lan-host/hosted-gate.cjs');
 const [root,commit]=process.argv.slice(2);
 const names=['K-SESSION-Setup-1.1.0-beta.3.exe','K-SESSION-Setup-1.1.0-beta.3.exe.sha256','build-info.json',
  'installer-manifest.json','LICENSE-Inno-Setup.txt','license-summary.json','portable-test-report.json',
@@ -48,8 +49,7 @@ const offline=json('offline-network.json');
 assert.equal(offline.sourceCommit,commit);assert.equal(offline.status,'PASS');assert.equal(offline.externalBefore,true);
 assert.equal(offline.externalDuring,false);assert.equal(offline.restored,true);assert.equal(offline.firewallChanged,false);
 const hosted=json('hosted-lan-gate.json');
-assert.deepEqual(hosted,{schema:1,status:'PASS',productionHostedAdapterRejected:true,syntheticStrictDiscovery:'PASS',
- runnerOwnedPrivateBind:'PASS',controllerHealth:'PASS',productionDiscoveryUsedAsSuccess:false,firewallChanged:false,realLanClaim:false});
+assert.equal(validateHostedLanReport(hosted,commit),true);assert.equal(hosted.status,'PASS');assert.equal(hosted.stage,'COMPLETE');assert.equal(hosted.reason,'PASS');
 const sessions=json('production-sessions.json');assert.equal(sessions.status,'PASS');assert.equal(sessions.productionBusinessHandler,true);
 assert.equal(sessions.runnerOwnedPrivateSocket,true);assert.equal(sessions.discovery,'SYNTHETIC_STRICT_TEST_INJECTION');
 assert.equal(sessions.listenerGuard,'PRODUCTION');assert.equal(sessions.sessionCount,2);assert.equal(sessions.independentBearerSessions,true);

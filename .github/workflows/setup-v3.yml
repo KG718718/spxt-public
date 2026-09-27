@@ -22,6 +22,7 @@ on:
           - full
           - lan-diagnostic
           - lan-diagnostic-extension
+          - lan-hosted-diagnostic
           - lan-full
           - lan-qa
 permissions:
@@ -333,6 +334,51 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Unsafe beta.2 identity report' }
           $taskReport=Get-Content -LiteralPath $env:KSESSION_BETA2_IDENTITY_REPORT -Raw | ConvertFrom-Json
           "Beta.2 identity capture: $($taskReport.status) / $($taskReport.stage) / $($taskReport.reason)" >> $env:GITHUB_STEP_SUMMARY
+  lan-hosted-diagnostic:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-host-v1.1' && github.event_name == 'workflow_dispatch' && inputs.mode == 'lan-hosted-diagnostic'
+    permissions:
+      contents: read
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - name: Exact public Git bytes
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.21.0'
+      - name: Initialize isolated Hosted LAN report path
+        shell: pwsh
+        run: |
+          $taskReport=Join-Path $env:RUNNER_TEMP 'hosted-lan-gate.json'
+          if(Test-Path -LiteralPath $taskReport){throw 'Hosted LAN report path is not fresh'}
+          "KSESSION_HOSTED_LAN_REPORT=$taskReport" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Isolated Hosted LAN fixed-stage gate
+        shell: pwsh
+        run: |
+          node tools/tests/lan-host/hosted-gate.cjs $env:KSESSION_HOSTED_LAN_REPORT
+          $taskExit=$LASTEXITCODE
+          node tools/tests/lan-host/hosted-gate.cjs verify-report $env:KSESSION_HOSTED_LAN_REPORT '${{ github.sha }}'
+          if($LASTEXITCODE -ne 0){throw 'Unsafe Hosted LAN diagnostic report'}
+          if($taskExit -ne 0){throw 'Hosted LAN fixed-stage gate failed'}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: hosted-lan-diagnostic-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ env.KSESSION_HOSTED_LAN_REPORT }}
+          if-no-files-found: error
+          retention-days: 30
+      - name: Fixed Hosted LAN summary only
+        if: always()
+        shell: pwsh
+        run: |
+          node tools/tests/lan-host/hosted-gate.cjs verify-report $env:KSESSION_HOSTED_LAN_REPORT '${{ github.sha }}'
+          if($LASTEXITCODE -ne 0){throw 'Unsafe Hosted LAN diagnostic report'}
+          $taskReport=Get-Content -LiteralPath $env:KSESSION_HOSTED_LAN_REPORT -Raw|ConvertFrom-Json
+          "Hosted LAN diagnostic: $($taskReport.status) / $($taskReport.stage) / $($taskReport.reason)" >> $env:GITHUB_STEP_SUMMARY
   lan-host-v1-1:
     if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-host-v1.1' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'lan-diagnostic' || inputs.mode == 'lan-diagnostic-extension' || inputs.mode == 'lan-full' || inputs.mode == 'lan-qa')
     permissions:
