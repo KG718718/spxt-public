@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前DISPATCHED：Utility一行修复合成门禁｜2026-09-27
+
+网页版正式批准`MINIMAL-UTILITY-FIX-APPROVAL.md`，原T5 thread`01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`/原worktree获派仅`WINDOWS_DISCOVERY_SCRIPT`一行显式Utility导入及F01—F12合成/静态测试，回单唯一Master`01a0db0e-c950-79e0-8e11-07155e0742f2`。公共本地/跟踪/GitHub远端均核对`2f21ec106cca9eb66ed970c893f375d98cafcd02`；生产原blob`4e13e944472f845675fe73d176f063c4fe97f6ed`。真实P01—P08必须等Master Review整合/push后才派。P02仍FAIL；Final Full0/1、QA0/1冻结。M03 1/1、H1/H2 2/2历史不扩额，禁新微诊断。下方M03止损为历史。
+
 ## 当前BLOCKED：M03 PASS，生产方案待网页版｜2026-09-27
 
 原T5在真实Win10只调用一次已Review的M03入口，固定证据`schema1/PASS/EXPLICIT_IMPORT_SERIALIZATION_PASS/stderrEmpty=true`，真实额度1/1；主动回单local`26ec72a`，Master核对thread唯一调用、证据四字段、两文件diff、生产blob未变，并整合`c1ae5a0`。T5现冻结。M00/M01历史PASS、M02历史FAIL；M03支持自动加载路径相关推断但不证明唯一根因或完整生产发现恢复。生产P02仍FAIL、P03—P08未到达；H1/H2 2/2、Final Full0/1、QA0/1。禁止追加微诊断、Hosted、生产修复或Full/QA；先就`M03-PROCESS-PASS-DECISION.md`的最小生产方案取得网页版决定。下方M03待派为历史。

@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前授权｜2026-09-27 Utility一行生产修复
+
+网页版已批准`MINIMAL-UTILITY-FIX-APPROVAL.md`：仅在`public-lan-network.js`的`WINDOWS_DISCOVERY_SCRIPT`开头加`Import-Module Microsoft.PowerShell.Utility -ErrorAction Stop`一行；禁止顺带导入网络模块或放宽stderr/网络安全。原T5在原thread/worktree先做F01—F12合成/静态门禁，Master Review并整合/push后，才允许一次真实Win10 P01—P08（全PASS且privateCandidatePresent=true）。P02仍FAIL或任一门禁失败即停交网页版，不再微诊断。若proof全PASS，仅按现存Final Full0/1→QA0/1顺序继续；最终停LAN HUMAN PENDING，不进Batch5/OCR/main/tag/Release。下方M03 PASS待决定是历史停点。
+
 ## 当前止损｜2026-09-27 M03 PASS 后待生产方案决定
 
 唯一真实Win10进程级M03已经完成1/1，固定结果`EXPLICIT_IMPORT_SERIALIZATION_PASS`、`stderrEmpty=true`（按现有生产trim判定）；原T5主动回单，Master核验四字段、唯一调用和生产blob后将local`26ec72a`整合为`c1ae5a0`。这只证明一次显式Utility导入+最小序列化组合干净，不证明唯一根因或完整production discovery恢复。原T5冻结，不再M04/M05/新S/Hosted微诊断；生产未改，P02仍FAIL、P03—P08未到达，Final Full0/1和QA0/1冻结。最小生产修复**仅提案、未实施**，等待网页版决定；见`docs/tasks/windows-installer-v1.1/batch-4.5/M03-PROCESS-PASS-DECISION.md`。下方M03待运行授权现为历史。

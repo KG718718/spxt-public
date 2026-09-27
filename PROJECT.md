@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前授权｜2026-09-27 最小Utility生产修复
+
+网页版批准只加一行显式Utility导入，原T5已派仅实现及F01—F12合成/静态测试；Master Review整合/push后才派唯一真实Win10 P01—P08。不得预加NetTCPIP/NetAdapter、忽略stderr或扩大网络/权限。P02仍FAIL即停；proof全PASS才依次使用Final Full0/1和Final QA0/1。详见`docs/tasks/windows-installer-v1.1/batch-4.5/MINIMAL-UTILITY-FIX-APPROVAL.md`。下方M03待决定是历史。
+
 ## 当前止损｜2026-09-27 M03 PASS 待网页版生产决定
 
 真实M03唯一一次已用1/1，四字段`EXPLICIT_IMPORT_SERIALIZATION_PASS`；Master Review后整合`c1ae5a0`。仅最小显式Utility导入+序列化路径通过，生产`public-lan-network.js`未改、P02仍FAIL，不能进入Final Full/QA。T5冻结、无后续微诊断；最小修复提案见`docs/tasks/windows-installer-v1.1/batch-4.5/M03-PROCESS-PASS-DECISION.md`，待网页版批准才实施。下方M03待派为历史状态。
