@@ -1,6 +1,6 @@
 # Batch 4.5 Orchestration
 
-方案A已批准，IN PROGRESS。唯一Master/回单01a0db0e-c950-79e0-8e11-07155e0742f2；旧Master永久只读。集成codex/lan-host-v1.1；Primary public-source。
+方案A保持批准；当前BLOCKED — HOSTED BUDGET EXHAUSTED。唯一Master/回单01a0db0e-c950-79e0-8e11-07155e0742f2；旧Master永久只读。集成codex/lan-host-v1.1；Primary public-source。
 
 |Task|Thread|worktree/branch|状态|依赖|
 |---|---|---|---|---|
@@ -13,7 +13,7 @@
 |B45-T5-INTEGRATION|同T5|b4-qa/codex/b45-t5-integration|INTEGRATED 至1ec4678 / 冻结17aba5d|Master44/44、四文件overlay Go27/27+vet；真实Setup/Registry待Hosted|
 |B45-QA|01a0e03a-15c9-7833-af1c-c05a8eca2126|lan-qa/阶段分支历史保留|T1/T4/T3缺陷复验PASS；T5设计及本地复验PASS|T3报告137e526、T5报告d485b36；真实Hosted与最终QA未完成|
 
-预算：专项3/4、Full0/2、QA0/2。身份取证计专项；不得运行无关Full。每次run前登记精确source/mode/budget，后记录result/Artifact，无修改不retry。
+预算：专项4/4、Full0/2、QA0/2。专项4失败，停止续行；身份取证计专项，不得运行无关Full。每次run前登记精确source/mode/budget，后记录result/Artifact，无修改不retry。
 
 Execution local commit→主动send_message_to_thread准确Master；Master wait/read/RESULT/worktree/commit兜底，失败恢复记DELIVERY_RECOVERED。Review后才整合。旧预检主动回单已收、独立21/40/41反例与双server无listen检查通过；仅预检，不代替产品验证。
 
@@ -63,3 +63,7 @@ T5-INTEGRATION原线程/原worktree继续，保留旧codex/b45-t5@4b08d35，按0
 下一次仅已注册setup-v3.yml / codex/lan-host-v1.1 / mode=lan-diagnostic，调用本分支LAN reusable workflow。只构建candidate、fault-payload-hash、fault-post-copy，验证目标Runtime/Launcher/Portable、实际U22拒绝/U23回滚/受验F3成功升级以及受控Hosted网络与NetSecurity API。真实物理LAN/第二设备仍人工门禁；不因runner合成adapter替代而宣称真实LAN PASS。
 
 当前已用专项3/4，预留最后第4次；Full0/2、QA0/2。受测为含本预登记的精确公开HEAD，dispatch后记录run/source。失败先保留证据，不无修改retry、不挪Full/QA预算绕过专项止损。成功后才按批准范围继续Full与最终QA。T3/T5当前冻结等待实际诊断；尚未宣称本Batch自动化PASS。
+
+专项4已dispatch：Run36288039798 / job108532480363 / source 4f52e8759d8ddd20b2a9883fd267a98ced27fba1 / setup-v3.yml / mode=lan-diagnostic / attempt1。API确认远端与本地受测HEAD一致，原F3 Artifact10907910968 expired=false、大小32538249及原Run/source匹配。预算正式专项4/4、Full0/2、QA0/2；当前IN PROGRESS，结果及Artifact待回填，不预判PASS。
+
+专项4结果FAIL：Run36288039798/job108532480363，固定PORTABLE。Firewall build.ps1的Go测试在三个有效夹具失败（HELPER_PATH_INVALID / INSTANCE_BINDING_INVALID / REGISTRATION_INVALID），尚未编译helper或进行Launcher/Setup/真实升级。Artifact10920906716仅lan-evidence/beta3-ci-stage.json，304bytes，ZIP SHA256 f2f304399b124fcc0d0c62c8dc3a53945b84a7681f488bbfc77df2f616c576d4，Master内存解包、唯一文件、封闭schema/source/status/mode/stage及privacy PASS。专项4/4、Full0/2、QA0/2；全体原线程/工作树冻结，T5/T3/QA已发停止通知，T1/T2/T4此前已冻结。只做证据与治理收尾，无生产返工、无额外测试/Hosted。等待网页版明确有界续行决定。

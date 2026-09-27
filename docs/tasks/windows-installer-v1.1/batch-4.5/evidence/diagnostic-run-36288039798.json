@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "kind": "k-session-lan-diagnostic-evidence",
+  "runId": 36288039798,
+  "jobId": 108532480363,
+  "attempt": 1,
+  "artifactId": 10920906716,
+  "artifactBytes": 304,
+  "artifactSha256": "f2f304399b124fcc0d0c62c8dc3a53945b84a7681f488bbfc77df2f616c576d4",
+  "artifactFiles": [
+    "lan-evidence/beta3-ci-stage.json"
+  ],
+  "report": {
+    "stage": "PORTABLE",
+    "schema": 1,
+    "status": "FAIL",
+    "mode": "DIAGNOSTIC",
+    "sourceCommit": "4f52e8759d8ddd20b2a9883fd267a98ced27fba1"
+  },
+  "verification": {
+    "archiveHash": true,
+    "exactSource": true,
+    "closedSchema": true,
+    "privacy": true
+  },
+  "budget": {
+    "specialUsed": 4,
+    "specialLimit": 4,
+    "fullUsed": 0,
+    "fullLimit": 2,
+    "qaUsed": 0,
+    "qaLimit": 2
+  },
+  "failure": {
+    "component": "firewall-build-unit-tests",
+    "cases": [
+      {
+        "test": "TestInstallIdentityAndTampering",
+        "reason": "HELPER_PATH_INVALID"
+      },
+      {
+        "test": "TestBoundConfigMustMatchRequest",
+        "reason": "INSTANCE_BINDING_INVALID"
+      },
+      {
+        "test": "TestRegistrationAndINIContracts/exact_registry_and_UTF16_INI_accepted",
+        "reason": "REGISTRATION_INVALID"
+      }
+    ]
+  },
+  "setupReached": false,
+  "rootCauseConfirmed": false
+}

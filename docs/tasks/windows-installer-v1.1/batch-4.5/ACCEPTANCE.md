@@ -52,3 +52,7 @@
 |C13|升级失败rollback保持beta.2|NOT RUN|
 |C14|身份验证不依赖Artifact在线|NOT RUN|
 |C15|日志/Artifact无secret和业务正文|NOT RUN|
+
+## 当前证据层级与止损
+
+专项4 Run36288039798失败PORTABLE；上表NOT RUN表示完整候选/真实环境验收尚未闭合，不否定各任务RESULT中的局部合成测试。Master局部T1 18/18、T2 13/13、统一LAN Node37/37、Launcher最终overlay27/27+vet、T4 13顶层29子反例+vet、兼容wrapper44/44均有各自来源证据；不能拼接宣称整个集成候选PASS。最终L01—L28/C01—C15、26/742、Setup/升级/真实Firewall及最终独立QA仍未完成。安全阶段JSON的privacy PASS不能替代最终EXE/Artifact隐私审查。

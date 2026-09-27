@@ -1,5 +1,10 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损停点｜2026-09-27
+
+**BLOCKED — HOSTED BUDGET EXHAUSTED**。专项4 Run36288039798 / source 4f52e8759d8ddd20b2a9883fd267a98ced27fba1 / Artifact10920906716 为FAIL，固定阶段PORTABLE。Firewall构建中的Go测试有效路径夹具被拒绝，实际Setup/U22/U23/Registry/Firewall尚未运行。专项4/4、Full0/2、QA0/2；不得挪预算或无修改retry。T1—T5及QA冻结原线程/工作树；等待网页版新预算与有界续行决定。现有方案A和产品安全契约不变，不是兼容授权撤回。唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2、Primary public-source、集成codex/lan-host-v1.1不变。尚无beta.3最终Artifact，未到AUTOMATION PASS / QA PASS / LAN HUMAN PENDING。详见batch-4.5/HOSTED-STOPLOSS-20260927.md、RESULT.md与ORCHESTRATION.md；下文继续执行和旧预算均为历史。
+
+
 ## Batch 4.5 当前执行状态｜2026-09-27
 
 方案A已批准并继续执行。唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2，集成codex/lan-host-v1.1，Primary public-source。T1—T4已Review整合；T3最新a226ed1。T5专项3 Run36281720897精确F3五锚固化0897383；独立beta3信任/事务路线及回滚修复、CI手动入口已整合，Master兼容44/44 fail0skip0。独立QA已关闭T1/T4/T3局部缺陷和T5两P2的设计/合成门禁；真实Setup/Registry/Firewall及最终QA仍PENDING。T5最后测试名单与RESULT正在完成，未开始候选Hosted。专项3/4、Full0/2、QA0/2；不得无修改retry。尚无beta.3候选Artifact或本Batch最终PASS。详细实时账本以batch-4.5/ORCHESTRATION.md为准，下文0/4及旧阻塞是历史。

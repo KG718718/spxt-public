@@ -72,3 +72,7 @@ T5阶段fe7cb3c7167acdb82743104352d1d54ab3725997、接线修复f053b907e08be75c7
 - T3冻结前Review：保存端口冲突的start错误导致run关闭控制窗口，阻断LAN设置；LAN READY不能仅依赖T2启动时health缓存，须新鲜Host LAN self-probe；状态查询失败不能保留旧可复制URL；首次自动配置不能把自己Local占用8080误判为第三方冲突；需异步处理自己child的停启、严格字段、SELECTED非空与错误恢复。已交原T3补反例，尚未整合。
 - T5冻结前Review：独立beta3事务沿用beta1六文件元数据清单，并以wx新建install-state.json；真实beta2正常具有install-state.json，会在prepare被拒绝或commit遇EEXIST。原T5须严格验证beta2旧state与已核验身份/binding契约，快照精确bytes，受保护替换为beta3状态并在任意失败还原。合成fixture须符合beta2实际形状，不能把合法旧state当未知文件；旧beta1路径不动。此为已批准兼容路由工程适配，无新产品/schema决定。
 - Hosted虚拟NIC不得作为放宽生产发现的理由。隔离runner socket/NetSecurity证据、严格生产拒绝和合成选择算法应分开记录；L25真实第二设备等仍人工。当前专项3/4、Full0/2、QA0/2，未新dispatch。
+
+## 专项4失败与预算止损
+
+Master核验Run36288039798精确受测4f52e8759d8ddd20b2a9883fd267a98ced27fba1、Artifact10920906716，FAIL/PORTABLE。实际失败为Firewall build.ps1内部go test，早于helper编译及后续显式Go名单门禁。三个有效夹具分别被HELPER_PATH_INVALID、INSTANCE_BINDING_INVALID、REGISTRATION_INVALID拒绝。只读源码确认夹具t.TempDir、ci-lan/build未规范TEMP/TMP；本地Master此前规范路径后通过。短路径/解析不一致仅候选原因，Hosted实际TEMP及细分拒绝原因未记录，不能宣布定位或修复。未执行新反例/修复，未借Full/QA预算；按专项4/4停止并提交网页版决策。
