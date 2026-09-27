@@ -68,3 +68,12 @@
 1. 独立 Review `526f2150cdd97527915a89921719d629f6add37a`，重点核验 reservation 阶段观察、controller 回退/health/close、报告 schema/privacy、workflow YAML 和最终 Artifact verifier 联动。
 2. Review 通过后由 Master 唯一整合、push，并按预算启动 H1；Execution 不自行 Hosted。
 3. H1 PASS 则无需 H2，按批准流程进入新增 Full；H1 FAIL 须以唯一固定 stage/reason 先做本地反例和最小修复，不能无修改 retry。
+
+## Master 初审返工补充：exact source
+
+Master 指出首版手动入口只把 `GITHUB_SHA` 写入报告，没有独立证明 checkout 实际 HEAD 与该 SHA 一致。该判断成立，现已用追加 commit `4a5c7aae1d3118966f26de7ffd36b2c77a007373` 修复，未 amend 前述提交。
+
+- gate 现在从仓库自身读取 `git rev-parse HEAD`，要求合法 40 位 commit 且与 `GITHUB_SHA` 大小写无关地精确相等；无法读取固定为 `HOSTED_CONTEXT/SOURCE_COMMIT_UNAVAILABLE`，不一致固定为 `HOSTED_CONTEXT/SOURCE_COMMIT_MISMATCH`。
+- 手动 job 在 checkout 后另做显式 `$taskHead -ceq '${{ github.sha }}'`，但仍先让 gate 写出并严格验证固定失败报告，再以固定消息终止；因此 mismatch 不会缺失证据，也不可能上传伪 PASS。
+- 新增合成 mismatch 反例：报告 `status=FAIL`、stage/reason 精确为上述 mismatch、`dualBindReady=false`，sourceCommit 仍是预期目标 SHA，不包含实际错误 checkout 身份或路径。
+- 返工后专项为 19/19、fail 0、skip 0；Node syntax、3 个 workflow PowerShell block AST、`git diff --check` 全部 PASS。未运行 Hosted，H1 仍为 0/2。
