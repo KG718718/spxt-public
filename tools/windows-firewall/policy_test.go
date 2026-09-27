@@ -65,6 +65,33 @@ func TestStrictDeploymentConfig(t *testing.T) {
 	}
 }
 
+func TestStrictDeploymentConfigExactKeyCorpus(t *testing.T) {
+	tests := []struct {
+		name string
+		json string
+		ok   bool
+	}{
+		{"exact keys", `{"schema":1,"port":8080,"adapterPreference":"` + testGUID + `"}`, true},
+		{"escaped exact key", `{"\u0073chema":1,"port":8080,"adapterPreference":"` + testGUID + `"}`, true},
+		{"Schema case variant", `{"Schema":1,"port":8080,"adapterPreference":"` + testGUID + `"}`, false},
+		{"PORT case variant", `{"schema":1,"PORT":8080,"adapterPreference":"` + testGUID + `"}`, false},
+		{"adapter case variant", `{"schema":1,"port":8080,"AdapterPreference":"` + testGUID + `"}`, false},
+		{"escaped equivalent duplicate", `{"schema":1,"\u0073chema":1,"port":8080,"adapterPreference":"` + testGUID + `"}`, false},
+		{"trailing object", `{"schema":1,"port":8080,"adapterPreference":"` + testGUID + `"}{}`, false},
+		{"decimal port", `{"schema":1,"port":8080.0,"adapterPreference":"` + testGUID + `"}`, false},
+		{"exponent port", `{"schema":1,"port":8.08e3,"adapterPreference":"` + testGUID + `"}`, false},
+		{"exponent schema", `{"schema":1e0,"port":8080,"adapterPreference":"` + testGUID + `"}`, false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := strictConfig([]byte(test.json))
+			if (err == nil) != test.ok {
+				t.Fatalf("ok=%v err=%v json=%s", test.ok, err, test.json)
+			}
+		})
+	}
+}
+
 func put(t *testing.T, path string, data []byte) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {

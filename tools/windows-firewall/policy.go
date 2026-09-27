@@ -308,6 +308,15 @@ func strictConfig(data []byte) (deploymentConfig, error) {
 	if err := verifyUniqueJSON(data); err != nil {
 		return c, err
 	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil || len(fields) != 3 {
+		return c, errors.New("invalid config fields")
+	}
+	for _, name := range []string{"schema", "port", "adapterPreference"} {
+		if _, ok := fields[name]; !ok {
+			return c, errors.New("invalid config fields")
+		}
+	}
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&c); err != nil {
