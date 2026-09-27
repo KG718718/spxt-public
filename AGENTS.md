@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前受控验证授权｜2026-09-27
+
+用户正式决定不批准H3/H4或任何等价Hosted网络发现专项。H1/H2历史FAIL保留；改走当前真实Win10开发机只读生产discovery proof→Master Review→仅测试harness的Hosted环境不可用记录与合成安全门禁→现有Final Full最多1次→独立QA Hosted最多1次。QA2不预授权。当前机器已只读核实Windows 10 Pro x64 build19045，但proof尚未运行；原T5/原b4-qa工作树按任务卡恢复阶段A，其他原线程冻结。生产`public-lan-network.js`及安全规则不得放宽；本机若`NETWORK_DISCOVERY_FAILED`立即停且不能进入Full。8.3额外历史真实alias若当前受控Windows与Hosted均不可用，按批准单独记`ENVIRONMENT_CAPABILITY_NOT_AVAILABLE`，不当PASS；核心26/742仍fail0skip0。最终仍停LAN HUMAN PENDING，不入Batch5/OCR/main/tag/Release。详见 `docs/tasks/windows-installer-v1.1/batch-4.5/FINAL-COST-CONTROLLED-VALIDATION-APPROVAL.md`、`ORCHESTRATION.md`。下文H2止损在本次有限授权范围内是历史状态，预算证据不可改写。
+
 ## 当前止损停点｜2026-09-27 HOSTED_LAN H2
 
 **BLOCKED — HOSTED_LAN DIAGNOSTIC BUDGET EXHAUSTED**。H1 Run36301442048 / Artifact10925263790 FAIL于生产发现粗分类；H2 Run36301876304@80ee1a88275a0ef631cef17d68ace8a69ceaacfa / Artifact10925513024 固定 `PRODUCTION_DISCOVERY_REJECT/DISCOVERY_COMMAND_FAILED`，仍未到runner地址或双bind。H1/H2 2/2耗尽；新增Full0/1、QA0/2未动，不能挪作诊断。原T5/T1—T4/QA线程与工作树冻结，等待网页版新决定；未有beta.3最终Artifact、未到LAN HUMAN PENDING。详见 `docs/tasks/windows-installer-v1.1/batch-4.5/HOSTED-STOPLOSS-H2-20260927.md`。下文有界续行文字为历史，不授权继续工程或Hosted。

@@ -1,3 +1,7 @@
+# 当前受控验证阶段｜2026-09-27
+
+网页版不批准H3/H4，授权真实Win10只读production discovery proof→Master Review→Hosted合成门禁→现有Final Full0/1→QA Hosted最多1次。当前仅OS身份Windows10 Pro x64 build19045已核实，真实proof尚未运行，原T5阶段A待回单；H1/H2 2/2历史FAIL及旧止损保留。生产安全规则不能放宽；本机若`NETWORK_DISCOVERY_FAILED`即停。无beta.3最终Artifact或LAN人工验收。见 `FINAL-COST-CONTROLLED-VALIDATION-APPROVAL.md`与`ORCHESTRATION.md`。
+
 # 当前最终停点：H2预算止损｜2026-09-27
 
 **BLOCKED — HOSTED_LAN DIAGNOSTIC BUDGET EXHAUSTED**。H2 Run36301876304@80ee1a88275a0ef631cef17d68ace8a69ceaacfa / Artifact10925513024固定 `PRODUCTION_DISCOVERY_REJECT/DISCOVERY_COMMAND_FAILED`；Master单JSON/schema/source/privacy PASS。H1/H2 2/2用尽，新增Full0/1、QA0/2未动，原线程/工作树冻结。尚无真实Setup/U22/U23/Registry/Firewall、26套742项、最终QA或beta.3最终Artifact。旧8.3 110PASS/1SKIP独立待证。等网页版新决定；详见 `HOSTED-STOPLOSS-H2-20260927.md`，以下续行是历史。

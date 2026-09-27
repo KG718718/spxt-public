@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前受控验证授权｜2026-09-27
+
+Batch4.5新决定：不追加H3/H4；先真实Win10只读生产discovery proof（本机Windows10 Pro x64 build19045已核实），仅proof PASS且Master Review后调整Hosted合成测试策略，再用现有Final Full0/1；最终QA Hosted最多1次，QA2未授权。H1/H2历史FAIL与旧止损保留，8.3额外环境缺失可在双环境核实后按正式决定单独记录。当前尚无proof、Final Full、最终QA或beta.3最终Artifact。见 `docs/tasks/windows-installer-v1.1/batch-4.5/FINAL-COST-CONTROLLED-VALIDATION-APPROVAL.md`。下方H2 BLOCKED为历史止损，不自动授予其他工程额度。
+
 ## 当前止损｜2026-09-27
 
 Batch4.5 HOSTED_LAN H1/H2 2/2已用，H2 Run36301876304固定失败 `PRODUCTION_DISCOVERY_REJECT/DISCOVERY_COMMAND_FAILED`；新增Full0/1、QA Hosted0/2未用，不得挪用。T1—T5及QA原线程/工作树冻结；无beta.3最终Artifact或真实LAN验收。等网页版新预算/范围决定，见 `docs/tasks/windows-installer-v1.1/batch-4.5/HOSTED-STOPLOSS-H2-20260927.md`。下方旧运行和停止状态是历史。

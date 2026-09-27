@@ -1,5 +1,10 @@
 # Batch 4.5 Orchestration
 
+## 当前受控Windows证明阶段｜2026-09-27
+
+网页版正式批准 `FINAL-COST-CONTROLLED-VALIDATION-APPROVAL.md`：禁止H3/H4或等价Hosted网络发现专项；H1/H2 2/2历史FAIL不撤销。仅恢复原T5 thread `01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`/原b4-qa worktree/`codex/b45-t5-integration`，先执行阶段A真实Win10只读生产discovery proof，任务卡 `tasks/B45-T5-CONTROLLED-WINDOWS-PROOF.md`，准确回单Master `01a0db0e-c950-79e0-8e11-07155e0742f2`；T1—T4/QA冻结。本机OS只读核实Windows10 Pro x64 build19045。proof PASS与Master安全Review之前不得改Hosted策略、不得Final Full。若本机`NETWORK_DISCOVERY_FAILED`立即停止。后续仅Final Full0/1、QA Hosted最多1次（QA2不预授权）；8.3环境能力按新决定另记，核心26/742零skip不变。生产网络/Server/Firewall/升级/业务边界不变。下方H2预算止损是历史证据，本次有限续行不增加H预算。
+
+
 ## 当前最终停点：H2预算止损｜2026-09-27
 
 **BLOCKED — HOSTED_LAN DIAGNOSTIC BUDGET EXHAUSTED**。H2 Run36301876304@80ee1a88275a0ef631cef17d68ace8a69ceaacfa / job108570884334 / Artifact10925513024 FAIL，固定 `PRODUCTION_DISCOVERY_REJECT/DISCOVERY_COMMAND_FAILED`；JSON受测SHA/allowlist/privacy/哈希核验PASS。H1+H2专项2/2已耗尽，新增Full0/1和原QA0/2不得挪用；未到runner地址/双bind，未有最终beta.3 Setup Artifact/QA PASS。T5已收到STOP、冻结原thread/worktree/local b8e3440；T1—T4/QA维持冻结。详见 `HOSTED-STOPLOSS-H2-20260927.md` 与 `evidence/h2-run-36301876304.json`。下文H1/H2准入与运行文字为历史。
