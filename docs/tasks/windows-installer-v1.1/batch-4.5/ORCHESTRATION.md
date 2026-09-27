@@ -81,3 +81,13 @@ T5定位计划主动已收，状态RUNNING。Master接受仅_test.go fixture协�
 原T5主动RETURNED并冻结b67cbb6e4bb2ddadd92ddf6ee12885198979ed19。Master取得准确回单后独立复验：环境13/13、driver反例5/5、实际build入口Go13顶层fail0skip0/package PASS/真实compile PASS、固定Go1.27.1 vet PASS、兼容wrapper45/45 fail0skip0、diff/privacy PASS。五个Firewall生产源文件/go.mod与原baseline逐字节不变；原路径/Registry/binding/CLI白名单及原拒绝语义未放宽。11类对照完整，实际8.3本机UNAVAILABLE如实保留。原3459失败和原Hosted未知路径事实不改写。安全证据evidence/d5-master-review-b67c.json。
 
 状态RETURNED→REVIEWED→INTEGRATED；正式90cdc0f/7e5e7f8/b67cbb6分别整合45dfc76/3187c41/f8f9340。原T5冻结等待Hosted，其他线程仍冻结。下一次只dispatch已注册setup-v3.yml / codex/lan-host-v1.1 / mode=lan-diagnostic-extension，预留Diagnostic Extension D5第1/2次；受测为包含本登记的精确HEAD，dispatch后记录run/source。D5真实构建仅TEST_BUILD_ONLY，不生成发行Artifact；上传仅四个固定JSON，不上传raw日志/路径/程序。当前历史专项4/4、新D0/2、Full0/2、QA0/2；D5结果未出，不预判当前阻塞或全Batch通过。
+
+D5已dispatch：Run36292597156 / source98b030d1fa5c2ca091ac266069ea9d624d3177a5 / setup-v3.yml / mode=lan-diagnostic-extension / attempt1。dispatch前local/origin/API远端三者精确一致；Diagnostic Extension正式使用1/2，历史专项4/4、Full0/2、QA0/2。当前PENDING，原T5冻结，不预判通过。
+
+## D5 PASS / Full1准入与预登记
+
+Run36292597156 / source98b030d1fa5c2ca091ac266069ea9d624d3177a5 / Artifact10922139870（1180bytes），SHA25660dd6656612fa510b35f769124f27a221fb0d817270278e6da8e0aa5043faa99。Master内存解包，四个精确JSON文件/schema/封闭字段/来源/计数及privacy核验PASS。Hosted原始TEMP/TMP为NONCANONICAL、GOTMPDIR为NONLOCAL，owned physical测试根下environment13/driver5/Go13 fail0skip0/package PASS/真实compile PASS。仅TEST_BUILD_ONLY；历史Run的精确路径仍未知，不倒推旧Run唯一根因。证据evidence/d5-run-36292597156.json。
+
+Master确认当前Firewall fixture/build阻塞已越过。T1—T5已整合，局部QA缺陷已关闭，D5修改仅测试环境/诊断，生产五文件冻结；完整candidate的真实Runtime→helper→Launcher构建身份链、固定F3五锚/离线升级、既有U30与C15及全26/742门禁未削弱。F3 Artifact10907910968 API仍expired=false且原Run/source/大小一致；只在Hosted下载原包，不fresh rebuild。满足Full1工程准入，不等于候选PASS。
+
+下一次仅setup-v3.yml / codex/lan-host-v1.1 / mode=lan-full，预留Full第1/2次，精确受测为包含本登记的公开HEAD，dispatch后回填。历史专项4/4、Diagnostic Extension1/2（D6未用）、Full当前0/2、QA0/2。Full1若有此前未到达的纯工程失败，按批准第12节本地反例→最小修复→Review后再Full2，不借预算；若失败性质不在授权内或需额外诊断而无相应额度则停止决策。仅FullPASS后启动原独立QA最终阶段。未运行真实Win10物理LAN/第二设备，不提前标LAN HUMAN PENDING。

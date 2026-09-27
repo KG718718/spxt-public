@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "runId": 36292597156,
+  "artifactId": 10922139870,
+  "sourceCommit": "98b030d1fa5c2ca091ac266069ea9d624d3177a5",
+  "artifactSha256": "60dd6656612fa510b35f769124f27a221fb0d817270278e6da8e0aa5043faa99",
+  "privacy": "PASS",
+  "scope": "TEST_BUILD_ONLY",
+  "reports": {
+    "build-driver.json": {
+      "schema": 1,
+      "kind": "k-session-firewall-build-driver-contract",
+      "status": "PASS",
+      "stage": "COMPLETE",
+      "reason": "PASS",
+      "checksPass": 5
+    },
+    "firewall-build.json": {
+      "schema": 1,
+      "kind": "k-session-firewall-build-diagnostic",
+      "qualification": "TEST_BUILD_ONLY",
+      "status": "PASS",
+      "stage": "COMPLETE",
+      "reason": "PASS",
+      "sourceCommit": "98b030d1fa5c2ca091ac266069ea9d624d3177a5",
+      "inputTempClass": "NONCANONICAL",
+      "inputTmpClass": "NONCANONICAL",
+      "inputGoTmpClass": "NONLOCAL",
+      "fixtureRootSource": "OWNED_PHYSICAL",
+      "testsPass": 13,
+      "testsFail": 0,
+      "testsSkipped": 0,
+      "packagePass": true,
+      "compileReached": true
+    },
+    "stage.json": {
+      "mode": "DIAGNOSTIC_EXTENSION",
+      "sourceCommit": "98b030d1fa5c2ca091ac266069ea9d624d3177a5",
+      "stage": "COMPLETE",
+      "status": "PASS",
+      "schema": 1,
+      "reason": "PASS"
+    },
+    "test-environment.json": {
+      "schema": 1,
+      "kind": "k-session-firewall-test-environment",
+      "status": "PASS",
+      "stage": "COMPLETE",
+      "reason": "PASS",
+      "shortPathEvidence": "UNAVAILABLE",
+      "checksPass": 13
+    }
+  }
+}

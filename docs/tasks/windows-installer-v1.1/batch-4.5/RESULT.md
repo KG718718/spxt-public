@@ -1,5 +1,9 @@
 # Batch 4.5 最新有界续行结果
 
+## 最新状态：D5 PASS，Full1待运行｜2026-09-27
+
+D5 Run36292597156@98b030d1fa5c2ca091ac266069ea9d624d3177a5 / Artifact10922139870通过，Master四JSON身份/privacy核验PASS。环境13、driver5、Go13 fail0skip0及真实compile已越过Firewall构建阻塞。Master确认完整候选准入，下一步仅lan-full，原线程/安全契约/唯一Master保持。当前历史专项4/4、扩展D1/2、Full0/2、QA0/2；D6未用，不挪预算。旧BLOCKED文字为历史止损，按已批准19节有界续行。整体自动化/最终QA/Setup Artifact尚未PASS；真实Win10和第二设备仍待后续人工。
+
 D5本地独立Review PASS，修复整合f8f9340。环境13/13、driver5/5、Go13/13+真实compile/vet及兼容45/45通过；生产安全契约不变。即将使用D5，当前D0/2、Full0/2、QA0/2，历史专项4/4。Hosted和全Batch仍未PASS；以下BLOCKED是保留的历史止损，当前有限续行按DIAGNOSTIC-EXTENSION-APPROVAL.md及ORCHESTRATION.md。
 
 # Batch 4.5 当前结果
