@@ -2,11 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf16"
 )
 
 const testGUID = "12345678-1234-1234-1234-123456789abc"
@@ -70,6 +73,17 @@ func put(t *testing.T, path string, data []byte) {
 	if err := os.WriteFile(path, data, 0600); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func utf16LE(text string) []byte {
+	words := utf16.Encode([]rune(text))
+	data := make([]byte, 2+len(words)*2)
+	data[0], data[1] = 0xff, 0xfe
+	for i, word := range words {
+		data[2+i*2] = byte(word)
+		data[3+i*2] = byte(word >> 8)
+	}
+	return data
 }
 
 func fixture(t *testing.T) (string, trustedInstall, installAnchors) {
@@ -146,6 +160,104 @@ func TestBoundConfigMustMatchRequest(t *testing.T) {
 	if err := verifyBoundConfig(instance, install, request{Action: "enable", Port: 8083, AdapterGUID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}); err == nil {
 		t.Fatal("mismatched adapter accepted")
 	}
+	err := verifyBoundConfig(install.InstallRoot, install, request{Action: "enable", Port: 8083, AdapterGUID: testGUID})
+	var coded *codedError
+	if !errors.As(err, &coded) || coded.Code != "INSTANCE_BINDING_INVALID" {
+		t.Fatalf("equal instance/install root not explicitly rejected: %v", err)
+	}
+}
+
+type fakeRegistry struct {
+	values map[string]string
+	keys   map[string]bool
+}
+
+func registrySlot(key, name string, view uintptr) string {
+	return fmt.Sprintf("%d|%s|%s", view, key, name)
+}
+func registryKeySlot(key string, view uintptr) string { return fmt.Sprintf("%d|%s", view, key) }
+func (f *fakeRegistry) access() registryAccess {
+	return registryAccess{
+		read: func(key, name string, view uintptr) (string, error) {
+			value, ok := f.values[registrySlot(key, name, view)]
+			if !ok {
+				return "", os.ErrNotExist
+			}
+			return value, nil
+		},
+		keyExists: func(key string, view uintptr) (bool, error) { return f.keys[registryKeySlot(key, view)], nil },
+	}
+}
+
+func registrationFixture(t *testing.T) (trustedInstall, string, *fakeRegistry) {
+	t.Helper()
+	_, install, _ := fixture(t)
+	instance := filepath.Join(t.TempDir(), "instance")
+	if err := os.MkdirAll(instance, 0700); err != nil {
+		t.Fatal(err)
+	}
+	uninstaller := filepath.Join(install.InstallRoot, "uninstall", "unins000.exe")
+	put(t, uninstaller, []byte("synthetic uninstaller"))
+	put(t, filepath.Join(install.InstallRoot, "uninstall", "instance-binding.ini"), utf16LE("[Installation]\r\nSchema=1\r\nInstallRoot="+install.InstallRoot+"\r\nInstance="+instance+"\r\n"))
+	const productKey = `Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1`
+	const bindingKey = `Software\KSESSION\Beta\InstallerBinding`
+	f := &fakeRegistry{values: map[string]string{}, keys: map[string]bool{registryKeySlot(productKey, keyWow6464): true, registryKeySlot(bindingKey, keyWow6464): true}}
+	for name, value := range map[string]string{"DisplayName": productName, "DisplayVersion": "1.1.0-beta.3", "InstallLocation": install.InstallRoot, "UninstallString": `"` + uninstaller + `"`} {
+		f.values[registrySlot(productKey, name, keyWow6464)] = value
+	}
+	for name, value := range map[string]string{"InstallRoot": install.InstallRoot, "Instance": instance} {
+		f.values[registrySlot(bindingKey, name, keyWow6464)] = value
+	}
+	return install, instance, f
+}
+
+func TestRegistrationAndINIContracts(t *testing.T) {
+	old := buildInstallerVersion
+	buildInstallerVersion = "1.1.0-beta.3"
+	defer func() { buildInstallerVersion = old }()
+	t.Run("exact registry and UTF16 INI accepted", func(t *testing.T) {
+		install, instance, f := registrationFixture(t)
+		got, err := verifyRegistrationWith(install, f.access())
+		if err != nil || got != instance {
+			t.Fatalf("got=%q err=%v", got, err)
+		}
+	})
+	t.Run("existing 32-bit product view missing InstallLocation rejected", func(t *testing.T) {
+		install, _, f := registrationFixture(t)
+		const key = `Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1`
+		f.keys[registryKeySlot(key, keyWow6432)] = true
+		f.values[registrySlot(key, "DisplayName", keyWow6432)] = productName
+		f.values[registrySlot(key, "DisplayVersion", keyWow6432)] = "1.1.0-beta.3"
+		if _, err := verifyRegistrationWith(install, f.access()); err == nil {
+			t.Fatal("incomplete existing 32-bit key accepted")
+		}
+	})
+	t.Run("conflicting 32-bit product view rejected", func(t *testing.T) {
+		install, _, f := registrationFixture(t)
+		const key = `Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1`
+		f.keys[registryKeySlot(key, keyWow6432)] = true
+		for name, value := range map[string]string{"DisplayName": productName, "DisplayVersion": "1.1.0-beta.2", "InstallLocation": install.InstallRoot, "UninstallString": `"` + filepath.Join(install.InstallRoot, "uninstall", "unins000.exe") + `"`} {
+			f.values[registrySlot(key, name, keyWow6432)] = value
+		}
+		if _, err := verifyRegistrationWith(install, f.access()); err == nil {
+			t.Fatal("conflicting 32-bit key accepted")
+		}
+	})
+	t.Run("duplicate INI key rejected", func(t *testing.T) {
+		install, instance, _ := registrationFixture(t)
+		data := utf16LE("[Installation]\r\nSchema=1\r\nInstallRoot=" + install.InstallRoot + "\r\nInstance=" + instance + "\r\nInstance=" + instance + "\r\n")
+		if err := verifyInstanceBindingFileWith(install, instance, func(string) ([]byte, error) { return data, nil }); err == nil {
+			t.Fatal("duplicate INI accepted")
+		}
+	})
+	t.Run("INI and registry instance mismatch rejected", func(t *testing.T) {
+		install, instance, _ := registrationFixture(t)
+		other := filepath.Join(t.TempDir(), "other")
+		data := utf16LE("[Installation]\r\nSchema=1\r\nInstallRoot=" + install.InstallRoot + "\r\nInstance=" + other + "\r\n")
+		if err := verifyInstanceBindingFileWith(install, instance, func(string) ([]byte, error) { return data, nil }); err == nil {
+			t.Fatal("mismatched INI accepted")
+		}
+	})
 }
 
 func TestRuleOwnershipAndIdempotencyPolicy(t *testing.T) {

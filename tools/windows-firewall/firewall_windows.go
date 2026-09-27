@@ -20,6 +20,8 @@ function Stop-With([int]$exit,[string]$code){[Console]::Error.WriteLine($code);e
 try {
   $action=$env:KSESSION_FW_ACTION;$guid=$env:KSESSION_FW_GUID;$portText=$env:KSESSION_FW_PORT
   $program=$env:KSESSION_FW_PROGRAM
+  $managedRuleMutationStarted=$false
+  $managedRule=$null
   if($action -notin @('status','enable')){Stop-With 20 'INVALID_INVOCATION'}
   if($guid -cnotmatch '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' -or $guid -eq '00000000-0000-0000-0000-000000000000'){Stop-With 20 'INVALID_ADAPTER'}
   [int]$port=0;if(-not [int]::TryParse($portText,[ref]$port) -or $port -lt 8080 -or $port -gt 8099){Stop-With 20 'INVALID_PORT'}
@@ -52,8 +54,11 @@ try {
   $routes=@(Get-NetRoute -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction Stop | Where-Object {$_.DestinationPrefix -eq $subnet})
   if($routes.Count -lt 1){Stop-With 23 'SUBNET_ROUTE_MISSING'}
   $ruleName='KSESSION-LAN-Host-v1';$displayName='K⁺-SESSION LAN Host (Private)';$group='K⁺-SESSION';$description='KSESSION_MANAGED_LAN_RULE_V1'
+  function Test-RuleOwned($candidate){
+    return ($null -ne $candidate -and $candidate.DisplayName -eq $displayName -and $candidate.Group -eq $group -and $candidate.Description -eq $description)
+  }
   function Test-RuleExact($candidate,[bool]$expectedEnabled){
-    if($candidate.DisplayName -ne $displayName -or $candidate.Group -ne $group -or $candidate.Description -ne $description){return $false}
+    if(-not (Test-RuleOwned $candidate)){return $false}
     $pf=@($candidate|Get-NetFirewallPortFilter -ErrorAction Stop);$af=@($candidate|Get-NetFirewallApplicationFilter -ErrorAction Stop)
     $rf=@($candidate|Get-NetFirewallAddressFilter -ErrorAction Stop);$if=@($candidate|Get-NetFirewallInterfaceFilter -ErrorAction Stop)
     if($pf.Count -ne 1 -or $af.Count -ne 1 -or $rf.Count -ne 1 -or $if.Count -ne 1){return $false}
@@ -74,14 +79,18 @@ try {
   if($rules.Count -gt 1){Stop-With 24 'RULE_CONFLICT'}
   if($rules.Count -eq 0){
     if($action -eq 'status'){[Console]::Out.WriteLine('{"schema":1,"status":"MISSING"}');exit 10}
-    New-NetFirewallRule -Name $ruleName -DisplayName $displayName -Group $group -Description $description -Direction Inbound -Action Allow -Enabled False -Profile Private -EdgeTraversalPolicy Block -Protocol TCP -LocalPort $port -RemoteAddress $subnet -Program $program -InterfaceAlias $adapter.Name -PolicyStore PersistentStore -ErrorAction Stop | Out-Null
+    $managedRule=New-NetFirewallRule -Name $ruleName -DisplayName $displayName -Group $group -Description $description -Direction Inbound -Action Allow -Enabled False -Profile Private -EdgeTraversalPolicy Block -Protocol TCP -LocalPort $port -RemoteAddress $subnet -Program $program -InterfaceAlias $adapter.Name -PolicyStore PersistentStore -ErrorAction Stop
+    if($null -eq $managedRule -or -not (Test-RuleOwned $managedRule)){Stop-With 25 'FIREWALL_OPERATION_FAILED'}
+    $managedRuleMutationStarted=$true
     $rules=@(Get-NetFirewallRule -Name $ruleName -PolicyStore PersistentStore -ErrorAction Stop)
     if($rules.Count -ne 1){Stop-With 25 'FIREWALL_OPERATION_FAILED'}
   }
   $rule=$rules[0]
-  if($rule.DisplayName -ne $displayName -or $rule.Group -ne $group -or $rule.Description -ne $description){Stop-With 24 'RULE_CONFLICT'}
+  if(-not (Test-RuleOwned $rule)){Stop-With 24 'RULE_CONFLICT'}
+  $managedRule=$rule
   if((Test-RuleExact $rule $true) -and (Test-ActiveEffective)){[Console]::Out.WriteLine('{"schema":1,"status":"ALLOWED"}');exit 0}
   if($action -eq 'status'){[Console]::Out.WriteLine('{"schema":1,"status":"STALE"}');exit 10}
+  $managedRuleMutationStarted=$true
   Set-NetFirewallRule -Name $ruleName -Direction Inbound -Action Allow -Enabled False -Profile Private -EdgeTraversalPolicy Block -PolicyStore PersistentStore -ErrorAction Stop | Out-Null
   $rule|Get-NetFirewallPortFilter|Set-NetFirewallPortFilter -Protocol TCP -LocalPort $port -RemotePort Any -ErrorAction Stop|Out-Null
   $rule|Get-NetFirewallApplicationFilter|Set-NetFirewallApplicationFilter -Program $program -ErrorAction Stop|Out-Null
@@ -92,11 +101,19 @@ try {
   Set-NetFirewallRule -Name $ruleName -Enabled True -PolicyStore PersistentStore -ErrorAction Stop | Out-Null
   $final=@(Get-NetFirewallRule -Name $ruleName -PolicyStore PersistentStore -ErrorAction Stop)
   if($final.Count -ne 1 -or -not (Test-RuleExact $final[0] $true) -or -not (Test-ActiveEffective)){
-    Set-NetFirewallRule -Name $ruleName -Enabled False -PolicyStore PersistentStore -ErrorAction SilentlyContinue | Out-Null
+    $disableTarget=if($final.Count -eq 1 -and (Test-RuleOwned $final[0])){$final[0]}else{$managedRule}
+    if(Test-RuleOwned $disableTarget){$disableTarget|Set-NetFirewallRule -Enabled False -ErrorAction SilentlyContinue|Out-Null}
     Stop-With 25 'FIREWALL_OPERATION_FAILED'
   }
   [Console]::Out.WriteLine('{"schema":1,"status":"ENABLED"}');exit 0
-} catch {Stop-With 25 'FIREWALL_OPERATION_FAILED'}
+} catch {
+  if($action -eq 'enable' -and $managedRuleMutationStarted){
+    try {
+      if(Test-RuleOwned $managedRule){$managedRule|Set-NetFirewallRule -Enabled False -ErrorAction Stop|Out-Null}
+    } catch {}
+  }
+  Stop-With 25 'FIREWALL_OPERATION_FAILED'
+}
 `
 
 func systemPowerShell() (string, error) {

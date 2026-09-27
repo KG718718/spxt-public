@@ -380,7 +380,7 @@ func validateProductionAnchors(anchors installAnchors) error {
 
 func verifyBoundConfig(instance string, install trustedInstall, req request) error {
 	cleanInstance, err := cleanLocal(instance)
-	if err != nil || noReparse(cleanInstance) != nil || within(install.InstallRoot, cleanInstance) || within(cleanInstance, install.InstallRoot) {
+	if err != nil || noReparse(cleanInstance) != nil || strings.EqualFold(cleanInstance, install.InstallRoot) || within(install.InstallRoot, cleanInstance) || within(cleanInstance, install.InstallRoot) {
 		return reject(exitConfig, "INSTANCE_BINDING_INVALID")
 	}
 	configPath := filepath.Join(cleanInstance, configName)
