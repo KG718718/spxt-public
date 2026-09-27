@@ -18,6 +18,7 @@
 - R1 Review 增量闭合：Firewall status 的命令环境构造失败时 fail closed，不允许 `cmd.Env=nil` 继承宿主环境；refresh/transition/UAC worker 到 UI 实际消费 pending result 前持续占有单任务串行权，旧复制 URL 在 transition 启动即撤销，worker 不再写 UI 所有的 `child/ready/lanConfig`。新配置启动失败且存在旧配置时先恢复精确旧配置、只尝试旧服务；首次配置无旧状态时保留已确定持久端口并明确失败，不自动换口。
 - WM_ENDSESSION 期间尚未由 UI 接收的 worker-owned child 继续依赖既有 per-child Job `KILL_ON_JOB_CLOSE` 与 launcher 进程句柄关闭边界；已有 `TestJobOwnsOnlyChild` 合成证据，本次未扩大或重新定义系统关机退出行为。
 - R2 Review 增量闭合：当前 Private IPv4/Subnet 与可复制 LAN URL 必须由同轮 fresh discovery 的 `SELECTED` 候选与 Server state 在 GUID/private IPv4/prefix/subnet 上精确一致，并与持久配置 adapter/port 一致后发布。`NETWORK_CHANGED`、fresh 候选消失或 mismatch 时不再把旧 Server state 显示成当前地址，IPv4/Subnet 回到 `-` 且 copy URL 为空；fresh 地址仍可信而仅 Firewall 等其他门禁失败时不误删地址。
+- Stop 同步增量闭合：第二次启动器向同一已核验 owner 窗口发送 stop 时，普通只读 refresh 导致的短暂 `lanBusy` 不再被当作永久失败；只对 stop 在严格 15 秒总期限内按剩余 timeout 有界重试。设置事务仍不可打断，open 请求行为、owner 验证、Job/PID 边界及“不结束其他进程”均未放宽。
 - helper 固定 `program/K-SESSION-Firewall.exe`，调用前校验真实普通文件、无 reparse、SHA 与 Launcher 内嵌值一致。普通刷新只执行 `status`；只有用户点击才单次 `ShellExecuteExW runas enable`。UAC 拒绝不重试且不停止 Local child；不接受任意 exe/remote/script/PowerShell 参数。
 
 ## 修改文件
@@ -39,7 +40,7 @@
 
 环境：Windows 10 `10.0.19045.0`；固定 Go `go1.27.1 windows/amd64`；本机 Node `v24.14.0`。只使用合成身份/地址/目录与 owned loopback 端口；未读取真实 NIC/登记/Firewall，未提权。
 
-1. Launcher Go 专项及既有安全单测：**27 个选定顶层测试 PASS**（其中 `LAN READY` 11 个逐项缺失反例全部非 READY），fail 0 / skip 0。覆盖两种启动模式、固定状态、strict JSON/CIDR、wildcard/第三 NIC/其他 port/IPv6/伪 PID 行拒绝、fresh self-probe、fresh mismatch 撤销 stale URL、fresh 有效但 Firewall blocked 仍发布当前 URL、复制源、persisted port 不 fallback、控制窗口保留、helper 篡改、Firewall 环境失败 fail closed、UAC 拒绝 Local 不变、pending/UI 消费串行、设置后台不阻塞、旧配置/服务精确回滚、首次失败保留确定端口、意外 fallback port 拒绝及首次 probe 前释放自己的 child。
+1. Launcher Go 专项及既有安全单测：**29 个选定顶层测试 PASS**（其中 `LAN READY` 11 个逐项缺失反例全部非 READY），fail 0 / skip 0。覆盖两种启动模式、固定状态、strict JSON/CIDR、wildcard/第三 NIC/其他 port/IPv6/伪 PID 行拒绝、fresh self-probe、fresh mismatch 撤销 stale URL、fresh 有效但 Firewall blocked 仍发布当前 URL、复制源、persisted port 不 fallback、控制窗口保留、helper 篡改、Firewall 环境失败 fail closed、UAC 拒绝 Local 不变、pending/UI 消费串行、stop 忙窗口有界重试与严格总 timeout、设置后台不阻塞、旧配置/服务精确回滚、首次失败保留确定端口、意外 fallback port 拒绝及首次 probe 前释放自己的 child。
 2. `go vet ./...`：PASS。
 3. `node --test` Launcher CLI + T1 network/config + T2 server/server-startup：**32 tests / pass 32 / fail 0 / skipped 0**。
 4. 固定 Go 的 Windows GUI Launcher 编译烟测（合成 commit/runtime/helper hash）：PASS；临时 EXE 与 cache 已删除，不作为发行物。

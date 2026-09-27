@@ -364,3 +364,54 @@ func TestFirewallHelperAbsentHashKeepsHistoricalLocalMode(t *testing.T) {
 		t.Fatal("legacy build trusted helper")
 	}
 }
+
+func TestStopDispatchRetriesBusyOwnedWindow(t *testing.T) {
+	oldAttempt, oldTimeout, oldRetry := dispatchExistingAttemptBoundary, dispatchExistingTimeout, dispatchExistingRetry
+	defer func() {
+		dispatchExistingAttemptBoundary = oldAttempt
+		dispatchExistingTimeout = oldTimeout
+		dispatchExistingRetry = oldRetry
+	}()
+	dispatchExistingTimeout = 100 * time.Millisecond
+	dispatchExistingRetry = time.Millisecond
+	calls := 0
+	dispatchExistingAttemptBoundary = func(class, exe string, stop bool, timeout time.Duration) existingDispatchOutcome {
+		calls++
+		if class != "synthetic-class" || exe != "synthetic.exe" || !stop || timeout <= 0 || timeout > dispatchExistingTimeout {
+			t.Fatal("dispatch boundary received an unsafe request")
+		}
+		if calls == 1 {
+			return dispatchBusy
+		}
+		return dispatchAccepted
+	}
+	if !dispatchExisting("synthetic-class", "synthetic.exe", true) || calls != 2 {
+		t.Fatalf("busy stop was not retried to acceptance: calls=%d", calls)
+	}
+}
+
+func TestStopDispatchKeepsStrictOverallTimeout(t *testing.T) {
+	oldAttempt, oldTimeout, oldRetry := dispatchExistingAttemptBoundary, dispatchExistingTimeout, dispatchExistingRetry
+	defer func() {
+		dispatchExistingAttemptBoundary = oldAttempt
+		dispatchExistingTimeout = oldTimeout
+		dispatchExistingRetry = oldRetry
+	}()
+	dispatchExistingTimeout = 20 * time.Millisecond
+	dispatchExistingRetry = time.Millisecond
+	calls := 0
+	dispatchExistingAttemptBoundary = func(_, _ string, stop bool, timeout time.Duration) existingDispatchOutcome {
+		calls++
+		if !stop || timeout <= 0 || timeout > dispatchExistingTimeout {
+			t.Fatal("stop retry escaped its strict remaining timeout")
+		}
+		return dispatchBusy
+	}
+	started := time.Now()
+	if dispatchExisting("synthetic-class", "synthetic.exe", true) {
+		t.Fatal("permanently busy window reported stop accepted")
+	}
+	if elapsed := time.Since(started); elapsed > 250*time.Millisecond || calls < 2 {
+		t.Fatalf("stop retry did not remain bounded: elapsed=%s calls=%d", elapsed, calls)
+	}
+}

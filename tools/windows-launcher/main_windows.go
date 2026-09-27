@@ -349,21 +349,62 @@ func sameWindowOwner(hwnd uintptr, exe string) bool {
 	r, _ := call(kernel32, "QueryFullProcessImageNameW", uintptr(h), 0, uintptr(unsafe.Pointer(&b[0])), uintptr(unsafe.Pointer(&size)))
 	return r != 0 && sameFile(syscall.UTF16ToString(b[:size]), exe)
 }
-func dispatchExisting(class, exe string, stop bool) bool {
-	for i := 0; i < 100; i++ {
-		hwnd, _ := call(user32, "FindWindowW", uintptr(unsafe.Pointer(ptr(class))), 0)
-		if hwnd != 0 && sameWindowOwner(hwnd, exe) {
-			var reply uintptr
-			m := uintptr(openMsg)
-			if stop {
-				m = stopMsg
-			}
-			r, _ := call(user32, "SendMessageTimeoutW", hwnd, m, 0, 0, 2, 15000, uintptr(unsafe.Pointer(&reply)))
-			return r != 0 && reply == 1
-		}
-		time.Sleep(100 * time.Millisecond)
+
+type existingDispatchOutcome uint8
+
+const (
+	dispatchUnavailable existingDispatchOutcome = iota
+	dispatchBusy
+	dispatchAccepted
+)
+
+var dispatchExistingTimeout = 15 * time.Second
+var dispatchExistingRetry = 100 * time.Millisecond
+var dispatchExistingAttemptBoundary = func(class, exe string, stop bool, timeout time.Duration) existingDispatchOutcome {
+	hwnd, _ := call(user32, "FindWindowW", uintptr(unsafe.Pointer(ptr(class))), 0)
+	if hwnd == 0 || !sameWindowOwner(hwnd, exe) {
+		return dispatchUnavailable
 	}
-	return false
+	var reply uintptr
+	m := uintptr(openMsg)
+	if stop {
+		m = stopMsg
+	}
+	milliseconds := timeout.Milliseconds()
+	if milliseconds < 1 {
+		milliseconds = 1
+	}
+	r, _ := call(user32, "SendMessageTimeoutW", hwnd, m, 0, 0, 2, uintptr(milliseconds), uintptr(unsafe.Pointer(&reply)))
+	if r != 0 && reply == 1 {
+		return dispatchAccepted
+	}
+	return dispatchBusy
+}
+
+func dispatchExisting(class, exe string, stop bool) bool {
+	deadline := time.Now().Add(dispatchExistingTimeout)
+	for {
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return false
+		}
+		outcome := dispatchExistingAttemptBoundary(class, exe, stop, remaining)
+		if outcome == dispatchAccepted {
+			return true
+		}
+		if outcome == dispatchBusy && !stop {
+			return false
+		}
+		remaining = time.Until(deadline)
+		if remaining <= 0 {
+			return false
+		}
+		pause := dispatchExistingRetry
+		if pause > remaining {
+			pause = remaining
+		}
+		time.Sleep(pause)
+	}
 }
 func (c *controller) makeWindow() error {
 	inst, _ := call(kernel32, "GetModuleHandleW", 0)
