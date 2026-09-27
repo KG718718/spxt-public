@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前Review PASS，唯一真实M03待派｜2026-09-27
+
+网页版批准进程级非对称方案A、拒绝B。原T5 local`9810f29`/`d1da5ad`仅合成与RESULT，Master检查payload/固定四字段/生产blob/范围，独立复验新增10/10、相关31/31、语法与diff-check PASS，整合`51e2509`/`bdc7c8c`。当前必须先同步并核对公共开发分支本地HEAD、origin跟踪及GitHub远端相等，才另派一次真实Win10 M03（当前0/1）；不能把合成PASS写成实机PASS。实机后不论结果停止所有stderr微诊断，Master Review证据、整合/push并返回网页版生产方案决定。原T5工作树不重建；生产与Final Full0/1、QA0/1冻结，H1/H2 2/2、P02 FAIL、P03—P08未到达。详见`M03-PROCESS-CONTROL-APPROVAL.md`。下方旧阶段归因BLOCKED为历史。
+
 ## 当前BLOCKED：M03阶段归因合成门禁｜2026-09-27
 
 原T5 thread`01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`主动回单`BLOCKED / NEED PARENT DECISION`，local`c1c1019`/`c1fdf25`。Master独立Review四文件范围、固定证据、生产blob`4e13e944472f845675fe73d176f063c4fe97f6ed`及49/49相关合成PASS，整合`8006d3c`。T02与T03仅靠同步子进程stderr汇总不可区分，所要求的两项分类未通过；不创建或运行live M03，不改生产，不跑Hosted/Full/QA。原T5冻结；详见`M03-ATTRIBUTION-STOP-20260927.md`和`M03-ATTRIBUTION-DECISION.md`。下方DISPATCHED为历史。

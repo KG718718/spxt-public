@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前有限授权｜2026-09-27 最后一次进程级 M03
+
+网页版批准方案 A，取代下方已阻塞的 M03 阶段归因目标；方案 B 未批准。原T5已完成新进程级T01—T08合成门禁，Master独立Review并整合`51e2509`/`bdc7c8c`，真实M03尚未运行，额度0/1。仅在公共开发分支本地HEAD、origin跟踪和GitHub远端再次一致后，允许原T5一次真实Win10同进程显式Utility导入+固定ConvertTo-Json；只判断整进程固定输出与聚合stderr。干净报`EXPLICIT_IMPORT_SERIALIZATION_PASS`，其他均`UNRESOLVED`，不再做内部阶段归因。之后无论结果都冻结T5并交网页版，不追加M04/M05/新S探针/Hosted，不立即改生产或运行Final Full/QA。生产blob`4e13e944472f845675fe73d176f063c4fe97f6ed`及stderr fail-closed不变；详见`docs/tasks/windows-installer-v1.1/batch-4.5/M03-PROCESS-CONTROL-APPROVAL.md`。下方M03阶段归因BLOCKED为历史停点。
+
 ## 当前止损｜2026-09-27 M03阶段归因门禁未通过
 
 **BLOCKED — M03 PHASE ATTRIBUTION NOT PROVEN。** 原T5在原thread/worktree仅做合成反例并主动回单；Master独立Review新增8/8、相关49/49 fail0skip0及四文件diff后，将来源local`c1c1019`/`c1fdf25`的最小证据整合为`8006d3c`。现有`spawnSync`仅返回整次PowerShell进程stderr，合成T02模块阶段与T03序列化阶段可产生相同可见结果；两项获批分类验收**未通过**，不能以测试49/49声称M03门禁PASS。未创建或运行真实M03、未改生产、未用Hosted/Final Full/QA；原T5冻结。P02仍FAIL，H1/H2 2/2、Final Full0/1、QA0/1不变。下一步需网页版决定是否把唯一M03改为进程级非对称判定，或另批有可靠阶段归因的观察设计；见`docs/tasks/windows-installer-v1.1/batch-4.5/M03-ATTRIBUTION-DECISION.md`。下节DISPATCHED为历史。

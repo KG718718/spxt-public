@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前有限授权｜2026-09-27 进程级 M03 方案 A
+
+网页版明确批准唯一真实M03改为整进程非对称对照，原阶段归因门禁被取代。原T5新合成T01—T08已获Master Review并整合`51e2509`/`bdc7c8c`；真实M03仍0/1。仅一次同进程显式Utility导入+固定ConvertTo-Json，清洁整进程才PASS，否则`UNRESOLVED`。完成后不追加stderr微诊断、不改生产，提交网页版生产方案决定。Final Full0/1、QA0/1冻结，生产P02仍FAIL；详见`docs/tasks/windows-installer-v1.1/batch-4.5/M03-PROCESS-CONTROL-APPROVAL.md`。下方旧M03合成阻塞为历史。
+
 ## 当前止损｜2026-09-27 M03合成阻塞
 
 Master已整合原T5的M03纯合成不可区分性证据`8006d3c`：新增8/8、相关49/49 PASS是保守分类器测试结果，**不代表**要求的T02 MODULE_LOAD_FAIL/T03 SERIALIZATION_FAIL能被可靠区分。真实M03未运行，生产不变，原T5冻结；P02 FAIL、Final Full0/1、QA0/1不动。待网页版决定观察目标/机制，见`docs/tasks/windows-installer-v1.1/batch-4.5/M03-ATTRIBUTION-DECISION.md`。
