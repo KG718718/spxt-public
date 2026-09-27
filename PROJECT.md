@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前最终停点｜2026-09-27
+
+Batch4.5受控Win10只读production discovery proof固定FAIL：P01系统PowerShell安全路径PASS，P02实际命令`NETWORK_DISCOVERY_FAILED`，P03—P08未到达。按用户第4节立即停止阶段B/Final Full/QA，Final Full0/1、QA1 0/1未用，QA2未授权；H3/H4仍禁止。生产网络源码未修改，无beta.3最终Artifact或LAN人工验收。见`docs/tasks/windows-installer-v1.1/batch-4.5/CONTROLLED-WINDOWS-PROOF-STOP-20260927.md`。下方受控验证、H2止损等为历史状态。
+
 ## 当前受控验证授权｜2026-09-27
 
 Batch4.5新决定：不追加H3/H4；先真实Win10只读生产discovery proof（本机Windows10 Pro x64 build19045已核实），仅proof PASS且Master Review后调整Hosted合成测试策略，再用现有Final Full0/1；最终QA Hosted最多1次，QA2未授权。H1/H2历史FAIL与旧止损保留，8.3额外环境缺失可在双环境核实后按正式决定单独记录。当前尚无proof、Final Full、最终QA或beta.3最终Artifact。见 `docs/tasks/windows-installer-v1.1/batch-4.5/FINAL-COST-CONTROLLED-VALIDATION-APPROVAL.md`。下方H2 BLOCKED为历史止损，不自动授予其他工程额度。

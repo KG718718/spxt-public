@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前最终停点｜2026-09-27 受控Win10 proof
+
+**BLOCKED — CONTROLLED WINDOWS PRODUCTION DISCOVERY FAILED**。真实Windows10 Pro x64 build19045上当前未改生产`public-lan-network.js`的`resolveSystemPowerShell()`成功，但首次`runWindowsDiscovery()`得到固定`NETWORK_DISCOVERY_FAILED`；P03—P08未到达。依用户《Final Cost-Controlled Validation Decision》第4节立即停止，不得进入阶段B、Hosted合成策略、Final Full或QA。本次Final Full0/1、QA Hosted0/1未用，QA2未授权；H1/H2历史2/2和不增H3/H4继续有效。原T5及T1—T4/QA冻结，等待网页版定点诊断/生产实现决定；无最终beta.3 Artifact。详见`docs/tasks/windows-installer-v1.1/batch-4.5/CONTROLLED-WINDOWS-PROOF-STOP-20260927.md`。以下受控续行授权仅保留历史证据，不允许自动跨越此停止点。
+
 ## 当前受控验证授权｜2026-09-27
 
 用户正式决定不批准H3/H4或任何等价Hosted网络发现专项。H1/H2历史FAIL保留；改走当前真实Win10开发机只读生产discovery proof→Master Review→仅测试harness的Hosted环境不可用记录与合成安全门禁→现有Final Full最多1次→独立QA Hosted最多1次。QA2不预授权。当前机器已只读核实Windows 10 Pro x64 build19045，但proof尚未运行；原T5/原b4-qa工作树按任务卡恢复阶段A，其他原线程冻结。生产`public-lan-network.js`及安全规则不得放宽；本机若`NETWORK_DISCOVERY_FAILED`立即停且不能进入Full。8.3额外历史真实alias若当前受控Windows与Hosted均不可用，按批准单独记`ENVIRONMENT_CAPABILITY_NOT_AVAILABLE`，不当PASS；核心26/742仍fail0skip0。最终仍停LAN HUMAN PENDING，不入Batch5/OCR/main/tag/Release。详见 `docs/tasks/windows-installer-v1.1/batch-4.5/FINAL-COST-CONTROLLED-VALIDATION-APPROVAL.md`、`ORCHESTRATION.md`。下文H2止损在本次有限授权范围内是历史状态，预算证据不可改写。

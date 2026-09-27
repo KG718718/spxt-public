@@ -1,5 +1,10 @@
 # Batch 4.5 Orchestration
 
+## 当前最终停点：受控Win10 proof P02失败｜2026-09-27
+
+**BLOCKED — CONTROLLED WINDOWS PRODUCTION DISCOVERY FAILED**。原T5主动BLOCKED回单，阶段A工具26d44ab、证据/RESULT c39cdaa，Master独立核验固定JSON、Git身份、生产网络blob三方相同，整合5b5de75/13caac8。实际Win10 build19045上P01=true；首次`runWindowsDiscovery()`固定`NETWORK_DISCOVERY_FAILED`，P02=false；P03—P08及实际private候选未测。依新版批准第4节停止，原T5再次冻结，T1—T4/QA维持冻结；无阶段B/Hosted/Final Full/QA。本轮Final Full0/1、QA Hosted0/1，QA2未授权；H1/H2历史2/2且无H3/H4。详见`CONTROLLED-WINDOWS-PROOF-STOP-20260927.md`与`evidence/controlled-windows-proof.json`。以下受控阶段和H2止损均为历史记录。
+
+
 ## 当前受控Windows证明阶段｜2026-09-27
 
 网页版正式批准 `FINAL-COST-CONTROLLED-VALIDATION-APPROVAL.md`：禁止H3/H4或等价Hosted网络发现专项；H1/H2 2/2历史FAIL不撤销。仅恢复原T5 thread `01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`/原b4-qa worktree/`codex/b45-t5-integration`，先执行阶段A真实Win10只读生产discovery proof，任务卡 `tasks/B45-T5-CONTROLLED-WINDOWS-PROOF.md`，准确回单Master `01a0db0e-c950-79e0-8e11-07155e0742f2`；T1—T4/QA冻结。本机OS只读核实Windows10 Pro x64 build19045。proof PASS与Master安全Review之前不得改Hosted策略、不得Final Full。若本机`NETWORK_DISCOVERY_FAILED`立即停止。后续仅Final Full0/1、QA Hosted最多1次（QA2不预授权）；8.3环境能力按新决定另记，核心26/742零skip不变。生产网络/Server/Firewall/升级/业务边界不变。下方H2预算止损是历史证据，本次有限续行不增加H预算。

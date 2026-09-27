@@ -1,3 +1,7 @@
+# 当前最终停点：受控Win10 proof P02失败｜2026-09-27
+
+**BLOCKED — CONTROLLED WINDOWS PRODUCTION DISCOVERY FAILED**。真实Windows10 build19045，未改生产代码P01安全系统PowerShell确认PASS、P02实际`runWindowsDiscovery()`固定`NETWORK_DISCOVERY_FAILED`；P03—P08未到达。Master核验安全JSON、来源及生产源码blob；阶段A工具/证据已整合，原T5冻结。依用户第4节不进入阶段B/Final Full/QA；Final Full0/1、QA Hosted0/1未动，QA2不预授权。无beta.3最终Artifact；见`CONTROLLED-WINDOWS-PROOF-STOP-20260927.md`。下方续行状态为历史。
+
 # 当前受控验证阶段｜2026-09-27
 
 网页版不批准H3/H4，授权真实Win10只读production discovery proof→Master Review→Hosted合成门禁→现有Final Full0/1→QA Hosted最多1次。当前仅OS身份Windows10 Pro x64 build19045已核实，真实proof尚未运行，原T5阶段A待回单；H1/H2 2/2历史FAIL及旧止损保留。生产安全规则不能放宽；本机若`NETWORK_DISCOVERY_FAILED`即停。无beta.3最终Artifact或LAN人工验收。见 `FINAL-COST-CONTROLLED-VALIDATION-APPROVAL.md`与`ORCHESTRATION.md`。
