@@ -46,7 +46,7 @@ $taskHelper=Join-Path $taskWork 'firewall-helper-output'
 & (Join-Path $taskRepo 'tools/windows-firewall/build.ps1') -OutputDir $taskHelper -SourceCommit $Commit `
   -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.3' -GoExe $taskGo
 if($LASTEXITCODE -ne 0){throw 'Firewall helper build failed'}
-$taskFirewallTests=@('TestRequestWhitelistAndCanonicalGUID','TestStrictDeploymentConfig','TestInstallIdentityAndTampering',
+$taskFirewallTests=@('TestRequestWhitelistAndCanonicalGUID','TestStrictDeploymentConfig','TestStrictDeploymentConfigExactKeyCorpus','TestInstallIdentityAndTampering',
   'TestReparseResolutionMismatchIsRejected','TestCleanPathComparisonRejectsLexicalAliases','TestBoundConfigMustMatchRequest',
   'TestRegistrationAndINIContracts','TestRuleOwnershipAndIdempotencyPolicy','TestEmbeddedFirewallScriptIsClosed',
   'TestEmbeddedFirewallScriptParses','TestStatusOutputAllowlist','TestFirewallScriptBehaviorWithIsolatedCmdletHarness')
@@ -62,6 +62,25 @@ $taskLauncher=Join-Path $taskWork 'launcher-output'
 & (Join-Path $taskRepo 'tools/windows-launcher/build.ps1') -RuntimeRoot $taskRoot -OutputDir $taskLauncher `
   -SourceCommit $Commit -FirewallHelperSha256 $taskHelperHash -GoExe $taskGo
 if($LASTEXITCODE -ne 0){throw 'LAN Launcher build failed'}
+$taskLauncherUnitTests=@(
+  'TestRelativePathSafety','TestEnvironmentAllowlist','TestInstanceOutsidePackage','TestRuntimeMissing',
+  'TestJobOwnsOnlyChild','TestInstallDataSafety','TestLANReadyRequiresEveryGate','TestFixedServerStatusesMapToProductStates',
+  'TestCandidateAndJSONAreStrict','TestEnvironmentLANModeIsExplicitAndAllowlisted',
+  'TestExactListenerOwnershipRejectsWildcardThirdNICPortAndPIDImpersonationRows','TestCopyURLSourceIsOnlyCurrentPrivateEndpoint',
+  'TestPersistedPortNeverSilentlyFallsThroughRange','TestFirewallHelperFixedHashBeforeElevation',
+  'TestFirewallHelperAbsentHashKeepsHistoricalLocalMode','TestFirewallEnvironmentFailureIsFailClosed',
+  'TestUACRejectionDoesNotStopLocalChildOrRetry','TestLANSettingsTransitionDoesNotBlockUIThread',
+  'TestTransitionStartFailureRestoresOldConfigAndService','TestFirstTransitionStartFailureKeepsDeterminedPort',
+  'TestTransitionRejectsUnexpectedFallbackPort','TestFailedRefreshRevokesStaleCopyURL',
+  'TestStrictLocalStatusAndActualPIDSocketOwnership'
+)
+$taskLauncherRaw=Join-Path $taskWork 'launcher-tests.jsonl';$taskLauncherReport=Join-Path $taskWork 'launcher-unit-report.json'
+Push-Location (Join-Path $taskRepo 'tools/windows-launcher')
+try{
+  & $taskGo test -json -count=1 -run ('^(' + ($taskLauncherUnitTests -join '|') + ')$') . | Set-Content -Encoding utf8 -LiteralPath $taskLauncherRaw
+  if($LASTEXITCODE -ne 0){throw 'Explicit Launcher unit tests failed'}
+}finally{Pop-Location}
+Run-Checked $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),$taskLauncherRaw,$taskLauncherReport,'LAUNCHER')+$taskLauncherUnitTests)
 Run-Checked $taskNode @($taskPackageScript,'finish',$taskRoot,$taskLauncher,$taskHelper,$taskGit,$taskRepo,$Commit)
 $taskLanTests=@(
   'tools/tests/lan-host/config.test.cjs','tools/tests/lan-host/network.test.cjs',
@@ -110,8 +129,10 @@ $taskStaging=Get-Content -Raw (Join-Path $taskWork 'portable-staging/portable-te
 $taskExtracted=Get-Content -Raw (Join-Path $taskWork 'portable-extracted/portable-test-report.json')|ConvertFrom-Json
 $taskIdentity=Get-Content -Raw (Join-Path $taskArtifact 'zip-identity.json')|ConvertFrom-Json
 $taskFirewallUnit=Get-Content -Raw $taskFirewallReport|ConvertFrom-Json
+$taskLauncherUnit=Get-Content -Raw $taskLauncherReport|ConvertFrom-Json
 @{status='PASS';sourceCommit=$Commit;zipSha256=$taskIdentity.zipSha256;firewallHelperSha256=$taskHelperHash;
-  staging=$taskStaging;extracted=$taskExtracted;firewallUnit=$taskFirewallUnit;humanWin10='PENDING; no real LAN or browser claim'}|ConvertTo-Json -Depth 30|
+  staging=$taskStaging;extracted=$taskExtracted;firewallUnit=$taskFirewallUnit;launcherUnit=$taskLauncherUnit;
+  humanWin10='PENDING; no real LAN or browser claim'}|ConvertTo-Json -Depth 30|
   Set-Content -Encoding utf8 (Join-Path $taskArtifact 'portable-test-report.json')
 Copy-Item -LiteralPath (Join-Path $taskRoot 'build-info.json') -Destination $taskArtifact
 Copy-Item -LiteralPath $taskManifest -Destination $taskArtifact

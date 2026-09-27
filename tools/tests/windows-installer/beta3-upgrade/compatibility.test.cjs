@@ -189,6 +189,11 @@ test('beta3 rollback snapshots complete registry views and restores registration
   assert.doesNotMatch(setup, /RegWriteStringValue\(HKCU64, ProductKey, 'Display/);
   assert.match(setup, /if RunNode\('upgrade-transaction-cli\.cjs', 'rollback[\s\S]+if RestoreUpgradeRegistration and[\s\S]+complete-rollback[\s\S]+Log\('KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK'\)/);
   assert.match(setup, /GetSHA256OfFile\(VerifyName\) = ExpectedHash/);
+  const corrupt=setup.indexOf("SaveStringToFile(PriorProduct64Snapshot, 'synthetic-corruption'");
+  const validate=setup.indexOf('ValidateRegistrySnapshot(PriorProduct64Snapshot');
+  const remove=setup.indexOf('DeleteRegistryKeyExact(HKCU64, ProductKey)');
+  assert.ok(corrupt>=0&&corrupt<validate&&validate<remove);
+  assert.match(setup, /GetFileAttributesW\(FileName\)[\s\S]+\$400/);
   const generator = fs.readFileSync(path.join(__dirname, 'prepare-hosted-harness.cjs'), 'utf8');
   assert.match(generator, /registration-64/);assert.match(generator, /registration-32/);
   assert.match(generator, /accepted F3 beta\.2 upgraded in place to beta\.3/);

@@ -600,14 +600,29 @@ begin
     (GetSHA256OfFile(VerifyName) = ExpectedHash);
 end;
 
+function ValidateRegistrySnapshot(FileName, ExpectedHash: String): Boolean;
+var Attributes: LongWord;
+begin
+  Result := False;
+  Attributes := GetFileAttributesW(FileName);
+  if (Attributes = $FFFFFFFF) or ((Attributes and $10) <> 0) or ((Attributes and $400) <> 0) then exit;
+  Result := FileExists(FileName) and (ExpectedHash <> '') and (GetSHA256OfFile(FileName) = ExpectedHash);
+end;
+
 function RestoreUpgradeRegistration: Boolean;
 var VerifyProduct64, VerifyBinding64, VerifyProduct32, VerifyBinding32: String;
 begin
   Result := False;
 #ifdef FaultRegistryRestore
+  if not SaveStringToFile(PriorProduct64Snapshot, 'synthetic-corruption', True) then begin
+    Log('KSESSION_FIXTURE_REGISTRY_RESTORE_FAILURE'); exit;
+  end;
   Log('KSESSION_FIXTURE_REGISTRY_RESTORE_FAILURE');
-  exit;
 #endif
+  if not ValidateRegistrySnapshot(PriorProduct64Snapshot, PriorProduct64Hash) or
+     not ValidateRegistrySnapshot(PriorBinding64Snapshot, PriorBinding64Hash) then exit;
+  if PriorProduct32Exists and not ValidateRegistrySnapshot(PriorProduct32Snapshot, PriorProduct32Hash) then exit;
+  if PriorBinding32Exists and not ValidateRegistrySnapshot(PriorBinding32Snapshot, PriorBinding32Hash) then exit;
   if not DeleteRegistryKeyExact(HKCU64, ProductKey) or not DeleteRegistryKeyExact(HKCU64, BindingKey) or
      not DeleteRegistryKeyExact(HKCU32, ProductKey) or not DeleteRegistryKeyExact(HKCU32, BindingKey) then exit;
   if not ImportRegistryKey(PriorProduct64Snapshot, '64') or not ImportRegistryKey(PriorBinding64Snapshot, '64') then exit;

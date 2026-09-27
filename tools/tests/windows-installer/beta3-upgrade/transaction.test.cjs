@@ -77,6 +77,9 @@ for (const fault of ['after-old-program', 'after-new-program', 'after-metadata']
       assert.equal(fs.readFileSync(f.startMenuShortcut, 'utf8'), 'old-start');
       assert.deepEqual(fs.readFileSync(path.join(f.plan.installRoot, 'uninstall', 'install-state.json')), f.oldStateBytes);
       assert.deepEqual(inventory(f.plan.instancePath), f.business);
+      assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.RECOVERY_NAME)), true);
+      assert.equal(tx.rollback(f.plan, true).code, 'TRANSACTION_ROLLED_BACK_REGISTRY_PENDING');
+      assert.equal(tx.completeRollback(f.plan).code, 'TRANSACTION_ROLLBACK_COMPLETED');
       assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.RECOVERY_NAME)), false);
     } finally { cleanup(f); }
   });
@@ -100,6 +103,8 @@ for (const operation of ['write', 'rename']) {
       assert.throws(() => tx.commit(f.plan), error => error.code === 'COMMIT_FAILED_ROLLED_BACK');
       assert.deepEqual(fs.readFileSync(path.join(f.plan.installRoot, 'uninstall', 'install-state.json')), f.oldStateBytes);
       assert.deepEqual(inventory(f.plan.instancePath), f.business);
+      assert.equal(tx.rollback(f.plan, true).code, 'TRANSACTION_ROLLED_BACK_REGISTRY_PENDING');
+      assert.equal(tx.completeRollback(f.plan).code, 'TRANSACTION_ROLLBACK_COMPLETED');
     } finally {
       if (operation === 'write') fs.writeFileSync = original; else fs.renameSync = original;
       cleanup(f);
@@ -131,14 +136,24 @@ test('file rollback retains a fixed journal until registry restoration is acknow
     assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.RECOVERY_NAME)), false);
   } finally { cleanup(f); }
 });
-for (const cleanupFault of ['first', 'mid']) {
+test('CLI commit fault keeps registry-pending state for idempotent rollback and completion',()=>{
+  const f=fixture();
+  try{
+    tx.prepare(f.plan);const planFile=path.join(f.root,'plan.json');fs.writeFileSync(planFile,JSON.stringify(f.plan));
+    const commitResult=runCli(['commit',planFile,'after-metadata']);assert.equal(commitResult.status,74);assert.equal(commitResult.stdout,'{"ok":false,"code":"COMMIT_FAILED_ROLLED_BACK"}\n');
+    const rollbackResult=runCli(['rollback',planFile]);assert.equal(rollbackResult.status,0);assert.equal(rollbackResult.stdout,'{"ok":true,"code":"TRANSACTION_ROLLED_BACK_REGISTRY_PENDING"}\n');
+    const completeResult=runCli(['complete-rollback',planFile]);assert.equal(completeResult.status,0);assert.equal(completeResult.stdout,'{"ok":true,"code":"TRANSACTION_ROLLBACK_COMPLETED"}\n');
+    assert.deepEqual(fs.readFileSync(path.join(f.plan.installRoot,'uninstall','install-state.json')),f.oldStateBytes);
+  }finally{cleanup(f);}
+});
+for (const cleanupFault of ['first', 'journal']) {
   test('finalize cleanup '+cleanupFault+' failure stays committed and can never roll back to beta2', () => {
     const f = fixture(), original = fs.rmSync;
     try {
       tx.prepare(f.plan); tx.commit(f.plan);
       fs.rmSync = function(target, options) {
         if (path.basename(String(target)) === tx.COMMITTED_RECOVERY_NAME) {
-          if (cleanupFault === 'mid') original.call(fs, path.join(target, 'program'), {recursive: true, force: true});
+          if (cleanupFault === 'journal') original.call(fs, path.join(target, 'journal.json'), {force: true});
           throw Object.assign(Error('synthetic committed cleanup failure'), {code: 'EIO'});
         }
         return original.call(fs, target, options);
@@ -147,6 +162,7 @@ for (const cleanupFault of ['first', 'mid']) {
       fs.rmSync = original;
       assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.RECOVERY_NAME)), false);
       assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.COMMITTED_RECOVERY_NAME)), true);
+      assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.COMMITTED_MARKER_NAME)), true);
       assert.equal(fs.readFileSync(path.join(f.plan.installRoot, 'program', 'K-SESSION.exe'), 'utf8'), 'launcher-beta3');
       assert.throws(() => tx.rollback(f.plan), error => ['RECOVERY_INVALID','PHASE_INVALID'].includes(error.code));
       assert.equal(tx.finalize(f.plan).code, 'TRANSACTION_COMMITTED');
@@ -163,6 +179,28 @@ test('prepare rejects staged payload tampering before recovery is created', () =
     assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.RECOVERY_NAME)), false);
     assert.equal(fs.readFileSync(path.join(f.plan.installRoot, 'program', 'old.txt'), 'utf8'), 'old-program');
   } finally { cleanup(f); }
+});
+test('committed marker survives recovery rename failure and prevents rollback', () => {
+  const f=fixture(),original=fs.renameSync;
+  try{
+    tx.prepare(f.plan);tx.commit(f.plan);
+    fs.renameSync=function(source,target){if(path.basename(String(source))===tx.RECOVERY_NAME&&path.basename(String(target))===tx.COMMITTED_RECOVERY_NAME)throw Object.assign(Error('synthetic rename failure'),{code:'EIO'});return original.apply(fs,arguments);};
+    assert.equal(tx.finalize(f.plan).code,'TRANSACTION_COMMITTED_RECOVERY_PENDING');fs.renameSync=original;
+    assert.equal(fs.existsSync(path.join(f.plan.installRoot,tx.COMMITTED_MARKER_NAME)),true);
+    assert.throws(()=>tx.rollback(f.plan,true),error=>error.code==='PHASE_INVALID');
+    assert.equal(tx.finalize(f.plan).code,'TRANSACTION_COMMITTED');
+  }finally{fs.renameSync=original;cleanup(f);}
+});
+test('complete rollback journal cleanup failure preserves external marker and exact beta2 state',()=>{
+  const f=fixture(),original=fs.rmSync;
+  try{
+    tx.prepare(f.plan);tx.commit(f.plan);tx.rollback(f.plan,true);
+    fs.rmSync=function(target,options){if(path.basename(String(target))===tx.RECOVERY_NAME){original.call(fs,path.join(target,'journal.json'),{force:true});throw Object.assign(Error('synthetic cleanup failure'),{code:'EIO'});}return original.call(fs,target,options);};
+    assert.equal(tx.completeRollback(f.plan).code,'TRANSACTION_ROLLBACK_COMPLETED_RECOVERY_PENDING');fs.rmSync=original;
+    assert.equal(fs.existsSync(path.join(f.plan.installRoot,tx.ROLLBACK_MARKER_NAME)),true);
+    assert.deepEqual(fs.readFileSync(path.join(f.plan.installRoot,'uninstall','install-state.json')),f.oldStateBytes);
+    assert.equal(tx.completeRollback(f.plan).code,'TRANSACTION_ROLLBACK_COMPLETED');
+  }finally{fs.rmSync=original;cleanup(f);}
 });
 test('prepare rejects a helper hash mismatch before recovery is created', () => {
   const f = fixture();

@@ -11,6 +11,8 @@ const DATA_CONTRACT_VERSION = 1;
 const JOURNAL_SCHEMA = 1;
 const RECOVERY_NAME = '.ksession-upgrade-recovery-v1';
 const COMMITTED_RECOVERY_NAME = '.ksession-upgrade-committed-v1';
+const COMMITTED_MARKER_NAME = '.ksession-upgrade-committed-v1.json';
+const ROLLBACK_MARKER_NAME = '.ksession-upgrade-rollback-v1.json';
 const INSTALLER_METADATA = Object.freeze(['LICENSE-Inno-Setup.txt', 'build-info.json', 'installer-manifest.json',
   'install-state.json', 'instance-binding.ini', 'unins000.dat', 'unins000.exe']);
 const ACCEPTED_F3_STATE = Object.freeze({
@@ -161,6 +163,8 @@ function locations(plan) {
     uninstall: path.join(plan.installRoot, 'uninstall'),
     recovery,
     committedRecovery,
+    committedMarker: path.join(plan.installRoot, COMMITTED_MARKER_NAME),
+    rollbackMarker: path.join(plan.installRoot, ROLLBACK_MARKER_NAME),
     journal: path.join(recovery, 'journal.json'),
     oldProgram: path.join(recovery, 'program'),
     oldUninstall: path.join(recovery, 'uninstall'),
@@ -256,7 +260,7 @@ function prepare(plan) {
   const loc = locations(plan);
   directory(plan.installRoot, 'INSTALL_ROOT_INVALID'); directory(loc.program, 'OLD_PROGRAM_INVALID'); directory(loc.uninstall, 'OLD_METADATA_INVALID');
   validateOldInstallState(plan, path.join(loc.uninstall, 'install-state.json'));
-  if (fs.existsSync(loc.recovery) || fs.existsSync(loc.committedRecovery)) fail('RECOVERY_EXISTS', 'unfinished recovery exists');
+  if ([loc.recovery, loc.committedRecovery, loc.committedMarker, loc.rollbackMarker].some(file => fs.existsSync(file))) fail('RECOVERY_EXISTS', 'unfinished recovery exists');
   fs.mkdirSync(loc.recovery, { recursive: false });
   try {
     copyInstallerMetadata(loc.uninstall, loc.oldUninstall);
@@ -295,9 +299,32 @@ function restoreShortcuts(plan, loc, journal) {
     if (present) { fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(saved, target, fs.constants.COPYFILE_EXCL); }
   }
 }
+function validateRolledBack(plan, loc, journal) {
+  const current = path.join(loc.uninstall, 'install-state.json'), saved = path.join(loc.oldUninstall, 'install-state.json');
+  validateOldInstallState(plan, current); validateOldInstallState(plan, saved);
+  if (!fs.readFileSync(current).equals(fs.readFileSync(saved)) || fs.existsSync(loc.oldProgram)) fail('ROLLBACK_FAILED', 'rollback state is not exact');
+  for (const [present, target, stored] of [[journal.desktop, plan.desktopShortcut, path.join(loc.shortcuts, 'desktop.lnk')],
+    [journal.start, plan.startMenuShortcut, path.join(loc.shortcuts, 'start-menu.lnk')]]) {
+    if (present !== fs.existsSync(target) || (present && !fs.readFileSync(target).equals(fs.readFileSync(stored)))) fail('ROLLBACK_FAILED', 'shortcut rollback is not exact');
+  }
+}
+function readMarker(file, plan, phase) {
+  regular(file, 'RECOVERY_INVALID');
+  const marker = readStrictJson(file, 'RECOVERY_INVALID').value;
+  if (marker.schema !== JOURNAL_SCHEMA || marker.phase !== phase || JSON.stringify(marker.plan) !== JSON.stringify(plan) ||
+      Object.keys(marker).sort().join('\0') !== ['phase','plan','schema'].sort().join('\0')) fail('RECOVERY_INVALID', 'persistent marker invalid');
+  return marker;
+}
 function rollback(plan, preserveForRegistry = false) {
+  assertPlan(plan);const pendingLoc=locations(plan);
+  if(fs.existsSync(pendingLoc.committedMarker))fail('PHASE_INVALID','transaction is not rollback eligible');
   const { loc, journal } = loadJournal(plan);
-  if (['COMMITTED', 'ROLLED_BACK'].includes(journal.phase)) fail('PHASE_INVALID', 'transaction is not rollback eligible');
+  if (journal.phase === 'COMMITTED') fail('PHASE_INVALID', 'transaction is not rollback eligible');
+  if (journal.phase === 'ROLLED_BACK') {
+    if (!preserveForRegistry) fail('PHASE_INVALID', 'transaction is registry pending');
+    validateRolledBack(plan, loc, journal);
+    return {ok:true, code:'TRANSACTION_ROLLED_BACK_REGISTRY_PENDING'};
+  }
   try {
     if (journal.phase === 'SWAPPED' || fs.existsSync(loc.oldProgram)) {
       if (fs.existsSync(loc.program)) fs.rmSync(loc.program, { recursive: true, force: true });
@@ -318,18 +345,22 @@ function rollback(plan, preserveForRegistry = false) {
   }
 }
 function completeRollback(plan) {
-  const {loc, journal} = loadJournal(plan);
-  if (journal.phase !== 'ROLLED_BACK') fail('PHASE_INVALID', 'rollback is not registry pending');
-  const current = path.join(loc.uninstall, 'install-state.json'), saved = path.join(loc.oldUninstall, 'install-state.json');
-  validateOldInstallState(plan, current); validateOldInstallState(plan, saved);
-  if (!fs.readFileSync(current).equals(fs.readFileSync(saved)) || fs.existsSync(loc.oldProgram)) fail('ROLLBACK_FAILED', 'rollback state is not exact');
-  for (const [present, target, stored] of [[journal.desktop, plan.desktopShortcut, path.join(loc.shortcuts, 'desktop.lnk')],
-    [journal.start, plan.startMenuShortcut, path.join(loc.shortcuts, 'start-menu.lnk')]]) {
-    if (present !== fs.existsSync(target) || (present && !fs.readFileSync(target).equals(fs.readFileSync(stored)))) fail('ROLLBACK_FAILED', 'shortcut rollback is not exact');
+  assertPlan(plan); const loc=locations(plan); let journal;
+  if(fs.existsSync(loc.rollbackMarker)){
+    readMarker(loc.rollbackMarker,plan,'ROLLED_BACK');
+    validateOldInstallState(plan,path.join(loc.uninstall,'install-state.json'));
+    if(!fs.existsSync(loc.recovery)){fs.rmSync(loc.rollbackMarker,{force:false});return{ok:true,code:'TRANSACTION_ROLLBACK_COMPLETED'};}
+  }else{
+    journal=loadJournal(plan).journal;
+    if(journal.phase!=='ROLLED_BACK')fail('PHASE_INVALID','rollback is not registry pending');
+    validateRolledBack(plan,loc,journal);
+    writeJsonNew(loc.rollbackMarker,{schema:JOURNAL_SCHEMA,phase:'ROLLED_BACK',plan});
   }
-  try { fs.rmSync(loc.recovery, {recursive: true, force: false}); }
-  catch { fail('ROLLBACK_FAILED', 'rollback cleanup incomplete'); }
-  return {ok: true, code: 'TRANSACTION_ROLLBACK_COMPLETED'};
+  try{
+    fs.rmSync(loc.recovery,{recursive:true,force:false});
+    fs.rmSync(loc.rollbackMarker,{force:false});
+    return{ok:true,code:'TRANSACTION_ROLLBACK_COMPLETED'};
+  }catch{return{ok:true,code:'TRANSACTION_ROLLBACK_COMPLETED_RECOVERY_PENDING'};}
 }
 function commit(plan, fault = '') {
   const { loc, journal } = loadJournal(plan);
@@ -352,7 +383,7 @@ function commit(plan, fault = '') {
     if (fault === 'after-metadata') throw new Error('fault');
     return { ok: true, code: 'TRANSACTION_SWAPPED', state };
   } catch {
-    try { rollback(plan); } catch { fail('ROLLBACK_FAILED', 'commit failed and rollback incomplete'); }
+    try { rollback(plan, true); } catch { fail('ROLLBACK_FAILED', 'commit failed and rollback incomplete'); }
     fail('COMMIT_FAILED_ROLLED_BACK', 'commit failed and old install restored');
   }
 }
@@ -360,27 +391,26 @@ function finalize(plan) {
   assertPlan(plan);
   const loc = locations(plan);
   let loaded;
-  if (fs.existsSync(loc.committedRecovery)) {
-    if (fs.existsSync(loc.recovery)) fail('RECOVERY_UNSAFE', 'ambiguous committed recovery');
-    loaded = loadJournalAt(plan, loc.committedRecovery, ['COMMITTED']);
-  } else {
-    loaded = loadJournal(plan);
-    if (!['SWAPPED', 'COMMITTED'].includes(loaded.journal.phase)) fail('PHASE_INVALID', 'transaction not swapped');
-  }
+  if(fs.existsSync(loc.committedMarker))readMarker(loc.committedMarker,plan,'COMMITTED');
+  else{loaded=loadJournal(plan);if(loaded.journal.phase!=='SWAPPED')fail('PHASE_INVALID','transaction not swapped');}
   validateStaged({ ...plan, stagedProgram: loc.program });
   validateNewInstallState(plan, path.join(loc.uninstall, 'install-state.json'));
-  if (loaded.journal.phase === 'SWAPPED') {
+  if (!fs.existsSync(loc.committedMarker)) {
     if (fs.existsSync(loc.committedRecovery)) fail('RECOVERY_UNSAFE', 'committed recovery already exists');
-    replaceJson(loaded.journalFile, { ...loaded.journal, phase: 'COMMITTED' });
+    writeJsonNew(loc.committedMarker,{schema:JOURNAL_SCHEMA,phase:'COMMITTED',plan});
   }
   try {
-    if (fs.existsSync(loc.recovery)) fs.renameSync(loc.recovery, loc.committedRecovery);
-    fs.rmSync(loc.committedRecovery, { recursive: true, force: false });
+    if(fs.existsSync(loc.recovery)){
+      if(fs.existsSync(loc.committedRecovery))fail('RECOVERY_UNSAFE','ambiguous committed recovery');
+      fs.renameSync(loc.recovery,loc.committedRecovery);
+    }
+    if(fs.existsSync(loc.committedRecovery))fs.rmSync(loc.committedRecovery,{recursive:true,force:false});
+    fs.rmSync(loc.committedMarker,{force:false});
     return { ok: true, code: 'TRANSACTION_COMMITTED' };
   } catch {
     return { ok: true, code: 'TRANSACTION_COMMITTED_RECOVERY_PENDING' };
   }
 }
 
-module.exports = { ACCEPTED_F3_STATE, APP_VERSION, COMMITTED_RECOVERY_NAME, DATA_CONTRACT_VERSION, INSTALLER_VERSION, INSTALLER_METADATA, RECOVERY_NAME, TransactionError,
+module.exports = { ACCEPTED_F3_STATE, APP_VERSION, COMMITTED_MARKER_NAME, COMMITTED_RECOVERY_NAME, DATA_CONTRACT_VERSION, INSTALLER_VERSION, INSTALLER_METADATA, RECOVERY_NAME, ROLLBACK_MARKER_NAME, TransactionError,
   commit, completeRollback, finalize, locations, parseStrictJson, prepare, rollback, validateOldInstallState, validateStaged };
