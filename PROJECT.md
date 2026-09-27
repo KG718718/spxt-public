@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前止损｜2026-09-27 最小Utility修复未越过P02
+
+真实Win10唯一受控proof对公开`bcf82b2`返回P01 PASS、P02 FAIL/`DISCOVERY_COMMAND_FAILED`，其后未到达；Master整合固定证据`79f2ad8`，原T5冻结。不得追加网络模块、stderr微诊断/Hosted、Final Full或QA。Final Full0/1、QA0/1未动，Batch4.5仍BLOCKED；详见`docs/tasks/windows-installer-v1.1/batch-4.5/UTILITY-FIX-P02-STOP-20260927.md`和决策卡。下方修复待proof为历史。
+
 ## 当前Review PASS｜2026-09-27 Utility一行修复待实机proof
 
 Master核对原T5的一行生产diff及F01—F12 12/12，整合`b4bd6b0`/`d9e9afd`；必须先push并核对三方HEAD相同，再运行唯一真实Win10 P01—P08。新生产blob`c3208b47cd93cf92989622b633a98cf994ce8712`，但生产P02尚未重测，不能宣称修复成功。Final Full0/1、QA0/1冻结；下节派单状态为历史。

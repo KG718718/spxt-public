@@ -1,5 +1,9 @@
 # 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
+## 当前结论｜2026-09-27 Utility修复后唯一实机proof止损
+
+**BLOCKED — CONTROLLED WINDOWS PRODUCTION DISCOVERY FAILED。** 获批的生产一行Utility显式导入经F01—F12 12/12、Master Review及公开`bcf82b2`同步；真实Win10唯一一次proof仍P01 PASS、P02 FAIL/`DISCOVERY_COMMAND_FAILED`，P03—P08未到达。固定证据local`192cd81`已整合`79f2ad8`，未保存网络身份或原始stderr。原T5冻结，不重复proof或微诊断，不运行Final Full0/1、QA0/1；无beta.3最终Artifact，待网页版决策。详见`UTILITY-FIX-P02-STOP-20260927.md`及决策卡。下方M03阻塞为历史。
+
 ## 当前结论｜2026-09-27 M03合成阻塞
 
 **BLOCKED — M03 PHASE ATTRIBUTION NOT PROVEN。** Master已Review并整合T5纯合成歧义反例`8006d3c`。相关49/49、fail0skip0仅证明保守闭合；T02/T03获批阶段归因不满足。真实M03未创建或执行，生产/历史证据不变。P02仍FAIL、P03—P08 NOT_REACHED；H1/H2 2/2、Final Full0/1、QA0/1。待网页版新明确决定；见`M03-ATTRIBUTION-DECISION.md`。

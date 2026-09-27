@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前BLOCKED：Utility一行修复后P02仍FAIL｜2026-09-27
+
+原T5 thread`01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`在原工作树只执行一次已推公开`bcf82b29a0ac322fb17f595fb428c3ea692fac99`受控proof；P01=true、P02=false/`DISCOVERY_COMMAND_FAILED`，P03—P08未到达、privateCandidatePresent未判定。固定证据和RESULT local`192cd81`经Master白名单/身份/两文件diff Review，整合`79f2ad8`。原T5冻结；不重复proof、不新增微诊断/网络模块/Hosted，不运行Final Full0/1或QA0/1。生产保持一行改动，stderr fail-closed及网络安全边界不变。现只治理收尾并交网页版`UTILITY-FIX-P02-DECISION.md`；无beta.3最终Artifact，未到LAN HUMAN PENDING。下方REVIEWED待proof为历史。
+
 ## 当前REVIEWED/INTEGRATED：Utility修复待push与proof｜2026-09-27
 
 原T5 thread`01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`主动回单local`04fe305`/`84d32b4`，Master独立复验F01—F12 12/12、fail0skip0、语法和diff-check；生产diff精确`WINDOWS_DISCOVERY_SCRIPT`新增一行Utility导入，删除该行后blob等于原`4e13e944472f845675fe73d176f063c4fe97f6ed`。整合`b4bd6b0`/`d9e9afd`，新blob`c3208b47cd93cf92989622b633a98cf994ce8712`。下一步只允许非force推送开发分支并核对本地/跟踪/GitHub三方HEAD一致，再另派原T5唯一真实Win10 P01—P08；当前实机proof未运行，Full0/1与QA0/1冻结。下节DISPATCHED为历史。

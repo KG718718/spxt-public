@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-09-27 Utility修复后实机P02仍FAIL
+
+获批的一行Utility显式导入经F01—F12、Master Review整合并推公开`bcf82b2`。原T5随后在真实Win10对该公开提交只执行一次受控P01—P08：P01 PASS、P02 FAIL/`DISCOVERY_COMMAND_FAILED`，P03—P08未到达，privateCandidatePresent=false仅为未到达；固定证据/RESULT local`192cd81`已由Master Review整合`79f2ad8`。这证明一行修复不足以使完整生产发现通过，不证明具体底层原因。依网页版第11节原T5冻结；禁再跑proof/M04/M05/新S/Hosted网络诊断、导入其他模块或用Final Full/QA调试。Final Full0/1、QA0/1未用，无beta.3最终Artifact。只做治理和网页版决策，见`docs/tasks/windows-installer-v1.1/batch-4.5/UTILITY-FIX-P02-STOP-20260927.md`与`UTILITY-FIX-P02-DECISION.md`。下方Review PASS待proof为历史。
+
 ## 当前Review PASS｜2026-09-27 Utility最小修复待唯一实机proof
 
 原T5 local`04fe305`/`84d32b4`已主动回单，Master独立复验F01—F12 12/12、语法和diff-check，并核对生产diff精确一行；整合为`b4bd6b0`/`d9e9afd`，新生产blob`c3208b47cd93cf92989622b633a98cf994ce8712`。当前仍须先将开发分支非force推送并核对本地/跟踪/GitHub远端一致，才允许原T5在真实Win10运行**唯一一次**P01—P08；实机proof尚未运行。P02历史FAIL，Final Full0/1、QA0/1仍冻结；详见`docs/tasks/windows-installer-v1.1/batch-4.5/MINIMAL-UTILITY-FIX-APPROVAL.md`。下节DISPATCHED为历史。
