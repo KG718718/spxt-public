@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前Review PASS｜2026-09-27 Utility一行修复待实机proof
+
+Master核对原T5的一行生产diff及F01—F12 12/12，整合`b4bd6b0`/`d9e9afd`；必须先push并核对三方HEAD相同，再运行唯一真实Win10 P01—P08。新生产blob`c3208b47cd93cf92989622b633a98cf994ce8712`，但生产P02尚未重测，不能宣称修复成功。Final Full0/1、QA0/1冻结；下节派单状态为历史。
+
 ## 当前授权｜2026-09-27 最小Utility生产修复
 
 网页版批准只加一行显式Utility导入，原T5已派仅实现及F01—F12合成/静态测试；Master Review整合/push后才派唯一真实Win10 P01—P08。不得预加NetTCPIP/NetAdapter、忽略stderr或扩大网络/权限。P02仍FAIL即停；proof全PASS才依次使用Final Full0/1和Final QA0/1。详见`docs/tasks/windows-installer-v1.1/batch-4.5/MINIMAL-UTILITY-FIX-APPROVAL.md`。下方M03待决定是历史。

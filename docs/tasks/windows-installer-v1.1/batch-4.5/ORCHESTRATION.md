@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前REVIEWED/INTEGRATED：Utility修复待push与proof｜2026-09-27
+
+原T5 thread`01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`主动回单local`04fe305`/`84d32b4`，Master独立复验F01—F12 12/12、fail0skip0、语法和diff-check；生产diff精确`WINDOWS_DISCOVERY_SCRIPT`新增一行Utility导入，删除该行后blob等于原`4e13e944472f845675fe73d176f063c4fe97f6ed`。整合`b4bd6b0`/`d9e9afd`，新blob`c3208b47cd93cf92989622b633a98cf994ce8712`。下一步只允许非force推送开发分支并核对本地/跟踪/GitHub三方HEAD一致，再另派原T5唯一真实Win10 P01—P08；当前实机proof未运行，Full0/1与QA0/1冻结。下节DISPATCHED为历史。
+
 ## 当前DISPATCHED：Utility一行修复合成门禁｜2026-09-27
 
 网页版正式批准`MINIMAL-UTILITY-FIX-APPROVAL.md`，原T5 thread`01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`/原worktree获派仅`WINDOWS_DISCOVERY_SCRIPT`一行显式Utility导入及F01—F12合成/静态测试，回单唯一Master`01a0db0e-c950-79e0-8e11-07155e0742f2`。公共本地/跟踪/GitHub远端均核对`2f21ec106cca9eb66ed970c893f375d98cafcd02`；生产原blob`4e13e944472f845675fe73d176f063c4fe97f6ed`。真实P01—P08必须等Master Review整合/push后才派。P02仍FAIL；Final Full0/1、QA0/1冻结。M03 1/1、H1/H2 2/2历史不扩额，禁新微诊断。下方M03止损为历史。
