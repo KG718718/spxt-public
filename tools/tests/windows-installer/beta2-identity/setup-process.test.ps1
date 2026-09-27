@@ -8,9 +8,12 @@ $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile($invoke,[ref]$tokens,[ref]$errors)
 if($errors.Count-ne 0){throw 'INVOKE_PARSE_FAILED'}
 $functions=@($ast.FindAll({param($node)$node-is[Management.Automation.Language.FunctionDefinitionAst]-and
-  $node.Name-in@('Assert-SafeAsciiPath','Invoke-SetupAndWait')},$true))
-if($functions.Count-ne 2){throw 'PROCESS_HELPER_MISSING'}
+  $node.Name-in@('Assert-SafeAsciiPath','Invoke-SetupAndWait','Wait-UninstallerCleanup','Get-RemainingPayloadCount',
+    'Get-LogicalSubkeyCount','Assert-UninstallContract')},$true))
+if($functions.Count-ne 6){throw 'PROCESS_HELPER_MISSING'}
 $functions|Sort-Object{$_.Extent.StartOffset}|ForEach-Object{Invoke-Expression $_.Extent.Text}
+$observedPhase=$null
+function Set-TaskPhase([string]$Phase){$script:observedPhase=$Phase}
 
 function New-SafeHarnessTemporaryPath([string]$Root,[AllowNull()][string]$RunnerTemp){
   if($Root-cnotmatch '^[A-Za-z]:\\'){throw 'REPOSITORY_PATH_UNSAFE'}
@@ -55,8 +58,10 @@ try{
   [IO.File]::WriteAllText($source,@'
 using System;
 using System.IO;
+using System.Threading;
 public static class Helper {
   public static int Main(string[] args) {
+    if (args.Length == 2 && args[0] == "--delete") { Thread.Sleep(600); File.Delete(args[1]); return 0; }
     foreach (string arg in args) if (arg.StartsWith("/LOG=")) File.WriteAllLines(arg.Substring(5)+".args", args);
     return 7;
   }
@@ -76,6 +81,50 @@ public static class Helper {
     -Instance (Join-Path $temporary 'instance') -Log $log -StandardOutput (Join-Path $temporary 'stdout') `
     -StandardError (Join-Path $temporary 'stderr')|Out-Null;throw 'UNSAFE_PATH_ACCEPTED'}
   catch{if($_.Exception.Message-cne'PATH_UNSAFE'){throw}}
+
+  $taskInstall=Join-Path $temporary 'uninstall-fixture';$uninstallDir=Join-Path $taskInstall 'uninstall'
+  [IO.Directory]::CreateDirectory($uninstallDir)|Out-Null
+  $uninstaller=Join-Path $uninstallDir 'unins000.exe'
+  [IO.File]::WriteAllText($uninstaller,'synthetic',[Text.UTF8Encoding]::new($false))
+  $deleteProcess=Start-Process -FilePath $helper -ArgumentList @('--delete',$uninstaller) -PassThru -WindowStyle Hidden
+  $taskUninstallSelfCleanupTimeoutMilliseconds=25000
+  $stopwatch=[Diagnostics.Stopwatch]::StartNew();$removed=Wait-UninstallerCleanup $uninstaller;$stopwatch.Stop()
+  $deleteProcess.WaitForExit();$deleteProcess.Dispose()
+  if(!$removed -or $stopwatch.ElapsedMilliseconds-lt 500 -or (Test-Path -LiteralPath $uninstaller)){
+    throw 'UNINSTALLER_SELF_CLEANUP_NOT_WAITED'
+  }
+  [IO.File]::WriteAllText($uninstaller,'synthetic',[Text.UTF8Encoding]::new($false))
+  $taskUninstallSelfCleanupTimeoutMilliseconds=200
+  if(Wait-UninstallerCleanup $uninstaller){throw 'UNINSTALLER_SELF_CLEANUP_TIMEOUT_NOT_ENFORCED'}
+  Remove-Item -LiteralPath $uninstaller -Force
+
+  $remainingOne=Join-Path $temporary 'remaining-one.bin';$remainingTwo=Join-Path $temporary 'remaining-two.bin'
+  $paths=@($remainingOne,$remainingTwo,(Join-Path $temporary 'missing.bin'))
+  if((Get-RemainingPayloadCount $paths)-ne 0){throw 'PAYLOAD_ZERO_COUNT_INVALID'}
+  [IO.File]::WriteAllText($remainingOne,'synthetic',[Text.UTF8Encoding]::new($false))
+  if((Get-RemainingPayloadCount $paths)-ne 1){throw 'PAYLOAD_ONE_COUNT_INVALID'}
+  [IO.File]::WriteAllText($remainingTwo,'synthetic',[Text.UTF8Encoding]::new($false))
+  if((Get-RemainingPayloadCount $paths)-ne 2){throw 'PAYLOAD_MULTIPLE_COUNT_INVALID'}
+  Remove-Item -LiteralPath $remainingOne,$remainingTwo -Force
+
+  if((Get-LogicalSubkeyCount @($false,$false))-ne 0 -or
+     (Get-LogicalSubkeyCount @($true,$false))-ne 1 -or
+     (Get-LogicalSubkeyCount @($false,$true))-ne 1 -or
+     (Get-LogicalSubkeyCount @($true,$true))-ne 1){throw 'SHARED_REGISTRY_VIEW_COUNT_INVALID'}
+  $retained=@{programAfter=$false;registrationAfter=0;desktopAfter=$false;programsAfter=$false;
+    bindingAfter=1;instanceAfter=$true;probeAfter=$true}
+  $script:observedPhase=$null;Assert-UninstallContract $retained
+  if($null-ne$script:observedPhase -or $retained.programAfter -or $retained.registrationAfter-ne 0 -or
+     !$retained.bindingAfter -or !$retained.instanceAfter -or !$retained.probeAfter){throw 'RETENTION_SUCCESS_STATE_INVALID'}
+  foreach($failure in @(
+    @{field='bindingAfter';value=0;phase='CLEANUP_BINDING_RETAINED'},
+    @{field='instanceAfter';value=$false;phase='CLEANUP_INSTANCE_RETAINED'},
+    @{field='probeAfter';value=$false;phase='CLEANUP_PROBE_RETAINED'})){
+    $state=$retained.Clone();$state[$failure.field]=$failure.value;$script:observedPhase=$null
+    try{Assert-UninstallContract $state;throw 'UNSAFE_RETENTION_ACCEPTED'}
+    catch{if($_.Exception.Message-cne'UNINSTALL_CONTRACT_FAILED' -or $script:observedPhase-cne$failure.phase){throw}}
+  }
+
   $text=Get-Content -LiteralPath $invoke -Raw
   if(!$text.Contains("Set-TaskPhase 'INSTALL'") -or
      !$text.Contains("if(`$setupExit-ne 0){throw 'SETUP_FAILED'}") -or
@@ -94,5 +143,18 @@ public static class Helper {
      !$text.Contains("'GITHUB_TOKEN','GH_TOKEN','GITHUB_PAT','ACTIONS_RUNTIME_TOKEN','ACTIONS_ID_TOKEN_REQUEST_TOKEN','SYSTEM_ACCESSTOKEN'")){
     throw 'CHILD_AUTH_ENV_NOT_CLEARED'
   }
+  if($text-match '\)\.Count\s+-eq\s+0' -or
+     !$text.Contains("Set-TaskPhase 'CLEANUP_READ_PAYLOAD_AFTER_HARNESS'") -or
+     !$text.Contains('Get-RemainingPayloadCount @(') -or
+     !$text.Contains("Set-TaskPhase 'UNINSTALL_SELF_CLEANUP_TIMEOUT'")){
+    throw 'CLEANUP_PHASE_OR_COUNT_UNSAFE'
+  }
+  $finallyIndex=$text.LastIndexOf('}finally{')
+  $mainCatch=[regex]::Match($text,'\}catch\{\r?\n  if\(\$taskAllowedPhases')
+  $catchIndex=$mainCatch.Index
+  if(!$mainCatch.Success -or $finallyIndex-le$catchIndex){throw 'FAILURE_FLOW_MISSING'}
+  $catchText=$text.Substring($catchIndex,$finallyIndex-$catchIndex);$finallyText=$text.Substring($finallyIndex)
+  if(!$catchText.Contains("Write-RunReport 'BLOCKED'") -or $finallyText.Contains('Write-RunReport') -or
+     $finallyText.Contains('Set-TaskPhase')){throw 'PRIMARY_FAILURE_STAGE_CAN_BE_OVERWRITTEN'}
   'BETA2 IDENTITY PROCESS TEST PASS'
 }finally{if(Test-Path -LiteralPath $temporary){Remove-Item -LiteralPath $temporary -Recurse -Force}}

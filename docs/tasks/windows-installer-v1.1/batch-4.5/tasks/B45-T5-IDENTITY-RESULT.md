@@ -109,3 +109,14 @@ b45-beta2-identity-<tested-commit>-<run-attempt>
 - 兼容审查实际发现 Windows PowerShell 5 的 .NET Framework不提供 `Path.IsPathFullyQualified`；harness改用pwsh 7与Windows PowerShell 5均支持的盘符绝对路径检查，避免同类第二次Hosted失败。
 - R1本地复测：合成短名TEMP下 pwsh 7 PASS、Windows PowerShell 5 PASS；受限且存在的 `RUNNER_TEMP` 分支在pwsh 7 PASS；新beta2 identity Node测试9/9 PASS；`git diff --check` PASS。
 - 没有修改生产取证脚本、Setup参数、真实取证路径验证、新beta.2 identity schema、旧beta.1语义或workflow调度条件；禁止自行Hosted保持不变。
+
+## R2｜Hosted cleanup诊断与StrictMode计数修复
+
+- 专项2 Run `36280914931` / job `108512416383` / tested source `a55395d7e06430be186705f09bf688ea89c75c20`：静态Node 9/9与PowerShell gate通过，实际capture随后固定阻断为 `CLEANUP_VERIFY/BLOCKED_CLEANUP_VERIFY`。Artifact `10918108433` 只有report，ZIP SHA-256 `db40c63678b6219eb49bb6614fb80c2c528f10413eba097dca080a152b69a174`；没有evidence，不能称身份或cleanup通过。
+- 已确认旧脚本在StrictMode下使用 `(... | Where-Object {...}).Count`：0项和1项都会抛 `PropertyNotFoundException`，只有多项返回Count。专项2发生在同一个粗粒度阶段且成功路径预期正是0项，因此这是与现象一致的强证据；但旧Hosted报告没有子阶段，不能追溯断言它是唯一实际失败原因。
+- 修复复用既有历史取证的 `@(...).Count` 封闭计数方式，新增0/1/多项本地实际反例；不放宽任何删除或清理成功条件。
+- cleanup改为固定细阶段：uninstaller exit/self-cleanup/timeout、program/登记/快捷方式/binding/instance/probe逐项读取与契约失败、harness binding/instance/payload移除及复读、final state/evidence write。报告仍只含固定阶段/reason，不含路径、原始异常或业务正文。
+- 共享HKCU 32/64观测以逻辑存在计数折叠为0/1，合成反例覆盖两视图同时观察同一共享键仍为1；不会把共享视图误判成两份登记。binding/instance/probe必须在产品卸载后保留，任一缺失分别固定阻断，harness随后才删除自己精确拥有的binding与合成instance。
+- 异步uninstaller反例实际等待精确 `uninstall\unins000.exe` 自删除并覆盖固定超时；不枚举或等待无关进程。主catch在finally前写原始失败阶段，finally不调用 `Set-TaskPhase` 或重写report，清理失败不会覆盖更早主故障证据。
+- R2本地复测：新beta2 identity Node 9/9 PASS；pwsh 7实际进程/计数/保留反例PASS；Windows PowerShell 5同组反例PASS；旧historical identity 71/71 PASS；`git diff --check` PASS。Node测试还逐一验证取证脚本实际调用的固定阶段均被report schema接受。
+- R2只修改beta2 identity取证器、对应测试/schema及本结果记录；没有更改F3可信来源、Setup、beta.2产品、旧historical identity、workflow条件或beta.3生产兼容路由。禁止自行Hosted保持不变。

@@ -10,7 +10,14 @@ Set-StrictMode -Version Latest
 
 $taskAllowedPhases=@('STATIC_GATE','HOSTED_PREFLIGHT','API_METADATA','ARTIFACT_DOWNLOAD','ARCHIVE_IDENTITY','EXTRACT',
   'SETUP_IDENTITY','INSTALL','INSTALL_LOG','OWNED_PROCESS_QUIESCE','INSTALLED_FOOTPRINT','REGISTRY_READ','REGISTRY_NORMALIZE',
-  'COLLECT','RETENTION_PROBE','UNINSTALL','CLEANUP_VERIFY','FINALIZE')
+  'COLLECT','RETENTION_PROBE','UNINSTALL','UNINSTALL_EXIT','UNINSTALL_SELF_CLEANUP','UNINSTALL_SELF_CLEANUP_TIMEOUT',
+  'CLEANUP_VERIFY','CLEANUP_READ_PROGRAM_ROOT','CLEANUP_PROGRAM_ROOT','CLEANUP_READ_UNINSTALL_REGISTRATION',
+  'CLEANUP_UNINSTALL_REGISTRATION','CLEANUP_READ_DESKTOP_SHORTCUT','CLEANUP_DESKTOP_SHORTCUT',
+  'CLEANUP_READ_START_MENU_SHORTCUT','CLEANUP_START_MENU_SHORTCUT','CLEANUP_READ_BINDING_RETAINED',
+  'CLEANUP_BINDING_RETAINED','CLEANUP_READ_INSTANCE_RETAINED','CLEANUP_INSTANCE_RETAINED',
+  'CLEANUP_READ_PROBE_RETAINED','CLEANUP_PROBE_RETAINED','CLEANUP_BINDING_REMOVE',
+  'CLEANUP_READ_BINDING_AFTER_HARNESS','CLEANUP_INSTANCE_REMOVE','CLEANUP_READ_INSTANCE_AFTER_HARNESS',
+  'CLEANUP_PAYLOAD_REMOVE','CLEANUP_READ_PAYLOAD_AFTER_HARNESS','CLEANUP_FINAL_STATE','CLEANUP_EVIDENCE_WRITE','FINALIZE')
 $taskPhase='HOSTED_PREFLIGHT'
 $taskWork='C:\KSESSION-B45-BETA2-IDENTITY-WORK'
 $taskExtract=Join-Path $taskWork 'artifact'
@@ -34,6 +41,7 @@ $taskToken=$env:GITHUB_TOKEN
 $taskInstalled=$false
 $taskFinalized=$false
 $taskWorkCreated=$false
+$taskUninstallSelfCleanupTimeoutMilliseconds=25000
 $taskDesktop=[Environment]::GetFolderPath('Desktop','DoNotVerify')
 $taskPrograms=[Environment]::GetFolderPath('Programs','DoNotVerify')
 $taskDesktopLink=Join-Path $taskDesktop 'K⁺-SESSION.lnk'
@@ -97,10 +105,11 @@ function Read-Snapshot{
   @{registrations=$registrations;bindings=$bindings}
 }
 function Count-Subkey([string]$Subkey){
-  $present=$false
-  foreach($view in @('64','32')){$base=Open-Hkcu $view;try{$key=$base.OpenSubKey($Subkey,$false);if($null-ne$key){$present=$true;$key.Dispose()}}finally{$base.Dispose()}}
-  if($present){1}else{0}
+  $observations=@()
+  foreach($view in @('64','32')){$base=Open-Hkcu $view;try{$key=$base.OpenSubKey($Subkey,$false);$present=$null-ne$key;if($present){$key.Dispose()};$observations+=,$present}finally{$base.Dispose()}}
+  Get-LogicalSubkeyCount $observations
 }
+function Get-LogicalSubkeyCount([bool[]]$Present){if(@($Present|Where-Object{$_}).Count-gt 0){1}else{0}}
 function Count-MachineSubkey([string]$Subkey){
   $count=0
   foreach($view in @('64','32')){$base=Open-Hklm $view;try{$key=$base.OpenSubKey($Subkey,$false);if($null-ne$key){$count++;$key.Dispose()}}finally{$base.Dispose()}}
@@ -147,9 +156,19 @@ function Invoke-SetupAndWait([string]$FileName,[string]$InstallRoot,[string]$Ins
 function Wait-UninstallerCleanup([string]$Path){
   $expected=[IO.Path]::GetFullPath((Join-Path $taskInstall 'uninstall\unins000.exe'))
   if(![IO.Path]::GetFullPath($Path).Equals($expected,[StringComparison]::OrdinalIgnoreCase)){throw 'UNINSTALLER_SCOPE'}
-  $deadline=[DateTime]::UtcNow.AddSeconds(25)
+  $deadline=[DateTime]::UtcNow.AddMilliseconds($taskUninstallSelfCleanupTimeoutMilliseconds)
   while(Test-Path -LiteralPath $Path){if([DateTime]::UtcNow-ge$deadline){return $false};Start-Sleep -Milliseconds 100}
   $true
+}
+function Get-RemainingPayloadCount([string[]]$Paths){@($Paths|Where-Object{Test-Path -LiteralPath $_}).Count}
+function Assert-UninstallContract($State){
+  if($State.programAfter){Set-TaskPhase 'CLEANUP_PROGRAM_ROOT';throw 'UNINSTALL_CONTRACT_FAILED'}
+  if($State.registrationAfter-ne 0){Set-TaskPhase 'CLEANUP_UNINSTALL_REGISTRATION';throw 'UNINSTALL_CONTRACT_FAILED'}
+  if($State.desktopAfter){Set-TaskPhase 'CLEANUP_DESKTOP_SHORTCUT';throw 'UNINSTALL_CONTRACT_FAILED'}
+  if($State.programsAfter){Set-TaskPhase 'CLEANUP_START_MENU_SHORTCUT';throw 'UNINSTALL_CONTRACT_FAILED'}
+  if($State.bindingAfter-ne 1){Set-TaskPhase 'CLEANUP_BINDING_RETAINED';throw 'UNINSTALL_CONTRACT_FAILED'}
+  if(!$State.instanceAfter){Set-TaskPhase 'CLEANUP_INSTANCE_RETAINED';throw 'UNINSTALL_CONTRACT_FAILED'}
+  if(!$State.probeAfter){Set-TaskPhase 'CLEANUP_PROBE_RETAINED';throw 'UNINSTALL_CONTRACT_FAILED'}
 }
 function Clear-ChildAuthenticationEnvironment{
   foreach($name in @('GITHUB_TOKEN','GH_TOKEN','GITHUB_PAT','ACTIONS_RUNTIME_TOKEN','ACTIONS_ID_TOKEN_REQUEST_TOKEN','SYSTEM_ACCESSTOKEN')){
@@ -225,25 +244,43 @@ try{
   Set-TaskPhase 'RETENTION_PROBE'
   $probeBytes=[Text.UTF8Encoding]::new($false).GetBytes('KSESSION-B45-SYNTHETIC-RETENTION-PROBE')
   [IO.File]::WriteAllBytes($taskProbe,$probeBytes);$probeHash=(Get-FileHash -LiteralPath $taskProbe -Algorithm SHA256).Hash
-  Set-TaskPhase 'UNINSTALL'
+  Set-TaskPhase 'UNINSTALL_EXIT'
   $uninstaller=Join-Path $taskInstall 'uninstall\unins000.exe'
   $process=Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -Wait -PassThru -WindowStyle Hidden
   try{$uninstallExit=$process.ExitCode}finally{$process.Dispose()}
-  if($uninstallExit-ne 0 -or !(Wait-UninstallerCleanup $uninstaller)){throw 'UNINSTALL_FAILED'};$taskInstalled=$false
-  Set-TaskPhase 'CLEANUP_VERIFY'
-  $programAfter=Test-Path -LiteralPath $taskInstall;$registrationAfter=Count-Subkey $taskProductSubkey
-  $desktopAfter=Test-Path -LiteralPath $taskDesktopLink;$programsAfter=Test-Path -LiteralPath $taskProgramsLink
-  $bindingAfter=Count-Subkey $taskBindingSubkey;$instanceAfter=Test-Path -LiteralPath $taskInstance
+  if($uninstallExit-ne 0){throw 'UNINSTALL_FAILED'}
+  Set-TaskPhase 'UNINSTALL_SELF_CLEANUP'
+  if(!(Wait-UninstallerCleanup $uninstaller)){Set-TaskPhase 'UNINSTALL_SELF_CLEANUP_TIMEOUT';throw 'UNINSTALL_FAILED'}
+  $taskInstalled=$false
+  Set-TaskPhase 'CLEANUP_READ_PROGRAM_ROOT';$programAfter=Test-Path -LiteralPath $taskInstall
+  Set-TaskPhase 'CLEANUP_READ_UNINSTALL_REGISTRATION';$registrationAfter=Count-Subkey $taskProductSubkey
+  Set-TaskPhase 'CLEANUP_READ_DESKTOP_SHORTCUT';$desktopAfter=Test-Path -LiteralPath $taskDesktopLink
+  Set-TaskPhase 'CLEANUP_READ_START_MENU_SHORTCUT';$programsAfter=Test-Path -LiteralPath $taskProgramsLink
+  Set-TaskPhase 'CLEANUP_READ_BINDING_RETAINED';$bindingAfter=Count-Subkey $taskBindingSubkey
+  Set-TaskPhase 'CLEANUP_READ_INSTANCE_RETAINED';$instanceAfter=Test-Path -LiteralPath $taskInstance
+  Set-TaskPhase 'CLEANUP_READ_PROBE_RETAINED'
   $probeAfter=$instanceAfter -and (Test-Path -LiteralPath $taskProbe) -and
     ((Get-FileHash -LiteralPath $taskProbe -Algorithm SHA256).Hash -ceq $probeHash)
-  if($programAfter -or $registrationAfter-ne 0 -or $desktopAfter -or $programsAfter -or
-     $bindingAfter-ne 1 -or !$instanceAfter -or !$probeAfter){throw 'UNINSTALL_CONTRACT_FAILED'}
+  Assert-UninstallContract @{programAfter=$programAfter;registrationAfter=$registrationAfter;desktopAfter=$desktopAfter;
+    programsAfter=$programsAfter;bindingAfter=$bindingAfter;instanceAfter=$instanceAfter;probeAfter=$probeAfter}
+  Set-TaskPhase 'CLEANUP_BINDING_REMOVE'
   Remove-OwnedBinding
+  Set-TaskPhase 'CLEANUP_READ_BINDING_AFTER_HARNESS';$bindingAfterHarness=Count-Subkey $taskBindingSubkey
+  if($bindingAfterHarness-ne 0){Set-TaskPhase 'CLEANUP_BINDING_REMOVE';throw 'BINDING_REMOVE_FAILED'}
+  Set-TaskPhase 'CLEANUP_INSTANCE_REMOVE'
   Assert-TaskPath $taskInstance;Remove-Item -LiteralPath $taskInstance -Recurse -Force
+  Set-TaskPhase 'CLEANUP_READ_INSTANCE_AFTER_HARNESS';$instanceAfterHarness=Test-Path -LiteralPath $taskInstance
+  if($instanceAfterHarness){Set-TaskPhase 'CLEANUP_INSTANCE_REMOVE';throw 'INSTANCE_REMOVE_FAILED'}
+  Set-TaskPhase 'CLEANUP_PAYLOAD_REMOVE'
   foreach($owned in @($taskExtract,$taskZip,$taskInstall,$taskLog,$taskStdout,$taskStderr,$taskSnapshotRaw,$taskSnapshot)){
     if(Test-Path -LiteralPath $owned){Assert-TaskPath $owned;Remove-Item -LiteralPath $owned -Recurse -Force}
   }
-  $cleanup=@{uninstallerExitCode=$uninstallExit;programRootExistsAfterUninstall=$programAfter;uninstallRegistrationCountAfterUninstall=$registrationAfter;desktopShortcutExistsAfterUninstall=$desktopAfter;startMenuShortcutExistsAfterUninstall=$programsAfter;bindingRetainedAfterUninstall=($bindingAfter -eq 1);instanceRetainedAfterUninstall=$instanceAfter;retentionProbeUnchangedAfterUninstall=$probeAfter;bindingRegistrationCountAfterHarnessCleanup=(Count-Subkey $taskBindingSubkey);instanceExistsAfterHarnessCleanup=(Test-Path -LiteralPath $taskInstance);temporaryPayloadRemoved=(@($taskExtract,$taskZip,$taskInstall,$taskLog,$taskStdout,$taskStderr,$taskSnapshotRaw,$taskSnapshot)|Where-Object{Test-Path -LiteralPath $_}).Count -eq 0}
+  Set-TaskPhase 'CLEANUP_READ_PAYLOAD_AFTER_HARNESS'
+  $payloadRemoved=(Get-RemainingPayloadCount @($taskExtract,$taskZip,$taskInstall,$taskLog,$taskStdout,$taskStderr,$taskSnapshotRaw,$taskSnapshot))-eq 0
+  if(!$payloadRemoved){Set-TaskPhase 'CLEANUP_PAYLOAD_REMOVE';throw 'PAYLOAD_REMOVE_FAILED'}
+  Set-TaskPhase 'CLEANUP_FINAL_STATE'
+  $cleanup=@{uninstallerExitCode=$uninstallExit;programRootExistsAfterUninstall=$programAfter;uninstallRegistrationCountAfterUninstall=$registrationAfter;desktopShortcutExistsAfterUninstall=$desktopAfter;startMenuShortcutExistsAfterUninstall=$programsAfter;bindingRetainedAfterUninstall=($bindingAfter -eq 1);instanceRetainedAfterUninstall=$instanceAfter;retentionProbeUnchangedAfterUninstall=$probeAfter;bindingRegistrationCountAfterHarnessCleanup=$bindingAfterHarness;instanceExistsAfterHarnessCleanup=$instanceAfterHarness;temporaryPayloadRemoved=$payloadRemoved}
+  Set-TaskPhase 'CLEANUP_EVIDENCE_WRITE'
   Write-PrivateJson $taskCleanup $cleanup
   Set-TaskPhase 'FINALIZE'
   Invoke-Node @('finalize','--draft',$taskDraft,'--cleanup',$taskCleanup,'--output',$taskEvidence)

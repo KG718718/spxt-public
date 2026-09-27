@@ -157,6 +157,11 @@ test('run report exposes only fixed stage and reason', () => {
     source: {repository: api.REPOSITORY, runId: api.RUN_ID, artifactId: api.ARTIFACT_ID,
       headSha: api.SOURCE_COMMIT}, testedCommit: tested});
   assert.equal(api.validateRunReport(api.createRunReport('PASS', 'FINALIZE', tested)).reason, 'CAPTURED');
+  assert.equal(api.validateRunReport(api.createRunReport('BLOCKED', 'CLEANUP_PAYLOAD_REMOVE', tested)).reason,
+    'BLOCKED_CLEANUP_PAYLOAD_REMOVE');
+  const invoke = fs.readFileSync(path.resolve(__dirname, '../../../windows-installer/beta2-identity/invoke.ps1'), 'utf8');
+  const invokedStages = new Set([...invoke.matchAll(/Set-TaskPhase '([^']+)'/g)].map(match => match[1]));
+  for (const stage of invokedStages) assert.equal(api.createRunReport('BLOCKED', stage, tested).stage, stage);
   expect('REPORT_INVALID', () => api.createRunReport('PASS', 'COLLECT', tested));
   const earlyPass = api.createRunReport('BLOCKED', 'COLLECT', tested);
   earlyPass.status = 'PASS'; earlyPass.reason = 'CAPTURED';
