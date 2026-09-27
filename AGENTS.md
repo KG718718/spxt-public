@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前有限授权｜2026-09-27 原生网络发现可行性门槛
+
+网页版批准 Route B **仅原生 Windows API/COM 可行性**，见 `docs/tasks/windows-installer-v1.1/batch-4.5/NATIVE-DISCOVERY-FEASIBILITY-APPROVAL.md`。仅 B45-T6 一个 Execution/一个任务 worktree，GPT-6 Sol/Medium；零 Hosted/Actions/Final Full/QA，最多一次真实 Win10 只读 research PoC，须先源码、F01—F15、go test/vet/build 和 Master Review。生产（含现有 Utility 行）、manifest/Setup/rollback/业务全部冻结；研究不得打包。PASS/PARTIAL/FAIL 均回网页版决定，不能自动实施；Batch 4.5 仍 `BLOCKED — PRODUCTION DISCOVERY P02 FAILED`。下方架构评审停点是本次授权前状态。
+
 ## 当前只读架构评审｜2026-09-27 生产网络发现路线
 
 网页版仅批准比较 PowerShell 封闭成功协议、Windows 原生只读 helper 和继续冻结。Master 已完成源码/微软官方 API 的只读评审，见 `docs/tasks/windows-installer-v1.1/batch-4.5/NETWORK-DISCOVERY-ARCHITECTURE-REVIEW.md` 与 `NETWORK-DISCOVERY-ARCHITECTURE-DECISION.md`。工程有条件建议先验证原生 API/COM 可行性，**不是实施授权**；本轮不得改生产、撤销 Utility 行、运行测试/实机/Hosted/Actions/Final Full/QA。唯一真实 Win10 proof 仍 P01 PASS、P02 FAIL / `DISCOVERY_COMMAND_FAILED`，P03—P08 未到达；Final Full0/1、Final QA0/1 未用，无 beta.3 最终 Artifact。当前 `BLOCKED — PRODUCTION DISCOVERY P02 FAILED`，等待网页版选择路线和下一轮范围。下方 Utility 修复后止损为本评审的事实基线。

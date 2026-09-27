@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前：B45-T6 原生可行性门槛获批｜2026-09-27
+
+网页版批准 Route B 有界 research：唯一新任务 `B45-T6-NATIVE-FEASIBILITY`，原 T1—T5/QA 历史不改。仅一个 Execution/一个任务 worktree、GPT-6 Sol/Medium、零 Hosted/Actions/Final Full/QA；唯一实机只读 PoC 必须等 F01—F15、go test/vet/build 与 Master Review 后单独放行。执行任务创建请求已提交，正式 thread/worktree/branch 和状态待工具返回后登记；不得重复创建。源基线公开 `b00749acee445d0a81b90748df851f1190a33cf0`。生产、Utility 行、Setup/manifest/rollback 冻结；Batch 仍 P02 FAIL/BLOCKED。批准全文 `NATIVE-DISCOVERY-FEASIBILITY-APPROVAL.md`。
+
 ## 当前只读路线评审完成，待网页版决定｜2026-09-27
 
 唯一 Master `01a0db0e-c950-79e0-8e11-07155e0742f2` 依最新第0—16节批准，仅阅读公开源码和微软官方 API 资料，完成 `NETWORK-DISCOVERY-ARCHITECTURE-REVIEW.md` 与 `NETWORK-DISCOVERY-ARCHITECTURE-DECISION.md`。原 T5 和 QA 继续冻结；无新 Execution/测试/实机/Hosted/Actions。工程有条件建议先证明原生 helper 的 NLM COM、普通用户权限、安全 DLL 和现有筛选语义；不得直接实施。当前 P01 PASS、P02 FAIL/`DISCOVERY_COMMAND_FAILED`、P03—P08 NOT_REACHED，生产 Utility 一行及 stderr fail-closed 均未改；Final Full0/1、Final QA0/1。Batch 仍 BLOCKED，无 beta.3 最终 Artifact，待网页版在 A/B/C 中选择并给下一轮范围。下方原 P02 止损是本评审的事实基线。

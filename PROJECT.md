@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 4.5 当前有限授权｜2026-09-27 Native feasibility
+
+网页版批准 B，但仅准一个 Execution/工作树验证 IP Helper + NLM COM 原生只读发现可行性；不准生产、Launcher/Setup/Runtime 接入。零 Hosted/Actions/Final Full/QA，最多一次真实 Win10 research PoC，须先合成门禁与 Master Review。详见 `docs/tasks/windows-installer-v1.1/batch-4.5/NATIVE-DISCOVERY-FEASIBILITY-APPROVAL.md`。原生产 P02 FAIL、P03—P08 未到达，Batch 4.5 仍 BLOCKED；前次架构评审报告与结论为本次授权的基线。
+
 ## Batch 4.5 当前停点｜2026-09-27 网络发现架构只读评审
 
 生产 discovery 唯一真实 Win10 proof 仍 P02 FAIL / `DISCOVERY_COMMAND_FAILED`；P03—P08 未到达。网页版批准的本轮仅做 Route A PowerShell 封闭协议、Route B 原生 Windows 只读 helper、Route C 冻结的源码和官方资料评审。报告及决策卡见 `docs/tasks/windows-installer-v1.1/batch-4.5/NETWORK-DISCOVERY-ARCHITECTURE-REVIEW.md`、`NETWORK-DISCOVERY-ARCHITECTURE-DECISION.md`。未改生产/Utility 行，未运行测试、实机、Hosted 或 Actions；Final Full0/1、Final QA0/1。工程有条件建议先验证 B 的 API/COM/普通用户可行性，待网页版决定，Batch 4.5 仍 BLOCKED，无 beta.3 最终 Artifact。
