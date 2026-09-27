@@ -9,6 +9,7 @@ const test = require('node:test');
 const identity = require('../../../windows-installer/beta3-upgrade/identity.cjs');
 const {buildBundle} = require('../../../windows-installer/beta3-upgrade/trusted-identity.cjs');
 const harness = require('./prepare-hosted-harness.cjs');
+const expectedGoTests = require('../../lan-host/expected-go-tests.cjs');
 
 const repo = path.resolve(__dirname, '../../../..');
 const evidence = JSON.parse(fs.readFileSync(path.join(repo,
@@ -210,4 +211,14 @@ test('fixed Go JSON reporter rejects missing, failed, skipped, or unexpected tes
   assert.notEqual(run('missing',pass,['TestOne','TestTwo']).status,0);
   assert.notEqual(run('skip',[{Action:'skip',Test:'TestOne'},{Action:'pass'}],['TestOne']).status,0);
   assert.notEqual(run('unexpected',[...pass.slice(0,-1),{Action:'pass',Test:'TestTwo'},{Action:'pass'}],['TestOne']).status,0);
+});
+
+test('fixed Go policies cover the exact Launcher build group and every firewall top-level test', () => {
+  const launcherBuild=fs.readFileSync(path.join(repo,'tools/windows-launcher/build.ps1'),'utf8');
+  const group=launcherBuild.match(/-run 'Test\(([^']+)\)\$'/);
+  assert.ok(group);assert.deepEqual(expectedGoTests.LAUNCHER,group[1].split('|').map(name=>'Test'+name));
+  const firewallDir=path.join(repo,'tools/windows-firewall');
+  const firewallNames=fs.readdirSync(firewallDir).filter(name=>name.endsWith('_test.go')).flatMap(name=>
+    [...fs.readFileSync(path.join(firewallDir,name),'utf8').matchAll(/^func (Test\w+)\(/gm)].map(match=>match[1]));
+  assert.deepEqual([...expectedGoTests.FIREWALL].sort(),firewallNames.sort());
 });

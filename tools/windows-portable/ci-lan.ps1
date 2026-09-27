@@ -46,10 +46,9 @@ $taskHelper=Join-Path $taskWork 'firewall-helper-output'
 & (Join-Path $taskRepo 'tools/windows-firewall/build.ps1') -OutputDir $taskHelper -SourceCommit $Commit `
   -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.3' -GoExe $taskGo
 if($LASTEXITCODE -ne 0){throw 'Firewall helper build failed'}
-$taskFirewallTests=@('TestRequestWhitelistAndCanonicalGUID','TestStrictDeploymentConfig','TestStrictDeploymentConfigExactKeyCorpus','TestInstallIdentityAndTampering',
-  'TestReparseResolutionMismatchIsRejected','TestCleanPathComparisonRejectsLexicalAliases','TestBoundConfigMustMatchRequest',
-  'TestRegistrationAndINIContracts','TestRuleOwnershipAndIdempotencyPolicy','TestEmbeddedFirewallScriptIsClosed',
-  'TestEmbeddedFirewallScriptParses','TestStatusOutputAllowlist','TestFirewallScriptBehaviorWithIsolatedCmdletHarness')
+$taskGoTestPolicy=Join-Path $taskRepo 'tools/tests/lan-host/expected-go-tests.cjs'
+$taskFirewallTests=@(& $taskNode $taskGoTestPolicy 'FIREWALL'|ConvertFrom-Json)
+if($LASTEXITCODE -ne 0){throw 'Fixed firewall test policy failed'}
 $taskFirewallRaw=Join-Path $taskWork 'firewall-tests.jsonl';$taskFirewallReport=Join-Path $taskWork 'firewall-unit-report.json'
 Push-Location (Join-Path $taskRepo 'tools/windows-firewall')
 try{
@@ -62,18 +61,8 @@ $taskLauncher=Join-Path $taskWork 'launcher-output'
 & (Join-Path $taskRepo 'tools/windows-launcher/build.ps1') -RuntimeRoot $taskRoot -OutputDir $taskLauncher `
   -SourceCommit $Commit -FirewallHelperSha256 $taskHelperHash -GoExe $taskGo
 if($LASTEXITCODE -ne 0){throw 'LAN Launcher build failed'}
-$taskLauncherUnitTests=@(
-  'TestRelativePathSafety','TestEnvironmentAllowlist','TestInstanceOutsidePackage','TestRuntimeMissing',
-  'TestJobOwnsOnlyChild','TestInstallDataSafety','TestLANReadyRequiresEveryGate','TestFixedServerStatusesMapToProductStates',
-  'TestCandidateAndJSONAreStrict','TestEnvironmentLANModeIsExplicitAndAllowlisted',
-  'TestExactListenerOwnershipRejectsWildcardThirdNICPortAndPIDImpersonationRows','TestCopyURLSourceIsOnlyCurrentPrivateEndpoint',
-  'TestPersistedPortNeverSilentlyFallsThroughRange','TestFirewallHelperFixedHashBeforeElevation',
-  'TestFirewallHelperAbsentHashKeepsHistoricalLocalMode','TestFirewallEnvironmentFailureIsFailClosed',
-  'TestUACRejectionDoesNotStopLocalChildOrRetry','TestLANSettingsTransitionDoesNotBlockUIThread',
-  'TestTransitionStartFailureRestoresOldConfigAndService','TestFirstTransitionStartFailureKeepsDeterminedPort',
-  'TestTransitionRejectsUnexpectedFallbackPort','TestFailedRefreshRevokesStaleCopyURL',
-  'TestStrictLocalStatusAndActualPIDSocketOwnership'
-)
+$taskLauncherUnitTests=@(& $taskNode $taskGoTestPolicy 'LAUNCHER'|ConvertFrom-Json)
+if($LASTEXITCODE -ne 0){throw 'Fixed Launcher test policy failed'}
 $taskLauncherRaw=Join-Path $taskWork 'launcher-tests.jsonl';$taskLauncherReport=Join-Path $taskWork 'launcher-unit-report.json'
 Push-Location (Join-Path $taskRepo 'tools/windows-launcher')
 try{

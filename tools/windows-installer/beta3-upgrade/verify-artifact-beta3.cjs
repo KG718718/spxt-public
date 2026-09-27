@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {sha,inventory}=require('../../windows-runtime/common.cjs');
+const {FIREWALL:firewallUnitExpected,LAUNCHER:launcherUnitExpected}=require('../../tests/lan-host/expected-go-tests.cjs');
 const [root,commit]=process.argv.slice(2);
 const names=['K-SESSION-Setup-1.1.0-beta.3.exe','K-SESSION-Setup-1.1.0-beta.3.exe.sha256','build-info.json',
  'installer-manifest.json','LICENSE-Inno-Setup.txt','license-summary.json','portable-test-report.json',
@@ -30,8 +31,8 @@ assert.equal(compatibility.onlineArtifactRequiredAtRuntime,false);
 for(let n=1;n<=15;n++)assert.equal(compatibility.checks['C'+String(n).padStart(2,'0')]?.status,'PASS');
 const portable=json('portable-test-report.json');assert.equal(portable.status,'PASS');assert.equal(portable.sourceCommit,commit);
 for(const phase of ['staging','extracted']){assert.equal(portable[phase]?.status,'PASS');assert.equal(portable[phase]?.sourceCommit,commit);assert.equal(portable[phase]?.checks?.length,27);}
-assert.equal(portable.firewallUnit?.status,'PASS');assert.equal(portable.firewallUnit?.pass,13);assert.equal(portable.firewallUnit?.fail,0);assert.equal(portable.firewallUnit?.skipped,0);
-assert.equal(portable.launcherUnit?.status,'PASS');assert.ok(portable.launcherUnit?.pass>0);assert.equal(portable.launcherUnit?.fail,0);assert.equal(portable.launcherUnit?.skipped,0);
+assert.equal(portable.firewallUnit?.status,'PASS');assert.deepEqual(portable.firewallUnit?.expectedTests,firewallUnitExpected);assert.equal(portable.firewallUnit?.pass,firewallUnitExpected.length);assert.equal(portable.firewallUnit?.fail,0);assert.equal(portable.firewallUnit?.skipped,0);
+assert.equal(portable.launcherUnit?.status,'PASS');assert.deepEqual(portable.launcherUnit?.expectedTests,launcherUnitExpected);assert.equal(portable.launcherUnit?.pass,launcherUnitExpected.length);assert.equal(portable.launcherUnit?.fail,0);assert.equal(portable.launcherUnit?.skipped,0);
 const regression=json('public-regression.json');
 assert.equal(regression.sourceCommit,commit);assert.equal(regression.testTotal,742);assert.equal(regression.fail,0);assert.equal(regression.skipped,0);assert.equal(regression.suitePass,26);
 const setup=json('BETA3-INSTALLER-TEST-REPORT.json');
