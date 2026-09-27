@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
+const {execFileSync} = require('node:child_process');
 const networkDefault = require('../../../public-lan-network');
 const serverDefault = require('../../../public-lan-server');
 
@@ -14,7 +15,8 @@ const STAGES = Object.freeze([
   'CONTROLLER_HEALTH', 'CONTROLLER_CLOSE', 'REPORT_WRITE', 'COMPLETE', 'INTERNAL'
 ]);
 const REASONS = Object.freeze([
-  'CONTEXT_REQUIRED', 'OUTPUT_ARGUMENT_INVALID', 'OUTPUT_EXISTS', 'PRODUCTION_DISCOVERY_ACCEPTED',
+  'CONTEXT_REQUIRED', 'SOURCE_COMMIT_UNAVAILABLE', 'SOURCE_COMMIT_MISMATCH',
+  'OUTPUT_ARGUMENT_INVALID', 'OUTPUT_EXISTS', 'PRODUCTION_DISCOVERY_ACCEPTED',
   'PRODUCTION_DISCOVERY_INVALID', 'SYNTHETIC_DISCOVERY_FAILED', 'ENUMERATION_FAILED',
   'ZERO_RUNNER_CANDIDATES', 'MULTIPLE_RUNNER_CANDIDATES', 'SUBNET_INVALID',
   'CONTROLLER_CREATE_FAILED', 'LOOPBACK_BIND_FAILED', 'LAN_BIND_FAILED',
@@ -23,7 +25,8 @@ const REASONS = Object.freeze([
   'PASS', 'INTERNAL'
 ]);
 const STAGE_REASONS = Object.freeze({
-  HOSTED_CONTEXT: ['CONTEXT_REQUIRED'], OUTPUT_PRECHECK: ['OUTPUT_ARGUMENT_INVALID', 'OUTPUT_EXISTS'],
+  HOSTED_CONTEXT: ['CONTEXT_REQUIRED', 'SOURCE_COMMIT_UNAVAILABLE', 'SOURCE_COMMIT_MISMATCH'],
+  OUTPUT_PRECHECK: ['OUTPUT_ARGUMENT_INVALID', 'OUTPUT_EXISTS'],
   PRODUCTION_DISCOVERY_REJECT: ['PRODUCTION_DISCOVERY_ACCEPTED', 'PRODUCTION_DISCOVERY_INVALID'],
   SYNTHETIC_DISCOVERY: ['SYNTHETIC_DISCOVERY_FAILED'], RUNNER_ADDRESS_ENUMERATION: ['ENUMERATION_FAILED'],
   RUNNER_ADDRESS_CARDINALITY: ['ZERO_RUNNER_CANDIDATES', 'MULTIPLE_RUNNER_CANDIDATES'],
@@ -195,6 +198,8 @@ function defaultDependencies() {
     platform: process.platform, env: process.env, fs, path, network: networkDefault,
     networkInterfaces: os.networkInterfaces, createLanHostController: serverDefault.createLanHostController,
     STATUS: serverDefault.STATUS, reservePersistedPort: networkDefault.reservePersistedPort,
+    readCheckoutCommit: () => execFileSync('git', ['-C', path.resolve(__dirname, '../../..'), 'rev-parse', 'HEAD'],
+      {encoding: 'utf8', windowsHide: true, timeout: 10000}).trim(),
     httpProbe, ports: Array.from({length: networkDefault.PORT_MAX - networkDefault.PORT_MIN + 1}, (_, index) => networkDefault.PORT_MIN + index),
     stdout: process.stdout
   };
@@ -207,6 +212,11 @@ async function executeGate(report, supplied = {}) {
       env.GITHUB_REPOSITORY !== 'KG718718/spxt-public' || !/^[a-f0-9]{40}$/i.test(String(env.GITHUB_SHA || ''))) {
     throw failure('HOSTED_CONTEXT', 'CONTEXT_REQUIRED');
   }
+  let checkoutCommit;
+  try { checkoutCommit = String(deps.readCheckoutCommit()).trim().toLowerCase(); }
+  catch { throw failure('HOSTED_CONTEXT', 'SOURCE_COMMIT_UNAVAILABLE'); }
+  if (!/^[a-f0-9]{40}$/.test(checkoutCommit)) throw failure('HOSTED_CONTEXT', 'SOURCE_COMMIT_UNAVAILABLE');
+  if (checkoutCommit !== env.GITHUB_SHA.toLowerCase()) throw failure('HOSTED_CONTEXT', 'SOURCE_COMMIT_MISMATCH');
 
   let actual;
   try { actual = deps.network.discoverWindowsLan(); }

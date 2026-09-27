@@ -61,6 +61,7 @@ function defaults(overrides = {}) {
     createLanHostController: server.createLanHostController,
     STATUS: server.STATUS,
     reservePersistedPort: reserve(),
+    readCheckoutCommit: () => commit,
     controllerOptions: {probe: async () => true, createHttpServer: handler => new FakeServer(handler)},
     httpProbe: async () => 200,
     ports: [8080],
@@ -213,6 +214,16 @@ test('hosted context and output precheck remain separate fixed stages', async ()
   assert.equal(output.report.reason, 'OUTPUT_ARGUMENT_INVALID');
 });
 
+test('checkout mismatch writes a fixed failure and can never upload fake PASS', async () => {
+  const result = await run({readCheckoutCommit: () => 'b'.repeat(40)});
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.report.status, 'FAIL');
+  assert.equal(result.report.stage, 'HOSTED_CONTEXT');
+  assert.equal(result.report.reason, 'SOURCE_COMMIT_MISMATCH');
+  assert.equal(result.report.sourceCommit, commit);
+  assert.equal(result.report.dualBindReady, false);
+});
+
 test('enumeration, controller creation, mixed range, and report write fail with fixed stages', async () => {
   const enumeration = await run({networkInterfaces() { throw Error('raw'); }});
   assert.equal(enumeration.report.stage, 'RUNNER_ADDRESS_ENUMERATION');
@@ -240,6 +251,8 @@ test('manual workflow exposes only the read-only hosted diagnostic and fixed JSO
   assert.match(hostedJob, /inputs\.mode == 'lan-hosted-diagnostic'/);
   assert.match(hostedJob, /permissions:\s*\r?\n\s*contents: read/);
   assert.match(hostedJob, /hosted-gate\.cjs[^\r\n]+KSESSION_HOSTED_LAN_REPORT/);
+  assert.match(hostedJob, /git rev-parse HEAD/);
+  assert.match(hostedJob, /taskSourceMatches/);
   assert.match(hostedJob, /hosted-gate\.cjs verify-report[^\r\n]+github\.sha/);
   assert.match(hostedJob, /path: \$\{\{ env\.KSESSION_HOSTED_LAN_REPORT \}\}/);
   assert.doesNotMatch(hostedJob, /uses: \.\/\.github\/workflows\/lan-host-v1\.1\.yml/);

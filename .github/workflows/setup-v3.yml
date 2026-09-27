@@ -359,10 +359,13 @@ jobs:
       - name: Isolated Hosted LAN fixed-stage gate
         shell: pwsh
         run: |
+          $taskHead=(git rev-parse HEAD).Trim()
+          $taskSourceMatches=$LASTEXITCODE -eq 0 -and $taskHead -ceq '${{ github.sha }}'
           node tools/tests/lan-host/hosted-gate.cjs $env:KSESSION_HOSTED_LAN_REPORT
           $taskExit=$LASTEXITCODE
           node tools/tests/lan-host/hosted-gate.cjs verify-report $env:KSESSION_HOSTED_LAN_REPORT '${{ github.sha }}'
           if($LASTEXITCODE -ne 0){throw 'Unsafe Hosted LAN diagnostic report'}
+          if(!$taskSourceMatches){throw 'Hosted LAN exact source mismatch'}
           if($taskExit -ne 0){throw 'Hosted LAN fixed-stage gate failed'}
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
