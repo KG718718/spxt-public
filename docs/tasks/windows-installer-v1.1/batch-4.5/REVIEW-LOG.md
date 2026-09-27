@@ -43,3 +43,10 @@
 - T1 R2/R3：递归token parser拒绝解码后重复键、未知字段及尾随值；仅配置层要求schema原始数字token为1、port为8080—8099规范十进制整数，通用parser仍保留标准JSON数字能力。Master18/18 fail0skip0，非法load/save保持原配置、合成业务及附件逐字节不变。
 - T4 R2：自有CIM rule object确认后立即承担cleanup责任，覆盖既有精确规则的早期Profile/ActiveStore查询异常；status/未知同名不写，正常幂等零写。R3补精确解码后字段集合，拒绝Go默认大小写匹配，整数解码继续拒绝小数/指数。Master13顶层29子用例及go vet PASS；原生产嵌入PS以隔离mock执行，未操作真实Firewall。
 - 集成HEAD b0e51b54744c944ce68a5730d9b8d279b72db9a0已远端核验；原QA FAIL保留，独立同bytes跨语言corpus与早期异常复验进行中，不能提前称QA PASS。
+
+## 早期复验闭合及T3/T5接线Review
+
+- QA主动返回4b9eae3，Master审查纯报告并整合d82a698：同13组JSON bytes的Node/Go结果一致，原精确enabled规则Profile/ActiveStore异常最后禁用，两个P2局部复验PASS。旧FAIL保留；这不是整个Batch QA PASS。
+- T3冻结前Review：保存端口冲突的start错误导致run关闭控制窗口，阻断LAN设置；LAN READY不能仅依赖T2启动时health缓存，须新鲜Host LAN self-probe；状态查询失败不能保留旧可复制URL；首次自动配置不能把自己Local占用8080误判为第三方冲突；需异步处理自己child的停启、严格字段、SELECTED非空与错误恢复。已交原T3补反例，尚未整合。
+- T5冻结前Review：独立beta3事务沿用beta1六文件元数据清单，并以wx新建install-state.json；真实beta2正常具有install-state.json，会在prepare被拒绝或commit遇EEXIST。原T5须严格验证beta2旧state与已核验身份/binding契约，快照精确bytes，受保护替换为beta3状态并在任意失败还原。合成fixture须符合beta2实际形状，不能把合法旧state当未知文件；旧beta1路径不动。此为已批准兼容路由工程适配，无新产品/schema决定。
+- Hosted虚拟NIC不得作为放宽生产发现的理由。隔离runner socket/NetSecurity证据、严格生产拒绝和合成选择算法应分开记录；L25真实第二设备等仍人工。当前专项3/4、Full0/2、QA0/2，未新dispatch。

@@ -11,7 +11,7 @@
 |B45-T3|01a0e035-3eca-7993-9db1-795373d92537|lan-launcher/codex/b45-t3|RUNNING @4b83380|T1/T2/T4均整合|
 |B45-T4|01a0e004-98a3-75b2-a2a1-3ffd0c6506c9|lan-firewall/codex/b45-t4|INTEGRATED b0e51b5 / 冻结aea2474|Master13+29、vet PASS；QA复验中|
 |B45-T5-INTEGRATION|同T5|b4-qa/codex/b45-t5-integration|RUNNING @0897383|精确F3已取证；T3并行独占Launcher|
-|B45-QA|01a0e03a-15c9-7833-af1c-c05a8eca2126|lan-qa/codex/b45-qa-r1|EARLY RETEST @b0e51b5|旧305344e FAIL历史保留；最终QA待候选|
+|B45-QA|01a0e03a-15c9-7833-af1c-c05a8eca2126|lan-qa/codex/b45-qa-r1|EARLY RETEST PASS / 4b9eae3整合d82a698|旧305344e FAIL历史保留；最终QA待候选|
 
 预算：专项3/4、Full0/2、QA0/2。身份取证计专项；不得运行无关Full。每次run前登记精确source/mode/budget，后记录result/Artifact，无修改不retry。
 
