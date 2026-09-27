@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前授权｜2026-09-27 完整受控Win10根因任务书
+
+网页版已用完整第0—31节任务书解除前次P02停止点的有限冻结；仅原B45-T5/原工作树先做R01—R10合成分类反例，Master Review后才做当前真实Win10只读production discovery定点诊断。根因未证明前不改生产；普通兼容修复仍须原T5执行、Master Review，随后唯一一次P01—P08真实proof全部PASS且privateCandidatePresent=true。H1/H2 2/2历史保持，不增H3/H4或等价Hosted诊断；Final Full0/1与Final QA0/1只在proof PASS后按序使用，FAIL即停。8.3额外环境能力缺失须双环境核实且不记PASS、不阻塞Batch；核心26/742仍fail0skip0。Master/T5普通工作GPT-6 Sol/Medium，最终独立QA Sol/High。唯一Master、public-source、codex/lan-host-v1.1不变；旧Master只读。无最终beta.3 Artifact或LAN人工验收。详见`docs/tasks/windows-installer-v1.1/batch-4.5/CONTROLLED-DISCOVERY-ROOT-CAUSE-APPROVAL.md`，下方P02 BLOCKED是本次有限授权前的历史状态。
+
 ## 当前最终停点｜2026-09-27 受控Win10 proof
 
 **BLOCKED — CONTROLLED WINDOWS PRODUCTION DISCOVERY FAILED**。真实Windows10 Pro x64 build19045上当前未改生产`public-lan-network.js`的`resolveSystemPowerShell()`成功，但首次`runWindowsDiscovery()`得到固定`NETWORK_DISCOVERY_FAILED`；P03—P08未到达。依用户《Final Cost-Controlled Validation Decision》第4节立即停止，不得进入阶段B、Hosted合成策略、Final Full或QA。本次Final Full0/1、QA Hosted0/1未用，QA2未授权；H1/H2历史2/2和不增H3/H4继续有效。原T5及T1—T4/QA冻结，等待网页版定点诊断/生产实现决定；无最终beta.3 Artifact。详见`docs/tasks/windows-installer-v1.1/batch-4.5/CONTROLLED-WINDOWS-PROOF-STOP-20260927.md`。以下受控续行授权仅保留历史证据，不允许自动跨越此停止点。

@@ -1,5 +1,9 @@
 # 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
+## 当前有限续行｜2026-09-27 完整受控Win10根因任务书
+
+正式批准原T5在同一工作树先完成R01—R10合成分类反例，Master Review后才做真实Win10一次只读production discovery根因诊断；未证实根因前不改生产。前次P01 PASS、P02 `NETWORK_DISCOVERY_FAILED`、P03—P08未到达仍是真实结果。H1/H2 2/2历史不变，不增H3/H4；Final Full0/1、Final QA0/1待真实proof全PASS且privateCandidatePresent=true后才用，失败即停。8.3额外环境能力缺失不是PASS，核心26/742仍零fail零skip。尚无最终beta.3 Artifact或LAN人工验收；详见`CONTROLLED-DISCOVERY-ROOT-CAUSE-APPROVAL.md`。下方停止结论为本次授权前历史。
+
 **BLOCKED — CONTROLLED WINDOWS PRODUCTION DISCOVERY FAILED**。真实Windows10 build19045，未改生产代码P01安全系统PowerShell确认PASS、P02实际`runWindowsDiscovery()`固定`NETWORK_DISCOVERY_FAILED`；P03—P08未到达。Master核验安全JSON、来源及生产源码blob；阶段A工具/证据已整合，原T5冻结。依用户第4节不进入阶段B/Final Full/QA；Final Full0/1、QA Hosted0/1未动，QA2不预授权。无beta.3最终Artifact；见`CONTROLLED-WINDOWS-PROOF-STOP-20260927.md`。下方续行状态为历史。
 
 # 当前受控验证阶段｜2026-09-27

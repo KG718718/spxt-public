@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前有限续行：受控Win10 discovery根因｜2026-09-27
+
+网页版完整第0—31节正式决定替代前次停止令。原T5 `01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`、`E:\CodexWorkspace\CodexWorktrees\b4-qa\public-source`、`codex/b45-t5-integration`、冻结local `c39cdaafa9cd8b25468009318cca4dabcd4ecb67`；准确回单Master `01a0db0e-c950-79e0-8e11-07155e0742f2`。当前仅DISPATCHED R01—R10合成分类反例；Master Review后独立派真实Win10只读诊断。生产blob `4e13e944472f845675fe73d176f063c4fe97f6ed`不改；P01 PASS、P02 FAIL、P03—P08 NOT REACHED保持历史事实。H1/H2 2/2耗尽，H3/H4及等价诊断禁止；Final Full0/1、Final QA0/1未启用。真正根因与最终candidate仍PENDING。8.3额外能力缺失双环境核实后可记ENVIRONMENT_CAPABILITY_NOT_AVAILABLE，不算PASS；核心26/742零fail零skip。模型Master/T5 Sol/Medium、最终QA Sol/High。完整任务书`CONTROLLED-DISCOVERY-ROOT-CAUSE-APPROVAL.md`，任务卡`tasks/B45-T5-WIN10-DISCOVERY-ROOT-CAUSE.md`。下方BLOCKED是本次有限续行前的历史停止点。
+
 ## 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
 **BLOCKED — CONTROLLED WINDOWS PRODUCTION DISCOVERY FAILED**。原T5主动BLOCKED回单，阶段A工具26d44ab、证据/RESULT c39cdaa，Master独立核验固定JSON、Git身份、生产网络blob三方相同，整合5b5de75/13caac8。实际Win10 build19045上P01=true；首次`runWindowsDiscovery()`固定`NETWORK_DISCOVERY_FAILED`，P02=false；P03—P08及实际private候选未测。依新版批准第4节停止，原T5再次冻结，T1—T4/QA维持冻结；无阶段B/Hosted/Final Full/QA。本轮Final Full0/1、QA Hosted0/1，QA2未授权；H1/H2历史2/2且无H3/H4。详见`CONTROLLED-WINDOWS-PROOF-STOP-20260927.md`与`evidence/controlled-windows-proof.json`。以下受控阶段和H2止损均为历史记录。

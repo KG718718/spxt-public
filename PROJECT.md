@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前授权｜2026-09-27 完整受控Win10根因任务书
+
+前次P02 `NETWORK_DISCOVERY_FAILED` 保持真实失败，P03—P08未到达。网页版第0—31节完整任务书仅解除原T5有限冻结：先R01—R10合成反例→Master Review→本机严格只读生产spawn/必要N01—N05诊断→经证实的最小普通修复→唯一真实P01—P08 proof。H3/H4及任何等价Hosted网络诊断禁止；Final Full0/1、Final QA0/1待proof PASS后才可启用，任一FAIL即停。8.3额外能力缺失经双环境核实可记环境不可用、不算PASS；核心26/742仍须零fail零skip。无beta.3最终Artifact，未到LAN人工验收。完整边界见`docs/tasks/windows-installer-v1.1/batch-4.5/CONTROLLED-DISCOVERY-ROOT-CAUSE-APPROVAL.md`；下方停止点是历史。
+
 ## 当前最终停点｜2026-09-27
 
 Batch4.5受控Win10只读production discovery proof固定FAIL：P01系统PowerShell安全路径PASS，P02实际命令`NETWORK_DISCOVERY_FAILED`，P03—P08未到达。按用户第4节立即停止阶段B/Final Full/QA，Final Full0/1、QA1 0/1未用，QA2未授权；H3/H4仍禁止。生产网络源码未修改，无beta.3最终Artifact或LAN人工验收。见`docs/tasks/windows-installer-v1.1/batch-4.5/CONTROLLED-WINDOWS-PROOF-STOP-20260927.md`。下方受控验证、H2止损等为历史状态。
