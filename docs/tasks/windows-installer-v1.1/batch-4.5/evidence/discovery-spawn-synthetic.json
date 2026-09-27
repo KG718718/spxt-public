@@ -1,0 +1,12 @@
+[
+  {"reason":"COMMAND_PASS","processResultPresent":true,"spawnError":false,"timedOut":false,"exitZero":true,"signalPresent":false,"stderrEmpty":true,"stdoutPresent":true,"jsonParseable":true},
+  {"reason":"SPAWN_FAILED","processResultPresent":true,"spawnError":true,"timedOut":false,"exitZero":false,"signalPresent":false,"stderrEmpty":true,"stdoutPresent":false,"jsonParseable":false},
+  {"reason":"TIMEOUT","processResultPresent":true,"spawnError":true,"timedOut":true,"exitZero":false,"signalPresent":true,"stderrEmpty":true,"stdoutPresent":false,"jsonParseable":false},
+  {"reason":"EXIT_NONZERO","processResultPresent":true,"spawnError":false,"timedOut":false,"exitZero":false,"signalPresent":false,"stderrEmpty":true,"stdoutPresent":true,"jsonParseable":true},
+  {"reason":"SIGNAL","processResultPresent":true,"spawnError":false,"timedOut":false,"exitZero":false,"signalPresent":true,"stderrEmpty":true,"stdoutPresent":false,"jsonParseable":false},
+  {"reason":"STDERR_NONEMPTY","processResultPresent":true,"spawnError":false,"timedOut":false,"exitZero":true,"signalPresent":false,"stderrEmpty":false,"stdoutPresent":true,"jsonParseable":true},
+  {"reason":"STDOUT_EMPTY","processResultPresent":true,"spawnError":false,"timedOut":false,"exitZero":true,"signalPresent":false,"stderrEmpty":true,"stdoutPresent":false,"jsonParseable":false},
+  {"reason":"JSON_INVALID","processResultPresent":true,"spawnError":false,"timedOut":false,"exitZero":true,"signalPresent":false,"stderrEmpty":true,"stdoutPresent":true,"jsonParseable":false},
+  {"reason":"SPAWN_FAILED","processResultPresent":false,"spawnError":false,"timedOut":false,"exitZero":false,"signalPresent":false,"stderrEmpty":false,"stdoutPresent":false,"jsonParseable":false},
+  {"reason":"INTERNAL","processResultPresent":false,"spawnError":false,"timedOut":false,"exitZero":false,"signalPresent":false,"stderrEmpty":false,"stdoutPresent":false,"jsonParseable":false}
+]
