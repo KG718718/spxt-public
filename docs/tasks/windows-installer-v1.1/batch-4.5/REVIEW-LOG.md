@@ -84,3 +84,9 @@ Master核验Run36288039798精确受测4f52e8759d8ddd20b2a9883fd267a98ced27fba1�
 ## D5实现3459a59：Master独立Review FAIL
 
 原T5代码冻结3459a5987f8aa77c5c26fc0efbbc04d45ba17950，生产5文件与原baseline逐字节一致。Master自有合成目录复测：环境分类13项PASS，兼容wrapper45/45 fail0skip0；真实build TESTS/TESTS_FAILED，12顶层PASS、9个Firewall隔离cmdlet行为子例及该顶层FAIL，compile未到达；driver ZERO的底层返回TESTS/INTERNAL，与期望TESTS_FAILED不一致，driver FAIL。原3fixture已通过，不能用Execution短目录结果掩盖此独立FAIL。Go临时根长路径与WindowsPS5事件文件兼容仅候选；对子进程pwsh7.6.5空事件解析及空数组比较手动复核均正常，不能认定该比较就是根因。已退回原T5 REWORK，保持当前5生产文件冻结；D5/D6仍0/2。安全报告evidence/d5-master-review-3459.json，raw本地保留不上传。
+
+## D5最终本地Review与预登记
+
+原T5主动RETURNED并冻结b67cbb6e4bb2ddadd92ddf6ee12885198979ed19。Master取得准确回单后独立复验：环境13/13、driver反例5/5、实际build入口Go13顶层fail0skip0/package PASS/真实compile PASS、固定Go1.27.1 vet PASS、兼容wrapper45/45 fail0skip0、diff/privacy PASS。五个Firewall生产源文件/go.mod与原baseline逐字节不变；原路径/Registry/binding/CLI白名单及原拒绝语义未放宽。11类对照完整，实际8.3本机UNAVAILABLE如实保留。原3459失败和原Hosted未知路径事实不改写。安全证据evidence/d5-master-review-b67c.json。
+
+状态RETURNED→REVIEWED→INTEGRATED；正式90cdc0f/7e5e7f8/b67cbb6分别整合45dfc76/3187c41/f8f9340。原T5冻结等待Hosted，其他线程仍冻结。下一次只dispatch已注册setup-v3.yml / codex/lan-host-v1.1 / mode=lan-diagnostic-extension，预留Diagnostic Extension D5第1/2次；受测为包含本登记的精确HEAD，dispatch后记录run/source。D5真实构建仅TEST_BUILD_ONLY，不生成发行Artifact；上传仅四个固定JSON，不上传raw日志/路径/程序。当前历史专项4/4、新D0/2、Full0/2、QA0/2；D5结果未出，不预判当前阻塞或全Batch通过。

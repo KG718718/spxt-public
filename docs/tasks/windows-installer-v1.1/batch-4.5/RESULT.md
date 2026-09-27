@@ -1,3 +1,7 @@
+# Batch 4.5 最新有界续行结果
+
+D5本地独立Review PASS，修复整合f8f9340。环境13/13、driver5/5、Go13/13+真实compile/vet及兼容45/45通过；生产安全契约不变。即将使用D5，当前D0/2、Full0/2、QA0/2，历史专项4/4。Hosted和全Batch仍未PASS；以下BLOCKED是保留的历史止损，当前有限续行按DIAGNOSTIC-EXTENSION-APPROVAL.md及ORCHESTRATION.md。
+
 # Batch 4.5 当前结果
 
 **BLOCKED — HOSTED BUDGET EXHAUSTED**。专项4 Run36288039798@4f52e8759d8ddd20b2a9883fd267a98ced27fba1 在PORTABLE/Firewall Go夹具校验失败；Artifact10920906716仅含安全阶段报告，SHA256 f2f304399b124fcc0d0c62c8dc3a53945b84a7681f488bbfc77df2f616c576d4。实际Setup/U22/U23/Registry/Firewall未到达。预算专项4/4、Full0/2、QA0/2；停止工程和Hosted，不挪用剩余预算。方案A的精确F3五锚已固化，独立beta.3实现和T1—T5本地Review已整合至1ec4678；局部本地/QA通过不等于最终验证通过。流水线未规范Go测试TEMP与本地规范TEMP的差异是根因候选，缺少Hosted实际路径，不能认定。独立最终QA、L/C端到端、26/742及beta.3最终Artifact均未完成；真实Win10+第二设备人工待后续候选。

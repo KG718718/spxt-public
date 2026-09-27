@@ -75,3 +75,9 @@ T5-INTEGRATION原线程/原worktree继续，保留旧codex/b45-t5@4b08d35，按0
 T5定位计划主动已收，状态RUNNING。Master接受仅_test.go fixture协作需求，明确由原T5直接改policy_test.go和必要firewall_behavior_windows_test.go测试根/反例，生产5文件冻结；不启新T4任务，不创建重复worktree。D5/D6仍0/2，未确认根因。
 
 原T5实现3459a5987f8aa77c5c26fc0efbbc04d45ba17950冻结供Review；Master独立环境13及兼容45PASS，但真实build/driver在不同owned测试根FAIL。状态REWORK，尚未整合该实现/运行D5。原线程复现最小修复，特别区分事件记录环境与生产Firewall拒绝，不改安全策略。新增D0/2、Full0/2、QA0/2。
+
+## D5最终本地Review与预登记
+
+原T5主动RETURNED并冻结b67cbb6e4bb2ddadd92ddf6ee12885198979ed19。Master取得准确回单后独立复验：环境13/13、driver反例5/5、实际build入口Go13顶层fail0skip0/package PASS/真实compile PASS、固定Go1.27.1 vet PASS、兼容wrapper45/45 fail0skip0、diff/privacy PASS。五个Firewall生产源文件/go.mod与原baseline逐字节不变；原路径/Registry/binding/CLI白名单及原拒绝语义未放宽。11类对照完整，实际8.3本机UNAVAILABLE如实保留。原3459失败和原Hosted未知路径事实不改写。安全证据evidence/d5-master-review-b67c.json。
+
+状态RETURNED→REVIEWED→INTEGRATED；正式90cdc0f/7e5e7f8/b67cbb6分别整合45dfc76/3187c41/f8f9340。原T5冻结等待Hosted，其他线程仍冻结。下一次只dispatch已注册setup-v3.yml / codex/lan-host-v1.1 / mode=lan-diagnostic-extension，预留Diagnostic Extension D5第1/2次；受测为包含本登记的精确HEAD，dispatch后记录run/source。D5真实构建仅TEST_BUILD_ONLY，不生成发行Artifact；上传仅四个固定JSON，不上传raw日志/路径/程序。当前历史专项4/4、新D0/2、Full0/2、QA0/2；D5结果未出，不预判当前阻塞或全Batch通过。

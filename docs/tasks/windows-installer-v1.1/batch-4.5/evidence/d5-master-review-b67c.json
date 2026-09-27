@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "kind": "master-d5-local-review",
+  "status": "PASS",
+  "sourceCommit": "b67cbb6e4bb2ddadd92ddf6ee12885198979ed19",
+  "integratedCommit": "f8f934058906a0b710b0b13d4989332656a92955",
+  "productionFiveFilesUnchanged": true,
+  "goVet": "PASS",
+  "diffCheck": "PASS",
+  "privacy": "PASS",
+  "environment": {
+    "schema": 1,
+    "kind": "k-session-firewall-test-environment",
+    "status": "PASS",
+    "stage": "COMPLETE",
+    "reason": "PASS",
+    "shortPathEvidence": "UNAVAILABLE",
+    "checksPass": 13
+  },
+  "driver": {
+    "schema": 1,
+    "kind": "k-session-firewall-build-driver-contract",
+    "status": "PASS",
+    "stage": "COMPLETE",
+    "reason": "PASS",
+    "checksPass": 5
+  },
+  "actualBuild": {
+    "schema": 1,
+    "kind": "k-session-firewall-build-diagnostic",
+    "qualification": "TEST_BUILD_ONLY",
+    "status": "PASS",
+    "stage": "COMPLETE",
+    "reason": "PASS",
+    "sourceCommit": "b67cbb6e4bb2ddadd92ddf6ee12885198979ed19",
+    "inputTempClass": "CANONICAL",
+    "inputTmpClass": "CANONICAL",
+    "inputGoTmpClass": "NONLOCAL",
+    "fixtureRootSource": "OWNED_PHYSICAL",
+    "testsPass": 13,
+    "testsFail": 0,
+    "testsSkipped": 0,
+    "packagePass": true,
+    "compileReached": true
+  },
+  "compatibility": {
+    "schema": 1,
+    "status": "PASS",
+    "sourceCommit": "b67cbb6e4bb2ddadd92ddf6ee12885198979ed19",
+    "acceptedProfile": "accepted-f3-run-36246132535",
+    "runtimeTrust": "REPOSITORY_FIXED_ANCHORS",
+    "onlineArtifactRequiredAtRuntime": false,
+    "tests": 45,
+    "pass": 45,
+    "fail": 0,
+    "skipped": 0,
+    "checks": {
+      "C01": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C02": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C03": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C04": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C05": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C06": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C07": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C08": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C09": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C10": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C11": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C12": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C13": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C14": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C15": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      }
+    }
+  }
+}
