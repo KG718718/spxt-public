@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "kind": "k-session-beta2-identity-evidence",
+  "status": "PASS",
+  "source": {
+    "repository": "KG718718/spxt-public",
+    "runId": 36246132535,
+    "runAttempt": 1,
+    "artifactId": 10907910968,
+    "artifactName": "K-SESSION-setup-win-x64-c8886e6b6d413c2fd73d6716621d07a80b337e58",
+    "artifactBytes": 32538249,
+    "artifactDigest": "sha256:e6b01fe7c4499526eb99a837892a0c0641ad2232c84981b191b2ac6f7c18f3c6",
+    "headSha": "c8886e6b6d413c2fd73d6716621d07a80b337e58",
+    "sourceTree": "0f298af80c1cbdf3835f39aca265cbcdb859bea6",
+    "setupFileName": "K-SESSION-Setup-1.1.0-beta.2.exe",
+    "setupBytes": 33018840,
+    "setupSha256": "877383fe14bf089eb0a4e130641a957062c07ab258d22d59895c46f9b3f671b6"
+  },
+  "profile": {
+    "id": "accepted-f3-run-36246132535",
+    "sources": [
+      "accepted-f3-run-36246132535"
+    ],
+    "policy": {
+      "schema": 1,
+      "appId": "KSESSION-Beta-Installer-v1",
+      "registrationDisplayName": "K⁺-SESSION Beta",
+      "uninstallKey": "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\KSESSION-Beta-Installer-v1_is1",
+      "bindingKey": "Software\\KSESSION\\Beta\\InstallerBinding",
+      "fromInstallerVersion": "1.1.0-beta.2",
+      "targetInstallerVersion": "1.1.0-beta.3",
+      "appVersion": "1.0.0",
+      "dataContractVersion": 1,
+      "runtimeIdentitySchema": 1,
+      "instanceBindingSchema": 1,
+      "sourceCommit": "c8886e6b6d413c2fd73d6716621d07a80b337e58",
+      "sourceTree": "0f298af80c1cbdf3835f39aca265cbcdb859bea6",
+      "programManifestSha256": "4681b44bb6a70926f0efba7e2f98701bc1cc12981618774cd5345aa1dc993d2c",
+      "programInventorySha256": "ecfbeac0c1ca127691ae5bc5b387a3e8d4d8a60236ca2b123b350bbb6c48874f",
+      "runtimeManifestSha256": "9cbae719e33456290c5c12d71b27e1fe4db0bc93f4e6b25f771ddf6bc6075671",
+      "launcherSha256": "0abe466cf580673e436deb9283dbd551ad1cb4b89f15b4c1cba5b60e66983b89",
+      "buildInfoSha256": "46110139aa75d7f6ad57dc8ba099e796876ed83dd7772c26b7948a7a4e52f11f"
+    }
+  },
+  "verification": {
+    "artifactMetadata": "PASS",
+    "archiveIdentity": "PASS",
+    "uniqueSetup": "PASS",
+    "installedAnchors": "PASS",
+    "registrationBinding": "PASS",
+    "registryView": "64",
+    "anchorCount": 5,
+    "cleanup": {
+      "desktopShortcutExistsAfterUninstall": false,
+      "bindingRegistrationCountAfterHarnessCleanup": 0,
+      "instanceExistsAfterHarnessCleanup": false,
+      "retentionProbeUnchangedAfterUninstall": true,
+      "startMenuShortcutExistsAfterUninstall": false,
+      "uninstallerExitCode": 0,
+      "bindingRetainedAfterUninstall": true,
+      "uninstallRegistrationCountAfterUninstall": 0,
+      "instanceRetainedAfterUninstall": true,
+      "programRootExistsAfterUninstall": false,
+      "temporaryPayloadRemoved": true
+    }
+  }
+}
