@@ -11,7 +11,7 @@
 |B45-T3|01a0e035-3eca-7993-9db1-795373d92537|lan-launcher/codex/b45-t3|DISPATCHED @4b83380|T1/T2/T4均整合|
 |B45-T4|01a0e004-98a3-75b2-a2a1-3ffd0c6506c9|lan-firewall/codex/b45-t4|INTEGRATED 4150409 / 冻结4f0c5c8|Master12+17、vet PASS|
 |B45-T5-INTEGRATION|同T5|b4-qa/codex/b45-t5-integration|DISPATCHED @0897383|精确F3已取证；T3并行独占Launcher|
-|B45-QA|待派发|待分配|WAITING|整合与实际证据|
+|B45-QA|01a0e03a-15c9-7833-af1c-c05a8eca2126|lan-qa/codex/b45-qa|EARLY SECURITY AUDIT @5825690|仅审已整合T1/T2/T4；最终QA待候选|
 
 预算：专项3/4、Full0/2、QA0/2。身份取证计专项；不得运行无关Full。每次run前登记精确source/mode/budget，后记录result/Artifact，无修改不retry。
 
@@ -51,3 +51,5 @@ T2正式Review整合c00e58a+4b83380，Master13/13 fail0skip0。T4 Master12顶层
 
 B45-T3 DISPATCHED：thread01a0e035-3eca-7993-9db1-795373d92537，managed lan-launcher/public-source，branch codex/b45-t3，精确baseline4b83380c5a6ebe6090af69415c9191c18779c4d1；模型gpt-5.6-sol/medium。完整任务卡tasks/B45-T3.md。只改Launcher及授权局部CLI，T1/T2/T4共享模块冻结待原线程返工。唯一回单Master不变。
 T5-INTEGRATION原线程/原worktree继续，保留旧codex/b45-t5@4b08d35，按0897383建立阶段branch codex/b45-t5-integration；精确任务卡tasks/B45-T5-INTEGRATION.md。T3独占Launcher/build.ps1，T5独占Runtime/Portable/Setup/CI，共享构建接口经Master协调。
+
+独立B45-QA早期安全审查已派：thread01a0e03a-15c9-7833-af1c-c05a8eca2126，model gpt-5.6-sol/medium，专属lan-qa工作树/branch，baseline582569083fe9773ddd11115ba9ba698f7f2c8d29。禁止生产修改和Hosted，只回可复现缺陷及文档，整体QA不得提前PASS。T3构建接口已确认并转T5：可选FirewallHelperSha256严格64lowercasehex，beta3必传真实helperhash；历史Local为空保持闭合。

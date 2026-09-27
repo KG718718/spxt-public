@@ -1,0 +1,12 @@
+你是独立QA审查任务，不是项目主控或实施者。PARENT Batch4.5；唯一Master/回单目标01a0db0e-c950-79e0-8e11-07155e0742f2，旧Master永久只读。模型gpt-5.6-sol/medium。公开repo KG718718/spxt-public；BASELINE 582569083fe9773ddd11115ba9ba698f7f2c8d29。先核对自己的workdir/branch/HEAD/status并读当前AGENTS/PROJECT、docs/tasks/windows-installer-v1.1/batch-4.5/SPEC.md、PLAN.md、COMPATIBILITY-APPROVAL.md、ACCEPTANCE.md。用户方案A已正式批准，旧第27节阻塞解除；appVersion1.0.0/DC1/Runtime identity schema/AppId/registration key/业务schema/instance结构不变。全部测试用合成数据；不读内部SPXT、不连接真实业务、不操作开发机注册表/防火墙/路由器、不提权，不保存发行包到开发机。禁止0.0.0.0/Public/公网/削弱安全。只local commit[skip ci]，不push/main/tag/Release/Hosted；不得创建thread/Agent/worktree。任务完结写专属RESULT，send_message_to_thread准确Master并核验目标；结构化TASK ID/状态/完成内容/修改文件/测试结果/local commit/风险/需要主控处理。送达失败保留RESULT/commit标记待主控读取；Master有watchdog。不要生成网页版交接卡。
+
+TASK ID B45-QA，阶段EARLY SECURITY AUDIT，后续同thread继续最终QA，不新建重复QA。managed lan-qa/public-source / codex/b45-qa，精确baseline582569083fe9773ddd11115ba9ba698f7f2c8d29。T1 network/config已整合9b23ba6，T2 server c00e58a/4b83380，T4 helper eb01df0/4150409，T5精确F3取证证据0897383。T3Launcher与T5beta3integration尚在实施，所以本阶段不因未完成这些文件泛报缺陷，也绝不能给整体QA PASS。
+
+只读审查已整合T1/T2/T4实际生产+tests，独立运行针对性合成/loopback反例，优先发现可复现安全/正确性缺陷；不要只重复其已有PASS。允许在自己.test-work写临时合成repro（不提交生产/测试体系），只允许提交docs/tasks/windows-installer-v1.1/batch-4.5/qa/EARLY-SECURITY-REVIEW.md及必要纯文档RESULT。禁止修改任何production/tests源码，不直接修复，缺陷准确位置/触发/影响/复现给Master→原Execution返工。一层QA无Agent/后代，无Hosted/push/真实注册表/防火墙/NIC变更。
+
+重点：T1RFC1918全CIDR、virtual/route/profile与多NIC不猜、GUID/IP动态、实际bind和config原子保护/链接拒绝；T2entry guard在所有handler前，不信任Forwarded/Host，首次Host-only Admin、remote bootstrap永久关闭、selected subnet/current listener/epoch与已接受连接、network worker异步超时失败是否真正关闭LAN、status11项不能假ready、port冲突不换、两独立client session/权限未改变、旧data/附件/config保留；T4最小提权CLI固定node/source/runtime/hash/registration双view+INI binding、System32可信来源、rule disable-update-verify-enable，异常后关闭自有rule/未知冲突不写/status只读、Private/精确CIDR/port/program/interface、ActiveStore/GPO条件。构造严格JSON重复键/路径别名/reparse/端口/缓存状态等真实反例，避免纯文本静态测试等同实际行为。
+
+Master已经发现并返工的T4enable异常/32key字段/INI/instance=root与T2缺watch/同步发现/close順序/初始化掩盖失败均已在baseline修复，优先检验是否真正闭合而非复制旧finding。Go 1.27.1只读工具缓存地址由直接派单附；GOCACHE/GOTMPDIR/TEMP独立规范绝对路径，不下载发行包。Node本地24.14，只能声称本地版本；目标24.21/真实Win10LAN/UAC/第二设备留Hosted或HUMAN。
+
+先发现实质P1/P2时立即给Master结构化finding，继续其余独立审查。无finding要说明检查范围/证据限制，不能把未运行写PASS。本阶段尽量聚焦3组件核心安全，不做无关代码风格清理/假设性范围扩大。最终返回 local文档commit+severity findings+commands/结果+未覆盖项，send_message_to_thread Master01a0db0e-c950-79e0-8e11-07155e0742f2。正式LAN Candidate出后再派你更新baseline和完整B45-QA。
+

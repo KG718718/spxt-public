@@ -2,7 +2,7 @@
 
 ## Batch 4.5 当前执行状态｜2026-09-27
 
-方案A已批准并继续执行。唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2，集成codex/lan-host-v1.1，Primary public-source。T1已Review整合；T2实现中；T4 Review返工；T5取证专项1、2均FAIL，当前固定CLEANUP_VERIFY，正做本地反例与更细闭合诊断。专项已用2/4，Full0/2、QA0/2；不得无修改retry。尚无可固化F3安装后证据、beta.3候选或本Batch最终PASS。详细实时账本以batch-4.5/ORCHESTRATION.md为准，下文0/4及旧阻塞是发生当时历史。
+方案A已批准并继续执行。唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2，集成codex/lan-host-v1.1，Primary public-source。T1/T2/T4已Review整合并独立局部复验；T5专项3 Run36281720897精确F3取证PASS，五锚和cleanup固化0897383。T3 Launcher与原T5独立beta3路由/构建实施中；独立QA先审已整合安全组件。专项已用3/4，Full0/2、QA0/2；不得无修改retry。尚无beta.3候选或本Batch最终PASS。详细实时账本以batch-4.5/ORCHESTRATION.md为准，下文0/4及旧阻塞是发生当时历史。
 
 ## 方案A正式批准｜2026-09-27
 
