@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前：Full1返工Review PASS，Full2待运行｜2026-09-27
+
+原T5冻结8e99b4d主动回单，经Master独立环境7/原37/兼容45及异常恢复复验PASS，整合a954578。仅修测试环境和固定诊断，生产安全契约不变。D5 PASS；Full1原后续config测试FAIL和所有实验保留。预算专项4/4、D1/2、Full1/2、QA0/2，下一次仅最后Full2，受测及结果详见batch-4.5/ORCHESTRATION.md；Full2失败即按批准第13节停止，不能挪D6/QA。原线程冻结待结果，整体自动化/最终QA/Artifact仍未PASS；旧状态为历史。
+
 ## 最新状态：D5 PASS，Full1待运行｜2026-09-27
 
 D5 Run36292597156@98b030d1fa5c2ca091ac266069ea9d624d3177a5 / Artifact10922139870通过，Master四JSON身份/privacy核验PASS。环境13、driver5、Go13 fail0skip0及真实compile已越过Firewall构建阻塞。Master确认完整候选准入，下一步仅lan-full，原线程/安全契约/唯一Master保持。当前历史专项4/4、扩展D1/2、Full0/2、QA0/2；D6未用，不挪预算。旧BLOCKED文字为历史止损，按已批准19节有界续行。整体自动化/最终QA/Setup Artifact尚未PASS；真实Win10和第二设备仍待后续人工。

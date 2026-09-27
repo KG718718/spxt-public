@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "sourceCommit": "1be32fe1d300079b933e8ab9e428f7995c9eb4a1",
+  "nodeVersion": "v24.14.0",
+  "scope": "TRANSACTION_ONLY_SHORT_OWNED_TEMP",
+  "results": [
+    {
+      "kind": "PHYSICAL",
+      "exitCode": 0,
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "skipped": 0,
+      "inventoryAliasRejected": false
+    },
+    {
+      "kind": "JUNCTION",
+      "exitCode": 1,
+      "tests": 25,
+      "pass": 2,
+      "fail": 23,
+      "skipped": 0,
+      "inventoryAliasRejected": true
+    }
+  ],
+  "priorExperimentConfounders": [
+    "PRIMARY_CRLF_STATIC_ASSERTIONS",
+    "LONG_TEMP_CHILD_PROCESS_FAILURE"
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "kind": "master-full1-rework-review",
+  "status": "PASS",
+  "sourceCommit": "8e99b4d9895c05fe6454d3bb20b32378c7516685",
+  "integratedCommit": "a9545783b4051f2e8358fc438efa072fa7237a94",
+  "nodeVersion": "24.14.0",
+  "environment": {
+    "schema": 1,
+    "kind": "k-session-lan-node-test-environment",
+    "qualification": "TEST_ONLY",
+    "status": "PASS",
+    "stage": "COMPLETE",
+    "reason": "PASS",
+    "checksPass": 7,
+    "physicalPass": 37,
+    "aliasPass": 31,
+    "aliasFail": 6,
+    "skipped": 0,
+    "environmentRestored": true
+  },
+  "compatibility": {
+    "schema": 1,
+    "status": "PASS",
+    "sourceCommit": "8e99b4d9895c05fe6454d3bb20b32378c7516685",
+    "acceptedProfile": "accepted-f3-run-36246132535",
+    "runtimeTrust": "REPOSITORY_FIXED_ANCHORS",
+    "onlineArtifactRequiredAtRuntime": false,
+    "tests": 45,
+    "pass": 45,
+    "fail": 0,
+    "skipped": 0,
+    "checks": {
+      "C01": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C02": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C03": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C04": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C05": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C06": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C07": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C08": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C09": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C10": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C11": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C12": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C13": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C14": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      },
+      "C15": {
+        "status": "PASS",
+        "method": "node:test exact passed-subtest mapping"
+      }
+    }
+  },
+  "injectedFailureRestore": "PASS",
+  "candidateOuterRestore": "PASS",
+  "scriptAstFiles": 4,
+  "workflowEmbeddedAstBlocks": 13,
+  "workflowSmallDiffReview": "PASS",
+  "extraYamlParser": "UNAVAILABLE_NOT_INSTALLED",
+  "productionContractsUnchanged": true,
+  "privacy": "PASS",
+  "diffCheck": "PASS"
+}

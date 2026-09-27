@@ -104,3 +104,15 @@ Run36292822541 / sourcef139a429b56aab53b84727fad58838619e40f4ee / Artifact109223
 Master在同一f139a42原37名单、本地Node24.14.0独立对照：规范physical TEMP/TMP为37/37 PASS；指向同一自有合成根的junction为31PASS6FAIL，六个失败名称与Hosted一致，仍固定LAN_CONFIG_PATH_INVALID。原业务合成字节/夹具保护测试未改，生产safeInstance拒绝符合契约。Hosted具体映射值仍未知，不写成唯一根因。证据evidence/full1-master-config-counterexample.json。初次只选五文件31项对照亦精确复现，随后补齐Launcher6项得到实际37，未隐藏初测范围。
 
 按用户批准第12节，B45-T5原thread01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9/原b4-qa/codex/b45-t5-integration从冻结b67cbb6继续REWORK，完整卡tasks/B45-T5-FULL1-REWORK.md，准确return target01a0db0e-c950-79e0-8e11-07155e0742f2。本地baseline的tools/.github/生产config与受测f139a42无diff。只处理测试环境/CI接线，生产路径及安全契约冻结，禁止直接Hosted或amend已返回SHA。先本地对照→最小修复→Master Review，证据充分才Full2；否则止损。当前历史专项4/4、扩展D1/2、Full1/2、QA0/2；未使用D6或Full2，最终QA仍冻结。
+## Full1返工期间下游对照更正
+
+Master对原compatibility wrapper做长owned TEMP实验曾得20/45及一次Node子进程提前退出。进一步核查，Primary工作树CRLF导致2个workflow静态regex不适配（Hosted checkout固定LF）；长物理TEMP另有Node24.14子进程3221226505退出。因此不能把这25个失败全归因transaction，更不能声称对应Hosted已运行该门禁。原日志保留本地，未发布raw。
+
+隔离后，在同一公开1be32fe、原transaction.test.cjs、短owned物理根与其junction对照：物理25/25 fail0skip0，junction2PASS23FAIL，明确inventory的Link or escaped file拒绝。全部是合成fixture，生产保护未修改；Node24.14与Hosted24.21版本差异明确保留。安全证据evidence/full1-master-transaction-counterexample.json。与原37项physical37 vsjunction31的已闭合对照共同支持修复ci-lan至ci-beta3的测试环境传递；该实证不追认历史Hosted精确路径。T5获得CI测试环境接线及固定安全报告授权，旧beta1语义/生产文件仍冻结。所有新修复待正式回单和Master最终冻结复验，无新Hosted。
+## Full2最终预登记 / Full1返工Review PASS
+
+原T5主动RETURNED冻结8e99b4d9895c05fe6454d3bb20b32378c7516685，实现cf4848a173535d746344d89be69d0c0ef3f8d04f；Master核对thread/worktree/两个local commit和完整回单。独立复验environment7checks、原37名单physical37PASS/junction31PASS6预期拒绝/skip0；兼容wrapper45/45 fail0skip0；额外实际注入Launcher环境变更后throw，finally完整恢复及candidate外层恢复均PASS。4脚本AST、13个workflow内嵌PS块、YAML小diff人工结构、diff/privacy PASS；未安装或宣称第三方YAML parser。生产JS、原config断言、Firewall五文件、Launcher build逻辑与冻结基线逐字节一致。证据evidence/full1-master-review-8e99.json。
+
+状态RETURNED→REVIEWED→INTEGRATED；cf4848a/8e99b4d分别整合7ec9be74e1353c871c12f73a635d55871128e030/a9545783b4051f2e8358fc438efa072fa7237a94。修复只隔离并恢复ci-lan/ci-beta3及回归测试环境，增加封闭诊断和必需PASS计数，不改变产品接受条件；原T5冻结，其他原线程/工作树保持。
+
+依批准第12—13节，当前新问题已能本地安全定位和复现，无须增加专项Hosted。下一次仅setup-v3.yml / codex/lan-host-v1.1 / mode=lan-full，预留最后Full第2/2次；精确受测为包含本登记的公开HEAD，dispatch后回填run/source。当前历史专项4/4、D1/2、Full1/2、QA0/2，D6未用。Full2仍失败必须停止交网页版，不挪D6/QA续调；FullPASS后才原独立QA最终阶段。当前尚无最终beta3 Artifact或LAN HUMAN PENDING结论。

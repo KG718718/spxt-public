@@ -1,5 +1,9 @@
 # K⁺-SESSION Windows Packaging Track — v1.1
 
+## 当前：Full1返工Review PASS，Full2待运行｜2026-09-27
+
+原T5冻结8e99b4d主动回单，经Master独立环境7/原37/兼容45及异常恢复复验PASS，整合a954578。仅修测试环境和固定诊断，生产安全契约不变。D5 PASS；Full1原后续config测试FAIL和所有实验保留。预算专项4/4、D1/2、Full1/2、QA0/2，下一次仅最后Full2，受测及结果详见batch-4.5/ORCHESTRATION.md；Full2失败即按批准第13节停止，不能挪D6/QA。原线程冻结待结果，整体自动化/最终QA/Artifact仍未PASS；旧状态为历史。
+
 ## D5/D6 有界工程续行已批准｜2026-09-27
 
 用户批准DIAGNOSTIC-EXTENSION-APPROVAL.md第1—19节。当前历史止损结论仍BLOCKED — HOSTED BUDGET EXHAUSTED，但允许原T5主责、必要时原T4协作，仅针对PORTABLE / Firewall Go fixture校验完成本地反例、固定白名单诊断和测试环境修复；未证实唯一原因前不得改生产接受条件。原专项4/4保留，新Diagnostic Extension D5/D6最多2次，当前0/2；Full0/2、QA0/2保持，禁止挪用和无修改retry。Master独立Review通过才D5；专项越过当前阻塞且候选条件具备后自动Full→独立QA→Artifact，不需重复确认。D6或Full2仍失败、新问题必须追加诊断、产品/安全改变或无法安全恢复时按批准决定再次停止。唯一Master/原线程/原worktree/集成分支不变，其他任务暂冻结；旧停止文字不撤销此有限授权。最终仍停AUTOMATION PASS / QA PASS / LAN HUMAN PENDING。
