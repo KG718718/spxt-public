@@ -167,6 +167,16 @@ test('workflow initializes fixed evidence before checkout and closes early sourc
   assert.doesNotMatch(workflow, /compiler-stdout|compiler-stderr|server\.log/);
 });
 
+test('registered Setup dispatcher calls only the bounded LAN reusable modes on the LAN branch', () => {
+  const setup=fs.readFileSync(path.join(repo,'.github/workflows/setup-v3.yml'),'utf8');
+  const lan=fs.readFileSync(path.join(repo,'.github/workflows/lan-host-v1.1.yml'),'utf8');
+  for(const mode of ['lan-diagnostic','lan-full','lan-qa'])assert.match(setup,new RegExp('          - '+mode+'$','m'));
+  assert.match(setup,/lan-host-v1-1:[\s\S]+github\.ref == 'refs\/heads\/codex\/lan-host-v1\.1'[\s\S]+github\.event_name == 'workflow_dispatch'/);
+  assert.match(setup,/uses: \.\/\.github\/workflows\/lan-host-v1\.1\.yml[\s\S]+mode: \$\{\{ inputs\.mode == 'lan-diagnostic' && 'diagnostic' \|\| inputs\.mode == 'lan-full' && 'full' \|\| 'qa' \}\}/);
+  assert.match(lan,/workflow_call:[\s\S]+mode:[\s\S]+required: true[\s\S]+type: string/);
+  assert.equal((setup.match(/uses: \.\/\.github\/workflows\/lan-host-v1\.1\.yml/g)||[]).length,1);
+});
+
 test('versioned Go overlay rewires LAN package verification and injects the reviewed helper identity', () => {
   const portableSource = '\truntimeHash = info["runtimeManifestSha256"].(string)\n' +
     Array(4).fill('tools/windows-portable/package.cjs').join('\n');
@@ -221,4 +231,7 @@ test('fixed Go policies cover the exact Launcher build group and every firewall 
   const firewallNames=fs.readdirSync(firewallDir).filter(name=>name.endsWith('_test.go')).flatMap(name=>
     [...fs.readFileSync(path.join(firewallDir,name),'utf8').matchAll(/^func (Test\w+)\(/gm)].map(match=>match[1]));
   assert.deepEqual([...expectedGoTests.FIREWALL].sort(),firewallNames.sort());
+  const integration=fs.readFileSync(path.join(repo,'tools/windows-launcher/integration_windows_test.go'),'utf8');
+  assert.equal(new Set(expectedGoTests.INTEGRATION_IDS).size,expectedGoTests.INTEGRATION_IDS.length);
+  for(const id of expectedGoTests.INTEGRATION_IDS)assert.match(integration,new RegExp('pass\\("'+id+' '));
 });

@@ -119,8 +119,15 @@ $taskExtracted=Get-Content -Raw (Join-Path $taskWork 'portable-extracted/portabl
 $taskIdentity=Get-Content -Raw (Join-Path $taskArtifact 'zip-identity.json')|ConvertFrom-Json
 $taskFirewallUnit=Get-Content -Raw $taskFirewallReport|ConvertFrom-Json
 $taskLauncherUnit=Get-Content -Raw $taskLauncherReport|ConvertFrom-Json
+$taskLauncherIntegration=Get-Content -Raw (Join-Path $taskWork 'launcher-integration/integration.json')|ConvertFrom-Json
+$taskIntegrationExpected=@(& $taskNode $taskGoTestPolicy 'INTEGRATION_IDS'|ConvertFrom-Json)
+if($LASTEXITCODE -ne 0){throw 'Fixed Launcher integration policy failed'}
+$taskIntegrationActual=@($taskLauncherIntegration.checks|ForEach-Object {($_ -split ' ',2)[0]})
+if($taskLauncherIntegration.status -ne 'PASS' -or
+   (Compare-Object -SyncWindow 0 $taskIntegrationExpected $taskIntegrationActual)){throw 'Launcher integration evidence is incomplete'}
+$taskIntegrationSummary=[ordered]@{status='PASS';expectedChecks=$taskIntegrationExpected;pass=$taskIntegrationActual.Count;fail=0;skipped=0}
 @{status='PASS';sourceCommit=$Commit;zipSha256=$taskIdentity.zipSha256;firewallHelperSha256=$taskHelperHash;
-  staging=$taskStaging;extracted=$taskExtracted;firewallUnit=$taskFirewallUnit;launcherUnit=$taskLauncherUnit;
+  staging=$taskStaging;extracted=$taskExtracted;firewallUnit=$taskFirewallUnit;launcherUnit=$taskLauncherUnit;launcherIntegration=$taskIntegrationSummary;
   humanWin10='PENDING; no real LAN or browser claim'}|ConvertTo-Json -Depth 30|
   Set-Content -Encoding utf8 (Join-Path $taskArtifact 'portable-test-report.json')
 Copy-Item -LiteralPath (Join-Path $taskRoot 'build-info.json') -Destination $taskArtifact

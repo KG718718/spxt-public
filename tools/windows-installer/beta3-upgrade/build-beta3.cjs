@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_pro
 const {inventory,sha,writeNew,writeJSON}=require('../../windows-runtime/common.cjs');
 const {validateBundle}=require('./identity.cjs');
 const {verify}=require('../../windows-portable/package-lan.cjs');
-const {FIREWALL:firewallUnitExpected,LAUNCHER:launcherUnitExpected}=require('../../tests/lan-host/expected-go-tests.cjs');
+const {FIREWALL:firewallUnitExpected,LAUNCHER:launcherUnitExpected,INTEGRATION_IDS:integrationExpected}=require('../../tests/lan-host/expected-go-tests.cjs');
 const [portable,compiler,outArg,commit,mode='lan-candidate',bundleArg]=process.argv.slice(2);
 const repo=path.resolve(__dirname,'../../..'),out=path.resolve(outArg),pin=JSON.parse(fs.readFileSync(path.join(__dirname,'toolchain-beta3.json')));
 assert.ok(/^E:\\/i.test(out)&&!fs.existsSync(out));assert.match(commit,/^[a-f0-9]{40}$/);
@@ -19,6 +19,7 @@ assert.equal(pr.staging.status,'PASS');assert.equal(pr.extracted.status,'PASS');
 assert.equal(pr.staging.checks.length,27);assert.equal(pr.extracted.checks.length,27);
 assert.equal(pr.firewallUnit.status,'PASS');assert.deepEqual(pr.firewallUnit.expectedTests,firewallUnitExpected);assert.equal(pr.firewallUnit.pass,firewallUnitExpected.length);assert.equal(pr.firewallUnit.fail,0);assert.equal(pr.firewallUnit.skipped,0);
 assert.equal(pr.launcherUnit.status,'PASS');assert.deepEqual(pr.launcherUnit.expectedTests,launcherUnitExpected);assert.equal(pr.launcherUnit.pass,launcherUnitExpected.length);assert.equal(pr.launcherUnit.fail,0);assert.equal(pr.launcherUnit.skipped,0);
+assert.equal(pr.launcherIntegration.status,'PASS');assert.deepEqual(pr.launcherIntegration.expectedChecks,integrationExpected);assert.equal(pr.launcherIntegration.pass,integrationExpected.length);assert.equal(pr.launcherIntegration.fail,0);assert.equal(pr.launcherIntegration.skipped,0);
 const build=JSON.parse(fs.readFileSync(path.join(root,'build-info.json')));
 const zip=path.join(portable,'artifact/K-SESSION-portable-lan-beta-win-x64.zip');
 const zi=JSON.parse(fs.readFileSync(path.join(portable,'artifact/zip-identity.json')));

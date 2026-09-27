@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Run an identity, LAN identity capture, closed upgrade-fault sequence, historical static QA, or full Setup workflow
+        description: Run an identity, LAN identity capture, closed upgrade-fault sequence, historical static QA, full Setup, or LAN Host workflow
         required: false
         default: identity
         type: choice
@@ -20,6 +20,9 @@ on:
           - sequence
           - qa-static
           - full
+          - lan-diagnostic
+          - lan-full
+          - lan-qa
 permissions:
   contents: read
 concurrency:
@@ -329,6 +332,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Unsafe beta.2 identity report' }
           $taskReport=Get-Content -LiteralPath $env:KSESSION_BETA2_IDENTITY_REPORT -Raw | ConvertFrom-Json
           "Beta.2 identity capture: $($taskReport.status) / $($taskReport.stage) / $($taskReport.reason)" >> $env:GITHUB_STEP_SUMMARY
+  lan-host-v1-1:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-host-v1.1' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'lan-diagnostic' || inputs.mode == 'lan-full' || inputs.mode == 'lan-qa')
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/lan-host-v1.1.yml
+    with:
+      mode: ${{ inputs.mode == 'lan-diagnostic' && 'diagnostic' || inputs.mode == 'lan-full' && 'full' || 'qa' }}
   historical-identity:
     if: github.event_name == 'workflow_dispatch' && inputs.mode == 'full' && github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1'
     permissions:

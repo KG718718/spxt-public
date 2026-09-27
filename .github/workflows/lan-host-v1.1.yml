@@ -11,6 +11,12 @@ on:
           - diagnostic
           - full
           - qa
+  workflow_call:
+    inputs:
+      mode:
+        description: Run bounded LAN diagnostic, full candidate, or independent QA rebuild
+        required: true
+        type: string
 permissions:
   contents: read
   actions: read
