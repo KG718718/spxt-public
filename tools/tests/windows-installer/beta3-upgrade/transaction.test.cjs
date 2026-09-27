@@ -119,6 +119,42 @@ test('C08 C09 C10 C11 C12 commit preserves instance, account, attachment, LAN co
     assert.equal(fs.readFileSync(path.join(f.plan.installRoot, 'program', 'K-SESSION.exe'), 'utf8'), 'launcher-beta3');
   } finally { cleanup(f); }
 });
+test('file rollback retains a fixed journal until registry restoration is acknowledged', () => {
+  const f = fixture();
+  try {
+    tx.prepare(f.plan); tx.commit(f.plan);
+    assert.equal(tx.rollback(f.plan, true).code, 'TRANSACTION_ROLLED_BACK_REGISTRY_PENDING');
+    assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.RECOVERY_NAME)), true);
+    assert.equal(fs.readFileSync(path.join(f.plan.installRoot, 'program', 'old.txt'), 'utf8'), 'old-program');
+    assert.deepEqual(fs.readFileSync(path.join(f.plan.installRoot, 'uninstall', 'install-state.json')), f.oldStateBytes);
+    assert.equal(tx.completeRollback(f.plan).code, 'TRANSACTION_ROLLBACK_COMPLETED');
+    assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.RECOVERY_NAME)), false);
+  } finally { cleanup(f); }
+});
+for (const cleanupFault of ['first', 'mid']) {
+  test('finalize cleanup '+cleanupFault+' failure stays committed and can never roll back to beta2', () => {
+    const f = fixture(), original = fs.rmSync;
+    try {
+      tx.prepare(f.plan); tx.commit(f.plan);
+      fs.rmSync = function(target, options) {
+        if (path.basename(String(target)) === tx.COMMITTED_RECOVERY_NAME) {
+          if (cleanupFault === 'mid') original.call(fs, path.join(target, 'program'), {recursive: true, force: true});
+          throw Object.assign(Error('synthetic committed cleanup failure'), {code: 'EIO'});
+        }
+        return original.call(fs, target, options);
+      };
+      assert.equal(tx.finalize(f.plan).code, 'TRANSACTION_COMMITTED_RECOVERY_PENDING');
+      fs.rmSync = original;
+      assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.RECOVERY_NAME)), false);
+      assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.COMMITTED_RECOVERY_NAME)), true);
+      assert.equal(fs.readFileSync(path.join(f.plan.installRoot, 'program', 'K-SESSION.exe'), 'utf8'), 'launcher-beta3');
+      assert.throws(() => tx.rollback(f.plan), error => ['RECOVERY_INVALID','PHASE_INVALID'].includes(error.code));
+      assert.equal(tx.finalize(f.plan).code, 'TRANSACTION_COMMITTED');
+      assert.equal(fs.existsSync(path.join(f.plan.installRoot, tx.COMMITTED_RECOVERY_NAME)), false);
+      assert.deepEqual(inventory(f.plan.instancePath), f.business);
+    } finally { fs.rmSync = original; cleanup(f); }
+  });
+}
 test('prepare rejects staged payload tampering before recovery is created', () => {
   const f = fixture();
   try {

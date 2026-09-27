@@ -8,6 +8,7 @@ const path = require('node:path');
 const test = require('node:test');
 const identity = require('../../../windows-installer/beta3-upgrade/identity.cjs');
 const {buildBundle} = require('../../../windows-installer/beta3-upgrade/trusted-identity.cjs');
+const harness = require('./prepare-hosted-harness.cjs');
 
 const repo = path.resolve(__dirname, '../../../..');
 const evidence = JSON.parse(fs.readFileSync(path.join(repo,
@@ -163,4 +164,45 @@ test('workflow initializes fixed evidence before checkout and closes early sourc
   assert.equal((workflow.match(/status='FAIL';stage=\$taskStage/g) || []).length, 2);
   assert.match(workflow, /E:\/lan-evidence\/beta3-ci-stage\.json/);
   assert.doesNotMatch(workflow, /compiler-stdout|compiler-stderr|server\.log/);
+});
+
+test('versioned Go overlay rewires LAN package verification and injects the reviewed helper identity', () => {
+  const portableSource = '\truntimeHash = info["runtimeManifestSha256"].(string)\n' +
+    Array(4).fill('tools/windows-portable/package.cjs').join('\n');
+  const portable = harness.transformPortable(portableSource);
+  assert.equal((portable.match(/package-lan\.cjs/g) || []).length, 4);
+  assert.match(portable, /firewallHelperHash = info\["firewallHelperSha256"\]\.\(string\)/);
+  assert.doesNotMatch(portable, /tools\/windows-portable\/package\.cjs/);
+  const integration = harness.transformIntegration('\truntimeHash = build["runtimeManifestSha256"].(string)\n');
+  assert.match(integration, /firewallHelperHash = build\["firewallHelperSha256"\]\.\(string\)/);
+  const ci = fs.readFileSync(path.join(repo, 'tools/windows-portable/ci-lan.ps1'), 'utf8');
+  assert.equal((ci.match(/-overlay=/g) || []).length, 3);
+  assert.doesNotMatch(fs.readFileSync(path.join(repo, 'tools/windows-launcher/portable_windows_test.go'), 'utf8'), /package-lan\.cjs/);
+});
+
+test('beta3 rollback snapshots complete registry views and restores registration only after file rollback', () => {
+  const setup = fs.readFileSync(path.join(repo, 'tools/windows-installer/beta3-upgrade/setup-beta3.iss'), 'utf8');
+  for (const marker of ['SnapshotUpgradeRegistration', 'ExportRegistryKey', 'ImportRegistryKey',
+    'PriorProduct64Hash', 'PriorBinding64Hash', 'PriorProduct32Hash', 'PriorBinding32Hash',
+    'KSESSION_FIXTURE_REGISTRY_RESTORE_FAILURE', 'KSESSION_UPGRADE_ROLLBACK_FAILED']) assert.match(setup, new RegExp(marker));
+  assert.doesNotMatch(setup, /procedure RestoreUpgradeRegistration/);
+  assert.doesNotMatch(setup, /RegWriteStringValue\(HKCU64, ProductKey, 'Display/);
+  assert.match(setup, /if RunNode\('upgrade-transaction-cli\.cjs', 'rollback[\s\S]+if RestoreUpgradeRegistration and[\s\S]+complete-rollback[\s\S]+Log\('KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK'\)/);
+  assert.match(setup, /GetSHA256OfFile\(VerifyName\) = ExpectedHash/);
+  const generator = fs.readFileSync(path.join(__dirname, 'prepare-hosted-harness.cjs'), 'utf8');
+  assert.match(generator, /registration-64/);assert.match(generator, /registration-32/);
+  assert.match(generator, /accepted F3 beta\.2 upgraded in place to beta\.3/);
+});
+
+test('fixed Go JSON reporter rejects missing, failed, skipped, or unexpected tests', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ksession-go-report-'));t.after(()=>fs.rmSync(directory,{recursive:true,force:true}));
+  const reporter=path.join(repo,'tools/tests/lan-host/go-test-report.cjs'),run=(name,events,expected)=>{
+    const input=path.join(directory,name+'.jsonl'),output=path.join(directory,name+'.json');fs.writeFileSync(input,events.map(JSON.stringify).join('\n')+'\n');
+    return cp.spawnSync(process.execPath,[reporter,input,output,'SYNTHETIC',...expected],{encoding:'utf8',windowsHide:true});
+  };
+  const pass=[{Action:'run',Test:'TestOne'},{Action:'pass',Test:'TestOne'},{Action:'pass'}];
+  assert.equal(run('pass',pass,['TestOne']).status,0);
+  assert.notEqual(run('missing',pass,['TestOne','TestTwo']).status,0);
+  assert.notEqual(run('skip',[{Action:'skip',Test:'TestOne'},{Action:'pass'}],['TestOne']).status,0);
+  assert.notEqual(run('unexpected',[...pass.slice(0,-1),{Action:'pass',Test:'TestTwo'},{Action:'pass'}],['TestOne']).status,0);
 });

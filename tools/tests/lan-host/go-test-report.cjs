@@ -1,0 +1,12 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const [input,output,suite,...expected]=process.argv.slice(2);
+assert.ok(input&&output&&/^[A-Z0-9_-]+$/.test(suite));assert.ok(expected.length>0);assert.equal(new Set(expected).size,expected.length);
+assert.equal(fs.existsSync(output),false);const events=fs.readFileSync(input,'utf8').split(/\r?\n/).filter(Boolean).map(line=>JSON.parse(line));
+const testEvents=events.filter(event=>typeof event.Test==='string'),failed=testEvents.filter(event=>event.Action==='fail');
+const skipped=testEvents.filter(event=>event.Action==='skip'),passed=new Set(testEvents.filter(event=>event.Action==='pass'&&!event.Test.includes('/')).map(event=>event.Test));
+const packagePass=events.some(event=>event.Action==='pass'&&!event.Test);
+for(const name of expected)assert.equal(passed.has(name),true,'expected Go test did not pass');
+assert.deepEqual([...passed].sort(),[...expected].sort());assert.equal(failed.length,0);assert.equal(skipped.length,0);assert.equal(packagePass,true);
+const report={schema:1,status:'PASS',suite,expectedTests:expected,pass:passed.size,fail:0,skipped:0,packagePass:true};
+fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n',{flag:'wx'});

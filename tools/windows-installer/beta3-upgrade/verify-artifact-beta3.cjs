@@ -28,6 +28,9 @@ assert.equal(compatibility.status,'PASS');assert.equal(compatibility.sourceCommi
 assert.equal(Object.keys(compatibility.checks).length,15);assert.equal(compatibility.actualSetupLifecycle,'PASS');
 assert.equal(compatibility.onlineArtifactRequiredAtRuntime,false);
 for(let n=1;n<=15;n++)assert.equal(compatibility.checks['C'+String(n).padStart(2,'0')]?.status,'PASS');
+const portable=json('portable-test-report.json');assert.equal(portable.status,'PASS');assert.equal(portable.sourceCommit,commit);
+for(const phase of ['staging','extracted']){assert.equal(portable[phase]?.status,'PASS');assert.equal(portable[phase]?.sourceCommit,commit);assert.equal(portable[phase]?.checks?.length,27);}
+assert.equal(portable.firewallUnit?.status,'PASS');assert.equal(portable.firewallUnit?.pass,12);assert.equal(portable.firewallUnit?.fail,0);assert.equal(portable.firewallUnit?.skipped,0);
 const regression=json('public-regression.json');
 assert.equal(regression.sourceCommit,commit);assert.equal(regression.testTotal,742);assert.equal(regression.fail,0);assert.equal(regression.skipped,0);assert.equal(regression.suitePass,26);
 const setup=json('BETA3-INSTALLER-TEST-REPORT.json');

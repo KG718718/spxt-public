@@ -95,6 +95,9 @@ var
   UpgradeMode, TransactionPrepared, TransactionSwapped, TransactionFinalized, PostInstallFailed: Boolean;
   PriorDisplayName, PriorDisplayVersion, PriorInstallRoot, PriorUninstallString: String;
   PriorBindingRoot, PriorBindingInstance, UpgradeRequest, UpgradePlan: String;
+  PriorProduct64Snapshot, PriorBinding64Snapshot, PriorProduct32Snapshot, PriorBinding32Snapshot: String;
+  PriorProduct64Hash, PriorBinding64Hash, PriorProduct32Hash, PriorBinding32Hash: String;
+  PriorProduct32Exists, PriorBinding32Exists: Boolean;
 #ifdef FaultCancel
   FaultCancelIssued: Boolean;
 #endif
@@ -336,6 +339,47 @@ begin
   StringChangeEx(Result, '"', '\"', True);
 end;
 
+function RegistryTool(View: String): String;
+begin
+  if View = '64' then Result := ExpandConstant('{sys}\reg.exe')
+  else Result := ExpandConstant('{syswow64}\reg.exe');
+end;
+
+function ExportRegistryKey(KeyName, FileName, View: String): Boolean;
+var Code: Integer;
+begin
+  DeleteFile(FileName);
+  Result := Exec(RegistryTool(View), 'export "HKCU\' + KeyName + '" "' + FileName + '" /y /reg:' + View,
+    ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, Code) and (Code = 0) and FileExists(FileName);
+end;
+
+function SnapshotUpgradeRegistration: Boolean;
+begin
+  Result := False;
+  PriorProduct64Snapshot := ExpandConstant('{tmp}\ksession-product-64.reg');
+  PriorBinding64Snapshot := ExpandConstant('{tmp}\ksession-binding-64.reg');
+  PriorProduct32Snapshot := ExpandConstant('{tmp}\ksession-product-32.reg');
+  PriorBinding32Snapshot := ExpandConstant('{tmp}\ksession-binding-32.reg');
+  PriorProduct32Exists := RegKeyExists(HKCU32, ProductKey);
+  PriorBinding32Exists := RegKeyExists(HKCU32, BindingKey);
+  if not ExportRegistryKey(ProductKey, PriorProduct64Snapshot, '64') or
+     not ExportRegistryKey(BindingKey, PriorBinding64Snapshot, '64') then exit;
+  PriorProduct64Hash := GetSHA256OfFile(PriorProduct64Snapshot);
+  PriorBinding64Hash := GetSHA256OfFile(PriorBinding64Snapshot);
+  if (PriorProduct64Hash = '') or (PriorBinding64Hash = '') then exit;
+  if PriorProduct32Exists then begin
+    if not ExportRegistryKey(ProductKey, PriorProduct32Snapshot, '32') then exit;
+    PriorProduct32Hash := GetSHA256OfFile(PriorProduct32Snapshot);
+    if PriorProduct32Hash = '' then exit;
+  end;
+  if PriorBinding32Exists then begin
+    if not ExportRegistryKey(BindingKey, PriorBinding32Snapshot, '32') then exit;
+    PriorBinding32Hash := GetSHA256OfFile(PriorBinding32Snapshot);
+    if PriorBinding32Hash = '' then exit;
+  end;
+  Result := True;
+end;
+
 function ReadUpgradeIdentity: Boolean;
 var N, V, R, U, BR, BI: String;
 begin
@@ -358,7 +402,8 @@ begin
        (CompareText(BR, PriorBindingRoot) <> 0) or (CompareText(BI, PriorBindingInstance) <> 0) then exit;
   end;
   Result := (PriorDisplayName = 'K⁺-SESSION Beta') and (PriorDisplayVersion <> '') and
-    (PriorInstallRoot <> '') and (PriorBindingRoot <> '') and (PriorBindingInstance <> '');
+    (PriorInstallRoot <> '') and (PriorBindingRoot <> '') and (PriorBindingInstance <> '') and
+    SnapshotUpgradeRegistration;
 end;
 
 procedure ExtractUpgradeTools;
@@ -535,14 +580,50 @@ begin
   Result := SaveStringToFile(P, Utf8Encode(S), False);
 end;
 
-procedure RestoreUpgradeRegistration;
+function DeleteRegistryKeyExact(Root: Integer; KeyName: String): Boolean;
 begin
-  RegWriteStringValue(HKCU64, ProductKey, 'DisplayName', PriorDisplayName);
-  RegWriteStringValue(HKCU64, ProductKey, 'DisplayVersion', PriorDisplayVersion);
-  RegWriteStringValue(HKCU64, ProductKey, 'InstallLocation', PriorInstallRoot);
-  RegWriteStringValue(HKCU64, ProductKey, 'UninstallString', PriorUninstallString);
-  RegWriteStringValue(HKCU64, BindingKey, 'InstallRoot', PriorBindingRoot);
-  RegWriteStringValue(HKCU64, BindingKey, 'Instance', PriorBindingInstance);
+  Result := True;
+  if RegKeyExists(Root, KeyName) then Result := RegDeleteKeyIncludingSubkeys(Root, KeyName);
+  Result := Result and not RegKeyExists(Root, KeyName);
+end;
+
+function ImportRegistryKey(FileName, View: String): Boolean;
+var Code: Integer;
+begin
+  Result := Exec(RegistryTool(View), 'import "' + FileName + '" /reg:' + View,
+    ExpandConstant('{tmp}'), SW_HIDE, ewWaitUntilTerminated, Code) and (Code = 0);
+end;
+
+function VerifyRegistryKey(KeyName, View, ExpectedHash, VerifyName: String): Boolean;
+begin
+  Result := ExportRegistryKey(KeyName, VerifyName, View) and
+    (GetSHA256OfFile(VerifyName) = ExpectedHash);
+end;
+
+function RestoreUpgradeRegistration: Boolean;
+var VerifyProduct64, VerifyBinding64, VerifyProduct32, VerifyBinding32: String;
+begin
+  Result := False;
+#ifdef FaultRegistryRestore
+  Log('KSESSION_FIXTURE_REGISTRY_RESTORE_FAILURE');
+  exit;
+#endif
+  if not DeleteRegistryKeyExact(HKCU64, ProductKey) or not DeleteRegistryKeyExact(HKCU64, BindingKey) or
+     not DeleteRegistryKeyExact(HKCU32, ProductKey) or not DeleteRegistryKeyExact(HKCU32, BindingKey) then exit;
+  if not ImportRegistryKey(PriorProduct64Snapshot, '64') or not ImportRegistryKey(PriorBinding64Snapshot, '64') then exit;
+  if PriorProduct32Exists and not ImportRegistryKey(PriorProduct32Snapshot, '32') then exit;
+  if PriorBinding32Exists and not ImportRegistryKey(PriorBinding32Snapshot, '32') then exit;
+  if (not PriorProduct32Exists and RegKeyExists(HKCU32, ProductKey)) or
+     (not PriorBinding32Exists and RegKeyExists(HKCU32, BindingKey)) then exit;
+  VerifyProduct64 := ExpandConstant('{tmp}\ksession-product-64-verify.reg');
+  VerifyBinding64 := ExpandConstant('{tmp}\ksession-binding-64-verify.reg');
+  VerifyProduct32 := ExpandConstant('{tmp}\ksession-product-32-verify.reg');
+  VerifyBinding32 := ExpandConstant('{tmp}\ksession-binding-32-verify.reg');
+  if not VerifyRegistryKey(ProductKey, '64', PriorProduct64Hash, VerifyProduct64) or
+     not VerifyRegistryKey(BindingKey, '64', PriorBinding64Hash, VerifyBinding64) then exit;
+  if PriorProduct32Exists and not VerifyRegistryKey(ProductKey, '32', PriorProduct32Hash, VerifyProduct32) then exit;
+  if PriorBinding32Exists and not VerifyRegistryKey(BindingKey, '32', PriorBinding32Hash, VerifyBinding32) then exit;
+  Result := True;
 end;
 
 function VerifyFinalRegistration: Boolean;
@@ -760,10 +841,11 @@ procedure DeinitializeSetup;
 begin
   if UpgradeMode and TransactionPrepared and not TransactionFinalized then begin
     if RunNode('upgrade-transaction-cli.cjs', 'rollback "' + UpgradePlan + '"') then begin
-      Log('KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK');
+      if RestoreUpgradeRegistration and
+         RunNode('upgrade-transaction-cli.cjs', 'complete-rollback "' + UpgradePlan + '"') then
+        Log('KSESSION_UPGRADE_TRANSACTION_ROLLED_BACK')
+      else Log('KSESSION_UPGRADE_ROLLBACK_FAILED');
     end else Log('KSESSION_UPGRADE_ROLLBACK_FAILED');
-    { commit may already have completed its filesystem rollback and removed the journal }
-    RestoreUpgradeRegistration;
   end;
   ReleaseLocks;
 end;

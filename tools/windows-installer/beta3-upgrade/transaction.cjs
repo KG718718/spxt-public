@@ -10,6 +10,7 @@ const APP_VERSION = '1.0.0';
 const DATA_CONTRACT_VERSION = 1;
 const JOURNAL_SCHEMA = 1;
 const RECOVERY_NAME = '.ksession-upgrade-recovery-v1';
+const COMMITTED_RECOVERY_NAME = '.ksession-upgrade-committed-v1';
 const INSTALLER_METADATA = Object.freeze(['LICENSE-Inno-Setup.txt', 'build-info.json', 'installer-manifest.json',
   'install-state.json', 'instance-binding.ini', 'unins000.dat', 'unins000.exe']);
 const ACCEPTED_F3_STATE = Object.freeze({
@@ -154,10 +155,12 @@ function assertPlan(plan) {
 }
 function locations(plan) {
   const recovery = path.join(plan.installRoot, RECOVERY_NAME);
+  const committedRecovery = path.join(plan.installRoot, COMMITTED_RECOVERY_NAME);
   return {
     program: path.join(plan.installRoot, 'program'),
     uninstall: path.join(plan.installRoot, 'uninstall'),
     recovery,
+    committedRecovery,
     journal: path.join(recovery, 'journal.json'),
     oldProgram: path.join(recovery, 'program'),
     oldUninstall: path.join(recovery, 'uninstall'),
@@ -253,7 +256,7 @@ function prepare(plan) {
   const loc = locations(plan);
   directory(plan.installRoot, 'INSTALL_ROOT_INVALID'); directory(loc.program, 'OLD_PROGRAM_INVALID'); directory(loc.uninstall, 'OLD_METADATA_INVALID');
   validateOldInstallState(plan, path.join(loc.uninstall, 'install-state.json'));
-  if (fs.existsSync(loc.recovery)) fail('RECOVERY_EXISTS', 'unfinished recovery exists');
+  if (fs.existsSync(loc.recovery) || fs.existsSync(loc.committedRecovery)) fail('RECOVERY_EXISTS', 'unfinished recovery exists');
   fs.mkdirSync(loc.recovery, { recursive: false });
   try {
     copyInstallerMetadata(loc.uninstall, loc.oldUninstall);
@@ -268,15 +271,20 @@ function prepare(plan) {
   }
   return { ok: true, code: 'TRANSACTION_PREPARED' };
 }
-function loadJournal(plan) {
+function loadJournalAt(plan, recovery, phases) {
   assertPlan(plan);
   const loc = locations(plan);
-  regular(loc.journal, 'RECOVERY_INVALID');
-  const journal = readJson(loc.journal);
-  if (journal.schema !== JOURNAL_SCHEMA || JSON.stringify(journal.plan) !== JSON.stringify(plan) || !['PREPARED', 'SWAPPED'].includes(journal.phase)) {
+  const journalFile = path.join(recovery, 'journal.json');
+  directory(recovery, 'RECOVERY_INVALID'); regular(journalFile, 'RECOVERY_INVALID');
+  const journal = readStrictJson(journalFile, 'RECOVERY_INVALID').value;
+  if (journal.schema !== JOURNAL_SCHEMA || JSON.stringify(journal.plan) !== JSON.stringify(plan) || !phases.includes(journal.phase)) {
     fail('RECOVERY_INVALID', 'journal invalid');
   }
-  return { loc, journal };
+  return { loc, journal, journalFile };
+}
+function loadJournal(plan) {
+  const loc = locations(plan);
+  return loadJournalAt(plan, loc.recovery, ['PREPARED', 'SWAPPED', 'COMMITTED', 'ROLLED_BACK']);
 }
 function restoreShortcuts(plan, loc, journal) {
   for (const [present, target, saved] of [
@@ -287,8 +295,9 @@ function restoreShortcuts(plan, loc, journal) {
     if (present) { fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(saved, target, fs.constants.COPYFILE_EXCL); }
   }
 }
-function rollback(plan) {
+function rollback(plan, preserveForRegistry = false) {
   const { loc, journal } = loadJournal(plan);
+  if (['COMMITTED', 'ROLLED_BACK'].includes(journal.phase)) fail('PHASE_INVALID', 'transaction is not rollback eligible');
   try {
     if (journal.phase === 'SWAPPED' || fs.existsSync(loc.oldProgram)) {
       if (fs.existsSync(loc.program)) fs.rmSync(loc.program, { recursive: true, force: true });
@@ -297,12 +306,30 @@ function rollback(plan) {
     if (fs.existsSync(loc.uninstall)) fs.rmSync(loc.uninstall, { recursive: true, force: true });
     fs.cpSync(loc.oldUninstall, loc.uninstall, { recursive: true, force: false, errorOnExist: true });
     restoreShortcuts(plan, loc, journal);
+    if (preserveForRegistry) {
+      replaceJson(loc.journal, {...journal, phase: 'ROLLED_BACK'});
+      return { ok: true, code: 'TRANSACTION_ROLLED_BACK_REGISTRY_PENDING' };
+    }
     fs.rmSync(loc.recovery, { recursive: true, force: true });
     return { ok: true, code: 'TRANSACTION_ROLLED_BACK' };
   } catch (error) {
     if (error instanceof TransactionError) throw error;
     fail('ROLLBACK_FAILED', 'rollback incomplete');
   }
+}
+function completeRollback(plan) {
+  const {loc, journal} = loadJournal(plan);
+  if (journal.phase !== 'ROLLED_BACK') fail('PHASE_INVALID', 'rollback is not registry pending');
+  const current = path.join(loc.uninstall, 'install-state.json'), saved = path.join(loc.oldUninstall, 'install-state.json');
+  validateOldInstallState(plan, current); validateOldInstallState(plan, saved);
+  if (!fs.readFileSync(current).equals(fs.readFileSync(saved)) || fs.existsSync(loc.oldProgram)) fail('ROLLBACK_FAILED', 'rollback state is not exact');
+  for (const [present, target, stored] of [[journal.desktop, plan.desktopShortcut, path.join(loc.shortcuts, 'desktop.lnk')],
+    [journal.start, plan.startMenuShortcut, path.join(loc.shortcuts, 'start-menu.lnk')]]) {
+    if (present !== fs.existsSync(target) || (present && !fs.readFileSync(target).equals(fs.readFileSync(stored)))) fail('ROLLBACK_FAILED', 'shortcut rollback is not exact');
+  }
+  try { fs.rmSync(loc.recovery, {recursive: true, force: false}); }
+  catch { fail('ROLLBACK_FAILED', 'rollback cleanup incomplete'); }
+  return {ok: true, code: 'TRANSACTION_ROLLBACK_COMPLETED'};
 }
 function commit(plan, fault = '') {
   const { loc, journal } = loadJournal(plan);
@@ -330,13 +357,30 @@ function commit(plan, fault = '') {
   }
 }
 function finalize(plan) {
-  const { loc, journal } = loadJournal(plan);
-  if (journal.phase !== 'SWAPPED') fail('PHASE_INVALID', 'transaction not swapped');
+  assertPlan(plan);
+  const loc = locations(plan);
+  let loaded;
+  if (fs.existsSync(loc.committedRecovery)) {
+    if (fs.existsSync(loc.recovery)) fail('RECOVERY_UNSAFE', 'ambiguous committed recovery');
+    loaded = loadJournalAt(plan, loc.committedRecovery, ['COMMITTED']);
+  } else {
+    loaded = loadJournal(plan);
+    if (!['SWAPPED', 'COMMITTED'].includes(loaded.journal.phase)) fail('PHASE_INVALID', 'transaction not swapped');
+  }
   validateStaged({ ...plan, stagedProgram: loc.program });
   validateNewInstallState(plan, path.join(loc.uninstall, 'install-state.json'));
-  fs.rmSync(loc.recovery, { recursive: true, force: false });
-  return { ok: true, code: 'TRANSACTION_COMMITTED' };
+  if (loaded.journal.phase === 'SWAPPED') {
+    if (fs.existsSync(loc.committedRecovery)) fail('RECOVERY_UNSAFE', 'committed recovery already exists');
+    replaceJson(loaded.journalFile, { ...loaded.journal, phase: 'COMMITTED' });
+  }
+  try {
+    if (fs.existsSync(loc.recovery)) fs.renameSync(loc.recovery, loc.committedRecovery);
+    fs.rmSync(loc.committedRecovery, { recursive: true, force: false });
+    return { ok: true, code: 'TRANSACTION_COMMITTED' };
+  } catch {
+    return { ok: true, code: 'TRANSACTION_COMMITTED_RECOVERY_PENDING' };
+  }
 }
 
-module.exports = { ACCEPTED_F3_STATE, APP_VERSION, DATA_CONTRACT_VERSION, INSTALLER_VERSION, INSTALLER_METADATA, RECOVERY_NAME, TransactionError,
-  commit, finalize, locations, parseStrictJson, prepare, rollback, validateOldInstallState, validateStaged };
+module.exports = { ACCEPTED_F3_STATE, APP_VERSION, COMMITTED_RECOVERY_NAME, DATA_CONTRACT_VERSION, INSTALLER_VERSION, INSTALLER_METADATA, RECOVERY_NAME, TransactionError,
+  commit, completeRollback, finalize, locations, parseStrictJson, prepare, rollback, validateOldInstallState, validateStaged };

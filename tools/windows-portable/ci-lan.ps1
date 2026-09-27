@@ -46,6 +46,17 @@ $taskHelper=Join-Path $taskWork 'firewall-helper-output'
 & (Join-Path $taskRepo 'tools/windows-firewall/build.ps1') -OutputDir $taskHelper -SourceCommit $Commit `
   -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.3' -GoExe $taskGo
 if($LASTEXITCODE -ne 0){throw 'Firewall helper build failed'}
+$taskFirewallTests=@('TestRequestWhitelistAndCanonicalGUID','TestStrictDeploymentConfig','TestInstallIdentityAndTampering',
+  'TestReparseResolutionMismatchIsRejected','TestCleanPathComparisonRejectsLexicalAliases','TestBoundConfigMustMatchRequest',
+  'TestRegistrationAndINIContracts','TestRuleOwnershipAndIdempotencyPolicy','TestEmbeddedFirewallScriptIsClosed',
+  'TestEmbeddedFirewallScriptParses','TestStatusOutputAllowlist','TestFirewallScriptBehaviorWithIsolatedCmdletHarness')
+$taskFirewallRaw=Join-Path $taskWork 'firewall-tests.jsonl';$taskFirewallReport=Join-Path $taskWork 'firewall-unit-report.json'
+Push-Location (Join-Path $taskRepo 'tools/windows-firewall')
+try{
+  & $taskGo test -json -count=1 -run ('^(' + ($taskFirewallTests -join '|') + ')$') . | Set-Content -Encoding utf8 -LiteralPath $taskFirewallRaw
+  if($LASTEXITCODE -ne 0){throw 'Explicit firewall unit and isolated cmdlet tests failed'}
+}finally{Pop-Location}
+Run-Checked $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),$taskFirewallRaw,$taskFirewallReport,'FIREWALL')+$taskFirewallTests)
 $taskHelperHash=(Get-FileHash -LiteralPath (Join-Path $taskHelper 'K-SESSION-Firewall.exe') -Algorithm SHA256).Hash.ToLower()
 $taskLauncher=Join-Path $taskWork 'launcher-output'
 & (Join-Path $taskRepo 'tools/windows-launcher/build.ps1') -RuntimeRoot $taskRoot -OutputDir $taskLauncher `
@@ -73,26 +84,34 @@ $taskArtifact=Join-Path $taskWork 'artifact';New-Item -ItemType Directory -Path 
 $env:KSESSION_TEST_LAUNCHER=Join-Path $taskRoot 'K-SESSION.exe'
 $env:KSESSION_TEST_EVIDENCE=Join-Path $taskWork 'launcher-integration'
 $env:KSESSION_PORTABLE_REPO=$taskRepo
+$taskHarness=Join-Path $taskWork 'lan-go-harness'
+Run-Checked $taskNode @((Join-Path $taskRepo 'tools/tests/windows-installer/beta3-upgrade/prepare-hosted-harness.cjs'),(Join-Path $taskRepo 'tools/windows-launcher'),$taskHarness)
+$taskOverlay=Join-Path $taskWork 'lan-go-overlay.json'
+@{Replace=@{
+  ([IO.Path]::GetFullPath((Join-Path $taskRepo 'tools/windows-launcher/integration_windows_test.go')))=[IO.Path]::GetFullPath((Join-Path $taskHarness 'integration_windows_test.go'))
+  ([IO.Path]::GetFullPath((Join-Path $taskRepo 'tools/windows-launcher/portable_windows_test.go')))=[IO.Path]::GetFullPath((Join-Path $taskHarness 'portable_windows_test.go'))
+}}|ConvertTo-Json -Depth 4|Set-Content -Encoding utf8 -LiteralPath $taskOverlay
 Push-Location (Join-Path $taskRepo 'tools/windows-launcher')
 try{
   Run-Checked $taskGo @('vet','./...')
-  Run-Checked $taskGo @('test','-count=1','-v','-run','^TestLauncherIntegration$','.')
+  Run-Checked $taskGo @('test',('-overlay='+$taskOverlay),'-count=1','-v','-run','^TestLauncherIntegration$','.')
   $env:KSESSION_PORTABLE_ROOT=$taskRoot
   $env:KSESSION_PORTABLE_EVIDENCE=Join-Path $taskWork 'portable-staging'
-  Run-Checked $taskGo @('test','-count=1','-v','-run','^TestPortable$','.')
+  Run-Checked $taskGo @('test',('-overlay='+$taskOverlay),'-count=1','-v','-run','^TestPortable$','.')
   Run-Checked $taskNode @($taskPackageScript,'archive',$taskRoot,$taskArtifact,(Join-Path $env:KSESSION_PORTABLE_EVIDENCE 'portable-test-report.json'))
   $taskExtract=Join-Path $taskWork '解包程序 中文 with spaces'
   Expand-Archive -LiteralPath (Join-Path $taskArtifact 'K-SESSION-portable-lan-beta-win-x64.zip') -DestinationPath $taskExtract
   $env:KSESSION_PORTABLE_ROOT=Join-Path $taskExtract 'K-SESSION'
   $env:KSESSION_PORTABLE_EVIDENCE=Join-Path $taskWork 'portable-extracted'
   Run-Checked $taskNode @($taskPackageScript,'verify',$env:KSESSION_PORTABLE_ROOT)
-  Run-Checked $taskGo @('test','-count=1','-v','-run','^TestPortable$','.')
+  Run-Checked $taskGo @('test',('-overlay='+$taskOverlay),'-count=1','-v','-run','^TestPortable$','.')
 }finally{Pop-Location}
 $taskStaging=Get-Content -Raw (Join-Path $taskWork 'portable-staging/portable-test-report.json')|ConvertFrom-Json
 $taskExtracted=Get-Content -Raw (Join-Path $taskWork 'portable-extracted/portable-test-report.json')|ConvertFrom-Json
 $taskIdentity=Get-Content -Raw (Join-Path $taskArtifact 'zip-identity.json')|ConvertFrom-Json
+$taskFirewallUnit=Get-Content -Raw $taskFirewallReport|ConvertFrom-Json
 @{status='PASS';sourceCommit=$Commit;zipSha256=$taskIdentity.zipSha256;firewallHelperSha256=$taskHelperHash;
-  staging=$taskStaging;extracted=$taskExtracted;humanWin10='PENDING; no real LAN or browser claim'}|ConvertTo-Json -Depth 30|
+  staging=$taskStaging;extracted=$taskExtracted;firewallUnit=$taskFirewallUnit;humanWin10='PENDING; no real LAN or browser claim'}|ConvertTo-Json -Depth 30|
   Set-Content -Encoding utf8 (Join-Path $taskArtifact 'portable-test-report.json')
 Copy-Item -LiteralPath (Join-Path $taskRoot 'build-info.json') -Destination $taskArtifact
 Copy-Item -LiteralPath $taskManifest -Destination $taskArtifact
