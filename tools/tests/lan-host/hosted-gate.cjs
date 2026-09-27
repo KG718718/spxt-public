@@ -17,7 +17,8 @@ const STAGES = Object.freeze([
 const REASONS = Object.freeze([
   'CONTEXT_REQUIRED', 'SOURCE_COMMIT_UNAVAILABLE', 'SOURCE_COMMIT_MISMATCH',
   'OUTPUT_ARGUMENT_INVALID', 'OUTPUT_EXISTS', 'PRODUCTION_DISCOVERY_ACCEPTED',
-  'PRODUCTION_DISCOVERY_INVALID', 'SYNTHETIC_DISCOVERY_FAILED', 'ENUMERATION_FAILED',
+  'DISCOVERY_PLATFORM_UNSUPPORTED', 'DISCOVERY_SYSTEM_RUNTIME_INVALID', 'DISCOVERY_COMMAND_FAILED',
+  'DISCOVERY_RECORDS_INVALID', 'DISCOVERY_SHAPE_INVALID', 'SYNTHETIC_DISCOVERY_FAILED', 'ENUMERATION_FAILED',
   'ZERO_RUNNER_CANDIDATES', 'MULTIPLE_RUNNER_CANDIDATES', 'SUBNET_INVALID',
   'CONTROLLER_CREATE_FAILED', 'LOOPBACK_BIND_FAILED', 'LAN_BIND_FAILED',
   'PORT_RANGE_EXHAUSTED_MIXED', 'LOCAL_HEALTH_FAILED', 'LAN_HEALTH_FAILED',
@@ -27,7 +28,8 @@ const REASONS = Object.freeze([
 const STAGE_REASONS = Object.freeze({
   HOSTED_CONTEXT: ['CONTEXT_REQUIRED', 'SOURCE_COMMIT_UNAVAILABLE', 'SOURCE_COMMIT_MISMATCH'],
   OUTPUT_PRECHECK: ['OUTPUT_ARGUMENT_INVALID', 'OUTPUT_EXISTS'],
-  PRODUCTION_DISCOVERY_REJECT: ['PRODUCTION_DISCOVERY_ACCEPTED', 'PRODUCTION_DISCOVERY_INVALID'],
+  PRODUCTION_DISCOVERY_REJECT: ['PRODUCTION_DISCOVERY_ACCEPTED', 'DISCOVERY_PLATFORM_UNSUPPORTED',
+    'DISCOVERY_SYSTEM_RUNTIME_INVALID', 'DISCOVERY_COMMAND_FAILED', 'DISCOVERY_RECORDS_INVALID', 'DISCOVERY_SHAPE_INVALID'],
   SYNTHETIC_DISCOVERY: ['SYNTHETIC_DISCOVERY_FAILED'], RUNNER_ADDRESS_ENUMERATION: ['ENUMERATION_FAILED'],
   RUNNER_ADDRESS_CARDINALITY: ['ZERO_RUNNER_CANDIDATES', 'MULTIPLE_RUNNER_CANDIDATES'],
   SUBNET_DERIVATION: ['SUBNET_INVALID'], CONTROLLER_CREATE: ['CONTROLLER_CREATE_FAILED'],
@@ -106,6 +108,32 @@ function syntheticDiscovery(network = networkDefault) {
     throw failure('SYNTHETIC_DISCOVERY', 'SYNTHETIC_DISCOVERY_FAILED');
   }
   return {adapterId};
+}
+
+function productionDiscovery(network) {
+  let actual;
+  try { actual = network.discoverWindowsLan(); }
+  catch (error) {
+    let code;
+    try { code = typeof error?.code === 'string' ? error.code : null; } catch { throw failure('INTERNAL', 'INTERNAL'); }
+    const reasons = {
+      NETWORK_PLATFORM_UNSUPPORTED: 'DISCOVERY_PLATFORM_UNSUPPORTED',
+      NETWORK_SYSTEM_RUNTIME_INVALID: 'DISCOVERY_SYSTEM_RUNTIME_INVALID',
+      NETWORK_DISCOVERY_FAILED: 'DISCOVERY_COMMAND_FAILED',
+      NETWORK_DISCOVERY_INVALID: 'DISCOVERY_RECORDS_INVALID'
+    };
+    if (!reasons[code]) throw failure('INTERNAL', 'INTERNAL');
+    throw failure('PRODUCTION_DISCOVERY_REJECT', reasons[code]);
+  }
+  const statuses = new Set(['NO_PRIVATE_LAN', 'MULTIPLE_LAN_ADAPTERS', 'SELECTED', 'NETWORK_CHANGED']);
+  if (!actual || typeof actual !== 'object' || !statuses.has(actual.status) ||
+      !Object.hasOwn(actual, 'selected') || !Array.isArray(actual.candidates)) {
+    throw failure('PRODUCTION_DISCOVERY_REJECT', 'DISCOVERY_SHAPE_INVALID');
+  }
+  if (actual.status !== 'NO_PRIVATE_LAN' || actual.selected !== null || actual.candidates.length !== 0) {
+    throw failure('PRODUCTION_DISCOVERY_REJECT', 'PRODUCTION_DISCOVERY_ACCEPTED');
+  }
+  return actual;
 }
 
 function httpProbe(address, port) {
@@ -218,13 +246,7 @@ async function executeGate(report, supplied = {}) {
   if (!/^[a-f0-9]{40}$/.test(checkoutCommit)) throw failure('HOSTED_CONTEXT', 'SOURCE_COMMIT_UNAVAILABLE');
   if (checkoutCommit !== env.GITHUB_SHA.toLowerCase()) throw failure('HOSTED_CONTEXT', 'SOURCE_COMMIT_MISMATCH');
 
-  let actual;
-  try { actual = deps.network.discoverWindowsLan(); }
-  catch { throw failure('PRODUCTION_DISCOVERY_REJECT', 'PRODUCTION_DISCOVERY_INVALID'); }
-  if (!actual || !Array.isArray(actual.candidates)) throw failure('PRODUCTION_DISCOVERY_REJECT', 'PRODUCTION_DISCOVERY_INVALID');
-  if (actual.status !== 'NO_PRIVATE_LAN' || actual.candidates.length !== 0) {
-    throw failure('PRODUCTION_DISCOVERY_REJECT', 'PRODUCTION_DISCOVERY_ACCEPTED');
-  }
+  productionDiscovery(deps.network);
   report.productionDiscoveryRejected = true;
 
   const {adapterId} = syntheticDiscovery(deps.network);
@@ -326,6 +348,6 @@ async function cli(argv) {
 }
 
 module.exports = {STAGES, REASONS, STAGE_REASONS, REPORT_KEYS, GateFailure, createReport, prefixFromNetmask,
-  enumerateRunnerAddresses, syntheticDiscovery, executeGate, validateReport, runGate, instrumentReservation};
+  enumerateRunnerAddresses, syntheticDiscovery, productionDiscovery, executeGate, validateReport, runGate, instrumentReservation};
 
 if (require.main === module) cli(process.argv.slice(2)).then(code => { process.exitCode = code; });

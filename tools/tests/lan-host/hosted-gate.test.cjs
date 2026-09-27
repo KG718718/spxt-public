@@ -84,7 +84,7 @@ test.after(() => fs.rmSync(testRoot, {recursive: true, force: true}));
 test('1 production discovery must reject the hosted virtual adapter', async () => {
   const result = await run();
   assert.equal(result.report.productionDiscoveryRejected, true);
-  const accepted = await run({network: {...network, discoverWindowsLan: () => ({status: 'SELECTED', candidates: [{}]})}});
+  const accepted = await run({network: {...network, discoverWindowsLan: () => ({status: 'SELECTED', selected: {}, candidates: [{}]})}});
   assert.equal(accepted.report.stage, 'PRODUCTION_DISCOVERY_REJECT');
   assert.equal(accepted.report.reason, 'PRODUCTION_DISCOVERY_ACCEPTED');
 });
@@ -222,6 +222,36 @@ test('checkout mismatch writes a fixed failure and can never upload fake PASS', 
   assert.equal(result.report.reason, 'SOURCE_COMMIT_MISMATCH');
   assert.equal(result.report.sourceCommit, commit);
   assert.equal(result.report.dualBindReady, false);
+});
+
+for (const [code, reason] of [
+  ['NETWORK_PLATFORM_UNSUPPORTED', 'DISCOVERY_PLATFORM_UNSUPPORTED'],
+  ['NETWORK_SYSTEM_RUNTIME_INVALID', 'DISCOVERY_SYSTEM_RUNTIME_INVALID'],
+  ['NETWORK_DISCOVERY_FAILED', 'DISCOVERY_COMMAND_FAILED'],
+  ['NETWORK_DISCOVERY_INVALID', 'DISCOVERY_RECORDS_INVALID']
+]) {
+  test(`production discovery fixed error ${code} maps without raw diagnostics`, async () => {
+    const fakeNetwork = {...network, discoverWindowsLan() { throw Object.assign(Error('raw path ip adapter stderr'), {code}); }};
+    const result = await run({network: fakeNetwork});
+    assert.equal(result.report.stage, 'PRODUCTION_DISCOVERY_REJECT');
+    assert.equal(result.report.reason, reason);
+    assert.doesNotMatch(JSON.stringify(result.report), /raw|path|stderr/i);
+  });
+}
+
+test('production discovery invalid return shape is distinct from fixed thrown errors', async () => {
+  const fakeNetwork = {...network, discoverWindowsLan: () => ({status: 'NO_PRIVATE_LAN', candidates: []})};
+  const result = await run({network: fakeNetwork});
+  assert.equal(result.report.stage, 'PRODUCTION_DISCOVERY_REJECT');
+  assert.equal(result.report.reason, 'DISCOVERY_SHAPE_INVALID');
+});
+
+test('unknown production discovery exception maps only to INTERNAL', async () => {
+  const fakeNetwork = {...network, discoverWindowsLan() { throw Error('raw path ip adapter stderr'); }};
+  const result = await run({network: fakeNetwork});
+  assert.equal(result.report.stage, 'INTERNAL');
+  assert.equal(result.report.reason, 'INTERNAL');
+  assert.doesNotMatch(JSON.stringify(result.report), /raw|path|stderr/i);
 });
 
 test('enumeration, controller creation, mixed range, and report write fail with fixed stages', async () => {
