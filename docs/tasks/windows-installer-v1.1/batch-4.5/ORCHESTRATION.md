@@ -6,12 +6,12 @@
 |---|---|---|---|---|
 |B45-T5-PREFLIGHT|01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9|b4-qa/codex/b45-t5-preflight|已整合7bfbfd3；c06dcfe历史冻结|方案A已解除原阻塞|
 |B45-T5-IDENTITY|01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9|b4-qa/codex/b45-t5|PASS / 固化0897383|专项3取证PASS|
-|B45-T1|01a0e002-cbb8-77f1-bf0b-505a7a327007|f8bd/codex/b45-t1|INTEGRATED 9b23ba6 / 冻结a698f94|Master15/15；T2接线|
+|B45-T1|01a0e002-cbb8-77f1-bf0b-505a7a327007|f8bd/codex/b45-t1|INTEGRATED 864e8f5 / 冻结ca454f1|Master18/18；QA复验中|
 |B45-T2|01a0e01c-ad06-7413-8572-bf1dbf2fbd11|lan-server/codex/b45-t2|INTEGRATED 4b83380 / 冻结30a1351|Master13/13 PASS|
-|B45-T3|01a0e035-3eca-7993-9db1-795373d92537|lan-launcher/codex/b45-t3|DISPATCHED @4b83380|T1/T2/T4均整合|
-|B45-T4|01a0e004-98a3-75b2-a2a1-3ffd0c6506c9|lan-firewall/codex/b45-t4|INTEGRATED 4150409 / 冻结4f0c5c8|Master12+17、vet PASS|
-|B45-T5-INTEGRATION|同T5|b4-qa/codex/b45-t5-integration|DISPATCHED @0897383|精确F3已取证；T3并行独占Launcher|
-|B45-QA|01a0e03a-15c9-7833-af1c-c05a8eca2126|lan-qa/codex/b45-qa|EARLY SECURITY AUDIT @5825690|仅审已整合T1/T2/T4；最终QA待候选|
+|B45-T3|01a0e035-3eca-7993-9db1-795373d92537|lan-launcher/codex/b45-t3|RUNNING @4b83380|T1/T2/T4均整合|
+|B45-T4|01a0e004-98a3-75b2-a2a1-3ffd0c6506c9|lan-firewall/codex/b45-t4|INTEGRATED b0e51b5 / 冻结aea2474|Master13+29、vet PASS；QA复验中|
+|B45-T5-INTEGRATION|同T5|b4-qa/codex/b45-t5-integration|RUNNING @0897383|精确F3已取证；T3并行独占Launcher|
+|B45-QA|01a0e03a-15c9-7833-af1c-c05a8eca2126|lan-qa/codex/b45-qa-r1|EARLY RETEST @b0e51b5|旧305344e FAIL历史保留；最终QA待候选|
 
 预算：专项3/4、Full0/2、QA0/2。身份取证计专项；不得运行无关Full。每次run前登记精确source/mode/budget，后记录result/Artifact，无修改不retry。
 
@@ -53,3 +53,5 @@ B45-T3 DISPATCHED：thread01a0e035-3eca-7993-9db1-795373d92537，managed lan-lau
 T5-INTEGRATION原线程/原worktree继续，保留旧codex/b45-t5@4b08d35，按0897383建立阶段branch codex/b45-t5-integration；精确任务卡tasks/B45-T5-INTEGRATION.md。T3独占Launcher/build.ps1，T5独占Runtime/Portable/Setup/CI，共享构建接口经Master协调。
 
 独立B45-QA早期安全审查已派：thread01a0e03a-15c9-7833-af1c-c05a8eca2126，model gpt-5.6-sol/medium，专属lan-qa工作树/branch，baseline582569083fe9773ddd11115ba9ba698f7f2c8d29。禁止生产修改和Hosted，只回可复现缺陷及文档，整体QA不得提前PASS。T3构建接口已确认并转T5：可选FirewallHelperSha256严格64lowercasehex，beta3必传真实helperhash；历史Local为空保持闭合。
+
+早期QA回单305344e已Review整合704a9bd，结论FAIL保留。T1 R2/R3 ff1f6fd/ca454f1整合aeac5fe/864e8f5；T4 R2/R3 ba399b8/aea2474整合48934de/b0e51b5。Master独立Node18/18、Go13顶层29子用例及vet PASS。同一QA线程/工作树保存旧分支，阶段分支codex/b45-qa-r1精确baseline b0e51b54744c944ce68a5730d9b8d279b72db9a0继续原缺陷corpus/mock复验；无新Hosted，无真实NIC/firewall/registry操作。

@@ -37,3 +37,9 @@
 - 已撤回T2 healthFailed孤立API漏洞定性：独立QA追溯唯一生产monitor→reconcile，发现异常前已同步selected=null/lanListening=false撤销guard；导出函数孤立测试不是生产可达绕过。Master撤销返工，原T2确认NO PRODUCTION DEFECT，清除仅自己的未提交孤立测试，clean@30a1351，无生产改动/新commit。
 - 已确认T4 P2：enable既有精确enabled自有rule时，早期Test-ActiveEffective查询异常在cleanup flag建立前，exit25但不禁用；原T4 R2补责任边界及exact规则下profile/ActiveStore查询throw反例。status/unknown仍禁止写，正常幂等保持。
 - QA未给整体PASS；T3/T5仍实施中，专项3/4、Full0/2、QA0/2不变。
+
+## T1/T4 原缺陷返工整合
+
+- T1 R2/R3：递归token parser拒绝解码后重复键、未知字段及尾随值；仅配置层要求schema原始数字token为1、port为8080—8099规范十进制整数，通用parser仍保留标准JSON数字能力。Master18/18 fail0skip0，非法load/save保持原配置、合成业务及附件逐字节不变。
+- T4 R2：自有CIM rule object确认后立即承担cleanup责任，覆盖既有精确规则的早期Profile/ActiveStore查询异常；status/未知同名不写，正常幂等零写。R3补精确解码后字段集合，拒绝Go默认大小写匹配，整数解码继续拒绝小数/指数。Master13顶层29子用例及go vet PASS；原生产嵌入PS以隔离mock执行，未操作真实Firewall。
+- 集成HEAD b0e51b54744c944ce68a5730d9b8d279b72db9a0已远端核验；原QA FAIL保留，独立同bytes跨语言corpus与早期异常复验进行中，不能提前称QA PASS。
