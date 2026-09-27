@@ -55,7 +55,7 @@ $taskFirewallRaw=Join-Path $taskWork 'firewall-tests.jsonl';$taskFirewallReport=
 $taskFirewallEnvironment=$null
 . (Join-Path $taskRepo 'tools/windows-firewall/test-environment.ps1')
 try{
-  $taskFirewallEnvironment=Enter-KSessionFirewallTestEnvironment (Resolve-KSessionFirewallPhysicalPath $taskWork) 'firewall-unit-test-env'
+  $taskFirewallEnvironment=Enter-KSessionFirewallTestEnvironment (Resolve-KSessionFirewallPhysicalPath $env:TEMP) ('firewall-unit-'+$PID+'-'+[guid]::NewGuid().ToString('N')+'-env')
   Push-Location (Join-Path $taskRepo 'tools/windows-firewall')
   try{
     & $taskGo test -json -count=1 -run ('^(' + ($taskFirewallTests -join '|') + ')$') . | Set-Content -Encoding utf8 -LiteralPath $taskFirewallRaw

@@ -110,7 +110,7 @@ func runFirewallBehavior(t *testing.T, action, scenario, fault string) (int, []f
 	if err != nil {
 		t.Fatal(err)
 	}
-	eventFile := filepath.Join(t.TempDir(), "events.jsonl")
+	eventFile := filepath.Join(fixtureDir(t), "events.jsonl")
 	cmd := exec.Command(powershell, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", firewallMockHarness+"\n"+firewallScript)
 	cmd.Env = append(os.Environ(),
 		"KSESSION_FW_ACTION="+action,

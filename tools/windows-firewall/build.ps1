@@ -16,12 +16,11 @@ if($InstallerVersion -ne '1.1.0-beta.3'){throw 'Batch 4.5 beta.3 installer versi
 $taskOutput=[IO.Path]::GetFullPath($OutputDir)
 if(Test-Path -LiteralPath $taskOutput){throw 'Output must be new'}
 if((& $GoExe version) -ne 'go version go1.27.1 windows/amd64'){throw 'Pinned Go 1.27.1 Windows amd64 required'}
-$taskParent=Split-Path $taskOutput -Parent
 . (Join-Path $PSScriptRoot 'test-environment.ps1')
 $taskInputTempClass=Get-KSessionFirewallTestPathClass $env:TEMP
 $taskInputTmpClass=Get-KSessionFirewallTestPathClass $env:TMP
 $taskInputGoTmpClass=Get-KSessionFirewallTestPathClass $env:GOTMPDIR
-$taskPhysicalParent=Resolve-KSessionFirewallPhysicalPath $taskParent
+$taskPhysicalParent=Resolve-KSessionFirewallPhysicalPath $env:TEMP
 $taskReportPath=''
 if($DiagnosticReport){
   $taskReportPath=[IO.Path]::GetFullPath($DiagnosticReport)
@@ -37,7 +36,7 @@ $flags="-H windowsgui -s -w -buildid= -X main.buildSourceCommit=$SourceCommit -X
 $taskEnvironment=$null
 $taskFailed=$false
 try {
-  $taskEnvironment=Enter-KSessionFirewallTestEnvironment $taskPhysicalParent 'firewall-build-test-env'
+  $taskEnvironment=Enter-KSessionFirewallTestEnvironment $taskPhysicalParent ('firewall-build-'+$PID+'-'+[guid]::NewGuid().ToString('N')+'-env')
   $taskReport.stage='TESTS';$taskReport.reason='RUNNING';Write-FixedReport
   $taskRaw=Join-Path $taskEnvironment.Root 'go-test.jsonl'
   [IO.File]::WriteAllText($taskRaw,'',[Text.UTF8Encoding]::new($false))
