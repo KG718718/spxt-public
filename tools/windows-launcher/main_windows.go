@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 	"unicode/utf16"
@@ -55,6 +56,7 @@ type msg struct {
 const openMsg = 0x8001
 const stopMsg = 0x8002
 const statusMsg = 0x8003
+const lanRefreshMsg = 0x8004
 
 type ownedChild struct {
 	process syscall.Handle
@@ -63,13 +65,22 @@ type ownedChild struct {
 	port    int
 }
 type controller struct {
-	root, exe, instance, class, loginHash string
-	lock                                  syscall.Handle
-	log                                   *os.File
-	hwnd, label                           uintptr
-	child                                 *ownedChild
-	ready                                 bool
-	closing                               bool
+	root, exe, instance, class, loginHash    string
+	lock                                     syscall.Handle
+	log                                      *os.File
+	hwnd, label                              uintptr
+	child                                    *ownedChild
+	ready                                    bool
+	closing                                  bool
+	lanMu                                    sync.Mutex
+	lanBusy                                  bool
+	lanConfig                                *lanConfig
+	lanCandidates                            []lanCandidate
+	lanURL                                   string
+	lanStatus                                string
+	combo, lanButton, copyButton, portButton uintptr
+	pendingLAN                               *lanRefreshResult
+	lastLANCheck                             time.Time
 }
 
 var active *controller
@@ -80,7 +91,7 @@ func (c *controller) event(code string, fields map[string]any) {
 	}
 	entry := map[string]any{"time": time.Now().UTC().Format(time.RFC3339Nano), "event": code}
 	// Explicit allowlist: never write arbitrary errors, environment, HTTP bodies or child output.
-	for _, k := range []string{"pid", "port", "node", "commit", "runtimeVersion", "code", "result"} {
+	for _, k := range []string{"pid", "port", "commit", "runtimeVersion", "code", "result"} {
 		if v, ok := fields[k]; ok {
 			entry[k] = v
 		}
@@ -111,7 +122,7 @@ func (ch *ownedChild) stop() {
 		ch.process = 0
 	}
 }
-func spawnNode(node, app, instance string, port int) (*ownedChild, error) {
+func spawnNode(node, app, instance string, port int, lanMode bool) (*ownedChild, error) {
 	j, e := call(kernel32, "CreateJobObjectW", 0, 0)
 	if j == 0 {
 		return nil, e
@@ -123,7 +134,12 @@ func spawnNode(node, app, instance string, port int) (*ownedChild, error) {
 		syscall.CloseHandle(syscall.Handle(j))
 		return nil, e
 	}
-	env := utf16.Encode([]rune(strings.Join(childEnvironment(instance, app, port), "\x00") + "\x00\x00"))
+	systemRoot, rootError := systemRootFromAPI()
+	if rootError != nil {
+		syscall.CloseHandle(syscall.Handle(j))
+		return nil, rootError
+	}
+	env := utf16.Encode([]rune(strings.Join(childEnvironmentFor(instance, app, port, systemRoot, lanMode), "\x00") + "\x00\x00"))
 	command := syscall.EscapeArg(node) + " --no-addons " + syscall.EscapeArg(filepath.Join(app, "server.js"))
 	si := syscall.StartupInfo{Cb: uint32(unsafe.Sizeof(syscall.StartupInfo{})), Flags: 1, ShowWindow: 0}
 	var pi syscall.ProcessInformation
@@ -148,41 +164,26 @@ func spawnNode(node, app, instance string, port int) (*ownedChild, error) {
 	return ch, nil
 }
 func ownsLoopback(pid uint32, port int) bool {
-	var size uint32
-	p := iphelper.NewProc("GetExtendedTcpTable")
-	p.Call(0, uintptr(unsafe.Pointer(&size)), 0, 2, 3, 0)
-	if size < 4 || size > 16*1024*1024 {
-		return false
-	}
-	b := make([]byte, size)
-	r, _, _ := p.Call(uintptr(unsafe.Pointer(&b[0])), uintptr(unsafe.Pointer(&size)), 0, 2, 3, 0)
-	if r != 0 {
-		return false
-	}
-	found := false
-	n := int(binary.LittleEndian.Uint32(b))
-	for i := 0; i < n; i++ {
-		at := 4 + i*24
-		if at+24 > len(b) {
-			return false
-		}
-		row := b[at : at+24]
-		if binary.LittleEndian.Uint32(row[20:]) != pid {
-			continue
-		}
-		// OWNER_PID_LISTENER table: state/address/port/remote/remotePort/PID.
-		if row[4] != 127 || row[5] != 0 || row[6] != 0 || row[7] != 1 {
-			return false
-		}
-		if int(binary.BigEndian.Uint16(row[8:10])) == port {
-			found = true
-		}
-	}
-	return found
+	return ownsExactListeners(pid, port, "", false)
 }
 func (c *controller) healthy() bool {
-	return c.child != nil && c.child.alive() && ownsLoopback(c.child.pid, c.child.port) && pageHealthy(c.child.port, c.loginHash)
+	if c.child == nil || !c.child.alive() || !pageHealthy(c.child.port, c.loginHash) {
+		return false
+	}
+	if c.lanEnabled() && c.lanConfig != nil {
+		state, err := c.serverState(c.child.port)
+		if err != nil {
+			return false
+		}
+		selected := ""
+		if state.Selected != nil {
+			selected = state.Selected.Address
+		}
+		return state.LocalListening && state.LocalHealth && ownsExactListeners(c.child.pid, c.child.port, selected, state.LANListening)
+	}
+	return ownsLoopback(c.child.pid, c.child.port)
 }
+
 func (c *controller) openBrowser() {
 	if !c.ready || !c.healthy() {
 		c.event("OPEN_REFUSED", nil)
@@ -223,6 +224,10 @@ func windowProc(hwnd uintptr, m uint32, w, l uintptr) uintptr {
 	switch m {
 	case openMsg:
 		if c != nil {
+			if c.isLANBusy() {
+				c.text("LAN 设置正在安全应用，请稍候。")
+				return 1
+			}
 			// A second launch may recover a dead child, never replace a live untrusted service.
 			if c.child != nil && !c.child.alive() {
 				c.child.stop()
@@ -232,7 +237,11 @@ func windowProc(hwnd uintptr, m uint32, w, l uintptr) uintptr {
 			if c.child == nil && !c.closing {
 				if e := c.start(); e != nil {
 					c.event("FAILED", map[string]any{"code": e.Error()})
-					c.text("后台重新启动失败，请保存诊断信息后重试。")
+					if e.Error() == "PORT_OCCUPIED" && c.lanConfig != nil {
+						c.text(fmt.Sprintf("PORT OCCUPIED\r\n保存的 LAN 端口 %d 仍被占用；请主动重新寻找端口。", c.lanConfig.Port))
+					} else {
+						c.text("后台重新启动失败，请保存诊断信息后重试。")
+					}
 					return 0
 				}
 			}
@@ -246,8 +255,16 @@ func windowProc(hwnd uintptr, m uint32, w, l uintptr) uintptr {
 			return uintptr(c.child.pid)
 		}
 		return 0
+	case lanRefreshMsg:
+		if c != nil {
+			c.applyLANRefresh()
+		}
+		return 1
 	case stopMsg:
 		if c != nil {
+			if c.isLANBusy() {
+				return 0
+			}
 			c.cleanup()
 		}
 		call(user32, "DestroyWindow", hwnd)
@@ -257,11 +274,33 @@ func windowProc(hwnd uintptr, m uint32, w, l uintptr) uintptr {
 			c.openBrowser()
 			return 0
 		}
+		if w&0xffff == confirmAdapterID {
+			c.selectAdapter()
+			return 0
+		}
+		if w&0xffff == enableLANID {
+			c.enableFirewallAsync()
+			return 0
+		}
+		if w&0xffff == copyLANID {
+			if !copyText(hwnd, c.currentLANURL()) {
+				c.text("局域网地址尚未就绪，未复制。")
+			}
+			return 0
+		}
+		if w&0xffff == reselectPortID {
+			c.reselectPort()
+			return 0
+		}
 		if w&0xffff != 102 {
 			break
 		}
 		fallthrough
 	case 0x10:
+		if c.isLANBusy() {
+			c.text("LAN 设置正在安全应用，完成后才能退出。")
+			return 0
+		}
 		r, _ := call(user32, "MessageBoxW", hwnd, uintptr(unsafe.Pointer(ptr("停止 K⁺-SESSION 后台并退出？\r\n请先保存页面中的操作。浏览器页面将无法继续访问。"))), uintptr(unsafe.Pointer(ptr(product))), 0x24)
 		if r == 6 {
 			c.cleanup()
@@ -276,6 +315,10 @@ func windowProc(hwnd uintptr, m uint32, w, l uintptr) uintptr {
 		}
 		return 0
 	case 0x113:
+		if c.isLANBusy() {
+			return 0
+		}
+		c.beginLANRefresh()
 		if c.ready && c.child != nil && !c.child.alive() {
 			pid := c.child.pid
 			c.child.stop()
@@ -328,17 +371,24 @@ func (c *controller) makeWindow() error {
 		return e
 	}
 	title := product + " — " + buildVersion + " " + buildCommit[:min(len(buildCommit), 8)]
-	hwnd, e := call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr(c.class))), uintptr(unsafe.Pointer(ptr(title))), 0x00ca0000, 200, 200, 590, 215, 0, 0, inst, 0)
+	hwnd, e := call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr(c.class))), uintptr(unsafe.Pointer(ptr(title))), 0x00ca0000, 160, 120, 760, 480, 0, 0, inst, 0)
 	if hwnd == 0 {
 		return e
 	}
 	c.hwnd = hwnd
-	c.label, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("STATIC"))), uintptr(unsafe.Pointer(ptr("正在校验并启动…"))), 0x50000000, 20, 20, 545, 75, hwnd, 0, inst, 0)
+	c.label, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("STATIC"))), uintptr(unsafe.Pointer(ptr("正在校验并启动…"))), 0x50000000, 20, 20, 700, 220, hwnd, 0, inst, 0)
 	for _, b := range []struct {
 		id, x uintptr
 		text  string
 	}{{101, 20, "打开系统页面"}, {102, 210, "停止服务并退出"}} {
-		call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr(b.text))), 0x50010000, b.x, 110, 170, 35, hwnd, b.id, inst, 0)
+		call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr(b.text))), 0x50010000, b.x, 390, 170, 35, hwnd, b.id, inst, 0)
+	}
+	if c.lanEnabled() {
+		c.combo, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("COMBOBOX"))), 0, 0x50200003, 20, 250, 700, 140, hwnd, selectAdapterID, inst, 0)
+		c.lanButton, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("选择此适配器"))), 0x50010000, 20, 300, 160, 35, hwnd, confirmAdapterID, inst, 0)
+		c.copyButton, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("复制局域网地址"))), 0x50010000, 195, 300, 160, 35, hwnd, copyLANID, inst, 0)
+		c.portButton, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("重新寻找可用端口"))), 0x50010000, 370, 300, 180, 35, hwnd, reselectPortID, inst, 0)
+		call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("启用局域网访问"))), 0x50010000, 565, 300, 155, 35, hwnd, enableLANID, inst, 0)
 	}
 	call(user32, "ShowWindow", hwnd, 5)
 	// First ShowWindow can inherit SW_HIDE from the parent STARTUPINFO.
@@ -351,18 +401,35 @@ func (c *controller) makeWindow() error {
 func (c *controller) start() error {
 	node := filepath.Join(c.root, "runtime", "node.exe")
 	app := filepath.Join(c.root, "app")
-	for port := 8080; port <= 8099; port++ {
+	first, last := launcherPortRange(nil)
+	if c.lanEnabled() {
+		config, err := c.readLANConfig()
+		// A damaged/unreadable LAN config remains untouched. T2 starts Local on the
+		// bounded host port and reports LAN_START_FAILED through its read-only status.
+		if err == nil {
+			c.lanConfig = config
+		} else {
+			c.lanConfig = nil
+		}
+		if err == nil && config != nil {
+			first, last = launcherPortRange(config)
+		}
+	}
+	for port := first; port <= last; port++ {
 		l, e := net.Listen("tcp4", fmt.Sprintf("127.0.0.1:%d", port))
 		if e != nil {
+			if c.lanConfig != nil {
+				return fail("PORT_OCCUPIED", "保存的局域网端口已被占用；请在控制窗口主动重新寻找端口。")
+			}
 			continue
 		}
 		l.Close()
-		ch, e := spawnNode(node, app, c.instance, port)
+		ch, e := spawnNode(node, app, c.instance, port, c.lanEnabled())
 		if e != nil {
 			return fail("SERVER_START_FAILED", "后台无法启动，请检查安全软件提示和 launcher.log。")
 		}
 		c.child = ch
-		c.event("NODE_SPAWN", map[string]any{"pid": ch.pid, "node": node, "port": port})
+		c.event("NODE_SPAWN", map[string]any{"pid": ch.pid, "port": port})
 		end := time.Now().Add(15 * time.Second)
 		for time.Now().Before(end) && ch.alive() {
 			if c.healthy() {
@@ -376,11 +443,14 @@ func (c *controller) start() error {
 		}
 		ch.stop()
 		c.child = nil
-		// Retry only when the selected port is now occupied (bind race); never loop on corrupted data.
+		// A persisted LAN port is never silently changed. A first local-only launch may continue its bounded search.
 		l, e = net.Listen("tcp4", fmt.Sprintf("127.0.0.1:%d", port))
 		if e == nil {
 			l.Close()
 			return fail("SERVER_START_FAILED", "后台未能就绪。请检查现有实例数据及安全软件；不会覆盖数据。")
+		}
+		if c.lanConfig != nil {
+			return fail("PORT_OCCUPIED", "保存的局域网端口已被占用；请在控制窗口主动重新寻找端口。")
 		}
 	}
 	return fail("PORT_UNAVAILABLE", "8080—8099 端口均不可用，请关闭冲突软件或联系管理员；未结束其他进程。")
@@ -460,8 +530,12 @@ func run() error {
 	// UI starts before backend, no unchecked command or URL accepted through the message channel.
 	if e = c.start(); e != nil {
 		c.event("FAILED", map[string]any{"code": e.Error()})
-		call(user32, "DestroyWindow", c.hwnd)
-		return e
+		if keepControlForStartFailure(c.lanConfig, e) {
+			c.text(fmt.Sprintf("PORT OCCUPIED\r\n保存的 LAN 端口 %d 被占用，未静默修改。\r\n服务尚未启动；请主动选择“重新寻找可用端口”。", c.lanConfig.Port))
+		} else {
+			call(user32, "DestroyWindow", c.hwnd)
+			return e
+		}
 	}
 	var mmsg msg
 	for {

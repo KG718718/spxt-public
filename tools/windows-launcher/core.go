@@ -16,9 +16,10 @@ import (
 
 var buildCommit = "unbuilt"
 var runtimeHash = "unbuilt"
+var firewallHelperHash = ""
 
 const product = "K⁺-SESSION"
-const buildVersion = "launcher development build / Batch 2B"
+const buildVersion = "launcher development build / Batch 4.5"
 
 type fileEntry struct {
 	Path   string
@@ -44,6 +45,17 @@ type fault struct {
 func (f *fault) Error() string    { return f.Code }
 func fail(code, msg string) error { return &fault{code, msg} }
 func digest(b []byte) string      { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
+func validDigest(value string) bool {
+	if len(value) != 64 {
+		return false
+	}
+	for _, r := range value {
+		if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f')) {
+			return false
+		}
+	}
+	return true
+}
 func hashFile(p string) (string, error) {
 	f, e := os.Open(p)
 	if e != nil {
@@ -176,7 +188,7 @@ func verifyRuntime(root string) (manifest, error) {
 			if name != "app" && name != "runtime" && name != "licenses" && name != "manifest" && name != "hashes" {
 				return bad()
 			}
-		} else if name != "K-SESSION.exe" && name != "build-info.json" {
+		} else if name != "K-SESSION.exe" && name != "build-info.json" && !(name == "K-SESSION-Firewall.exe" && validDigest(firewallHelperHash)) {
 			return bad()
 		}
 	}
@@ -222,8 +234,7 @@ func instancePath(root, requested string) (string, error) {
 	os.Remove(name)
 	return real, nil
 }
-func childEnvironment(instance, app string, port int) []string {
-	sys := os.Getenv("SystemRoot")
+func childEnvironmentFor(instance, app string, port int, sys string, lanMode bool) []string {
 	temp := filepath.Join(instance, "temp")
 	env := map[string]string{"SystemRoot": sys, "WINDIR": sys, "PATH": filepath.Join(sys, "System32"), "TEMP": temp, "TMP": temp,
 		"USERPROFILE": temp, "APPDATA": temp, "LOCALAPPDATA": temp, "HOME": temp,
@@ -234,6 +245,9 @@ func childEnvironment(instance, app string, port int) []string {
 		"KSESSION_SMTP_SECRET_FILE": filepath.Join(instance, "runtime", "secrets", "smtp-pass.dpapi"),
 		"KSESSION_OCR_PYTHON":       filepath.Join(instance, "absent-python.exe"), "KSESSION_OCR_SCRIPT": filepath.Join(app, "tools", "ocr", "ocr_invoice.py"),
 		"KSESSION_MAIL_ENABLED": "0", "KSESSION_MAIL_FORMAL_ENABLED": "0", "KSESSION_MAIL_DRY_RUN": "1", "KSESSION_SKIP_STARTUP_JOBS": "1"}
+	if lanMode {
+		env["KSESSION_LAN_MODE"] = "1"
+	}
 	keys := make([]string, 0, len(env))
 	for k := range env {
 		keys = append(keys, k)
@@ -245,9 +259,24 @@ func childEnvironment(instance, app string, port int) []string {
 	}
 	return result
 }
+func childEnvironment(instance, app string, port int) []string {
+	return childEnvironmentFor(instance, app, port, os.Getenv("SystemRoot"), false)
+}
 func pageHealthy(port int, want string) bool {
+	return endpointHealthy("127.0.0.1", port, want)
+}
+func endpointHealthy(address string, port int, want string) bool {
+	if port < 1 || port > 65535 {
+		return false
+	}
 	client := &http.Client{Timeout: 700 * time.Millisecond, Transport: &http.Transport{Proxy: nil, DisableKeepAlives: true}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	res, e := client.Get(fmt.Sprintf("http://127.0.0.1:%d/login.html", port))
+	url := fmt.Sprintf("http://%s:%d/login.html", address, port)
+	req, e := http.NewRequest(http.MethodGet, url, nil)
+	if e != nil {
+		return false
+	}
+	req.Host = fmt.Sprintf("%s:%d", address, port)
+	res, e := client.Do(req)
 	if e != nil {
 		return false
 	}
