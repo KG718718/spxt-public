@@ -77,3 +77,20 @@ Master 指出首版手动入口只把 `GITHUB_SHA` 写入报告，没有独立�
 - 手动 job 在 checkout 后另做显式 `$taskHead -ceq '${{ github.sha }}'`，但仍先让 gate 写出并严格验证固定失败报告，再以固定消息终止；因此 mismatch 不会缺失证据，也不可能上传伪 PASS。
 - 新增合成 mismatch 反例：报告 `status=FAIL`、stage/reason 精确为上述 mismatch、`dualBindReady=false`，sourceCommit 仍是预期目标 SHA，不包含实际错误 checkout 身份或路径。
 - 返工后专项为 19/19、fail 0、skip 0；Node syntax、3 个 workflow PowerShell block AST、`git diff --check` 全部 PASS。未运行 Hosted，H1 仍为 0/2。
+
+## H1 结果与有界返工补充
+
+Master 执行 H1 Run `36301442048`、source `f026131e9d397e6910ad41f84fa238af49d409a4`、job `108569698585`、Artifact `10925263790`。Artifact 为 459 bytes，ZIP SHA256 `16efa711232189daff8c2990259d0bb26410aa8bac43a992c0ac189020d7369d`；Master 仅在内存核验唯一 JSON allowlist/schema/source/privacy。固定结果为 `FAIL / PRODUCTION_DISCOVERY_REJECT / PRODUCTION_DISCOVERY_INVALID`，后续布尔均 false、计数均 0，未到 runner 候选或双绑定。H1 已用 1/2；H2 剩 1 次，新增 Full 0/1，QA 0/2。
+
+该 H1 旧 reason 混合了 `discoverWindowsLan()` 抛出异常和返回 shape 非法，现有证据不能判断是 Hosted 测试环境假设还是生产安全逻辑问题，也不能证明具体唯一根因。追加 commit `1f1801754e23079e58c2913d2066b0ec54e22c02` 仅在测试 harness 深化固定诊断：
+
+- `NETWORK_PLATFORM_UNSUPPORTED` → `DISCOVERY_PLATFORM_UNSUPPORTED`
+- `NETWORK_SYSTEM_RUNTIME_INVALID` → `DISCOVERY_SYSTEM_RUNTIME_INVALID`
+- `NETWORK_DISCOVERY_FAILED` → `DISCOVERY_COMMAND_FAILED`
+- `NETWORK_DISCOVERY_INVALID` → `DISCOVERY_RECORDS_INVALID`
+- 无异常但返回结构非法 → `DISCOVERY_SHAPE_INVALID`
+- 无固定已知 code 的异常 → `INTERNAL / INTERNAL`
+
+报告不包含异常正文、路径、IP、adapter、stdout/stderr，也不编码其 hash 或长度。四类已知异常、shape 无效和未知异常的合成反例均通过。返工后原 14 项、exact-source 和其他反例合计专项 25 项；完整 LAN 为 62/62、fail 0、skip 0；compatibility + transaction 保持 45/45、fail 0、skip 0；Node syntax、`git diff --check` 和生产/工作流/最终 verifier 冻结检查均 PASS。本线程没有运行 H2 或其他 Hosted。
+
+H2 的用途仅是取得上述唯一固定 reason。若 H2 返回生产已知错误码，再依据该码判断能否在测试 harness/CI 边界修复；若要求放宽 production discovery 安全边界，或 H2 仍不能唯一定位，则必须停止并回 Master/网页版决定。
