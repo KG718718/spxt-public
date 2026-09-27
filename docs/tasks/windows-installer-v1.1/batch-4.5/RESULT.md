@@ -1,5 +1,9 @@
 # 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
+## 当前阶段｜2026-09-27
+
+D01—D12合成门禁由原T5主动回单，Master独立相关28/28、隐私/范围/生产blob Review PASS并整合`9ce5890`；真实S01—S03此前未运行。现在只派原T5一次本机只读链，结果PENDING，P02仍FAIL、P03—P08 NOT REACHED；生产和Windows网络保持冻结。H1/H2 2/2、Final Full0/1、QA0/1未动。
+
 ## 当前有限诊断授权｜2026-09-27
 
 网页版正式批准原T5一次本机S01—S03只读stderr层级诊断，先D01—D12合成反例与Master Review；本轮不得改生产、忽略stderr、增Hosted或提前运行Final Full/QA。此前两次完整命令及N01—N05均`STDERR_NONEMPTY`、P02 FAIL、P03—P08 NOT REACHED保持事实；新分层结果尚PENDING。H1/H2 2/2、Final Full0/1、QA0/1不变。完整授权见`FINAL-LOCAL-STDERR-LAYER-APPROVAL.md`；下方BLOCKED在本次有限授权范围内是历史停止点。
