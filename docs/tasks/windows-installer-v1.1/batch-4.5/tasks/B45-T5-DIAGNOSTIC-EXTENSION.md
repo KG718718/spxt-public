@@ -21,3 +21,5 @@ D5应为最小实际build.ps1/fixture/compile门禁，不重复完整Setup或消
 预算：历史专项4/4封存；新增D5/D6合计最多2，目前0；Full0/2、QA0/2不可挪用。Execution不能dispatch。Master通过9项Review门禁后才D5；当前问题越过且完整候选条件具备后才Full。若新问题必须额外诊断/放宽安全/改产品或无法安全恢复，回Master决策，不自行扩大。
 
 先向Master发送简短有证据的定位计划/最小分工需求，然后持续完成获批本地工作。结果写tasks/B45-T5-DIAGNOSTIC-EXTENSION-RESULT.md，local commit后send_message_to_thread准确Master并核验返回ID。字段：TASK ID、PASS/FAIL/BLOCKED、完成、修改文件、逐项11反例/全Go/vet/driver/privacy证据、生产冻结文件hash/diff、local commit、风险/未实测、D5建议输入、需要Master处理。送达失败标DELIVERY FAILED保留现场，由Master read/RESULT/git兜底。不要生成网页版交接卡。
+
+Master后续精确范围授权：原T5可直接修改tools/windows-firewall/policy_test.go及必要firewall_behavior_windows_test.go，仅测试fixture根、11类反例和固定诊断；无需新建T4任务。生产5文件/go.mod保持。KSESSION_FIREWALL_TEST_ROOT如采用只能测试读取；根验证/ownership/清理边界、原TEMP替换前分类、独立go test与build入口均需核验，不能预设根因。

@@ -76,3 +76,7 @@ T5阶段fe7cb3c7167acdb82743104352d1d54ab3725997、接线修复f053b907e08be75c7
 ## 专项4失败与预算止损
 
 Master核验Run36288039798精确受测4f52e8759d8ddd20b2a9883fd267a98ced27fba1、Artifact10920906716，FAIL/PORTABLE。实际失败为Firewall build.ps1内部go test，早于helper编译及后续显式Go名单门禁。三个有效夹具分别被HELPER_PATH_INVALID、INSTANCE_BINDING_INVALID、REGISTRATION_INVALID拒绝。只读源码确认夹具t.TempDir、ci-lan/build未规范TEMP/TMP；本地Master此前规范路径后通过。短路径/解析不一致仅候选原因，Hosted实际TEMP及细分拒绝原因未记录，不能宣布定位或修复。未执行新反例/修复，未借Full/QA预算；按专项4/4停止并提交网页版决策。
+
+## D5前主控独立原测试对照
+
+在公开f727063d818cd8e6a0bcd640cafc5ce4f2864467、固定Go1.27.1上运行未修改的3个原Firewall测试。规范GOTMPDIR下3/3 PASS；仅GOTMPDIR换成指向同一owned合成目录的junction，3个顶层及登记合法子用例失败，精确复现HELPER_PATH_INVALID / INSTANCE_BINDING_INVALID / REGISTRATION_INVALID。初轮只切TEMP、GOTMPDIR仍规范，两轮均PASS，原先“仅TEMP即可触发”实验预期失败，未掩盖。固定Go源码testing/testing.go的t.TempDir使用os.MkdirTemp(os.Getenv("GOTMPDIR"),pattern)，因此输入分类须含有效GOTMPDIR。机制已复现、原合法fixture结构可通过；历史Hosted具体路径仍未知，不能追认junction就是旧Run根因。仅自有合成目录与junction，无系统配置/真实Registry/Firewall操作，原测试自动清理自己的子目录。安全结果见evidence/d5-master-original-fixture-counterexample.json；raw日志仅本地，不上传。

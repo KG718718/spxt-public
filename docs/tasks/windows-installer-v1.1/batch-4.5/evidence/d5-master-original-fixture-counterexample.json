@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "kind": "k-session-master-original-fixture-counterexample",
+  "sourceCommit": "f727063d818cd8e6a0bcd640cafc5ce4f2864467",
+  "productionChanged": false,
+  "testsChanged": false,
+  "tempOnlyExperiment": [
+    {
+      "passed": [
+        "TestInstallIdentityAndTampering",
+        "TestBoundConfigMustMatchRequest",
+        "TestRegistrationAndINIContracts"
+      ],
+      "exit": 0,
+      "failed": [],
+      "case": "CANONICAL",
+      "reasons": []
+    },
+    {
+      "passed": [
+        "TestInstallIdentityAndTampering",
+        "TestBoundConfigMustMatchRequest",
+        "TestRegistrationAndINIContracts"
+      ],
+      "exit": 0,
+      "failed": [],
+      "case": "JUNCTION",
+      "reasons": []
+    }
+  ],
+  "gotmpdirExperiment": [
+    {
+      "case": "CANONICAL_GOTMPDIR",
+      "exit": 0,
+      "reasons": [],
+      "failed": [],
+      "passed": [
+        "TestInstallIdentityAndTampering",
+        "TestBoundConfigMustMatchRequest",
+        "TestRegistrationAndINIContracts"
+      ]
+    },
+    {
+      "case": "JUNCTION_GOTMPDIR",
+      "exit": 1,
+      "reasons": [
+        "HELPER_PATH_INVALID",
+        "INSTANCE_BINDING_INVALID",
+        "REGISTRATION_INVALID"
+      ],
+      "failed": [
+        "TestInstallIdentityAndTampering",
+        "TestBoundConfigMustMatchRequest",
+        "TestRegistrationAndINIContracts/exact_registry_and_UTF16_INI_accepted",
+        "TestRegistrationAndINIContracts"
+      ],
+      "passed": []
+    }
+  ],
+  "mechanismReproduced": true,
+  "historicalHostedCauseConfirmed": false
+}
