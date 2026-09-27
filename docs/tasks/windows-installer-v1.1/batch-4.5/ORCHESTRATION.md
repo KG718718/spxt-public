@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前：合成分类Review PASS；真实Win10只读诊断已派｜2026-09-27
+
+原T5主动回单第一阶段PASS：local `4f77a8e`/`800c1e2`，Master独立复验R01—R10与固定契约12/12、隐私JSON白名单、生产blob、diff均PASS；整合`1fb36ae`/`13f483f`并push，仅开发分支，无Hosted。现同原T5 thread/worktree/branch派第二阶段`tasks/B45-T5-WIN10-DISCOVERY-LIVE.md`：一次真实Win10只读spawn分类，条件性N01—N05及最多一次完整脚本复核；生产代码仍不得改。此阶段根因PENDING，未授权Final Full或QA。H1/H2 2/2，Final Full0/1，Final QA0/1。下方早期DISPATCHED合成阶段是历史。
+
 ## 当前有限续行：受控Win10 discovery根因｜2026-09-27
 
 网页版完整第0—31节正式决定替代前次停止令。原T5 `01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9`、`E:\CodexWorkspace\CodexWorktrees\b4-qa\public-source`、`codex/b45-t5-integration`、冻结local `c39cdaafa9cd8b25468009318cca4dabcd4ecb67`；准确回单Master `01a0db0e-c950-79e0-8e11-07155e0742f2`。当前仅DISPATCHED R01—R10合成分类反例；Master Review后独立派真实Win10只读诊断。生产blob `4e13e944472f845675fe73d176f063c4fe97f6ed`不改；P01 PASS、P02 FAIL、P03—P08 NOT REACHED保持历史事实。H1/H2 2/2耗尽，H3/H4及等价诊断禁止；Final Full0/1、Final QA0/1未启用。真正根因与最终candidate仍PENDING。8.3额外能力缺失双环境核实后可记ENVIRONMENT_CAPABILITY_NOT_AVAILABLE，不算PASS；核心26/742零fail零skip。模型Master/T5 Sol/Medium、最终QA Sol/High。完整任务书`CONTROLLED-DISCOVERY-ROOT-CAUSE-APPROVAL.md`，任务卡`tasks/B45-T5-WIN10-DISCOVERY-ROOT-CAUSE.md`。下方BLOCKED是本次有限续行前的历史停止点。

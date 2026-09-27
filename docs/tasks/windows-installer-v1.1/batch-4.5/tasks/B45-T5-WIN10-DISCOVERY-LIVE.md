@@ -1,0 +1,9 @@
+# B45-T5 — 真实Win10只读网络发现根因诊断
+
+你是原B45-T5 Execution，不是项目主控。TASK ID `B45-T5-WIN10-DISCOVERY-LIVE`，PARENT Batch4.5；准确回单Master `01a0db0e-c950-79e0-8e11-07155e0742f2`，公开仓库 `KG718718/spxt-public`，原worktree `E:\CodexWorkspace\CodexWorktrees\b4-qa\public-source`，原分支 `codex/b45-t5-integration`。阶段基线为已Review合成结果：原local `800c1e2d08cd4becf7d2bdde9e1c760c1aa73aab`；集成对应 `13f483f`。先读原AGENTS/PROJECT与Batch4.5 SPEC/PLAN/ACCEPTANCE、集成`CONTROLLED-DISCOVERY-ROOT-CAUSE-APPROVAL.md`完整第0—31节、第1阶段卡及RESULT；无需checkout/cherry-pick集成分支。仅你这条原线程/原工作树，禁止重复T5或worktree。
+
+已确认真实Win10 Pro x64 build19045、P01 PASS、P02生产`NETWORK_DISCOVERY_FAILED`，P03—P08 NOT REACHED。合成R01—R10经Master独立12/12及隐私/生产blob Review PASS，且整合已push。现**只授权真实Win10一次只读spawn分类**，使用当前未改`public-lan-network.js`（blob `4e13e944472f845675fe73d176f063c4fe97f6ed`）、生产`WINDOWS_DISCOVERY_SCRIPT`和`runWindowsDiscovery()`及其`resolveSystemPowerShell()`：相同经验证系统exe、args、cwd、env、timeout、maxBuffer。独立harness包装真正`spawnSync`，内存检查一次结果、原样返回生产代码；不要在异常/工具输出中泄露原始文本或本机身份。若现有`runClassifier`把生产解析失败归为`INTERNAL`，仍须从**同一次**拦截的spawn结果独立得到第8节固定布尔/类别，不得重新执行来补分类；非唯一状态如实说明。
+
+第一层报告严格仅审批书第8节8个布尔与固定reason，无stdout/stderr/异常/stack、退出消息、IP/网卡/GUID/MAC/hostname、route/DNS/gateway、系统/用户路径或这些值的hash/长度。只有若真实完整命令为`EXIT_NONZERO`、`STDERR_NONEMPTY`、`JSON_INVALID`或其他非唯一结果，才按第10节在同一安全系统PowerShell/环境依次做N01—N05只读探针；每项只PASS/FAIL与准许固定reason，绝不保存命令实际输出。阶段结束后按第12节**最多一次**重新运行完整当前生产脚本并只报告固定状态。已能唯一定位时不扩大诊断；若仍失败，提交唯一或最小故障集合及其证据，不猜测。若成功，不自行跳过Master Review而直接跑P01—P08；先回单。严禁改任何生产代码、Firewall/网卡/Profile/Route/Gateway/DNS/Registry/Windows Service/Policy/模块、创建永久listener或运行Hosted/Final Full/QA；第15节架构/安全变化立即BLOCKED/NEED PARENT DECISION。
+
+允许修改只读harness、窄合成测试、安全固定证据和本任务RESULT；真实测试输出须先做严格白名单和隐私核验。保留本地commit；语法/合成反例/diff-check须PASS。完成后主动`send_message_to_thread`到准确Master并核对目标，结构化回单【TASK ID】【状态】【完成内容】【修改文件】【测试结果】【local commit】【已知风险】【需要主控处理】。失败按AGENTS记RETURN DELIVERY FAILED；原线程再次冻结待Master判定根因和后续最小修复。H1/H2历史2/2，不增H3/H4；Final Full0/1、Final QA0/1不得动。

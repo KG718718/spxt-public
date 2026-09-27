@@ -1,5 +1,9 @@
 # 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
+## 当前阶段结果｜2026-09-27
+
+第一阶段原T5合成固定分类R01—R10经Master独立12/12 PASS、隐私白名单及未改生产blob Review PASS，已整合并push `13f483f`。这是合成harness结论，真实Win10 P02历史FAIL及P03—P08 NOT REACHED不变。第二阶段仅原T5一次真实只读spawn分类/条件性N01—N05已派，根因与后续修复PENDING；H1/H2 2/2，Final Full0/1、Final QA0/1未用。无beta.3最终Artifact。
+
 ## 当前有限续行｜2026-09-27 完整受控Win10根因任务书
 
 正式批准原T5在同一工作树先完成R01—R10合成分类反例，Master Review后才做真实Win10一次只读production discovery根因诊断；未证实根因前不改生产。前次P01 PASS、P02 `NETWORK_DISCOVERY_FAILED`、P03—P08未到达仍是真实结果。H1/H2 2/2历史不变，不增H3/H4；Final Full0/1、Final QA0/1待真实proof全PASS且privateCandidatePresent=true后才用，失败即停。8.3额外环境能力缺失不是PASS，核心26/742仍零fail零skip。尚无最终beta.3 Artifact或LAN人工验收；详见`CONTROLLED-DISCOVERY-ROOT-CAUSE-APPROVAL.md`。下方停止结论为本次授权前历史。
