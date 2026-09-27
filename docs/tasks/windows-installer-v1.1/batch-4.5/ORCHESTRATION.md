@@ -6,6 +6,8 @@
 
 H2准入Review：原T5 H1返工主动RETURNED实现1f18017、报告b8e3440，Master核验旧失败确实混合发现抛错与结构错误；仅测试harness将四个既有生产固定错误码分别映射闭合reason，非法shape独立，未知异常INTERNAL，未读取/输出异常正文或环境信息。Master独立重跑LAN62/62、兼容事务45/45 fail0skip0，diff仅Hosted gate/测试/RESULT；整合3de2715、42a6c54。H1仍FAIL，实际固定生产code未知，生产发现规则不能在无证据下修改。H2作为最后一次专项，仅用于验证此最小诊断返工后的真实结果；预算目前H1已用1/2、H2待运行、新Full0/1、QA0/2。H2 FAIL即按批准停止，不挪Full/QA。
 
+H2已dispatch：Run `36301876304` / source `80ee1a88275a0ef631cef17d68ace8a69ceaacfa` / attempt1 / mode `lan-hosted-diagnostic`。dispatch前local/origin/GitHub remote HEAD三者一致；H专项正式2/2，新Full0/1、QA0/2。结果PENDING；不得预判PASS或额外retry。
+
 
 H1结果FAIL：Run36301442048@f026131 / job108569698585 / Artifact10925263790（459bytes，ZIP SHA256 16efa711232189daff8c2990259d0bb26410aa8bac43a992c0ac189020d7369d）。Master内存解包，严格单JSON allowlist/schema/source/privacy PASS；固定阶段 `PRODUCTION_DISCOVERY_REJECT/PRODUCTION_DISCOVERY_INVALID`，候选与端口计数均0，双bind未达。此码仍合并“发现抛错/结果结构无效”，实际根因UNKNOWN。原T5同线程返工：本地反例、更深封闭分类及最小安全修复，Master Review后才可H2。预算H1/2已用1次、H2剩1次、新Full0/1、QA0/2；禁止无修改retry。证据 `evidence/h1-run-36301442048.json`。
 

@@ -1,5 +1,8 @@
 # 当前有界工程续行｜2026-09-27
 
+H2最后专项已启动：Run36301876304@80ee1a88275a0ef631cef17d68ace8a69ceaacfa，H预算2/2、新Full0/1、QA0/2；结果PENDING。若H2 FAIL按网页批准立即止损，不借Full或QA重试。
+
+
 H1 Run36301442048@f026131e9d397e6910ad41f84fa238af49d409a4 FAIL，Artifact10925263790严格身份/privacy核验PASS，固定原因 `PRODUCTION_DISCOVERY_REJECT/PRODUCTION_DISCOVERY_INVALID`。runner地址/双bind未到达，真实异常类别尚未知；原T5本地返工中，H2未运行。预算H1 1/2、新Full0/1、QA0/2；不能宣称LAN或候选PASS。
 
 
