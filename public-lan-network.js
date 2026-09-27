@@ -13,6 +13,7 @@ const VIRTUAL_HINT = /(?:\b(?:vpn|tunnel|tap|tun|wireguard|docker|wsl|virtual|vm
 const PHYSICAL_MEDIA = /(?:802\.3|ethernet|native\s*802\.11|wireless\s*lan|wi-?fi)/i;
 
 const WINDOWS_DISCOVERY_SCRIPT = String.raw`$ErrorActionPreference='Stop'
+Import-Module Microsoft.PowerShell.Utility -ErrorAction Stop
 $profiles=@{}; Get-NetConnectionProfile -ErrorAction Stop | ForEach-Object { $profiles[[int]$_.InterfaceIndex]=[string]$_.NetworkCategory }
 $routes=@{}; Get-NetRoute -AddressFamily IPv4 -DestinationPrefix '0.0.0.0/0' -ErrorAction Stop | Where-Object { $_.State -eq 'Alive' } | ForEach-Object { $i=[int]$_.InterfaceIndex; $m=[int]$_.RouteMetric; if(!$routes.ContainsKey($i) -or $m -lt $routes[$i]){$routes[$i]=$m} }
 $onLink=@{}; Get-NetRoute -AddressFamily IPv4 -ErrorAction Stop | Where-Object { $_.State -eq 'Alive' -and $_.NextHop -eq '0.0.0.0' -and $_.DestinationPrefix -ne '0.0.0.0/0' } | ForEach-Object { $i=[int]$_.InterfaceIndex; if(!$onLink.ContainsKey($i)){$onLink[$i]=@()}; $onLink[$i] += [string]$_.DestinationPrefix }
