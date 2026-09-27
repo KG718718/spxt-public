@@ -80,3 +80,7 @@ Master核验Run36288039798精确受测4f52e8759d8ddd20b2a9883fd267a98ced27fba1�
 ## D5前主控独立原测试对照
 
 在公开f727063d818cd8e6a0bcd640cafc5ce4f2864467、固定Go1.27.1上运行未修改的3个原Firewall测试。规范GOTMPDIR下3/3 PASS；仅GOTMPDIR换成指向同一owned合成目录的junction，3个顶层及登记合法子用例失败，精确复现HELPER_PATH_INVALID / INSTANCE_BINDING_INVALID / REGISTRATION_INVALID。初轮只切TEMP、GOTMPDIR仍规范，两轮均PASS，原先“仅TEMP即可触发”实验预期失败，未掩盖。固定Go源码testing/testing.go的t.TempDir使用os.MkdirTemp(os.Getenv("GOTMPDIR"),pattern)，因此输入分类须含有效GOTMPDIR。机制已复现、原合法fixture结构可通过；历史Hosted具体路径仍未知，不能追认junction就是旧Run根因。仅自有合成目录与junction，无系统配置/真实Registry/Firewall操作，原测试自动清理自己的子目录。安全结果见evidence/d5-master-original-fixture-counterexample.json；raw日志仅本地，不上传。
+
+## D5实现3459a59：Master独立Review FAIL
+
+原T5代码冻结3459a5987f8aa77c5c26fc0efbbc04d45ba17950，生产5文件与原baseline逐字节一致。Master自有合成目录复测：环境分类13项PASS，兼容wrapper45/45 fail0skip0；真实build TESTS/TESTS_FAILED，12顶层PASS、9个Firewall隔离cmdlet行为子例及该顶层FAIL，compile未到达；driver ZERO的底层返回TESTS/INTERNAL，与期望TESTS_FAILED不一致，driver FAIL。原3fixture已通过，不能用Execution短目录结果掩盖此独立FAIL。Go临时根长路径与WindowsPS5事件文件兼容仅候选；对子进程pwsh7.6.5空事件解析及空数组比较手动复核均正常，不能认定该比较就是根因。已退回原T5 REWORK，保持当前5生产文件冻结；D5/D6仍0/2。安全报告evidence/d5-master-review-3459.json，raw本地保留不上传。

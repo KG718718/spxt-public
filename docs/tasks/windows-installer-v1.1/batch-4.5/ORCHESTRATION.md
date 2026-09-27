@@ -73,3 +73,5 @@ T5-INTEGRATION原线程/原worktree继续，保留旧codex/b45-t5@4b08d35，按0
 用户明确批准19节续行决定，原专项4/4历史保留；新增D5/D6合计0/2，Full0/2、QA0/2。当前BLOCKED历史结论不改为PASS，但原T5按tasks/B45-T5-DIAGNOSTIC-EXTENSION.md恢复本地定位/测试环境/白名单诊断，其他任务冻结待需要。T5 thread01a0dfe6-e0f4-70f1-bea3-7b162d6e84e9，原b4-qa/public-source，原codex/b45-t5-integration，baseline17aba5da455838d7a20e75e4160f597d291200a0；Master核验其tools/.github/核心LAN代码与公开0e9543479bce2e41eae75d15b6e332179e1d0101无差异。准确return target01a0db0e-c950-79e0-8e11-07155e0742f2。状态DISPATCHED；尚未Hosted。规则以DIAGNOSTIC-EXTENSION-APPROVAL.md为准，先原入口本地反例/Go全测/vet/diff/privacy/生产契约逐字节Review，再决定D5。
 
 T5定位计划主动已收，状态RUNNING。Master接受仅_test.go fixture协作需求，明确由原T5直接改policy_test.go和必要firewall_behavior_windows_test.go测试根/反例，生产5文件冻结；不启新T4任务，不创建重复worktree。D5/D6仍0/2，未确认根因。
+
+原T5实现3459a5987f8aa77c5c26fc0efbbc04d45ba17950冻结供Review；Master独立环境13及兼容45PASS，但真实build/driver在不同owned测试根FAIL。状态REWORK，尚未整合该实现/运行D5。原线程复现最小修复，特别区分事件记录环境与生产Firewall拒绝，不改安全策略。新增D0/2、Full0/2、QA0/2。

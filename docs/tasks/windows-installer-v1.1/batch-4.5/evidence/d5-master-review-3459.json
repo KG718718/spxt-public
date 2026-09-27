@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "kind": "k-session-master-d5-local-review",
+  "testedCommit": "3459a5987f8aa77c5c26fc0efbbc04d45ba17950",
+  "status": "FAIL",
+  "productionFrozen": true,
+  "environment": {
+    "schema": 1,
+    "kind": "k-session-firewall-test-environment",
+    "status": "PASS",
+    "stage": "COMPLETE",
+    "reason": "PASS",
+    "shortPathEvidence": "UNAVAILABLE",
+    "checksPass": 13
+  },
+  "driver": {
+    "schema": 1,
+    "kind": "k-session-firewall-build-driver-contract",
+    "status": "FAIL",
+    "stage": "DRIVER",
+    "reason": "DRIVER_REASON",
+    "checksPass": 0
+  },
+  "driverZero": {
+    "schema": 1,
+    "kind": "k-session-firewall-build-diagnostic",
+    "qualification": "TEST_BUILD_ONLY",
+    "status": "FAIL",
+    "stage": "TESTS",
+    "reason": "INTERNAL",
+    "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "inputTempClass": "CANONICAL",
+    "inputTmpClass": "CANONICAL",
+    "inputGoTmpClass": "NONLOCAL",
+    "fixtureRootSource": "OWNED_PHYSICAL",
+    "testsPass": 0,
+    "testsFail": 0,
+    "testsSkipped": 0,
+    "packagePass": false,
+    "compileReached": false
+  },
+  "build": {
+    "schema": 1,
+    "kind": "k-session-firewall-build-diagnostic",
+    "qualification": "TEST_BUILD_ONLY",
+    "status": "FAIL",
+    "stage": "TESTS",
+    "reason": "TESTS_FAILED",
+    "sourceCommit": "3459a5987f8aa77c5c26fc0efbbc04d45ba17950",
+    "inputTempClass": "CANONICAL",
+    "inputTmpClass": "CANONICAL",
+    "inputGoTmpClass": "NONLOCAL",
+    "fixtureRootSource": "OWNED_PHYSICAL",
+    "testsPass": 12,
+    "testsFail": 10,
+    "testsSkipped": 0,
+    "packagePass": false,
+    "compileReached": false
+  },
+  "compatibility": {
+    "tests": 45,
+    "pass": 45,
+    "fail": 0,
+    "skip": 0
+  },
+  "hostedUsed": 0,
+  "historicalHostedCauseConfirmed": false
+}
