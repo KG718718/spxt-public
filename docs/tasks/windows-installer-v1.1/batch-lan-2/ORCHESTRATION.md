@@ -41,3 +41,7 @@ Full #1 Run `36379556816` 结果 FAIL，固定失败 Artifact `10951969499`。`b
 ## 2026-09-28 — Full #2 固定失败与预算止损
 
 Master 将原 T3 修复与治理记录非 force 推唯一开发分支，核验本地 HEAD、origin 跟踪及 GitHub 远端同为 `f15170389a915dcf245c8ae721ef46d0d9201c38` 后，通过已登记 workflow ID `362562346` 仅派发 `mode=lan2-full`。Run `36380488652` 结果 FAIL，失败 Artifact `10952926928`，固定 `beta4-ci-stage.json` 为 `OFFLINE_LIFECYCLE FAIL`。受验 F3 Setup 精确下载/校验、Node LAN 44/44、兼容事务 45/45、真实 beta.4 Setup 构建与安装、多个 beta.2→beta.4 实际升级检查通过；升级总报告 FAIL。日志指向 instance `.launcher.lock` 被其他进程占用时的读取失败，不能据此确认锁的唯一根因、也不能判定整个升级安全验收通过。固定 offline 报告显示 externalDuring=false、restored=true、firewallChanged=false；状态 FAIL 与流水线失败并存，不能误记网络隔离门禁 PASS。核心 26/742、最终 Artifact privacy、独立 QA 未到达；无最终 beta.4 Artifact。Full 2/2 已耗尽，QA 0/1 不挪用；依授权冻结 LAN2-T1/T2/T3 与原工作树，禁止追加工程/Hosted/QA，只完成治理收尾并返回网页版决定。详见 `LAN2-FULL2-STOP-20260928.md`。
+
+## 2026-09-28 — 网页版批准有界锁生命周期续行
+
+下方 Full #2 止损结论保留历史；用户现仅授权原 LAN2-T3 长期 Thread `01a0e644-b6de-74a1-8fc7-ce454eadce57` / 原 `530d` 工作树、本地任务分支定位 `.launcher.lock occupied`，不重开 T1/T2、不创建普通 sub-agent。Master 已向原 T3 派发完整返工卡：先构造本地锁占用反例，查受控持锁进程、shutdown/exit、锁释放、正常/异常 cleanup、inventory/readback 顺序；只允许确定性生命周期修复，禁止排除锁文件、忽略 sharing violation、固定 sleep 或放宽安全/数据保护。正常释放、占用 fail-closed、graceful/abnormal/timeout、cleanup 后读取与重复无残留均须 fail0skip0。T3 local commit/主动回单后由 Master 独立 Review；Review PASS 才可使用新增 Final Full #3 最多 1 次，无新增 diagnostic Hosted。原 Final QA 0/1 保留，只有 Full #3 PASS 才运行；Full #3 或 QA FAIL 即停交网页版，不申请 Full #4。最终仍须 LAN HUMAN PENDING，不进 main/tag/Release/Batch5/OCR。

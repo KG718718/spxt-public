@@ -1,6 +1,6 @@
 # Batch LAN-2 Result
 
-状态：`BLOCKED — FULL HOSTED BUDGET EXHAUSTED; OFFLINE_LIFECYCLE FAILED`。正式长期 Execution T1/T2/T3 均已主动回单，经 Master Review、普通工程返工和整合后，集成源码独立复测 Node LAN 44/44、beta.4 兼容事务 45/45、C01—C15、Launcher 固定 Go 28/28 + vet、Firewall build 13/13 + compile PASS；这些局部门禁不能代替最终 Full。真实 Win10 Node 候选存在，同端口 loopback+候选 IP 临时 bind 成功；未触发 UAC 或修改网络。Batch 4.5 仍冻结。
+状态：`IN PROGRESS — BOUNDED LOCK LIFECYCLE FIX; FULL #3 PENDING`。Full #1/#2 历史 FAIL 与原 2/2 止损不改写；网页版仅批准原 LAN2-T3 长期 Thread 对 Full #2 `.launcher.lock occupied` 进行本地反例和确定性生命周期修复，Master Review 后新增 Final Full #3 最多一次，QA 原 0/1 保留。正式长期 Execution T1/T2/T3 既有局部门禁 Node LAN 44/44、beta.4 兼容事务 45/45、C01—C15、Launcher 固定 Go 28/28 + vet、Firewall build 13/13 + compile PASS；这些不能代替最终 Full。真实 Win10 Node 候选存在，同端口 loopback+候选 IP 临时 bind 成功；未触发 UAC 或修改网络。Batch 4.5 仍冻结。
 
 Full #1 Run `36379556816`@`9ba5a33` 已失败，固定阶段 `FROZEN_REGRESSION`，失败 Artifact `10951969499`；原 T3 local `e517c22` 经 Master Review 整合 `502c81d`，修正历史 sequence 静态测试跨 YAML job 读取的假报。主控六文件复验 112 tests/110 pass/0 fail/2 环境 skip（8.3 alias 与文件 symlink），不能记作 skip0；beta.4 兼容事务 45/45 fail0skip0。
 
