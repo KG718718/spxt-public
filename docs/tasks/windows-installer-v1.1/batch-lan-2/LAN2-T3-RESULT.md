@@ -1,6 +1,6 @@
 # LAN2-T3 执行回单（2026-09-28）
 
-> 当前追加状态：`WAITING T2 INTEGRATION`。下方初次 45/45 为冻结独立基线的历史结果；集成 `61c8652` 加入精确新名单断言后为 44/45，待 T2 `build.ps1` 修复整合后由 Master 重跑完整门禁。
+> 当前追加状态：`RETURNED — LOCAL SYNTHETIC PASS; PARENT INTEGRATION PENDING`。下方独立基线与集成反例均为历史结果；本任务最新验证为集成 `56aed68` 源码只读快照上的 45/45 与 C01—C15 PASS，仍需 Master 整合本次修复并独立复跑。
 
 ## 状态
 
@@ -35,3 +35,9 @@
 - 集成反例：T2 `tools/windows-launcher/build.ps1:22` 仍调用旧的 27 项 Launcher 名单，含已删除的 `TestUACRejectionDoesNotStopLocalChildOrRetry`，缺少 `TestFirewallInterfaceNameArgumentIsQuoted`、`TestEnableRejectionRestoresDisabledPreferenceAndLocalChild`。本任务不修改该 T2 文件。
 - 在 `61c8652` 的 Git archive 只读源码快照中覆盖本任务修正后的 T3 测试运行完整 compatibility+transaction：45 tests、44 pass、1 fail、0 skipped；唯一失败正是上述精确名单断言。C01—C15 报告据 fail-closed 规则为 FAIL（全部检查标 FAIL），不得称 45/45 或 C01—C15 PASS。该测试快照不是 Git worktree，未修改集成 checkout。
 - 已将 T2 接口问题主动报送唯一 Master。待 T2/主控修正 `build.ps1` 后须在新集成 SHA 上重跑 45/45 与 C01—C15；旧基线的 45/45 结果不能代替此次集成验证。
+
+## 第二次返工：双锚提取反例（2026-09-28）
+
+- 主控已将 T2 构建名单修复整合为 `4cc6044`，T3 精确名单断言整合为 `2bd885a`/`56aed68`。`56aed68` 的 Launcher 构建命令采用 `-run '^Test(...)$'`；原 T3 提取正则只接受缺少 `^` 的旧文本，因此 `assert.ok(group)` 失败。此为 T3 静态测试缺陷，不是 T2 名单再次不一致。
+- 仅在 T3 `compatibility.test.cjs` 将提取正则改为同时精确要求 `^` 与 `$`；加入缺起始锚、缺结束锚各一条反例，均要求无法匹配。原 Launcher 28 项、Firewall 13 项逐项深度相等断言保留。
+- 从集成 `56aed68d08d8bd635f8b381d313a2f40889b9563` 创建无 `.git` 的只读源码快照，仅覆盖本任务修正后的 T3 测试文件，运行完整 `compatibility-report.cjs`：45 tests、45 pass、0 fail、0 skipped，C01—C15 报告 `PASS`。未运行 Hosted/Actions；本地源码快照测试不替代 Master 在新集成 SHA 的独立复验。

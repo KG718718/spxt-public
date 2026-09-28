@@ -300,7 +300,10 @@ test('fixed Go policies cover the exact Launcher build group and every firewall 
   assert.deepEqual(expectedGoTests.LAUNCHER, launcherPolicy);
   assert.deepEqual(expectedGoTests.FIREWALL, firewallPolicy);
   const launcherBuild=fs.readFileSync(path.join(repo,'tools/windows-launcher/build.ps1'),'utf8');
-  const group=launcherBuild.match(/-run 'Test\(([^']+)\)\$'/);
+  const anchoredGroup=/-run '\^Test\(([^']+)\)\$'/;
+  assert.equal("-run 'Test(RelativePathSafety)$'".match(anchoredGroup),null);
+  assert.equal("-run '^Test(RelativePathSafety)'".match(anchoredGroup),null);
+  const group=launcherBuild.match(anchoredGroup);
   assert.ok(group);assert.deepEqual(group[1].split('|').map(name=>'Test'+name),launcherPolicy);
   const firewallDir=path.join(repo,'tools/windows-firewall');
   const firewallNames=fs.readdirSync(firewallDir).filter(name=>name.endsWith('_test.go')).flatMap(name=>
