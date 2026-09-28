@@ -25,3 +25,15 @@
 T3 返工又发现 T2 `tools/windows-launcher/build.ps1` 的 `-run` 正则保留不存在的旧 UAC 测试，漏跑两个实际存在的安全测试。已派原 T2 仅修构建门禁与 beta.4 元数据，先整合 T2 再整合 T3 精确断言。主控在当前集成源码独立跑 Node 44/44、Launcher 固定 Go 28/28 + vet、Firewall build 13/13 + compile；beta.4 联合测试仍 FAIL，不得宣称 45/45 已闭合。
 
 随后原 T2/T3 各自追加 local commit 与主动回单，Master Review 后整合；T3 又补双锚正则反例。当前 `002c122d4df0f713bd432ef46cc898d2fdc7834b` 同源联合门禁 Node 44/44、beta.4 兼容事务 45/45、C01—C15 PASS，Launcher 固定 Go 28/28 + vet、Firewall build 13/13 + compile。先前 44/45 FAIL 和原任务独立 45/45 均保留历史，最终以本次集成复测为准。受验 F3 Artifact 10907910968 当前通过 GitHub API 核验未过期、大小 32538249；这只证明当前可获取，不承诺永久保存。Full 0/2、QA 0/1，Setup/26/742/Artifact/QA 尚未运行。
+
+## 2026-09-28 — Full #1 已派发
+
+已登记 Setup workflow ID `362562346` 的 LAN-2 caller 经原 T3 返工、Master Review 整合为 `9ba5a337cc7c6d24a39d8ac21cec49280af8b7b4`，并核对本地 HEAD、origin 跟踪和 GitHub 远端一致。仅在该公开开发分支 dispatch `mode=lan2-full`：Run `36379556816`，受测 SHA `9ba5a337cc7c6d24a39d8ac21cec49280af8b7b4`。当前结果 PENDING，Full 1/2、Final QA 0/1；不得把派发成功写为自动验收 PASS。若 Full #1 失败，依固定阶段证据→本地反例→原 Execution 返工→Master Review 后才可决定是否使用最后 Full #2，禁止无修改重试。
+
+## 2026-09-28 — Full #1 固定失败与原 T3 返工
+
+Full #1 Run `36379556816` 结果 FAIL，固定失败 Artifact `10951969499`。`beta4-ci-stage.json` 为 `FROZEN_REGRESSION` FAIL；`lan-node-test-environment.json` 证 Node LAN 44/44、fail0skip0 PASS，受验 F3 Setup 精确下载/校验步骤 PASS。Setup 构建、实际升级、26/742、Artifact 隐私均未到达；不能冒称通过。主控按 CI 原六文件在集成源码本地复现：111 项中仅历史 sequence 静态测试 1 FAIL。该测试把 `sequence:` 到更后方 `historical-identity:` 之间的多个无关 YAML job 误包含在 sequence 检查范围，读到后续 job 的 `hosted-gate.cjs` 后假报；未见生产/升级逻辑失败证据。原 LAN2-T3 已获准仅修此历史测试的顶层 job 边界、保持原安全断言，并加正反例。Full 1/2、QA 0/1；不得无修改重跑，也不得跳过旧回归测试。
+
+## 2026-09-28 — 原 T3 正式回单与 Master Review
+
+原长期 LAN2-T3 thread `01a0e644-b6de-74a1-8fc7-ce454eadce57` 在原 `530d` 工作树主动回单 local `e517c2266b89d68fcaa6cd98aad08786e4062baa`，仅改历史 `upgrade-lifecycle/contract.test.cjs` 和 T3 RESULT。Master 审查两文件 diff：按 `jobs:` 下两空格顶层 job header 精确截取 `sequence`，保留原 forbidden 断言；正反例分别验证后续 job 不污染、sequence 内违规仍拒绝。整合为 `502c81db0f0f35170b44618c973cb40b6740af6f`。主控独立六文件回归 112 tests/110 pass/0 fail/2 skip：本机缺 8.3 alias 与文件 symlink 权限，不能报告 skip0；beta.4 兼容事务 45/45、C01—C15 PASS。Full #1 Hosted 日志同样显示 8.3 alias 不可用，此项按历史环境能力缺口单列；核心 26/742 fail0skip0 要求不变。此修复改变了 Full #1 受测源码，满足禁止无修改 retry 条件；仅余 Full #2 1 次，必须在公开分支新 HEAD 三方一致后派发。Full #2 若 FAIL 则依预算止损，不启动 QA。
