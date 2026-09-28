@@ -41,3 +41,9 @@
 - 主控已将 T2 构建名单修复整合为 `4cc6044`，T3 精确名单断言整合为 `2bd885a`/`56aed68`。`56aed68` 的 Launcher 构建命令采用 `-run '^Test(...)$'`；原 T3 提取正则只接受缺少 `^` 的旧文本，因此 `assert.ok(group)` 失败。此为 T3 静态测试缺陷，不是 T2 名单再次不一致。
 - 仅在 T3 `compatibility.test.cjs` 将提取正则改为同时精确要求 `^` 与 `$`；加入缺起始锚、缺结束锚各一条反例，均要求无法匹配。原 Launcher 28 项、Firewall 13 项逐项深度相等断言保留。
 - 从集成 `56aed68d08d8bd635f8b381d313a2f40889b9563` 创建无 `.git` 的只读源码快照，仅覆盖本任务修正后的 T3 测试文件，运行完整 `compatibility-report.cjs`：45 tests、45 pass、0 fail、0 skipped，C01—C15 报告 `PASS`。未运行 Hosted/Actions；本地源码快照测试不替代 Master 在新集成 SHA 的独立复验。
+
+## 已登记 workflow 手动入口返工（2026-09-28）
+
+- 远端预检由 Master 确认：新建的 `lan2-beta4-v1.1.yml` 尚未登记在 GitHub workflow 列表，无法直接以 `gh workflow run` 调度。本轮授权在已登记的 `.github/workflows/setup-v3.yml` 最小增加 `lan2-full`/`lan2-qa` 两个手动 mode 与独立 caller job；仅在仓库 `KG718718/spxt-public`、分支 `codex/lan2-manual-host-v1.1`、`workflow_dispatch`、对应 mode 下调用 `./.github/workflows/lan2-beta4-v1.1.yml`，分别映射为 `full`/`qa`。原 Batch 4/4.5 modes/jobs 条件及调用语义未改。
+- T3 静态测试精确断言 caller job 全部文本、两个 option 恰各一次、callee `workflow_call` 输入与 candidate 的仓库/分支/mode 限制。PyYAML `BaseLoader` 对 caller/callee 两份 YAML 解析通过；T3 CJS 语法通过。
+- 在集成 `56aed68d08d8bd635f8b381d313a2f40889b9563` 的无 `.git` 源码快照中仅覆盖本轮 caller 与 T3 测试文件，完整 `compatibility-report.cjs` 为 45 tests、45 pass、0 fail、0 skipped，C01—C15 报告 `PASS`。这是本地静态/合成验证；Master Review、整合、push 后才可按预算调度 Full 0/2，本任务未运行 Hosted。

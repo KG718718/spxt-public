@@ -200,7 +200,21 @@ test('LAN test subprocess resolves dependencies only from the built Runtime tree
 
 test('LAN-2 workflow exposes only full and QA and fixes source identity before build', () => {
   const workflow = fs.readFileSync(path.join(repo, '.github/workflows/lan2-beta4-v1.1.yml'), 'utf8').replaceAll('\r\n','\n');
+  const caller = fs.readFileSync(path.join(repo, '.github/workflows/setup-v3.yml'), 'utf8').replaceAll('\r\n','\n');
   const candidate = workflow.slice(workflow.indexOf('\n  candidate:\n'));
+  const lan2Job = caller.match(/\n  lan2-beta4-v1-1:\n([\s\S]*?)(?=\n  historical-identity:\n)/);
+  assert.ok(lan2Job);
+  assert.equal((caller.match(/\n          - lan2-full\n/g) || []).length, 1);
+  assert.equal((caller.match(/\n          - lan2-qa\n/g) || []).length, 1);
+  assert.equal(lan2Job[1], [
+    "    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan2-manual-host-v1.1' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'lan2-full' || inputs.mode == 'lan2-qa')",
+    '    permissions:', '      contents: read', '      actions: read',
+    '    uses: ./.github/workflows/lan2-beta4-v1.1.yml', '    with:',
+    "      mode: ${{ inputs.mode == 'lan2-full' && 'full' || inputs.mode == 'lan2-qa' && 'qa' || '' }}"
+  ].join('\n'));
+  assert.match(workflow, /\n  workflow_call:\n    inputs:\n      mode:\n/);
+  assert.match(candidate, /github\.repository == 'KG718718\/spxt-public' && github\.ref == 'refs\/heads\/codex\/lan2-manual-host-v1\.1'/);
+  assert.match(candidate, /\(inputs\.mode == 'full' \|\| inputs\.mode == 'qa'\)/);
   assert.match(workflow, /options:\n          - full\n          - qa\n/);
   assert.doesNotMatch(workflow, /\n  diagnostic(?:-extension)?:\n|          - diagnostic(?:-extension)?\n/);
   assert.match(candidate, /refs\/heads\/codex\/lan2-manual-host-v1\.1/);

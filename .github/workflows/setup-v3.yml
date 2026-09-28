@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Run an identity, LAN identity capture, closed upgrade-fault sequence, historical static QA, full Setup, or LAN Host workflow
+        description: Run an identity, LAN identity capture, closed upgrade-fault sequence, historical static QA, full Setup, LAN Host, or LAN2 workflow
         required: false
         default: identity
         type: choice
@@ -25,6 +25,8 @@ on:
           - lan-hosted-diagnostic
           - lan-full
           - lan-qa
+          - lan2-full
+          - lan2-qa
 permissions:
   contents: read
 concurrency:
@@ -390,6 +392,14 @@ jobs:
     uses: ./.github/workflows/lan-host-v1.1.yml
     with:
       mode: ${{ inputs.mode == 'lan-diagnostic' && 'diagnostic' || inputs.mode == 'lan-diagnostic-extension' && 'diagnostic-extension' || inputs.mode == 'lan-full' && 'full' || 'qa' }}
+  lan2-beta4-v1-1:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan2-manual-host-v1.1' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'lan2-full' || inputs.mode == 'lan2-qa')
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/lan2-beta4-v1.1.yml
+    with:
+      mode: ${{ inputs.mode == 'lan2-full' && 'full' || inputs.mode == 'lan2-qa' && 'qa' || '' }}
   historical-identity:
     if: github.event_name == 'workflow_dispatch' && inputs.mode == 'full' && github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/windows-installer-v1.1'
     permissions:
