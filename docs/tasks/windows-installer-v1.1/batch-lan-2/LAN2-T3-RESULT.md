@@ -1,5 +1,7 @@
 # LAN2-T3 执行回单（2026-09-28）
 
+> 当前追加状态：`WAITING T2 INTEGRATION`。下方初次 45/45 为冻结独立基线的历史结果；集成 `61c8652` 加入精确新名单断言后为 44/45，待 T2 `build.ps1` 修复整合后由 Master 重跑完整门禁。
+
 ## 状态
 
 `RETURNED — LOCAL SYNTHETIC PASS; PARENT INTEGRATION AND HOSTED PENDING`。本回单仅覆盖独立工作树中的 beta.4 信任、事务、Setup、CI 静态与合成验证；未运行 Hosted/Actions、真实 Setup、真实升级或用户 LAN 验收，不能记 Batch LAN-2 自动验收 PASS。
