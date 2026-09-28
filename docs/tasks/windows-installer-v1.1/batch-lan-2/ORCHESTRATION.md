@@ -55,3 +55,7 @@ Master 将 Review 记录与测试专用修复非 force 推唯一开发分支，�
 ## 2026-09-28 — Full #3 同阶段 FAIL，立即止损
 
 Run `36383900353` 结论 FAIL，失败 Artifact `10953579335`；固定阶段 `OFFLINE_LIFECYCLE FAIL`，升级总报告 FAIL。日志在 U05/U06 PASS 后再次报告 synthetic instance `.launcher.lock` sharing violation，`TestUpgradeLifecycle` 失败；新增的三处停止后锁释放门禁未覆盖后续占用窗口，失败瞬间实际持锁者仍未证。安装局部报告 `AUTOMATED_PASS_HUMAN_PENDING`、Node LAN 44/44 等不能代替整个候选通过；offline 报告 externalDuring=false、restored=true、firewallChanged=false 但总状态 FAIL。26/742、最终 Artifact privacy、独立 QA 未到达，无 beta.4 最终 Artifact。依用户明确止损，Final Full #3 1/1 耗尽后立即冻结 T1/T2/T3 和原工作树，不申请 Full #4、不运行 QA 0/1、不派生产返工；仅治理收尾、非 force push 开发分支并返回网页版。历史 Full #1/#2 结果保留，见 `LAN2-FULL3-STOP-20260928.md`。
+
+## 2026-09-28 — 网页版批准 volatile lock 最终有界修正
+
+Full #3 止损与失败证据保持历史；用户新增批准原 LAN2-T3 长期 Thread `01a0e644-b6de-74a1-8fc7-ce454eadce57` / 原 `530d` 工作树仅修 beta.4 验收语义：`.launcher.lock` 精确从 persistent business inventory 排除，另以运行期占用、第二 Launcher 拒绝及 quiescent 独占打开/关闭门禁验证。U05/U06 各自拒绝后、任何业务 inventory 前重查 Launcher/私有 Node 退出与锁释放。其余 instance 普通文件、data.json、附件、lan-deployment.json 仍严格 hash；未知文件 sharing violation 必须失败。不改生产 Launcher、可信身份、事务、rollback、schema，不扩大排除路径或通用捕获异常。T3 已获正式返工卡；先 LCK01—LCK14 本地 fail0skip0、local commit/主动回单，Master 独立 Review PASS 后才可非 force 整合并使用唯一 Final Full #4 0/1；无新 diagnostic Hosted。Full #4 任意 FAIL 立即停止，不申请 Full #5；Full 完整 PASS 后才运行原 Final QA 0/1，QA FAIL 即停，PASS 才到 LAN HUMAN PENDING。禁止普通 sub-agent/main/tag/Release/Batch5/OCR。
