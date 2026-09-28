@@ -272,13 +272,40 @@ test('fixed Go JSON reporter rejects missing, failed, skipped, or unexpected tes
 });
 
 test('fixed Go policies cover the exact Launcher build group and every firewall top-level test', () => {
+  const launcherPolicy = [
+    'TestRelativePathSafety', 'TestEnvironmentAllowlist', 'TestInstanceOutsidePackage', 'TestRuntimeMissing',
+    'TestJobOwnsOnlyChild', 'TestInstallDataSafety', 'TestLANReadyRequiresEveryGate', 'TestFixedServerStatusesMapToProductStates',
+    'TestCandidateAndJSONAreStrict', 'TestEnvironmentLANModeIsExplicitAndAllowlisted',
+    'TestExactListenerOwnershipRejectsWildcardThirdNICPortAndPIDImpersonationRows',
+    'TestCopyURLSourceIsOnlyCurrentPrivateEndpoint', 'TestPersistedPortNeverSilentlyFallsThroughRange',
+    'TestFirewallHelperFixedHashBeforeElevation', 'TestFirewallHelperAbsentHashKeepsHistoricalLocalMode',
+    'TestFirewallEnvironmentFailureIsFailClosed', 'TestFirewallInterfaceNameArgumentIsQuoted',
+    'TestEnableRejectionRestoresDisabledPreferenceAndLocalChild', 'TestLANSettingsTransitionDoesNotBlockUIThread',
+    'TestTransitionStartFailureRestoresOldConfigAndService', 'TestFirstTransitionStartFailureKeepsDeterminedPort',
+    'TestTransitionRejectsUnexpectedFallbackPort', 'TestFailedRefreshRevokesStaleCopyURL',
+    'TestFreshDiscoveryMismatchRevokesCopyURL', 'TestFreshDiscoveryMatchPublishesURLWhenFirewallBlocked',
+    'TestStopDispatchRetriesBusyOwnedWindow', 'TestStopDispatchKeepsStrictOverallTimeout',
+    'TestStrictLocalStatusAndActualPIDSocketOwnership'
+  ];
+  const firewallPolicy = [
+    'TestRequestWhitelistAndInterfaceName', 'TestStrictDeploymentConfig', 'TestStrictDeploymentConfigExactKeyCorpus',
+    'TestInstallIdentityAndTampering', 'TestReparseResolutionMismatchIsRejected',
+    'TestCleanPathComparisonRejectsLexicalAliases', 'TestBoundConfigMustMatchRequest',
+    'TestRegistrationAndINIContracts', 'TestRuleOwnershipAndIdempotencyPolicy',
+    'TestEmbeddedFirewallScriptIsClosed', 'TestEmbeddedFirewallScriptParses', 'TestStatusOutputAllowlist',
+    'TestFirewallScriptBehaviorWithIsolatedCmdletHarness'
+  ];
+  assert.equal(launcherPolicy.length, 28);
+  assert.equal(firewallPolicy.length, 13);
+  assert.deepEqual(expectedGoTests.LAUNCHER, launcherPolicy);
+  assert.deepEqual(expectedGoTests.FIREWALL, firewallPolicy);
   const launcherBuild=fs.readFileSync(path.join(repo,'tools/windows-launcher/build.ps1'),'utf8');
   const group=launcherBuild.match(/-run 'Test\(([^']+)\)\$'/);
-  assert.ok(group);assert.deepEqual(expectedGoTests.LAUNCHER,group[1].split('|').map(name=>'Test'+name));
+  assert.ok(group);assert.deepEqual(group[1].split('|').map(name=>'Test'+name),launcherPolicy);
   const firewallDir=path.join(repo,'tools/windows-firewall');
   const firewallNames=fs.readdirSync(firewallDir).filter(name=>name.endsWith('_test.go')).flatMap(name=>
     [...fs.readFileSync(path.join(firewallDir,name),'utf8').matchAll(/^func (Test\w+)\(/gm)].map(match=>match[1]));
-  assert.deepEqual([...expectedGoTests.FIREWALL].sort(),firewallNames.sort());
+  assert.deepEqual(firewallNames.sort(),[...firewallPolicy].sort());
   const integration=fs.readFileSync(path.join(repo,'tools/windows-launcher/integration_windows_test.go'),'utf8');
   assert.equal(new Set(expectedGoTests.INTEGRATION_IDS).size,expectedGoTests.INTEGRATION_IDS.length);
   for(const id of expectedGoTests.INTEGRATION_IDS)assert.match(integration,new RegExp('pass\\("'+id+' '));

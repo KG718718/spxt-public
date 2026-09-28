@@ -26,3 +26,10 @@
 ## 未改变的边界
 
 未改 beta.2 或旧 beta.3 文件/证据，未改 Batch 4/4.5 文档、业务 schema、AppId、实例数据。未 push、合并、建 tag/Release，未执行真实网络探针或 Firewall UAC。
+
+## 追加返工：集成名单反例（2026-09-28）
+
+- 主控集成 HEAD `61c86522eacbe3688ad7ca09ca6eebd2ec825f3e` 的只读快照显示：T2 固定名单为 Launcher 精确 28 项、Firewall 精确 13 项；原 T3 测试只把固定名单与构建命令相比，未独立钉住新名单。现已在本任务测试中逐项硬编码新 28/13 名单，并分别与固定名单、Launcher 构建命令、Firewall Go 顶层测试集合做深度相等断言；不接受旧/新两套名单。
+- 集成反例：T2 `tools/windows-launcher/build.ps1:22` 仍调用旧的 27 项 Launcher 名单，含已删除的 `TestUACRejectionDoesNotStopLocalChildOrRetry`，缺少 `TestFirewallInterfaceNameArgumentIsQuoted`、`TestEnableRejectionRestoresDisabledPreferenceAndLocalChild`。本任务不修改该 T2 文件。
+- 在 `61c8652` 的 Git archive 只读源码快照中覆盖本任务修正后的 T3 测试运行完整 compatibility+transaction：45 tests、44 pass、1 fail、0 skipped；唯一失败正是上述精确名单断言。C01—C15 报告据 fail-closed 规则为 FAIL（全部检查标 FAIL），不得称 45/45 或 C01—C15 PASS。该测试快照不是 Git worktree，未修改集成 checkout。
+- 已将 T2 接口问题主动报送唯一 Master。待 T2/主控修正 `build.ps1` 后须在新集成 SHA 上重跑 45/45 与 C01—C15；旧基线的 45/45 结果不能代替此次集成验证。
