@@ -1,3 +1,7 @@
+# 当前冻结交接｜2026-09-28
+
+网页版已选择 C，Batch 4.5 为 `FROZEN — LAN HOST DEFERRED`。正式完整交接卡见 [`batch45-frozen/CHATGPT-HANDOFF.md`](batch45-frozen/CHATGPT-HANDOFF.md)，冻结边界见 [`BATCH45-FROZEN.md`](BATCH45-FROZEN.md)。以下原交接卡保留为当时 Hosted 止损的历史证据，其 `BLOCKED` 与待续行文字不再表示当前授权。
+
 ===== CHATGPT HANDOFF BEGIN =====
 
 项目：

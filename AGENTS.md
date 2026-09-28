@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前最终决定｜2026-09-28 Batch 4.5 LAN Host 冻结
+
+网页版选择 Route C：Batch 4.5 正式 `FROZEN — LAN HOST DEFERRED`。唯一 Master `01a0db0e-c950-79e0-8e11-07155e0742f2`；旧 Master 永久只读。T1—T6、B4.5-QA 及原工作树全部冻结并保留；不再派生产开发、实机 probe、Hosted 网络诊断、Final Full 或 Final QA，不进入 Batch5/OCR。Final Full 0/1、Final QA 0/1 记 `UNUSED — BATCH FROZEN`。当前生产 Utility 显式导入虽已测试，未解决真实 Win10 P02，标记 `NOT APPROVED FOR RELEASE`；`codex/lan-host-v1.1` 及任何 beta.3 构建均不可作为用户交付版，尚无最终 beta.3 Artifact。Batch 4 的受验 F3 beta.2 单机轨道保持 PASS；LAN 未发布/未认证，Win11 未获物理机认证。仅允许本次治理文档收尾并非 force push 开发分支；禁止 main/tag/Release、删历史或清理工作树。未来恢复须另立 Batch LAN-2 并重新定路线、预算和实机门禁。详见 `docs/tasks/windows-installer-v1.1/batch-4.5/BATCH45-FROZEN.md`；以下阶段状态均为历史。
+
 ## 当前止损｜2026-09-28 Native feasibility 未证
 
 唯一 B45-T6 执行 thread `01a0e33e-7152-7d92-bbc2-cbf06efaed94` 在原 `1ed3` 工作树完成有界研究并主动回单，local `b993dc6` 经 Master 独立 Review/复验后整合为 `cd9b75a`。F01—F15 合成 15/15、go vet/build 通过；研究 EXE 与任何真实 IP Helper/NLM 调用**均未运行**，普通用户权限和 Win10 真实行为未证。小 PoC 的安全 ABI/COM 成本超出本轮边界，故仅本轮可行性门槛记 `FAIL — NATIVE ROUTE NOT ACCEPTABLE`，不宣称原生路线永远不可行。唯一实机 0/1、本轮新增 Hosted/Actions 0，历史 H1/H2 2/2 保留；Final Full0/1、Final QA0/1 未用；生产 P02 仍 FAIL，Utility 行不变，无 beta.3 最终 Artifact。T6 冻结；待网页版选 A、重新定义 B 或 C。见 `docs/tasks/windows-installer-v1.1/batch-4.5/NATIVE-DISCOVERY-FEASIBILITY-DECISION.md`；下方有限授权已用完。

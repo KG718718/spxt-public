@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 最终治理状态：FROZEN — LAN HOST DEFERRED｜2026-09-28
+
+网页版已选择 C。唯一 Master `01a0db0e-c950-79e0-8e11-07155e0742f2` 只做冻结治理收尾；旧 Master `019fa7e9-f46b-7192-9052-cd0aac7c2cc5` 永久只读。B45-T1、T2、T3、T4、T5、T6 与 B4.5-QA 全部冻结，原线程、分支、工作树、源码、证据和 Actions/失败运行保持现场，不重开任务、不清理。T6 的研究交付 COMPLETE 不等于 Native 路线获准；本轮 feasibility FAIL 仍为历史事实。PowerShell 生产 P02 FAIL，Utility 实验行 `NOT APPROVED FOR RELEASE`。Final Full 0/1、Final QA 0/1 均登记 `UNUSED — BATCH FROZEN`；不运行任何新实机、Hosted、Actions、Full 或 QA。仅治理文档提交并非 force 推送 `codex/lan-host-v1.1`，不动 main/tag/Release。未来须新建 Batch LAN-2 并另行批准路线与预算；下一项工作流优化本次不启动。见 `BATCH45-FROZEN.md`；下文运行和待派文字仅供历史追溯。
+
 ## 当前止损：B45-T6 本轮门槛 FAIL，回网页版｜2026-09-28
 
 唯一 Execution `01a0e33e-7152-7d92-bbc2-cbf06efaed94` 于 `E:\CodexWorkspace\CodexWorktrees\1ed3\public-source` 主动回单 local `b993dc60e8e1141426984e72db243a1349db1125`；Master 核验七文件 research/报告范围、无新依赖/cgo、不安全 DLL 搜索、无 production 修改，并独立复验 F01—F15 15/15、go vet/build PASS，整合 `cd9b75a`。T6 状态 COMPLETE（研究交付）/ 本轮 feasibility FAIL：仅合成与未调用的 IP Helper 入口代码，NLM COM/完整数据/标准用户均未证；不满足 PASS 或 PARTIAL。没有真实 PoC（0/1）、Hosted/Actions、Final Full0/1、Final QA0/1。T6/旧 T1—T5/QA 冻结；Batch 仍 `BLOCKED — PRODUCTION DISCOVERY P02 FAILED`，无 beta.3 最终 Artifact。下一步只交 `NATIVE-DISCOVERY-FEASIBILITY-DECISION.md` 给网页版选择 A、重定义 B 或 C。下方 DISPATCHED 是已完成阶段。

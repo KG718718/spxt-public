@@ -1,3 +1,11 @@
+# Batch 4.5 最终治理结论｜2026-09-28
+
+**FROZEN — LAN HOST DEFERRED。** 网页版选择 C，停止 PowerShell Route A、扩大 Native Route B、生产发现开发、实机 probe、Hosted 网络诊断、Final Full 和 Final QA。T1—T6 的源码、研究与证据及所有失败运行原样保留；不把历史 FAIL 改为 PASS。本轮仅治理文档，无新的工程验证。
+
+已证：真实 Win10 P01 PASS、P02 FAIL/`DISCOVERY_COMMAND_FAILED`，P03—P08 NOT_REACHED；M00/M01 PASS、M02 FAIL、M03 PASS；Utility 一行修复合成12/12，但完整生产 P02 仍 FAIL。Native feasibility 合成 F01—F15 15/15、go vet/build PASS；研究 EXE、真实 IP Helper/NLM、标准用户权限均未实测。故当前 LAN `NOT RELEASED / NOT CERTIFIED`，Win11 `NOT PHYSICAL-MACHINE CERTIFIED`。Utility 行 `NOT APPROVED FOR RELEASE`；无 beta.3 最终 Artifact，开发分支不能交普通用户。
+
+Batch 4 独立保持 `PASS — Windows 10 x64 Beta Upgrade Track`：受验 F3 beta.2 source `c8886e6b6d413c2fd73d6716621d07a80b337e58` / Run `36246132535` / Artifact `10907910968`，用户人工 1—10 PASS；当前正式基线为 beta.2 单机轨道。Final Full 0/1、Final QA 0/1 均 `UNUSED — BATCH FROZEN`。详情及未来恢复入口见 `BATCH45-FROZEN.md`；以下章节保留历史结果。
+
 # 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
 ## 当前结论｜2026-09-28 B45-T6 Native feasibility 本轮止损

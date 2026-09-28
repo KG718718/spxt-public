@@ -1,5 +1,12 @@
 # K⁺-SESSION｜项目状态
 
+## 当前正式状态｜2026-09-28
+
+- Batch 4：`PASS — Windows 10 x64 Beta Upgrade Track`；用户人工 1—10 PASS。受验 F3 beta.2：source `c8886e6b6d413c2fd73d6716621d07a80b337e58` / Run `36246132535` / Artifact `10907910968`。这是历史受验身份，不代表 Artifact 永久在线。
+- Batch 4.5：网页版选择 C，`FROZEN — LAN HOST DEFERRED`；生产 P02 FAIL，T1—T6 与 B4.5-QA 冻结。Final Full 0/1、Final QA 0/1 均 `UNUSED — BATCH FROZEN`。
+- 当前正式用户基线：`K⁺-SESSION 1.1.0-beta.2 / Single-machine Beta Track`。LAN `NOT RELEASED / NOT CERTIFIED`；Win11 `NOT PHYSICAL-MACHINE CERTIFIED`。无 beta.3 最终 Artifact，开发分支的 Utility 实验行 `NOT APPROVED FOR RELEASE`。
+- 只完成 `codex/lan-host-v1.1` 治理文档收尾；不启动 Batch5/OCR。未来 LAN 恢复另立 Batch LAN-2，先由 GPT Planner 重新选择路线与预算。下一项独立工作重点为 GPT Planner ↔ GitHub ↔ Codex Executor 工作流优化，本次不启动。完整边界见 `docs/tasks/windows-installer-v1.1/batch-4.5/BATCH45-FROZEN.md`；下文均为历史阶段。
+
 ## Batch 4.5 当前止损｜2026-09-28 Native feasibility 未证
 
 B45-T6 有界研究 F01—F15 合成 15/15、go vet/build 经 Master 复验通过，但未运行 research EXE 或真实 IP Helper/NLM，普通用户权限未证；安全 ABI/COM 完整采集超出本轮小 PoC 范围。仅本轮门槛判 `FAIL — NATIVE ROUTE NOT ACCEPTABLE`，不推断原生方案永不可行。唯一实机 PoC 0/1、本轮新增 Hosted/Actions 0（历史 H1/H2 2/2 保留）、Final Full0/1、Final QA0/1 未用。生产 P02 FAIL、Batch 4.5 BLOCKED，无 beta.3 最终 Artifact。决策卡：`docs/tasks/windows-installer-v1.1/batch-4.5/NATIVE-DISCOVERY-FEASIBILITY-DECISION.md`。等待网页版选择 A、重定义 B 或 C；下方批准为已执行历史。
