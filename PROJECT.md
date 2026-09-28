@@ -2,7 +2,7 @@
 
 ## 当前活动｜2026-09-28 Batch LAN-2
 
-用户已从 Batch 4.5 冻结 HEAD `43914744c0b74031fb2d20c849c7500408e0a85a` 授权新分支 `codex/lan2-manual-host-v1.1`：手动选择并确认 RFC1918 网卡的 LAN Host、候选 `1.1.0-beta.4`、受验 F3 beta.2 直接升级。Full #1 Run `36379556816` 与 Full #2 Run `36380488652` 均历史 FAIL；#2 在 `OFFLINE_LIFECYCLE` 因 `.launcher.lock` 被占用失败。网页版现批准有界续行：仅原 LAN2-T3 长期 Thread/工作树做本地锁生命周期反例与确定性修复，Master Review 后 Final Full #3 最多一次；QA 原 0/1 保留且不得调试。当前 `IN PROGRESS — BOUNDED LOCK LIFECYCLE FIX; FULL #3 PENDING`，26/742、最终 Artifact privacy、独立 QA 未到达，无 beta.4 最终 Artifact。Batch 4.5 继续 FROZEN；正式用户产品仍受验 beta.2 单机轨道。历史止损证据见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL2-STOP-20260928.md`；本轮范围见 `ORCHESTRATION.md`。
+用户已从 Batch 4.5 冻结 HEAD `43914744c0b74031fb2d20c849c7500408e0a85a` 授权新分支 `codex/lan2-manual-host-v1.1`：手动选择并确认 RFC1918 网卡的 LAN Host、候选 `1.1.0-beta.4`、受验 F3 beta.2 直接升级。Full #1 Run `36379556816` 与 Full #2 Run `36380488652` 均历史 FAIL；#2 在 `OFFLINE_LIFECYCLE` 因 `.launcher.lock` 被占用失败。网页版批准原 LAN2-T3 长期 Thread/工作树有界续行，测试专用锁释放门禁经本地反例、Master Review、55/55 合成及固定 Go 工具链编译通过；历史 #2 实际持锁者仍未知。当前 `IN PROGRESS — LOCK LIFECYCLE REVIEW PASS; FULL #3 PENDING`，仅余新增 Full #3 0/1 与 QA 原 0/1；26/742、最终 Artifact privacy、独立 QA 未到达，无 beta.4 最终 Artifact。Batch 4.5 继续 FROZEN；正式用户产品仍受验 beta.2 单机轨道。历史止损证据见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL2-STOP-20260928.md`；本轮范围见 `ORCHESTRATION.md`。
 
 ## 当前正式状态｜2026-09-28
 

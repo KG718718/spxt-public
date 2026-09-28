@@ -4,6 +4,8 @@
 
 用户批准方案 A，仅解除下方 Full 2/2 止损对 `OFFLINE_LIFECYCLE / TestUpgradeLifecycle / .launcher.lock occupied` 的有限冻结。唯一 Master、原 LAN2-T3 长期 Execution Thread `01a0e644-b6de-74a1-8fc7-ce454eadce57`、原 `530d` 工作树/本地分支继续；禁止普通 sub-agent、新任务树或改产品/LAN/安全/升级架构。T3 先本地构造锁占用反例，证明持锁进程、退出、释放及 cleanup/readback 顺序，做确定性生命周期最小修复与正常/异常/超时/占用/重复运行 fail0skip0 门禁；不得忽略 sharing violation、排除锁文件或用固定 sleep。Master Review PASS 后仅新增 Final Full #3 最多一次，QA 原 0/1 保留且不得调试。Full #3 FAIL 或 QA FAIL 即停；Full PASS 后才运行唯一 QA。最终自动停 `BLOCKED — AUTOMATION PASS / QA PASS / LAN HUMAN PENDING`；不进 main/tag/Release/Batch5/OCR。下方 Full 2/2 FAIL 为不可改写历史，详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/ORCHESTRATION.md`。
 
+原 T3 的 local `ef66b5f`/`b3e9c78` 已主动回单，Master Review 后整合 `6b688ca`/`b81bb3c`：只改 beta.4 测试生成器与受控锁反例，生产/身份/事务/rollback 不变。主控同源兼容报告 55/55 fail0skip0，生成 Go 测试经固定 Go 1.27.1 离线编译 PASS；Full #2 实际持锁者仍未知，不宣称唯一根因。当前仅可在公开分支三方 HEAD 一致后运行一次 Full #3；尚未运行，QA 0/1 不变。
+
 ## 当前止损｜2026-09-28 LAN-2 Full 2/2
 
 **BLOCKED — FULL HOSTED BUDGET EXHAUSTED; OFFLINE_LIFECYCLE FAILED。** LAN-2 Full #1 Run `36379556816` / Artifact `10951969499` 在历史静态测试跨 job 假报处 FAIL；原 LAN2-T3 在原长期 Thread/工作树返工，Master Review 后整合 `502c81d`，不得改写 Full #1 历史。Full #2 Run `36380488652`@`f15170389a915dcf245c8ae721ef46d0d9201c38` / 失败 Artifact `10952926928` 在真实 Setup、受验 F3 beta.2→beta.4 的部分检查通过后，于 `OFFLINE_LIFECYCLE` 因读取被占用的 `.launcher.lock` 失败。固定证据显示网络适配器已恢复、Firewall 未改变；尚不能判定锁的唯一根因或整个升级 PASS。核心 26/742、最终 Artifact privacy、独立 QA 均未到达；Full 2/2、QA 0/1，QA 不得挪作调试。本 Batch 无 beta.4 最终 Artifact，不是 LAN HUMAN PENDING。T1/T2/T3 与原工作树冻结保留；仅治理收尾、非 force push 唯一开发分支，停止工程/Hosted，等待网页版新决定。Batch 4.5 仍冻结，正式用户产品仍受验 beta.2 单机轨道；不改 main/tag/Release。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL2-STOP-20260928.md`。下方“当前活动”授权是本次止损前历史。
