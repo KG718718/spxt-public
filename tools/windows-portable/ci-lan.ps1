@@ -47,7 +47,7 @@ $taskHelper=Join-Path $taskWork 'firewall-helper-output'
 $taskFirewallBuildReport=Join-Path $taskWork 'firewall-build-diagnostic.json'
 $taskFirewallBuildLog=Join-Path $taskWork 'firewall-build-entry.log'
 & pwsh -NoLogo -NoProfile -File (Join-Path $taskRepo 'tools/windows-firewall/build.ps1') -OutputDir $taskHelper -SourceCommit $Commit `
-  -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.3' -GoExe $taskGo -DiagnosticReport $taskFirewallBuildReport *> $taskFirewallBuildLog
+  -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.4' -GoExe $taskGo -DiagnosticReport $taskFirewallBuildReport *> $taskFirewallBuildLog
 if($LASTEXITCODE -ne 0){throw 'Firewall helper build failed'}
 $taskGoTestPolicy=Join-Path $taskRepo 'tools/tests/lan-host/expected-go-tests.cjs'
 $taskFirewallTests=@(& $taskNode $taskGoTestPolicy 'FIREWALL'|ConvertFrom-Json)
@@ -82,7 +82,7 @@ try{
 Run-Checked $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),$taskLauncherRaw,$taskLauncherReport,'LAUNCHER')+$taskLauncherUnitTests)
 Run-Checked $taskNode @($taskPackageScript,'finish',$taskRoot,$taskLauncher,$taskHelper,$taskGit,$taskRepo,$Commit)
 $taskLanTests=@(
-  'tools/tests/lan-host/config.test.cjs','tools/tests/lan-host/network.test.cjs',
+  'tools/tests/lan-host/config.test.cjs','tools/tests/lan-host/network.test.cjs','tools/tests/lan-host/lan2-network.test.cjs',
   'tools/tests/lan-host/server.test.cjs','tools/tests/lan-host/server-startup.test.cjs',
   'tools/tests/lan-host/server-runtime.test.cjs'
 ) | ForEach-Object {Join-Path $taskRepo $_}
@@ -107,7 +107,7 @@ try{
   $taskNodeExit=$LASTEXITCODE;$taskNodeSummary=Read-KSessionNodeTestSummary $taskNodeRaw
   $taskNodeTestReport.tests=$taskNodeSummary.Tests;$taskNodeTestReport.pass=$taskNodeSummary.Pass;$taskNodeTestReport.fail=$taskNodeSummary.Fail;$taskNodeTestReport.skipped=$taskNodeSummary.Skipped
   if(!$taskNodeSummary.Valid){$taskNodeTestReport.reason='NODE_TEST_REPORT_INVALID';throw 'NODE_TEST_REPORT_INVALID'}
-  if($taskNodeExit-ne0-or$taskNodeSummary.Tests-ne37-or$taskNodeSummary.Pass-ne37-or$taskNodeSummary.Fail-ne0-or$taskNodeSummary.Skipped-ne0){$taskNodeTestReport.reason='NODE_TESTS_FAILED';throw 'NODE_TESTS_FAILED'}
+  if($taskNodeExit-ne0-or$taskNodeSummary.Tests-ne44-or$taskNodeSummary.Pass-ne44-or$taskNodeSummary.Fail-ne0-or$taskNodeSummary.Skipped-ne0){$taskNodeTestReport.reason='NODE_TESTS_FAILED';throw 'NODE_TESTS_FAILED'}
   $taskNodeTestReport.status='PASS';$taskNodeTestReport.stage='COMPLETE';$taskNodeTestReport.reason='PASS'
 }catch{
   if($taskNodeTestReport.reason-eq'RUNNING'){$taskNodeTestReport.reason='INTERNAL'}
@@ -125,7 +125,7 @@ $env:KSESSION_TEST_LAUNCHER=Join-Path $taskRoot 'K-SESSION.exe'
 $env:KSESSION_TEST_EVIDENCE=Join-Path $taskWork 'launcher-integration'
 $env:KSESSION_PORTABLE_REPO=$taskRepo
 $taskHarness=Join-Path $taskWork 'lan-go-harness'
-Run-Checked $taskNode @((Join-Path $taskRepo 'tools/tests/windows-installer/beta3-upgrade/prepare-hosted-harness.cjs'),(Join-Path $taskRepo 'tools/windows-launcher'),$taskHarness)
+Run-Checked $taskNode @((Join-Path $taskRepo 'tools/tests/windows-installer/beta4-upgrade/prepare-hosted-harness.cjs'),(Join-Path $taskRepo 'tools/windows-launcher'),$taskHarness)
 $taskOverlay=Join-Path $taskWork 'lan-go-overlay.json'
 @{Replace=@{
   ([IO.Path]::GetFullPath((Join-Path $taskRepo 'tools/windows-launcher/integration_windows_test.go')))=[IO.Path]::GetFullPath((Join-Path $taskHarness 'integration_windows_test.go'))

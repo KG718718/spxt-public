@@ -12,32 +12,32 @@ import (
 	"unicode/utf16"
 )
 
-const testGUID = "12345678-1234-1234-1234-123456789abc"
+const testInterfaceName = "Ethernet"
 
-func TestRequestWhitelistAndCanonicalGUID(t *testing.T) {
+func TestRequestWhitelistAndInterfaceName(t *testing.T) {
 	valid := [][]string{
-		{"status", "--port", "8080", "--adapter-guid", testGUID},
-		{"enable", "--adapter-guid", "{12345678-1234-1234-1234-123456789ABC}", "--port", "8099"},
+		{"status", "--port", "8080", "--interface-name", testInterfaceName},
+		{"enable", "--interface-name", "Wi-Fi", "--port", "8099"},
 	}
 	for _, args := range valid {
 		r, err := parseRequest(args)
-		if err != nil || r.AdapterGUID != testGUID {
+		if err != nil || !validInterfaceName(r.InterfaceName) {
 			t.Fatalf("valid request rejected: %#v %v", args, err)
 		}
 	}
 	malicious := [][]string{
-		{}, {"delete", "--port", "8080", "--adapter-guid", testGUID},
+		{}, {"delete", "--port", "8080", "--interface-name", testInterfaceName},
 		{"enable", "--port", "8080", "--program", `C:\evil.exe`},
 		{"enable", "--port", "8080", "--remote", "Any"},
-		{"enable", "--port", "8080", "--adapter-guid", testGUID, "--script", "Remove-NetFirewallRule"},
-		{"enable", "--port", "8080", "--adapter-guid", testGUID, "extra"},
-		{"enable", "--port", "8080;Stop-Process", "--adapter-guid", testGUID},
-		{"enable", "--port", "8079", "--adapter-guid", testGUID},
-		{"enable", "--port", "8100", "--adapter-guid", testGUID},
-		{"enable", "--port", "08080", "--adapter-guid", testGUID},
-		{"enable", "--port", "8080", "--adapter-guid", "00000000-0000-0000-0000-000000000000"},
-		{"enable", "--port", "8080", "--adapter-guid", "../../adapter"},
-		{"enable", "--port", "8080", "--adapter-guid", testGUID, "--port", "8081"},
+		{"enable", "--port", "8080", "--interface-name", testInterfaceName, "--script", "Remove-NetFirewallRule"},
+		{"enable", "--port", "8080", "--interface-name", testInterfaceName, "extra"},
+		{"enable", "--port", "8080;Stop-Process", "--interface-name", testInterfaceName},
+		{"enable", "--port", "8079", "--interface-name", testInterfaceName},
+		{"enable", "--port", "8100", "--interface-name", testInterfaceName},
+		{"enable", "--port", "08080", "--interface-name", testInterfaceName},
+		{"enable", "--port", "8080", "--interface-name", "VirtualBox"},
+		{"enable", "--port", "8080", "--interface-name", " Ethernet"},
+		{"enable", "--port", "8080", "--interface-name", testInterfaceName, "--port", "8081"},
 	}
 	for _, args := range malicious {
 		if _, err := parseRequest(args); err == nil {
@@ -47,21 +47,24 @@ func TestRequestWhitelistAndCanonicalGUID(t *testing.T) {
 }
 
 func TestStrictDeploymentConfig(t *testing.T) {
-	good := []byte(`{"schema":1,"port":8083,"adapterPreference":"` + testGUID + `"}`)
+	good := []byte(`{"schema":2,"enabled":true,"interfaceName":"Ethernet","port":8083}`)
 	cfg, err := strictConfig(good)
 	if err != nil || cfg.Port != 8083 {
 		t.Fatalf("good config: %#v %v", cfg, err)
 	}
 	bad := [][]byte{
-		[]byte(`{"schema":1,"port":8083,"adapterPreference":"` + testGUID + `","remote":"Any"}`),
-		[]byte(`{"schema":1,"port":8083,"port":8084,"adapterPreference":"` + testGUID + `"}`),
-		[]byte(`{"schema":1,"port":8083,"adapterPreference":"{12345678-1234-1234-1234-123456789ABC}"}`),
-		[]byte(`{"schema":1,"port":80,"adapterPreference":"` + testGUID + `"}`),
+		[]byte(`{"schema":2,"enabled":true,"interfaceName":"Ethernet","port":8083,"remote":"Any"}`),
+		[]byte(`{"schema":2,"enabled":true,"interfaceName":"Ethernet","port":8083,"port":8084}`),
+		[]byte(`{"schema":2,"enabled":true,"interfaceName":"VirtualBox","port":8083}`),
+		[]byte(`{"schema":2,"enabled":true,"interfaceName":"Ethernet","port":80}`),
 	}
 	for _, data := range bad {
 		if _, err := strictConfig(data); err == nil {
 			t.Fatalf("unsafe config accepted: %s", data)
 		}
+	}
+	if _, err := strictConfig([]byte(`{"schema":2,"enabled":false,"interfaceName":"Ethernet","port":8083}`)); err != nil {
+		t.Fatalf("disabled configuration should remain readable: %v", err)
 	}
 }
 
@@ -71,16 +74,16 @@ func TestStrictDeploymentConfigExactKeyCorpus(t *testing.T) {
 		json string
 		ok   bool
 	}{
-		{"exact keys", `{"schema":1,"port":8080,"adapterPreference":"` + testGUID + `"}`, true},
-		{"escaped exact key", `{"\u0073chema":1,"port":8080,"adapterPreference":"` + testGUID + `"}`, true},
-		{"Schema case variant", `{"Schema":1,"port":8080,"adapterPreference":"` + testGUID + `"}`, false},
-		{"PORT case variant", `{"schema":1,"PORT":8080,"adapterPreference":"` + testGUID + `"}`, false},
-		{"adapter case variant", `{"schema":1,"port":8080,"AdapterPreference":"` + testGUID + `"}`, false},
-		{"escaped equivalent duplicate", `{"schema":1,"\u0073chema":1,"port":8080,"adapterPreference":"` + testGUID + `"}`, false},
-		{"trailing object", `{"schema":1,"port":8080,"adapterPreference":"` + testGUID + `"}{}`, false},
-		{"decimal port", `{"schema":1,"port":8080.0,"adapterPreference":"` + testGUID + `"}`, false},
-		{"exponent port", `{"schema":1,"port":8.08e3,"adapterPreference":"` + testGUID + `"}`, false},
-		{"exponent schema", `{"schema":1e0,"port":8080,"adapterPreference":"` + testGUID + `"}`, false},
+		{"exact keys", `{"schema":2,"enabled":true,"interfaceName":"Ethernet","port":8080}`, true},
+		{"escaped exact key", `{"\u0073chema":2,"enabled":true,"interfaceName":"Ethernet","port":8080}`, true},
+		{"Schema case variant", `{"Schema":2,"enabled":true,"interfaceName":"Ethernet","port":8080}`, false},
+		{"PORT case variant", `{"schema":2,"enabled":true,"interfaceName":"Ethernet","PORT":8080}`, false},
+		{"interface case variant", `{"schema":2,"enabled":true,"InterfaceName":"Ethernet","port":8080}`, false},
+		{"escaped equivalent duplicate", `{"schema":2,"\u0073chema":2,"enabled":true,"interfaceName":"Ethernet","port":8080}`, false},
+		{"trailing object", `{"schema":2,"enabled":true,"interfaceName":"Ethernet","port":8080}{}`, false},
+		{"decimal port", `{"schema":2,"enabled":true,"interfaceName":"Ethernet","port":8080.0}`, false},
+		{"exponent port", `{"schema":2,"enabled":true,"interfaceName":"Ethernet","port":8.08e3}`, false},
+		{"exponent schema", `{"schema":2e0,"enabled":true,"interfaceName":"Ethernet","port":8080}`, false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -144,7 +147,7 @@ func fixture(t *testing.T) (string, trustedInstall, installAnchors) {
 	nodeHash := hashBytes(node)
 	manifest := map[string]any{"format": "k-session-runtime", "manifestSchema": 1, "platform": "win32-x64", "sourceCommit": strings.Repeat("a", 40), "nodeHash": nodeHash}
 	manifestBytes, _ := json.Marshal(manifest)
-	info := installerBuildInfo{Product: productName, InstallerVersion: "1.1.0-beta.3", AppVersion: appVersion,
+	info := installerBuildInfo{Product: productName, InstallerVersion: "1.1.0-beta.4", AppVersion: appVersion,
 		DataContractVersion: 1, SourceCommit: strings.Repeat("a", 40), RuntimeManifestSHA256: hashBytes(manifestBytes), NodeVersion: "24.21.0",
 		Platform: "windows", Architecture: "x64", InstanceBindingSchema: 1}
 	infoBytes, _ := json.Marshal(info)
@@ -152,7 +155,7 @@ func fixture(t *testing.T) (string, trustedInstall, installAnchors) {
 	put(t, filepath.Join(program, "runtime", "node.exe"), node)
 	put(t, filepath.Join(program, "manifest", "runtime-manifest.json"), manifestBytes)
 	put(t, filepath.Join(root, "uninstall", "build-info.json"), infoBytes)
-	anchors := installAnchors{SourceCommit: strings.Repeat("a", 40), RuntimeManifestSHA256: hashBytes(manifestBytes), NodeSHA256: nodeHash, InstallerVersion: "1.1.0-beta.3"}
+	anchors := installAnchors{SourceCommit: strings.Repeat("a", 40), RuntimeManifestSHA256: hashBytes(manifestBytes), NodeSHA256: nodeHash, InstallerVersion: "1.1.0-beta.4"}
 	return exe, trustedInstall{InstallRoot: root, ProgramRoot: program, NodePath: filepath.Join(program, "runtime", "node.exe")}, anchors
 }
 
@@ -208,24 +211,24 @@ func TestCleanPathComparisonRejectsLexicalAliases(t *testing.T) {
 func TestBoundConfigMustMatchRequest(t *testing.T) {
 	_, install, _ := fixture(t)
 	instance := filepath.Join(fixtureDir(t), "instance")
-	put(t, filepath.Join(instance, configName), []byte(`{"schema":1,"port":8083,"adapterPreference":"`+testGUID+`"}`))
-	if err := verifyBoundConfig(instance, install, request{Action: "enable", Port: 8083, AdapterGUID: testGUID}); err != nil {
+	put(t, filepath.Join(instance, configName), []byte(`{"schema":2,"enabled":true,"interfaceName":"Ethernet","port":8083}`))
+	if err := verifyBoundConfig(instance, install, request{Action: "enable", Port: 8083, InterfaceName: testInterfaceName}); err != nil {
 		t.Fatal(err)
 	}
-	if err := verifyBoundConfig(instance, install, request{Action: "enable", Port: 8084, AdapterGUID: testGUID}); err == nil {
+	if err := verifyBoundConfig(instance, install, request{Action: "enable", Port: 8084, InterfaceName: testInterfaceName}); err == nil {
 		t.Fatal("mismatched port accepted")
 	}
-	if err := verifyBoundConfig(instance, install, request{Action: "enable", Port: 8083, AdapterGUID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}); err == nil {
+	if err := verifyBoundConfig(instance, install, request{Action: "enable", Port: 8083, InterfaceName: "Wi-Fi"}); err == nil {
 		t.Fatal("mismatched adapter accepted")
 	}
 	insideInstall := filepath.Join(install.InstallRoot, "instance")
-	put(t, filepath.Join(insideInstall, configName), []byte(`{"schema":1,"port":8083,"adapterPreference":"`+testGUID+`"}`))
+	put(t, filepath.Join(insideInstall, configName), []byte(`{"schema":2,"enabled":true,"interfaceName":"Ethernet","port":8083}`))
 	for name, overlapping := range map[string]string{
 		"equal":            install.InstallRoot,
 		"inside install":   insideInstall,
 		"contains install": filepath.Dir(install.InstallRoot),
 	} {
-		err := verifyBoundConfig(overlapping, install, request{Action: "enable", Port: 8083, AdapterGUID: testGUID})
+		err := verifyBoundConfig(overlapping, install, request{Action: "enable", Port: 8083, InterfaceName: testInterfaceName})
 		var coded *codedError
 		if !errors.As(err, &coded) || coded.Code != "INSTANCE_BINDING_INVALID" {
 			t.Fatalf("%s overlap not explicitly rejected: %v", name, err)
@@ -268,7 +271,7 @@ func registrationFixture(t *testing.T) (trustedInstall, string, *fakeRegistry) {
 	const productKey = `Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1`
 	const bindingKey = `Software\KSESSION\Beta\InstallerBinding`
 	f := &fakeRegistry{values: map[string]string{}, keys: map[string]bool{registryKeySlot(productKey, keyWow6464): true, registryKeySlot(bindingKey, keyWow6464): true}}
-	for name, value := range map[string]string{"DisplayName": productName, "DisplayVersion": "1.1.0-beta.3", "InstallLocation": install.InstallRoot, "UninstallString": `"` + uninstaller + `"`} {
+	for name, value := range map[string]string{"DisplayName": productName, "DisplayVersion": "1.1.0-beta.4", "InstallLocation": install.InstallRoot, "UninstallString": `"` + uninstaller + `"`} {
 		f.values[registrySlot(productKey, name, keyWow6464)] = value
 	}
 	for name, value := range map[string]string{"InstallRoot": install.InstallRoot, "Instance": instance} {
@@ -279,7 +282,7 @@ func registrationFixture(t *testing.T) (trustedInstall, string, *fakeRegistry) {
 
 func TestRegistrationAndINIContracts(t *testing.T) {
 	old := buildInstallerVersion
-	buildInstallerVersion = "1.1.0-beta.3"
+	buildInstallerVersion = "1.1.0-beta.4"
 	defer func() { buildInstallerVersion = old }()
 	t.Run("exact registry and UTF16 INI accepted", func(t *testing.T) {
 		install, instance, f := registrationFixture(t)
@@ -293,7 +296,7 @@ func TestRegistrationAndINIContracts(t *testing.T) {
 		const key = `Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1`
 		f.keys[registryKeySlot(key, keyWow6432)] = true
 		f.values[registrySlot(key, "DisplayName", keyWow6432)] = productName
-		f.values[registrySlot(key, "DisplayVersion", keyWow6432)] = "1.1.0-beta.3"
+		f.values[registrySlot(key, "DisplayVersion", keyWow6432)] = "1.1.0-beta.4"
 		if _, err := verifyRegistrationWith(install, f.access()); err == nil {
 			t.Fatal("incomplete existing 32-bit key accepted")
 		}

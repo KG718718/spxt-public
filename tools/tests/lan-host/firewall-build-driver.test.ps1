@@ -15,7 +15,7 @@ try{
   foreach($case in @(@('ZERO','TESTS','TESTS_FAILED'),@('PACKAGE','TESTS','TESTS_FAILED'),@('NONJSON','TESTS','TESTS_FAILED'),@('KNOWN','TESTS','FIXTURE_INSTALL_PATH'),@('COMPILE','COMPILE','COMPILE_FAILED'))){
     $mode=$case[0];$caseRoot=Join-Path $work $mode;New-Item -ItemType Directory -Path $caseRoot|Out-Null
     $env:KSESSION_FAKE_GO_MODE=$mode;$entry=Join-Path $caseRoot 'entry.log';$diagnostic=Join-Path $caseRoot 'diagnostic.json'
-    & pwsh -NoLogo -NoProfile -File (Join-Path $repo 'tools/windows-firewall/build.ps1') -OutputDir (Join-Path $caseRoot 'output') -SourceCommit ('a'*40) -RuntimeManifestSha256 ('b'*64) -NodeSha256 'ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32' -InstallerVersion '1.1.0-beta.3' -GoExe $fake -DiagnosticReport $diagnostic *> $entry
+    & pwsh -NoLogo -NoProfile -File (Join-Path $repo 'tools/windows-firewall/build.ps1') -OutputDir (Join-Path $caseRoot 'output') -SourceCommit ('a'*40) -RuntimeManifestSha256 ('b'*64) -NodeSha256 'ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32' -InstallerVersion '1.1.0-beta.4' -GoExe $fake -DiagnosticReport $diagnostic *> $entry
     if($LASTEXITCODE-ne71){throw 'DRIVER_EXIT'}
     $d=Get-Content -Raw $diagnostic|ConvertFrom-Json
     if($d.status-ne'FAIL'-or$d.stage-ne$case[1]-or$d.reason-ne$case[2]-or$d.qualification-ne'TEST_BUILD_ONLY'){throw 'DRIVER_REASON'}

@@ -25,6 +25,8 @@ const (
 	enableLANID      = 202
 	copyLANID        = 203
 	reselectPortID   = 204
+	trustNetworkID   = 206
+	disableLANID     = 207
 )
 
 func systemRootFromAPI() (string, error) {
@@ -103,13 +105,13 @@ func (c *controller) readLANConfig() (*lanConfig, error) {
 		return nil, err
 	}
 	var reply lanConfigReply
-	if exactObjectKeys(output, "schema", "status", "config") != nil || decodeStrictJSON(output, &reply) != nil || reply.Schema != 1 {
+	if exactObjectKeys(output, "schema", "status", "config") != nil || decodeStrictJSON(output, &reply) != nil || reply.Schema != 2 {
 		return nil, fmt.Errorf("invalid config reply")
 	}
 	if exit == 10 && reply.Status == "NOT_CONFIGURED" && reply.Config == nil {
 		return nil, nil
 	}
-	if exit != 0 || reply.Status != "CONFIGURED" || reply.Config == nil || exactNestedKeys(output, "config", "schema", "port", "adapterPreference") != nil || reply.Config.Schema != 1 || reply.Config.Port < 8080 || reply.Config.Port > 8099 || !validGUID(reply.Config.AdapterPreference) {
+	if exit != 0 || reply.Status != "CONFIGURED" || reply.Config == nil || exactNestedKeys(output, "config", "schema", "enabled", "interfaceName", "port") != nil || reply.Config.Schema != 2 || reply.Config.Port < 8080 || reply.Config.Port > 8099 || !validInterfaceName(reply.Config.InterfaceName) {
 		return nil, fmt.Errorf("config rejected")
 	}
 	return reply.Config, nil
@@ -121,7 +123,7 @@ func (c *controller) discoverLAN() (*lanDiscovery, error) {
 		return nil, err
 	}
 	var reply lanDiscovery
-	if exactObjectKeys(output, "schema", "status", "selected", "candidates", "hostName") != nil || exactArrayObjectKeys(output, "candidates", "adapterId", "name", "address", "prefixLength", "subnet") != nil || decodeStrictJSON(output, &reply) != nil || reply.Schema != 1 || (exit != 0 && exit != 10 && exit != 12) {
+	if exactObjectKeys(output, "schema", "status", "selected", "candidates", "hostName") != nil || exactArrayObjectKeys(output, "candidates", "interfaceName", "name", "address", "prefixLength", "subnet") != nil || decodeStrictJSON(output, &reply) != nil || reply.Schema != 2 || (exit != 10 && exit != 12) {
 		return nil, fmt.Errorf("discovery rejected")
 	}
 	for index := range reply.Candidates {
@@ -129,28 +131,25 @@ func (c *controller) discoverLAN() (*lanDiscovery, error) {
 			return nil, fmt.Errorf("candidate rejected")
 		}
 	}
-	if exit == 10 && (reply.Status != "MULTIPLE_LAN_ADAPTERS" || reply.Selected != nil || len(reply.Candidates) < 2) {
+	if exit == 10 && (reply.Status != "NEEDS_NETWORK_SELECTION" || reply.Selected != nil || len(reply.Candidates) < 1) {
 		return nil, fmt.Errorf("multiple selection invalid")
 	}
 	if exit == 12 && (reply.Status != "NO_PRIVATE_LAN" || reply.Selected != nil || len(reply.Candidates) != 0) {
 		return nil, fmt.Errorf("empty selection invalid")
 	}
-	if exit == 0 && (reply.Status != "SELECTED" || reply.Selected == nil || exactNestedKeys(output, "selected", "adapterId", "name", "address", "prefixLength", "subnet") != nil) {
-		return nil, fmt.Errorf("selection rejected")
-	}
 	return &reply, nil
 }
 
 func (c *controller) discoverPreferred(adapter string) (*lanDiscovery, error) {
-	if !validGUID(adapter) {
+	if !validInterfaceName(adapter) {
 		return nil, fmt.Errorf("adapter rejected")
 	}
-	output, exit, err := c.runNodeCLI("tools/lan-host/network-cli.cjs", "discover", "--adapter-preference", adapter)
+	output, exit, err := c.runNodeCLI("tools/lan-host/network-cli.cjs", "discover", "--interface-name", adapter)
 	if err != nil {
 		return nil, err
 	}
 	var reply lanDiscovery
-	if exactObjectKeys(output, "schema", "status", "selected", "candidates", "hostName") != nil || exactArrayObjectKeys(output, "candidates", "adapterId", "name", "address", "prefixLength", "subnet") != nil || decodeStrictJSON(output, &reply) != nil || reply.Schema != 1 || (exit != 0 && exit != 11 && exit != 12) {
+	if exactObjectKeys(output, "schema", "status", "selected", "candidates", "hostName") != nil || exactArrayObjectKeys(output, "candidates", "interfaceName", "name", "address", "prefixLength", "subnet") != nil || decodeStrictJSON(output, &reply) != nil || reply.Schema != 2 || (exit != 0 && exit != 11 && exit != 12) {
 		return nil, fmt.Errorf("discovery rejected")
 	}
 	for index := range reply.Candidates {
@@ -164,7 +163,7 @@ func (c *controller) discoverPreferred(adapter string) (*lanDiscovery, error) {
 	if exit == 12 && (reply.Status != "NO_PRIVATE_LAN" || reply.Selected != nil) {
 		return nil, fmt.Errorf("no LAN invalid")
 	}
-	if exit == 0 && (reply.Status != "SELECTED" || exactNestedKeys(output, "selected", "adapterId", "name", "address", "prefixLength", "subnet") != nil || !validCandidate(reply.Selected)) {
+	if exit == 0 && (reply.Status != "SELECTED" || exactNestedKeys(output, "selected", "interfaceName", "name", "address", "prefixLength", "subnet") != nil || !validCandidate(reply.Selected)) {
 		return nil, fmt.Errorf("selection rejected")
 	}
 	return &reply, nil
@@ -178,35 +177,61 @@ type configureReply struct {
 }
 
 func (c *controller) configureLAN(adapter string, reselect bool) (*lanConfig, error) {
-	if !validGUID(adapter) {
+	if !validInterfaceName(adapter) {
 		return nil, fmt.Errorf("adapter rejected")
 	}
 	command := "configure"
 	if reselect {
 		command = "reselect"
 	}
-	output, exit, err := c.runNodeCLI("tools/lan-host/launcher-cli.cjs", command, "--instance-dir", c.instance, "--adapter-guid", adapter)
+	output, exit, err := c.runNodeCLI("tools/lan-host/launcher-cli.cjs", command, "--instance-dir", c.instance, "--interface-name", adapter)
 	if err != nil {
 		return nil, err
 	}
 	var reply configureReply
-	if exactObjectKeys(output, "schema", "status", "config", "selected") != nil || exactNestedKeys(output, "config", "schema", "port", "adapterPreference") != nil || exactNestedKeys(output, "selected", "adapterId", "name", "address", "prefixLength", "subnet") != nil || decodeStrictJSON(output, &reply) != nil || exit != 0 || reply.Schema != 1 || reply.Status != "SAVED" || reply.Config == nil || reply.Selected == nil || !validCandidate(reply.Selected) || reply.Config.AdapterPreference != adapter {
+	if exactObjectKeys(output, "schema", "status", "config", "selected") != nil || exactNestedKeys(output, "config", "schema", "enabled", "interfaceName", "port") != nil || exactNestedKeys(output, "selected", "interfaceName", "name", "address", "prefixLength", "subnet") != nil || decodeStrictJSON(output, &reply) != nil || exit != 0 || reply.Schema != 2 || reply.Status != "SAVED" || reply.Config == nil || reply.Selected == nil || !validCandidate(reply.Selected) || reply.Config.InterfaceName != adapter || reply.Config.Schema != 2 || reply.Config.Enabled {
 		return nil, fmt.Errorf("configuration rejected")
 	}
 	return reply.Config, nil
 }
 
 func (c *controller) selectExistingAdapter(adapter string) (*lanConfig, error) {
-	if !validGUID(adapter) {
+	if !validInterfaceName(adapter) {
 		return nil, fmt.Errorf("adapter rejected")
 	}
-	output, exit, err := c.runNodeCLI("tools/lan-host/launcher-cli.cjs", "select", "--instance-dir", c.instance, "--adapter-guid", adapter)
+	output, exit, err := c.runNodeCLI("tools/lan-host/launcher-cli.cjs", "select", "--instance-dir", c.instance, "--interface-name", adapter)
 	if err != nil {
 		return nil, err
 	}
 	var reply configureReply
-	if exactObjectKeys(output, "schema", "status", "config", "selected") != nil || exactNestedKeys(output, "config", "schema", "port", "adapterPreference") != nil || exactNestedKeys(output, "selected", "adapterId", "name", "address", "prefixLength", "subnet") != nil || decodeStrictJSON(output, &reply) != nil || exit != 0 || reply.Schema != 1 || reply.Status != "SAVED" || reply.Config == nil || reply.Config.AdapterPreference != adapter {
+	if exactObjectKeys(output, "schema", "status", "config", "selected") != nil || exactNestedKeys(output, "config", "schema", "enabled", "interfaceName", "port") != nil || exactNestedKeys(output, "selected", "interfaceName", "name", "address", "prefixLength", "subnet") != nil || decodeStrictJSON(output, &reply) != nil || exit != 0 || reply.Schema != 2 || reply.Status != "SAVED" || reply.Config == nil || reply.Selected == nil || !validCandidate(reply.Selected) || reply.Config.InterfaceName != adapter || reply.Config.Schema != 2 || reply.Config.Enabled {
 		return nil, fmt.Errorf("selection rejected")
+	}
+	return reply.Config, nil
+}
+
+func (c *controller) toggleLAN(adapter string, enabled bool) (*lanConfig, error) {
+	if !validInterfaceName(adapter) {
+		return nil, fmt.Errorf("network rejected")
+	}
+	command := "disable"
+	if enabled {
+		command = "enable"
+	}
+	output, exit, err := c.runNodeCLI("tools/lan-host/launcher-cli.cjs", command, "--instance-dir", c.instance, "--interface-name", adapter)
+	if err != nil {
+		return nil, err
+	}
+	var reply configureReply
+	if exactObjectKeys(output, "schema", "status", "config", "selected") != nil ||
+		exactNestedKeys(output, "config", "schema", "enabled", "interfaceName", "port") != nil ||
+		decodeStrictJSON(output, &reply) != nil || exit != 0 || reply.Schema != 2 || reply.Status != "SAVED" ||
+		reply.Config == nil || reply.Config.Schema != 2 || reply.Config.Enabled != enabled || reply.Config.InterfaceName != adapter ||
+		reply.Config.Port < 8080 || reply.Config.Port > 8099 {
+		return nil, fmt.Errorf("LAN toggle rejected")
+	}
+	if enabled && (reply.Selected == nil || exactNestedKeys(output, "selected", "interfaceName", "name", "address", "prefixLength", "subnet") != nil || !validCandidate(reply.Selected) || reply.Selected.InterfaceName != adapter) {
+		return nil, fmt.Errorf("network selection rejected")
 	}
 	return reply.Config, nil
 }
@@ -230,10 +255,10 @@ func (c *controller) serverState(port int) (*lanServerState, error) {
 	}
 	var state lanServerState
 	bytes, readErr := io.ReadAll(io.LimitReader(res.Body, 64*1024+1))
-	if readErr != nil || exactObjectKeys(bytes, "schema", "status", "serverReady", "initializationRequired", "port", "localListening", "lanListening", "localHealth", "lanHealth", "remoteBootstrapClosed", "selected") != nil || decodeStrictJSON(bytes, &state) != nil || state.Schema != 1 {
+	if readErr != nil || exactObjectKeys(bytes, "schema", "status", "serverReady", "initializationRequired", "port", "localListening", "lanListening", "localHealth", "lanHealth", "remoteBootstrapClosed", "selected") != nil || decodeStrictJSON(bytes, &state) != nil || state.Schema != 2 {
 		return nil, fmt.Errorf("status invalid")
 	}
-	if state.Selected != nil && exactNestedKeys(bytes, "selected", "adapterId", "address", "prefixLength", "subnet") != nil {
+	if state.Selected != nil && exactNestedKeys(bytes, "selected", "interfaceName", "address", "prefixLength", "subnet") != nil {
 		return nil, fmt.Errorf("status selection invalid")
 	}
 	return &state, nil
@@ -333,7 +358,7 @@ func (c *controller) firewallAllowed(config *lanConfig) bool {
 	if err != nil {
 		return false
 	}
-	cmd := exec.CommandContext(ctx, path, "status", "--port", strconv.Itoa(config.Port), "--adapter-guid", config.AdapterPreference)
+	cmd := exec.CommandContext(ctx, path, "status", "--port", strconv.Itoa(config.Port), "--interface-name", config.InterfaceName)
 	cmd.Dir = c.root
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	cmd.Env = env
@@ -346,7 +371,7 @@ func (c *controller) firewallAllowed(config *lanConfig) bool {
 		Status string `json:"status"`
 		Code   string `json:"code"`
 	}
-	return exactObjectKeys(output, "schema", "status", "code") == nil && decodeStrictJSON(output, &result) == nil && result.Schema == 1 && result.Status == "ALLOWED"
+	return exactObjectKeys(output, "schema", "status", "code") == nil && decodeStrictJSON(output, &result) == nil && result.Schema == 2 && result.Status == "ALLOWED"
 }
 
 func (c *controller) elevateFirewall(config *lanConfig) bool {
@@ -365,7 +390,7 @@ func (c *controller) elevateFirewall(config *lanConfig) bool {
 		HotKey                            uint32
 		IconOrMonitor, Process            uintptr
 	}
-	params := "enable --port " + strconv.Itoa(config.Port) + " --adapter-guid " + config.AdapterPreference
+	params := "enable --port " + strconv.Itoa(config.Port) + " --interface-name " + quoteWindowsArgument(config.InterfaceName)
 	info := shellExecuteInfo{CbSize: uint32(unsafe.Sizeof(shellExecuteInfo{})), Mask: 0x40, Hwnd: c.hwnd, Verb: ptr("runas"), File: ptr(path), Parameters: ptr(params), Directory: ptr(c.root), Show: 0}
 	r, _, _ := shell32.NewProc("ShellExecuteExW").Call(uintptr(unsafe.Pointer(&info)))
 	if r == 0 || info.Process == 0 {
@@ -380,6 +405,30 @@ func (c *controller) elevateFirewall(config *lanConfig) bool {
 		return false
 	}
 	return code == 0 && c.firewallAllowed(config)
+}
+
+func quoteWindowsArgument(value string) string {
+	var result strings.Builder
+	result.WriteByte('"')
+	backslashes := 0
+	for _, r := range value {
+		if r == '\\' {
+			backslashes++
+			continue
+		}
+		if r == '"' {
+			result.WriteString(strings.Repeat("\\", backslashes*2+1))
+			result.WriteRune(r)
+			backslashes = 0
+			continue
+		}
+		result.WriteString(strings.Repeat("\\", backslashes))
+		backslashes = 0
+		result.WriteRune(r)
+	}
+	result.WriteString(strings.Repeat("\\", backslashes*2))
+	result.WriteByte('"')
+	return result.String()
 }
 
 func copyText(hwnd uintptr, value string) bool {
@@ -417,17 +466,17 @@ func copyText(hwnd uintptr, value string) bool {
 }
 
 type lanRefreshResult struct {
-	state            *lanServerState
-	config           *lanConfig
-	discovery        *lanDiscovery
-	status           string
-	firewall         bool
-	ownership        bool
-	suggestedAdapter string
-	err              bool
-	transition       bool
-	child            *ownedChild
-	ready            bool
+	state           *lanServerState
+	config          *lanConfig
+	discovery       *lanDiscovery
+	status          string
+	firewall        bool
+	ownership       bool
+	requestFirewall bool
+	err             bool
+	transition      bool
+	child           *ownedChild
+	ready           bool
 }
 
 var elevateFirewallBoundary = func(c *controller, config *lanConfig) bool { return c.elevateFirewall(config) }
@@ -439,6 +488,8 @@ var lanTransitionConfigureBoundary = func(c *controller, command, adapter string
 		return c.selectExistingAdapter(adapter)
 	case "reselect":
 		return c.configureLAN(adapter, true)
+	case "enable", "disable":
+		return c.toggleLAN(adapter, command == "enable")
 	default:
 		return nil, fmt.Errorf("transition rejected")
 	}
@@ -453,7 +504,7 @@ func startExactLANConfig(c *controller, expected *lanConfig) error {
 	if err := lanTransitionStartBoundary(c); err != nil {
 		return err
 	}
-	if c.lanConfig == nil || c.lanConfig.Port != expected.Port || c.lanConfig.AdapterPreference != expected.AdapterPreference || c.child == nil || c.child.port != expected.Port || !c.ready {
+	if c.lanConfig == nil || *c.lanConfig != *expected || c.child == nil || c.child.port != expected.Port || !c.ready {
 		if c.child != nil {
 			c.child.stop()
 		}
@@ -504,6 +555,7 @@ func (c *controller) beginLANRefresh() {
 	}
 	c.lastLANCheck = time.Now()
 	pid, port, process := c.child.pid, c.child.port, c.child.process
+	firewallDenied := c.lanStatus == firewallBlocked
 	c.lanMu.Lock()
 	if c.lanBusy {
 		c.lanMu.Unlock()
@@ -533,16 +585,8 @@ func (c *controller) beginLANRefresh() {
 					} else {
 						result.discovery = discovery
 						switch discovery.Status {
-						case "SELECTED":
-							if discovery.Selected == nil {
-								result.err = true
-								result.status = lanStartFailed
-							} else {
-								result.suggestedAdapter = discovery.Selected.AdapterID
-								result.status = networkChanged
-							}
-						case "MULTIPLE_LAN_ADAPTERS":
-							result.status = multipleLANAdapters
+						case "NEEDS_NETWORK_SELECTION":
+							result.status = needsNetworkSelection
 						case "NO_PRIVATE_LAN":
 							result.status = noPrivateLAN
 						default:
@@ -552,11 +596,11 @@ func (c *controller) beginLANRefresh() {
 				} else if config == nil {
 					result.status = hostInitializationRequired
 				} else {
-					discovery, discoveryErr := c.discoverPreferred(config.AdapterPreference)
+					discovery, discoveryErr := c.discoverPreferred(config.InterfaceName)
 					if discoveryErr == nil {
 						result.discovery = discovery
 					}
-					adapterValid := discoveryErr == nil && discovery.Status == "SELECTED" && validCandidate(discovery.Selected) && validServerCandidate(state.Selected) && state.Selected.AdapterID == config.AdapterPreference && discovery.Selected.AdapterID == state.Selected.AdapterID && discovery.Selected.Address == state.Selected.Address && discovery.Selected.PrefixLength == state.Selected.PrefixLength && discovery.Selected.Subnet == state.Selected.Subnet
+					adapterValid := discoveryErr == nil && discovery.Status == "SELECTED" && validCandidate(discovery.Selected) && validServerCandidate(state.Selected) && state.Selected.InterfaceName == config.InterfaceName && discovery.Selected.InterfaceName == state.Selected.InterfaceName && discovery.Selected.Address == state.Selected.Address && discovery.Selected.PrefixLength == state.Selected.PrefixLength && discovery.Selected.Subnet == state.Selected.Subnet
 					selected := ""
 					if state.Selected != nil {
 						selected = state.Selected.Address
@@ -575,7 +619,16 @@ func (c *controller) beginLANRefresh() {
 					if state.ServerReady && adapterValid && result.ownership {
 						result.firewall = c.firewallAllowed(config)
 					}
-					result.status = finalLANStatus(readiness{ChildAlive: alive, Ownership: result.ownership, AdapterValid: adapterValid, FirewallAllowed: result.firewall, Config: config, Server: state})
+					if discoveryErr == nil && discovery.Status == "NETWORK_CHANGED" {
+						result.status = networkChanged
+					} else if !config.Enabled {
+						result.status = lanDisabled
+						if firewallDenied {
+							result.status = firewallBlocked
+						}
+					} else {
+						result.status = finalLANStatus(readiness{ChildAlive: alive, Ownership: result.ownership, AdapterValid: adapterValid, FirewallAllowed: result.firewall, Config: config, Server: state})
+					}
 				}
 			}
 		}
@@ -597,7 +650,7 @@ func verifiedFreshLANEndpoint(result *lanRefreshResult) (*lanCandidate, int, boo
 		return nil, 0, false
 	}
 	fresh, server := result.discovery.Selected, result.state.Selected
-	if *result.state.Port != result.config.Port || fresh.AdapterID != result.config.AdapterPreference || server.AdapterID != fresh.AdapterID || server.Address != fresh.Address || server.PrefixLength != fresh.PrefixLength || server.Subnet != fresh.Subnet {
+	if *result.state.Port != result.config.Port || fresh.InterfaceName != result.config.InterfaceName || server.InterfaceName != fresh.InterfaceName || server.Address != fresh.Address || server.PrefixLength != fresh.PrefixLength || server.Subnet != fresh.Subnet {
 		return nil, 0, false
 	}
 	return fresh, result.config.Port, true
@@ -632,10 +685,6 @@ func (c *controller) applyLANRefresh() {
 		c.lastLANCheck = time.Time{}
 		return
 	}
-	if result.suggestedAdapter != "" {
-		c.startLANTransition("configure", result.suggestedAdapter)
-		return
-	}
 	if result.discovery != nil {
 		c.lanCandidates = append([]lanCandidate(nil), result.discovery.Candidates...)
 		call(user32, "SendMessageW", c.combo, 0x014B, 0, 0) // CB_RESETCONTENT
@@ -661,6 +710,8 @@ func (c *controller) applyLANRefresh() {
 		}
 		if result.discovery.Selected != nil {
 			adapter = safeDisplay(result.discovery.Selected.Name)
+		} else if result.config != nil {
+			adapter = safeDisplay(result.config.InterfaceName)
 		}
 	}
 	if result.state != nil {
@@ -675,7 +726,7 @@ func (c *controller) applyLANRefresh() {
 	}
 	note := ""
 	if result.status == lanReady {
-		note = "\r\nHOST READY — EXTERNAL LAN ACCESS NOT CONFIRMED\r\n第二设备仍可能受公司 VLAN / Guest Wi-Fi / AP 隔离策略限制。"
+		note = "\r\nHOST READY — EXTERNAL ACCESS NOT CONFIRMED\r\n第二设备仍可能受公司 VLAN / Guest Wi-Fi / AP 隔离策略限制。"
 	}
 	c.text(fmt.Sprintf("%s\r\nHost: %s | Adapter: %s\r\nPrivate IPv4: %s | Subnet: %s | Port: %d\r\nLocal URL: %s\r\nLAN URL: %s\r\nListener: local=%t lan=%t | Firewall: %t | Health: local=%t lan=%t%s",
 		result.status, host, adapter, address, subnet, port, localURL, emptyDash(c.lanURL), result.state != nil && result.state.LocalListening, result.state != nil && result.state.LANListening, result.firewall, result.state != nil && result.state.LocalHealth, result.state != nil && result.state.LANHealth, note))
@@ -689,7 +740,7 @@ func emptyDash(value string) string {
 }
 
 func (c *controller) startLANTransition(command, adapter string) {
-	if !validGUID(adapter) || !c.claimLANWork() {
+	if !validInterfaceName(adapter) || !c.claimLANWork() {
 		return
 	}
 	var previous *lanConfig
@@ -701,7 +752,8 @@ func (c *controller) startLANTransition(command, adapter string) {
 	c.child = nil
 	c.ready = false
 	c.lanURL = ""
-	work := &controller{root: c.root, exe: c.exe, instance: c.instance, class: c.class, loginHash: c.loginHash, suppressUI: true}
+	c.lanStatus = lanDisabled
+	work := &controller{root: c.root, exe: c.exe, instance: c.instance, class: c.class, loginHash: c.loginHash, hwnd: c.hwnd, suppressUI: true}
 	go func() {
 		if oldChild != nil {
 			oldChild.stop()
@@ -727,6 +779,9 @@ func (c *controller) startLANTransition(command, adapter string) {
 		if next != nil {
 			startErr = startExactLANConfig(work, next)
 		}
+		if command == "enable" && startErr == nil && next != nil && !work.firewallAllowed(next) && !elevateFirewallBoundary(work, next) {
+			startErr = fmt.Errorf("FIREWALL_BLOCKED")
+		}
 		if next != nil && startErr != nil {
 			err = startErr
 			if previous != nil && !restoredBeforeStart {
@@ -742,7 +797,9 @@ func (c *controller) startLANTransition(command, adapter string) {
 					if recoveryErr := startExactLANConfig(work, previous); recoveryErr != nil {
 						err = recoveryErr
 					} else {
-						err = fmt.Errorf("LAN_START_FAILED")
+						if err.Error() != "FIREWALL_BLOCKED" {
+							err = fmt.Errorf("LAN_START_FAILED")
+						}
 					}
 				}
 			}
@@ -752,6 +809,8 @@ func (c *controller) startLANTransition(command, adapter string) {
 			status = lanStartFailed
 			if err.Error() == "PORT_OCCUPIED" {
 				status = portOccupied
+			} else if err.Error() == "FIREWALL_BLOCKED" {
+				status = firewallBlocked
 			}
 		}
 		c.publishLANResult(&lanRefreshResult{status: status, err: true, transition: true, child: work.child, ready: work.ready, config: work.lanConfig})
@@ -772,45 +831,55 @@ func (c *controller) selectAdapter() {
 		return
 	}
 	selected := c.lanCandidates[index]
+	if !c.trustedNetworkConfirmed() {
+		c.text("NEEDS NETWORK SELECTION\r\n请先确认所选网络是可信的公司或家庭网络，且不是公共或访客网络。")
+		return
+	}
+	call(user32, "SendMessageW", c.trustCheck, 0x00F1, 0, 0)
 	command := "configure"
 	if c.lanConfig != nil {
 		command = "select"
 	}
-	c.startLANTransition(command, selected.AdapterID)
+	c.startLANTransition(command, selected.InterfaceName)
 }
 
-func (c *controller) enableFirewallAsync() {
-	if c.isLANBusy() {
+func (c *controller) trustedNetworkConfirmed() bool {
+	if c.trustCheck == 0 {
+		return false
+	}
+	r, _ := call(user32, "SendMessageW", c.trustCheck, 0x00F0, 0, 0)
+	return r == 1
+}
+
+func (c *controller) enableLAN() {
+	if c.isLANBusy() || c.lanConfig == nil || c.lanConfig.Enabled {
 		return
 	}
-	if c.lanConfig == nil {
-		c.text("FIREWALL BLOCKED\r\n请先完成首个 Admin 和 LAN 适配器配置。")
+	if !c.trustedNetworkConfirmed() {
+		c.text("LAN DISABLED\r\n请确认已选网络是可信的公司或家庭网络，且不是公共或访客网络。")
 		return
 	}
-	if !c.claimLANWork() {
+	call(user32, "SendMessageW", c.trustCheck, 0x00F1, 0, 0)
+	c.startLANTransition("enable", c.lanConfig.InterfaceName)
+}
+
+func (c *controller) disableLAN() {
+	if c.isLANBusy() || c.lanConfig == nil || !c.lanConfig.Enabled {
 		return
 	}
-	go func() {
-		config := *c.lanConfig
-		ok := elevateFirewallBoundary(c, &config)
-		status := networkChanged
-		if !ok {
-			status = firewallBlocked
-		}
-		c.publishLANResult(&lanRefreshResult{status: status, err: true})
-	}()
+	c.startLANTransition("disable", c.lanConfig.InterfaceName)
 }
 
 func (c *controller) saveConfig(config *lanConfig) error {
 	if config == nil {
 		return fmt.Errorf("config absent")
 	}
-	output, exit, err := c.runNodeCLI("tools/lan-host/config-cli.cjs", "save", "--instance-dir", c.instance, "--port", strconv.Itoa(config.Port), "--adapter-preference", config.AdapterPreference)
+	output, exit, err := c.runNodeCLI("tools/lan-host/config-cli.cjs", "save", "--instance-dir", c.instance, "--port", strconv.Itoa(config.Port), "--interface-name", config.InterfaceName, "--enabled", strconv.FormatBool(config.Enabled))
 	if err != nil || exit != 0 {
 		return fmt.Errorf("save failed")
 	}
 	var reply lanConfigReply
-	if exactObjectKeys(output, "schema", "status", "config") != nil || exactNestedKeys(output, "config", "schema", "port", "adapterPreference") != nil || decodeStrictJSON(output, &reply) != nil || reply.Status != "SAVED" {
+	if exactObjectKeys(output, "schema", "status", "config") != nil || exactNestedKeys(output, "config", "schema", "enabled", "interfaceName", "port") != nil || decodeStrictJSON(output, &reply) != nil || reply.Schema != 2 || reply.Status != "SAVED" || reply.Config == nil || *reply.Config != *config {
 		return fmt.Errorf("save rejected")
 	}
 	return nil
@@ -827,5 +896,5 @@ func (c *controller) reselectPort() {
 	if r != 6 {
 		return
 	}
-	c.startLANTransition("reselect", c.lanConfig.AdapterPreference)
+	c.startLANTransition("reselect", c.lanConfig.InterfaceName)
 }

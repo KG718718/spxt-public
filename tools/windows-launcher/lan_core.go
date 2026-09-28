@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"regexp"
 	"strings"
+	"unicode/utf16"
 )
 
 const (
 	lanReady                   = "LAN READY"
+	lanDisabled                = "LAN DISABLED"
+	needsNetworkSelection      = "NEEDS NETWORK SELECTION"
 	hostInitializationRequired = "HOST INITIALIZATION REQUIRED"
 	noPrivateLAN               = "NO PRIVATE LAN"
 	multipleLANAdapters        = "MULTIPLE LAN ADAPTERS"
@@ -20,12 +24,14 @@ const (
 	networkChanged             = "NETWORK CHANGED"
 )
 
+var virtualInterfaceHint = regexp.MustCompile(`(?i)(\b(vpn|tunnel|tap|tun|wireguard|docker|wsl|virtual|vmware|virtualbox|loopback|bluetooth|teredo|isatap|6to4)\b|hyper[- ]?v|vethernet)`)
+
 type lanCandidate struct {
-	AdapterID    string `json:"adapterId"`
-	Name         string `json:"name"`
-	Address      string `json:"address"`
-	PrefixLength int    `json:"prefixLength"`
-	Subnet       string `json:"subnet"`
+	InterfaceName string `json:"interfaceName"`
+	Name          string `json:"name"`
+	Address       string `json:"address"`
+	PrefixLength  int    `json:"prefixLength"`
+	Subnet        string `json:"subnet"`
 }
 
 type lanDiscovery struct {
@@ -37,9 +43,10 @@ type lanDiscovery struct {
 }
 
 type lanConfig struct {
-	Schema            int    `json:"schema"`
-	Port              int    `json:"port"`
-	AdapterPreference string `json:"adapterPreference"`
+	Schema        int    `json:"schema"`
+	Enabled       bool   `json:"enabled"`
+	InterfaceName string `json:"interfaceName"`
+	Port          int    `json:"port"`
 }
 
 type lanConfigReply struct {
@@ -62,20 +69,16 @@ type lanServerState struct {
 	Selected               *lanCandidate `json:"selected"`
 }
 
-func validGUID(value string) bool {
-	if len(value) != 36 || value == "00000000-0000-0000-0000-000000000000" || value != strings.ToLower(value) {
+func validInterfaceName(value string) bool {
+	if value == "" || value != strings.TrimSpace(value) || len(utf16.Encode([]rune(value))) > 128 {
 		return false
 	}
-	for i, r := range value {
-		if i == 8 || i == 13 || i == 18 || i == 23 {
-			if r != '-' {
-				return false
-			}
-		} else if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f')) {
+	for _, r := range value {
+		if r < 0x20 || r == 0x7f || r == '\ufffd' {
 			return false
 		}
 	}
-	return true
+	return !virtualInterfaceHint.MatchString(value)
 }
 
 func privateIPv4(value string) bool {
@@ -88,7 +91,7 @@ func privateIPv4(value string) bool {
 }
 
 func validCandidate(value *lanCandidate) bool {
-	if value == nil || !validGUID(value.AdapterID) || strings.TrimSpace(value.Name) == "" || !privateIPv4(value.Address) || value.PrefixLength < 8 || value.PrefixLength > 32 {
+	if value == nil || !validInterfaceName(value.InterfaceName) || value.Name != value.InterfaceName || !privateIPv4(value.Address) || value.PrefixLength < 8 || value.PrefixLength > 30 {
 		return false
 	}
 	ip, network, err := net.ParseCIDR(value.Subnet)
@@ -115,7 +118,7 @@ func validServerCandidate(value *lanCandidate) bool {
 		return false
 	}
 	copy := *value
-	copy.Name = "server-status"
+	copy.Name = copy.InterfaceName
 	return validCandidate(&copy)
 }
 
@@ -250,7 +253,7 @@ func finalLANStatus(input readiness) string {
 	if s.InitializationRequired || status == hostInitializationRequired {
 		return hostInitializationRequired
 	}
-	for _, fixed := range []string{noPrivateLAN, multipleLANAdapters, portOccupied, lanStartFailed, lanHealthFailed, networkChanged} {
+	for _, fixed := range []string{lanDisabled, needsNetworkSelection, noPrivateLAN, multipleLANAdapters, portOccupied, lanStartFailed, lanHealthFailed, networkChanged} {
 		if status == fixed {
 			return fixed
 		}
@@ -258,9 +261,9 @@ func finalLANStatus(input readiness) string {
 	if status != "LAN SERVER READY" {
 		return lanStartFailed
 	}
-	if !input.ChildAlive || input.Config == nil || input.Config.Schema != 1 || input.Config.Port < 8080 || input.Config.Port > 8099 ||
-		!validGUID(input.Config.AdapterPreference) || !input.AdapterValid || !validServerCandidate(s.Selected) ||
-		s.Selected.AdapterID != input.Config.AdapterPreference || s.Port == nil || *s.Port != input.Config.Port ||
+	if !input.ChildAlive || input.Config == nil || input.Config.Schema != 2 || !input.Config.Enabled || input.Config.Port < 8080 || input.Config.Port > 8099 ||
+		!validInterfaceName(input.Config.InterfaceName) || !input.AdapterValid || !validServerCandidate(s.Selected) ||
+		s.Selected.InterfaceName != input.Config.InterfaceName || s.Port == nil || *s.Port != input.Config.Port ||
 		!input.Ownership || !s.ServerReady || !s.LocalListening || !s.LANListening || !s.LocalHealth || !s.LANHealth || !s.RemoteBootstrapClosed {
 		return lanHealthFailed
 	}

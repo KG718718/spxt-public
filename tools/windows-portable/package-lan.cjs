@@ -51,7 +51,7 @@ function prepare(root,goRoot) {
 function finish(root,launcherDir,helperDir,git,repo,commit) {
  const m=JSON.parse(read(root,'manifest/runtime-manifest.json')),li=JSON.parse(read(launcherDir,'build-info.json')),hi=JSON.parse(read(helperDir,'build-info.json'));
  assert.equal(m.sourceCommit,commit);assert.equal(li.sourceCommit,commit);assert.equal(li.runtimeManifestSha256,sha(read(root,'manifest/runtime-manifest.json')));
- assert.equal(hi.sourceCommit,commit);assert.equal(hi.runtimeManifestSha256,li.runtimeManifestSha256);assert.equal(hi.installerVersion,'1.1.0-beta.3');
+ assert.equal(hi.sourceCommit,commit);assert.equal(hi.runtimeManifestSha256,li.runtimeManifestSha256);assert.equal(hi.installerVersion,'1.1.0-beta.4');
  assert.equal(hi.nodeSha256,sha(read(root,'runtime/node.exe')));assert.equal(li.firewallHelperSha256,hi.sha256);
  writeNew(path.join(root,'K-SESSION.exe'),read(launcherDir,'K-SESSION.exe'));
  writeNew(path.join(root,'K-SESSION-Firewall.exe'),read(helperDir,'K-SESSION-Firewall.exe'));

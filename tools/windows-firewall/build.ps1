@@ -12,7 +12,7 @@ Set-StrictMode -Version Latest
 if($SourceCommit -notmatch '^[a-f0-9]{40}$'){throw 'Exact source commit required'}
 if($RuntimeManifestSha256 -notmatch '^[a-f0-9]{64}$'){throw 'Exact runtime manifest SHA256 required'}
 if($NodeSha256 -ne 'ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32'){throw 'Pinned Node SHA256 required'}
-if($InstallerVersion -ne '1.1.0-beta.3'){throw 'Batch 4.5 beta.3 installer version required'}
+if($InstallerVersion -ne '1.1.0-beta.4'){throw 'Batch LAN-2 beta.4 installer version required'}
 $taskOutput=[IO.Path]::GetFullPath($OutputDir)
 if(Test-Path -LiteralPath $taskOutput){throw 'Output must be new'}
 if((& $GoExe version) -ne 'go version go1.27.1 windows/amd64'){throw 'Pinned Go 1.27.1 Windows amd64 required'}
@@ -27,7 +27,7 @@ if($DiagnosticReport){
   if(Test-Path -LiteralPath $taskReportPath){throw 'Diagnostic report must be new'}
   if(!(Test-Path -LiteralPath (Split-Path $taskReportPath -Parent) -PathType Container)){throw 'Diagnostic report parent missing'}
 }
-$taskExpectedTests=@('TestRequestWhitelistAndCanonicalGUID','TestStrictDeploymentConfig','TestStrictDeploymentConfigExactKeyCorpus','TestInstallIdentityAndTampering','TestReparseResolutionMismatchIsRejected','TestCleanPathComparisonRejectsLexicalAliases','TestBoundConfigMustMatchRequest','TestRegistrationAndINIContracts','TestRuleOwnershipAndIdempotencyPolicy','TestEmbeddedFirewallScriptIsClosed','TestEmbeddedFirewallScriptParses','TestStatusOutputAllowlist','TestFirewallScriptBehaviorWithIsolatedCmdletHarness')
+$taskExpectedTests=@('TestRequestWhitelistAndInterfaceName','TestStrictDeploymentConfig','TestStrictDeploymentConfigExactKeyCorpus','TestInstallIdentityAndTampering','TestReparseResolutionMismatchIsRejected','TestCleanPathComparisonRejectsLexicalAliases','TestBoundConfigMustMatchRequest','TestRegistrationAndINIContracts','TestRuleOwnershipAndIdempotencyPolicy','TestEmbeddedFirewallScriptIsClosed','TestEmbeddedFirewallScriptParses','TestStatusOutputAllowlist','TestFirewallScriptBehaviorWithIsolatedCmdletHarness')
 $taskReport=[ordered]@{schema=1;kind='k-session-firewall-build-diagnostic';qualification='TEST_BUILD_ONLY';status='RUNNING';stage='PREFLIGHT';reason='INPUT_ENV_CAPTURED';sourceCommit=$SourceCommit;inputTempClass=$taskInputTempClass;inputTmpClass=$taskInputTmpClass;inputGoTmpClass=$taskInputGoTmpClass;fixtureRootSource='OWNED_PHYSICAL';testsPass=0;testsFail=0;testsSkipped=0;packagePass=$false;compileReached=$false}
 function Write-FixedReport(){if($taskReportPath){[IO.File]::WriteAllText($taskReportPath,($taskReport|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}}
 Write-FixedReport

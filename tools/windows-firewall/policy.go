@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf16"
 )
 
 const (
@@ -39,20 +40,21 @@ var (
 	buildRuntimeManifestSHA256 = "unbuilt"
 	buildNodeSHA256            = "unbuilt"
 	buildInstallerVersion      = "unbuilt"
-	guidPattern                = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 	hexHashPattern             = regexp.MustCompile(`^[0-9a-f]{64}$`)
+	virtualInterfaceHint       = regexp.MustCompile(`(?i)(\b(vpn|tunnel|tap|tun|wireguard|docker|wsl|virtual|vmware|virtualbox|loopback|bluetooth|teredo|isatap|6to4)\b|hyper[- ]?v|vethernet)`)
 )
 
 type request struct {
-	Action      string
-	Port        int
-	AdapterGUID string
+	Action        string
+	Port          int
+	InterfaceName string
 }
 
 type deploymentConfig struct {
-	Schema            int    `json:"schema"`
-	Port              int    `json:"port"`
-	AdapterPreference string `json:"adapterPreference"`
+	Schema        int    `json:"schema"`
+	Enabled       bool   `json:"enabled"`
+	InterfaceName string `json:"interfaceName"`
+	Port          int    `json:"port"`
 }
 
 type runtimeManifest struct {
@@ -122,7 +124,7 @@ func parseRequest(args []string) (request, error) {
 	seen := map[string]bool{}
 	for i := 1; i < len(args); i += 2 {
 		key, value := args[i], args[i+1]
-		if seen[key] || (key != "--port" && key != "--adapter-guid") {
+		if seen[key] || (key != "--port" && key != "--interface-name") {
 			return request{}, reject(exitInvalid, "INVALID_INVOCATION")
 		}
 		seen[key] = true
@@ -136,25 +138,29 @@ func parseRequest(args []string) (request, error) {
 				return request{}, reject(exitInvalid, "INVALID_PORT")
 			}
 			r.Port = port
-		case "--adapter-guid":
-			value = strings.ToLower(value)
-			if strings.HasPrefix(value, "{") && strings.HasSuffix(value, "}") && len(value) == 38 {
-				value = value[1 : len(value)-1]
-			}
-			if !validGUID(value) {
+		case "--interface-name":
+			if !validInterfaceName(value) {
 				return request{}, reject(exitInvalid, "INVALID_ADAPTER")
 			}
-			r.AdapterGUID = value
+			r.InterfaceName = value
 		}
 	}
-	if !seen["--port"] || !seen["--adapter-guid"] {
+	if !seen["--port"] || !seen["--interface-name"] {
 		return request{}, reject(exitInvalid, "INVALID_INVOCATION")
 	}
 	return r, nil
 }
 
-func validGUID(value string) bool {
-	return guidPattern.MatchString(value) && value != "00000000-0000-0000-0000-000000000000"
+func validInterfaceName(value string) bool {
+	if len(utf16.Encode([]rune(value))) < 1 || len(utf16.Encode([]rune(value))) > 128 || strings.TrimSpace(value) != value {
+		return false
+	}
+	for _, character := range value {
+		if character < 32 || character == 127 {
+			return false
+		}
+	}
+	return !virtualInterfaceHint.MatchString(value)
 }
 
 func hashBytes(b []byte) string {
@@ -309,10 +315,10 @@ func strictConfig(data []byte) (deploymentConfig, error) {
 		return c, err
 	}
 	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(data, &fields); err != nil || len(fields) != 3 {
+	if err := json.Unmarshal(data, &fields); err != nil || len(fields) != 4 {
 		return c, errors.New("invalid config fields")
 	}
-	for _, name := range []string{"schema", "port", "adapterPreference"} {
+	for _, name := range []string{"schema", "enabled", "interfaceName", "port"} {
 		if _, ok := fields[name]; !ok {
 			return c, errors.New("invalid config fields")
 		}
@@ -322,7 +328,7 @@ func strictConfig(data []byte) (deploymentConfig, error) {
 	if err := decoder.Decode(&c); err != nil {
 		return c, err
 	}
-	if c.Schema != 1 || c.Port < 8080 || c.Port > 8099 || !validGUID(c.AdapterPreference) {
+	if c.Schema != 2 || c.Port < 8080 || c.Port > 8099 || !validInterfaceName(c.InterfaceName) {
 		return deploymentConfig{}, errors.New("invalid config")
 	}
 	return c, nil
@@ -381,7 +387,7 @@ func verifyInstall(executable string, anchors installAnchors) (trustedInstall, e
 }
 
 func validateProductionAnchors(anchors installAnchors) error {
-	if anchors.NodeSHA256 != runtimeNodeHash || anchors.InstallerVersion != "1.1.0-beta.3" {
+	if anchors.NodeSHA256 != runtimeNodeHash || anchors.InstallerVersion != "1.1.0-beta.4" {
 		return reject(exitInstallTrust, "BUILD_ANCHORS_INVALID")
 	}
 	return nil
@@ -401,14 +407,14 @@ func verifyBoundConfig(instance string, install trustedInstall, req request) err
 		return reject(exitConfig, "LAN_CONFIG_INVALID")
 	}
 	cfg, err := strictConfig(data)
-	if err != nil || cfg.Port != req.Port || cfg.AdapterPreference != req.AdapterGUID {
+	if err != nil || !cfg.Enabled || cfg.Port != req.Port || cfg.InterfaceName != req.InterfaceName {
 		return reject(exitConfig, "LAN_CONFIG_MISMATCH")
 	}
 	return nil
 }
 
 func response(status, code string) []byte {
-	b, _ := json.Marshal(result{Schema: 1, Status: status, Code: code})
+	b, _ := json.Marshal(result{Schema: 2, Status: status, Code: code})
 	return append(b, '\n')
 }
 

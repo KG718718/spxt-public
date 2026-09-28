@@ -11,8 +11,8 @@ func readyFixture() readiness {
 	port := 8083
 	return readiness{
 		ChildAlive: true, Ownership: true, AdapterValid: true, FirewallAllowed: true,
-		Config: &lanConfig{Schema: 1, Port: port, AdapterPreference: syntheticGUID},
-		Server: &lanServerState{Schema: 1, Status: "LAN_SERVER_READY", ServerReady: true, InitializationRequired: false, Port: &port, LocalListening: true, LANListening: true, LocalHealth: true, LANHealth: true, RemoteBootstrapClosed: true, Selected: &lanCandidate{AdapterID: syntheticGUID, Address: "192.168.40.10", PrefixLength: 24, Subnet: "192.168.40.0/24"}},
+		Config: &lanConfig{Schema: 2, Enabled: true, Port: port, InterfaceName: syntheticGUID},
+		Server: &lanServerState{Schema: 2, Status: "LAN_SERVER_READY", ServerReady: true, InitializationRequired: false, Port: &port, LocalListening: true, LANListening: true, LocalHealth: true, LANHealth: true, RemoteBootstrapClosed: true, Selected: &lanCandidate{InterfaceName: syntheticGUID, Address: "192.168.40.10", PrefixLength: 24, Subnet: "192.168.40.0/24"}},
 	}
 }
 
@@ -27,6 +27,7 @@ func TestLANReadyRequiresEveryGate(t *testing.T) {
 		{"server running", func(r *readiness) { r.ChildAlive = false }},
 		{"admin created", func(r *readiness) { r.Server.InitializationRequired = true }},
 		{"adapter valid", func(r *readiness) { r.AdapterValid = false }},
+		{"disabled preference", func(r *readiness) { r.Config.Enabled = false }},
 		{"private IPv4", func(r *readiness) { r.Server.Selected.Address = "203.0.113.2" }},
 		{"persisted port", func(r *readiness) { r.Config.Port = 9000 }},
 		{"bind ownership", func(r *readiness) { r.Ownership = false }},
@@ -48,7 +49,7 @@ func TestLANReadyRequiresEveryGate(t *testing.T) {
 }
 
 func TestFixedServerStatusesMapToProductStates(t *testing.T) {
-	for server, want := range map[string]string{"HOST_INITIALIZATION_REQUIRED": hostInitializationRequired, "NO_PRIVATE_LAN": noPrivateLAN, "MULTIPLE_LAN_ADAPTERS": multipleLANAdapters, "PORT_OCCUPIED": portOccupied, "LAN_START_FAILED": lanStartFailed, "LAN_HEALTH_FAILED": lanHealthFailed, "NETWORK_CHANGED": networkChanged} {
+	for server, want := range map[string]string{"HOST_INITIALIZATION_REQUIRED": hostInitializationRequired, "LAN_DISABLED": lanDisabled, "NEEDS_NETWORK_SELECTION": needsNetworkSelection, "NO_PRIVATE_LAN": noPrivateLAN, "PORT_OCCUPIED": portOccupied, "LAN_START_FAILED": lanStartFailed, "LAN_HEALTH_FAILED": lanHealthFailed, "NETWORK_CHANGED": networkChanged} {
 		r := readyFixture()
 		r.Server.Status = server
 		if got := finalLANStatus(r); got != want {
@@ -63,17 +64,24 @@ func TestFixedServerStatusesMapToProductStates(t *testing.T) {
 }
 
 func TestCandidateAndJSONAreStrict(t *testing.T) {
-	good := &lanCandidate{AdapterID: syntheticGUID, Name: "Synthetic", Address: "192.168.1.4", PrefixLength: 24, Subnet: "192.168.1.0/24"}
+	good := &lanCandidate{InterfaceName: syntheticGUID, Name: syntheticGUID, Address: "192.168.1.4", PrefixLength: 24, Subnet: "192.168.1.0/24"}
 	if !validCandidate(good) {
 		t.Fatal("good candidate rejected")
 	}
-	for _, bad := range []*lanCandidate{{AdapterID: syntheticGUID, Name: "Synthetic", Address: "203.0.113.4", PrefixLength: 24, Subnet: "203.0.113.0/24"}, {AdapterID: syntheticGUID, Name: "Synthetic", Address: "192.168.1.4", PrefixLength: 8, Subnet: "192.0.0.0/8"}, {AdapterID: syntheticGUID, Name: "Synthetic", Address: "192.168.1.4", PrefixLength: 24, Subnet: "192.168.2.0/24"}, {AdapterID: syntheticGUID, Name: "Synthetic", Address: "192.168.1.4", PrefixLength: 25, Subnet: "192.168.1.0/24"}} {
+	for _, name := range []string{"Guest VPN", "Docker Network", "WSL", " bad ", "bad\x00name"} {
+		candidate := *good
+		candidate.InterfaceName, candidate.Name = name, name
+		if validCandidate(&candidate) {
+			t.Fatalf("unsafe interface accepted: %q", name)
+		}
+	}
+	for _, bad := range []*lanCandidate{{InterfaceName: syntheticGUID, Name: syntheticGUID, Address: "203.0.113.4", PrefixLength: 24, Subnet: "203.0.113.0/24"}, {InterfaceName: syntheticGUID, Name: syntheticGUID, Address: "192.168.1.4", PrefixLength: 8, Subnet: "192.0.0.0/8"}, {InterfaceName: syntheticGUID, Name: syntheticGUID, Address: "192.168.1.4", PrefixLength: 24, Subnet: "192.168.2.0/24"}, {InterfaceName: syntheticGUID, Name: syntheticGUID, Address: "192.168.1.4", PrefixLength: 25, Subnet: "192.168.1.0/24"}} {
 		if validCandidate(bad) {
 			t.Fatalf("unsafe candidate accepted: %+v", bad)
 		}
 	}
 	var value map[string]any
-	for _, source := range []string{`{"schema":1,"schema":1}`, `{"schema":1}{"schema":1}`, strings.Repeat(" ", 64*1024+1)} {
+	for _, source := range []string{`{"schema":2,"schema":2}`, `{"schema":2}{"schema":2}`, strings.Repeat(" ", 64*1024+1)} {
 		if decodeStrictJSON([]byte(source), &value) == nil {
 			t.Fatal("unsafe JSON accepted")
 		}
@@ -141,10 +149,10 @@ func TestPersistedPortNeverSilentlyFallsThroughRange(t *testing.T) {
 	if first, last := launcherPortRange(nil); first != 8080 || last != 8099 {
 		t.Fatal("first range changed")
 	}
-	if first, last := launcherPortRange(&lanConfig{Schema: 1, Port: 8087, AdapterPreference: syntheticGUID}); first != 8087 || last != 8087 {
+	if first, last := launcherPortRange(&lanConfig{Schema: 2, Port: 8087, InterfaceName: syntheticGUID}); first != 8087 || last != 8087 {
 		t.Fatal("persisted port could silently change")
 	}
-	if !keepControlForStartFailure(&lanConfig{Schema: 1, Port: 8087, AdapterPreference: syntheticGUID}, fail("PORT_OCCUPIED", "synthetic")) {
+	if !keepControlForStartFailure(&lanConfig{Schema: 2, Port: 8087, InterfaceName: syntheticGUID}, fail("PORT_OCCUPIED", "synthetic")) {
 		t.Fatal("port conflict would close settings control")
 	}
 	if keepControlForStartFailure(nil, fail("PORT_OCCUPIED", "synthetic")) {

@@ -65,23 +65,23 @@ type ownedChild struct {
 	port    int
 }
 type controller struct {
-	root, exe, instance, class, loginHash    string
-	lock                                     syscall.Handle
-	log                                      *os.File
-	hwnd, label                              uintptr
-	child                                    *ownedChild
-	ready                                    bool
-	closing                                  bool
-	lanMu                                    sync.Mutex
-	lanBusy                                  bool
-	lanConfig                                *lanConfig
-	lanCandidates                            []lanCandidate
-	lanURL                                   string
-	lanStatus                                string
-	combo, lanButton, copyButton, portButton uintptr
-	pendingLAN                               *lanRefreshResult
-	lastLANCheck                             time.Time
-	suppressUI                               bool
+	root, exe, instance, class, loginHash                               string
+	lock                                                                syscall.Handle
+	log                                                                 *os.File
+	hwnd, label                                                         uintptr
+	child                                                               *ownedChild
+	ready                                                               bool
+	closing                                                             bool
+	lanMu                                                               sync.Mutex
+	lanBusy                                                             bool
+	lanConfig                                                           *lanConfig
+	lanCandidates                                                       []lanCandidate
+	lanURL                                                              string
+	lanStatus                                                           string
+	combo, lanButton, copyButton, portButton, trustCheck, disableButton uintptr
+	pendingLAN                                                          *lanRefreshResult
+	lastLANCheck                                                        time.Time
+	suppressUI                                                          bool
 }
 
 var active *controller
@@ -280,7 +280,11 @@ func windowProc(hwnd uintptr, m uint32, w, l uintptr) uintptr {
 			return 0
 		}
 		if w&0xffff == enableLANID {
-			c.enableFirewallAsync()
+			c.enableLAN()
+			return 0
+		}
+		if w&0xffff == disableLANID {
+			c.disableLAN()
 			return 0
 		}
 		if w&0xffff == copyLANID {
@@ -413,7 +417,7 @@ func (c *controller) makeWindow() error {
 		return e
 	}
 	title := product + " — " + buildVersion + " " + buildCommit[:min(len(buildCommit), 8)]
-	hwnd, e := call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr(c.class))), uintptr(unsafe.Pointer(ptr(title))), 0x00ca0000, 160, 120, 760, 480, 0, 0, inst, 0)
+	hwnd, e := call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr(c.class))), uintptr(unsafe.Pointer(ptr(title))), 0x00ca0000, 160, 120, 760, 540, 0, 0, inst, 0)
 	if hwnd == 0 {
 		return e
 	}
@@ -427,10 +431,12 @@ func (c *controller) makeWindow() error {
 	}
 	if c.lanEnabled() {
 		c.combo, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("COMBOBOX"))), 0, 0x50200003, 20, 250, 700, 140, hwnd, selectAdapterID, inst, 0)
-		c.lanButton, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("选择此适配器"))), 0x50010000, 20, 300, 160, 35, hwnd, confirmAdapterID, inst, 0)
-		c.copyButton, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("复制局域网地址"))), 0x50010000, 195, 300, 160, 35, hwnd, copyLANID, inst, 0)
-		c.portButton, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("重新寻找可用端口"))), 0x50010000, 370, 300, 180, 35, hwnd, reselectPortID, inst, 0)
-		call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("启用局域网访问"))), 0x50010000, 565, 300, 155, 35, hwnd, enableLANID, inst, 0)
+		c.trustCheck, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("我确认所选网络是可信的公司/家庭网络，非公共或访客网络"))), 0x50010003, 20, 298, 700, 28, hwnd, trustNetworkID, inst, 0)
+		c.lanButton, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("选择此网络"))), 0x50010000, 20, 340, 130, 35, hwnd, confirmAdapterID, inst, 0)
+		c.portButton, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("重新寻找端口"))), 0x50010000, 160, 340, 130, 35, hwnd, reselectPortID, inst, 0)
+		call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("开启 LAN"))), 0x50010000, 300, 340, 125, 35, hwnd, enableLANID, inst, 0)
+		c.disableButton, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("关闭 LAN"))), 0x50010000, 435, 340, 125, 35, hwnd, disableLANID, inst, 0)
+		c.copyButton, _ = call(user32, "CreateWindowExW", 0, uintptr(unsafe.Pointer(ptr("BUTTON"))), uintptr(unsafe.Pointer(ptr("复制 LAN 地址"))), 0x50010000, 570, 340, 150, 35, hwnd, copyLANID, inst, 0)
 	}
 	call(user32, "ShowWindow", hwnd, 5)
 	// First ShowWindow can inherit SW_HIDE from the parent STARTUPINFO.

@@ -42,7 +42,8 @@ if($script:scenario -in @('exact','stale','unknown','active-missing','gpo-blocke
 }
 function Import-Module {[CmdletBinding()]param([Parameter(Position=0)]$Name,[switch]$Force)}
 function Get-NetAdapter {[CmdletBinding()]param([switch]$IncludeHidden)
-  [pscustomobject]@{InterfaceGuid=[guid]'12345678-1234-1234-1234-123456789abc';Status='Up';HardwareInterface=$true;Virtual=$false;Hidden=$false;InterfaceType=6;Name='Ethernet';InterfaceDescription='Synthetic physical Ethernet';InterfaceIndex=7}
+  $name=if($script:scenario-eq'renamed'){'Renamed Ethernet'}else{'Ethernet'}
+  [pscustomobject]@{InterfaceGuid=[guid]'12345678-1234-1234-1234-123456789abc';Status='Up';HardwareInterface=$true;Virtual=$false;Hidden=$false;InterfaceType=6;Name=$name;InterfaceDescription='Synthetic physical Ethernet';InterfaceIndex=7}
 }
 function Get-NetConnectionProfile {[CmdletBinding()]param($InterfaceIndex)
   $category=if($script:scenario-eq'public'){'Public'}else{'Private'}
@@ -114,7 +115,7 @@ func runFirewallBehavior(t *testing.T, action, scenario, fault string) (int, []f
 	cmd := exec.Command(powershell, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", firewallMockHarness+"\n"+firewallScript)
 	cmd.Env = append(os.Environ(),
 		"KSESSION_FW_ACTION="+action,
-		"KSESSION_FW_GUID="+testGUID,
+		"KSESSION_FW_INTERFACE_NAME="+testInterfaceName,
 		"KSESSION_FW_PORT=8083",
 		`KSESSION_FW_PROGRAM=C:\KSESSION\program\runtime\node.exe`,
 		"KSESSION_TEST_EVENT_FILE="+eventFile,
@@ -206,6 +207,12 @@ func TestFirewallScriptBehaviorWithIsolatedCmdletHarness(t *testing.T) {
 	})
 	t.Run("public profile is rejected without writes", func(t *testing.T) {
 		exit, events := runFirewallBehavior(t, "enable", "public", "")
+		if exit != exitNetwork || len(events) != 0 {
+			t.Fatalf("exit=%d events=%#v", exit, events)
+		}
+	})
+	t.Run("renamed selected interface is rejected without writes", func(t *testing.T) {
+		exit, events := runFirewallBehavior(t, "enable", "renamed", "")
 		if exit != exitNetwork || len(events) != 0 {
 			t.Fatalf("exit=%d events=%#v", exit, events)
 		}

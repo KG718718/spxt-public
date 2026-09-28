@@ -24,8 +24,8 @@ foreach($taskAdapter in @(Get-NetAdapter -IncludeHidden -ErrorAction Stop|Where-
 }
 if($taskRows.Count -ne 1){throw 'Hosted firewall gate requires exactly one runner-owned private IPv4; fail closed'}
 $taskAdapter=$taskRows[0].Adapter;$taskIp=$taskRows[0].Ip
-$taskGuid=([string]$taskAdapter.InterfaceGuid).Trim('{}').ToLowerInvariant()
-if($taskGuid -notmatch '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'){throw 'Adapter GUID unavailable'}
+$taskInterfaceName=[string]$taskAdapter.Name
+if([string]::IsNullOrWhiteSpace($taskInterfaceName) -or $taskInterfaceName.Length -gt 128){throw 'Adapter name unavailable'}
 $taskPrefix=[int]$taskIp.PrefixLength
 $taskOctets=@($taskIp.IPAddress.Split('.')|ForEach-Object{[uint32]$_})
 $taskAddress=[uint32](($taskOctets[0]-shl 24)-bor($taskOctets[1]-shl 16)-bor($taskOctets[2]-shl 8)-bor$taskOctets[3])
@@ -40,8 +40,8 @@ $taskProductRule='KSESSION-LAN-Host-v1'
 if(@(Get-NetFirewallRule -Name $taskProductRule -PolicyStore PersistentStore -ErrorAction SilentlyContinue).Count -ne 0){throw 'Unexpected pre-existing product rule'}
 $taskHelperRejected=$false
 try{
-  [IO.File]::WriteAllText($taskConfig,(@{schema=1;port=8083;adapterPreference=$taskGuid}|ConvertTo-Json -Compress),(New-Object Text.UTF8Encoding($false)))
-  $taskOutputBytes=& $Helper enable --port 8083 --adapter-guid $taskGuid
+  [IO.File]::WriteAllText($taskConfig,(@{schema=2;enabled=$true;port=8083;interfaceName=$taskInterfaceName}|ConvertTo-Json -Compress),(New-Object Text.UTF8Encoding($false)))
+  $taskOutputBytes=& $Helper enable --port 8083 --interface-name $taskInterfaceName
   if($LASTEXITCODE -eq 23 -and (($taskOutputBytes -join '')|ConvertFrom-Json).code -eq 'NETWORK_UNSAFE'){$taskHelperRejected=$true}
 }finally{
   [IO.File]::WriteAllBytes($taskConfig,$taskOriginal)

@@ -18,19 +18,19 @@ const firewallScript = `$ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
 function Stop-With([int]$exit,[string]$code){[Console]::Error.WriteLine($code);exit $exit}
 try {
-  $action=$env:KSESSION_FW_ACTION;$guid=$env:KSESSION_FW_GUID;$portText=$env:KSESSION_FW_PORT
+  $action=$env:KSESSION_FW_ACTION;$interfaceName=$env:KSESSION_FW_INTERFACE_NAME;$portText=$env:KSESSION_FW_PORT
   $program=$env:KSESSION_FW_PROGRAM
   $managedRuleMutationStarted=$false
   $managedRule=$null
   if($action -notin @('status','enable')){Stop-With 20 'INVALID_INVOCATION'}
-  if($guid -cnotmatch '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' -or $guid -eq '00000000-0000-0000-0000-000000000000'){Stop-With 20 'INVALID_ADAPTER'}
+  if([string]::IsNullOrWhiteSpace($interfaceName) -or $interfaceName.Length -gt 128 -or $interfaceName.Trim() -cne $interfaceName -or $interfaceName -match '[\x00-\x1f\x7f]' -or $interfaceName -match '(?i)(\b(vpn|tunnel|tap|tun|wireguard|docker|wsl|virtual|vmware|virtualbox|loopback|bluetooth|teredo|isatap|6to4)\b|hyper[- ]?v|vethernet)'){Stop-With 20 'INVALID_ADAPTER'}
   [int]$port=0;if(-not [int]::TryParse($portText,[ref]$port) -or $port -lt 8080 -or $port -gt 8099){Stop-With 20 'INVALID_PORT'}
   $moduleRoot=$env:SystemRoot+'\System32\WindowsPowerShell\v1.0\Modules'
   Import-Module ($moduleRoot+'\NetAdapter\NetAdapter.psd1') -Force -ErrorAction Stop
   Import-Module ($moduleRoot+'\NetConnection\NetConnection.psd1') -Force -ErrorAction Stop
   Import-Module ($moduleRoot+'\NetTCPIP\NetTCPIP.psd1') -Force -ErrorAction Stop
   Import-Module ($moduleRoot+'\NetSecurity\NetSecurity.psd1') -Force -ErrorAction Stop
-  $adapters=@(Get-NetAdapter -IncludeHidden -ErrorAction Stop | Where-Object {([guid]$_.InterfaceGuid).ToString('D').ToLowerInvariant() -ceq $guid})
+  $adapters=@(Get-NetAdapter -IncludeHidden -ErrorAction Stop | Where-Object {[string]$_.Name -ceq $interfaceName})
   if($adapters.Count -ne 1){Stop-With 23 'ADAPTER_NOT_FOUND'}
   $adapter=$adapters[0]
   if($adapter.Status -ne 'Up' -or $adapter.HardwareInterface -ne $true -or $adapter.Virtual -eq $true -or $adapter.Hidden -eq $true -or $adapter.InterfaceType -notin @(6,71)){Stop-With 23 'ADAPTER_UNSAFE'}
@@ -178,7 +178,7 @@ func runFirewall(req request, install trustedInstall) (int, []byte, error) {
 		"SystemRoot=" + filepath.Dir(systemDir), "WINDIR=" + filepath.Dir(systemDir),
 		"PATH=" + systemDir,
 		"PSModulePath=" + filepath.Join(systemDir, "WindowsPowerShell", "v1.0", "Modules"),
-		"KSESSION_FW_ACTION=" + req.Action, "KSESSION_FW_GUID=" + req.AdapterGUID,
+		"KSESSION_FW_ACTION=" + req.Action, "KSESSION_FW_INTERFACE_NAME=" + req.InterfaceName,
 		"KSESSION_FW_PORT=" + strconv.Itoa(req.Port), "KSESSION_FW_PROGRAM=" + install.NodePath,
 	}
 	var stdout, stderr bytes.Buffer

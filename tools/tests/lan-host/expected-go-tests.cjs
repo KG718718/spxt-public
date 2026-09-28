@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const FIREWALL=Object.freeze(['TestRequestWhitelistAndCanonicalGUID','TestStrictDeploymentConfig',
+const FIREWALL=Object.freeze(['TestRequestWhitelistAndInterfaceName','TestStrictDeploymentConfig',
   'TestStrictDeploymentConfigExactKeyCorpus','TestInstallIdentityAndTampering','TestReparseResolutionMismatchIsRejected',
   'TestCleanPathComparisonRejectsLexicalAliases','TestBoundConfigMustMatchRequest','TestRegistrationAndINIContracts',
   'TestRuleOwnershipAndIdempotencyPolicy','TestEmbeddedFirewallScriptIsClosed','TestEmbeddedFirewallScriptParses',
@@ -9,7 +9,8 @@ const LAUNCHER=Object.freeze(['TestRelativePathSafety','TestEnvironmentAllowlist
   'TestJobOwnsOnlyChild','TestInstallDataSafety','TestLANReadyRequiresEveryGate','TestFixedServerStatusesMapToProductStates',
   'TestCandidateAndJSONAreStrict','TestEnvironmentLANModeIsExplicitAndAllowlisted','TestExactListenerOwnershipRejectsWildcardThirdNICPortAndPIDImpersonationRows',
   'TestCopyURLSourceIsOnlyCurrentPrivateEndpoint','TestPersistedPortNeverSilentlyFallsThroughRange','TestFirewallHelperFixedHashBeforeElevation',
-  'TestFirewallHelperAbsentHashKeepsHistoricalLocalMode','TestFirewallEnvironmentFailureIsFailClosed','TestUACRejectionDoesNotStopLocalChildOrRetry',
+  'TestFirewallHelperAbsentHashKeepsHistoricalLocalMode','TestFirewallEnvironmentFailureIsFailClosed',
+  'TestFirewallInterfaceNameArgumentIsQuoted','TestEnableRejectionRestoresDisabledPreferenceAndLocalChild',
   'TestLANSettingsTransitionDoesNotBlockUIThread','TestTransitionStartFailureRestoresOldConfigAndService','TestFirstTransitionStartFailureKeepsDeterminedPort',
   'TestTransitionRejectsUnexpectedFallbackPort','TestFailedRefreshRevokesStaleCopyURL','TestFreshDiscoveryMismatchRevokesCopyURL',
   'TestFreshDiscoveryMatchPublishesURLWhenFirewallBlocked','TestStopDispatchRetriesBusyOwnedWindow',

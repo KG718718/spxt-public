@@ -34,24 +34,53 @@ func TestFirewallHelperFixedHashBeforeElevation(t *testing.T) {
 	}
 }
 
-func TestUACRejectionDoesNotStopLocalChildOrRetry(t *testing.T) {
-	old := elevateFirewallBoundary
-	defer func() { elevateFirewallBoundary = old }()
-	calls := 0
-	elevateFirewallBoundary = func(_ *controller, _ *lanConfig) bool { calls++; return false }
-	child := &ownedChild{pid: 4242, port: 8083}
-	c := &controller{lanConfig: &lanConfig{Schema: 1, Port: 8083, AdapterPreference: syntheticGUID}, child: child}
-	c.enableFirewallAsync()
+func TestFirewallInterfaceNameArgumentIsQuoted(t *testing.T) {
+	if got, want := quoteWindowsArgument(`Office LAN "A"\\`), `"Office LAN \"A\"\\\\"`; got != want {
+		t.Fatalf("unsafe Windows argument quoting: got %q want %q", got, want)
+	}
+}
+
+func TestEnableRejectionRestoresDisabledPreferenceAndLocalChild(t *testing.T) {
+	oldConfigure, oldStart, oldSave, oldElevate := lanTransitionConfigureBoundary, lanTransitionStartBoundary, lanTransitionSaveConfigBoundary, elevateFirewallBoundary
+	defer func() {
+		lanTransitionConfigureBoundary, lanTransitionStartBoundary, lanTransitionSaveConfigBoundary, elevateFirewallBoundary = oldConfigure, oldStart, oldSave, oldElevate
+	}()
+	previous := &lanConfig{Schema: 2, Port: 8083, InterfaceName: syntheticGUID}
+	lanTransitionConfigureBoundary = func(_ *controller, command, name string) (*lanConfig, error) {
+		if command != "enable" || name != syntheticGUID {
+			t.Fatal("unexpected LAN transition")
+		}
+		config := *previous
+		config.Enabled = true
+		return &config, nil
+	}
+	starts, rollbacks, elevations := 0, 0, 0
+	lanTransitionStartBoundary = func(work *controller) error {
+		starts++
+		work.child = &ownedChild{port: work.lanConfig.Port}
+		work.ready = true
+		return nil
+	}
+	lanTransitionSaveConfigBoundary = func(_ *controller, config *lanConfig) error {
+		if *config != *previous {
+			t.Fatal("UAC rejection did not restore exact disabled preference")
+		}
+		rollbacks++
+		return nil
+	}
+	elevateFirewallBoundary = func(_ *controller, config *lanConfig) bool {
+		if !config.Enabled {
+			t.Fatal("UAC requested for disabled LAN")
+		}
+		elevations++
+		return false
+	}
+	c := &controller{root: t.TempDir(), lanConfig: previous, child: &ownedChild{port: previous.Port}}
+	c.startLANTransition("enable", syntheticGUID)
 	waitPendingLAN(t, c)
-	if !c.isLANBusy() {
-		t.Fatal("UAC worker released serialization before UI consumption")
-	}
 	c.applyLANRefresh()
-	if calls != 1 {
-		t.Fatalf("elevation calls=%d", calls)
-	}
-	if c.child != child || c.child.pid != 4242 || c.child.port != 8083 {
-		t.Fatal("UAC rejection changed Local child")
+	if starts != 2 || rollbacks != 1 || elevations != 1 || c.lanConfig == nil || *c.lanConfig != *previous || c.child == nil || !c.ready || c.lanStatus != firewallBlocked {
+		t.Fatalf("UAC rejection recovery failed: starts=%d rollbacks=%d elevations=%d config=%+v status=%q", starts, rollbacks, elevations, c.lanConfig, c.lanStatus)
 	}
 }
 
@@ -74,7 +103,7 @@ func TestLANSettingsTransitionDoesNotBlockUIThread(t *testing.T) {
 			t.Error("own Local child was not detached before first range probe")
 		}
 		<-release
-		return &lanConfig{Schema: 1, Port: 8080, AdapterPreference: syntheticGUID}, nil
+		return &lanConfig{Schema: 2, Port: 8080, InterfaceName: syntheticGUID}, nil
 	}
 	lanTransitionStartBoundary = func(c *controller) error { c.child = &ownedChild{port: 8080}; c.ready = true; return nil }
 	lanTransitionSaveConfigBoundary = func(_ *controller, _ *lanConfig) error { return nil }
@@ -131,7 +160,7 @@ func TestFirewallEnvironmentFailureIsFailClosed(t *testing.T) {
 	firewallHelperHash = digest(content)
 	commandEnvironmentBoundary = func(_ *controller) ([]string, error) { return nil, fmt.Errorf("synthetic environment failure") }
 	c := &controller{root: root}
-	if c.firewallAllowed(&lanConfig{Schema: 1, Port: 8080, AdapterPreference: syntheticGUID}) {
+	if c.firewallAllowed(&lanConfig{Schema: 2, Port: 8080, InterfaceName: syntheticGUID}) {
 		t.Fatal("firewall status inherited ambient environment after allowlist construction failed")
 	}
 }
@@ -143,12 +172,12 @@ func TestTransitionStartFailureRestoresOldConfigAndService(t *testing.T) {
 		lanTransitionStartBoundary = oldStart
 		lanTransitionSaveConfigBoundary = oldSave
 	}()
-	previous := &lanConfig{Schema: 1, Port: 8083, AdapterPreference: syntheticGUID}
-	next := &lanConfig{Schema: 1, Port: 8084, AdapterPreference: "11111111-2222-4333-8444-555555555555"}
+	previous := &lanConfig{Schema: 2, Port: 8083, InterfaceName: syntheticGUID}
+	next := &lanConfig{Schema: 2, Port: 8084, InterfaceName: "11111111-2222-4333-8444-555555555555"}
 	lanTransitionConfigureBoundary = func(_ *controller, _, _ string) (*lanConfig, error) { copy := *next; return &copy, nil }
 	saved := 0
 	lanTransitionSaveConfigBoundary = func(_ *controller, config *lanConfig) error {
-		if config.Port != previous.Port || config.AdapterPreference != previous.AdapterPreference {
+		if config.Port != previous.Port || config.InterfaceName != previous.InterfaceName {
 			t.Fatal("rollback did not restore exact previous config")
 		}
 		saved++
@@ -171,7 +200,7 @@ func TestTransitionStartFailureRestoresOldConfigAndService(t *testing.T) {
 		return nil
 	}
 	c := &controller{lanConfig: previous, child: &ownedChild{port: previous.Port}, lanURL: "http://192.168.40.10:8083/login.html"}
-	c.startLANTransition("select", next.AdapterPreference)
+	c.startLANTransition("select", next.InterfaceName)
 	waitPendingLAN(t, c)
 	if !c.isLANBusy() {
 		t.Fatal("rollback result was exposed before UI consumption")
@@ -189,7 +218,7 @@ func TestFirstTransitionStartFailureKeepsDeterminedPort(t *testing.T) {
 		lanTransitionStartBoundary = oldStart
 		lanTransitionSaveConfigBoundary = oldSave
 	}()
-	next := &lanConfig{Schema: 1, Port: 8086, AdapterPreference: syntheticGUID}
+	next := &lanConfig{Schema: 2, Port: 8086, InterfaceName: syntheticGUID}
 	lanTransitionConfigureBoundary = func(_ *controller, _, _ string) (*lanConfig, error) { copy := *next; return &copy, nil }
 	starts, saves := 0, 0
 	lanTransitionStartBoundary = func(_ *controller) error { starts++; return fmt.Errorf("SERVER_START_FAILED") }
@@ -213,7 +242,7 @@ func TestTransitionRejectsUnexpectedFallbackPort(t *testing.T) {
 		lanTransitionStartBoundary = oldStart
 		lanTransitionSaveConfigBoundary = oldSave
 	}()
-	next := &lanConfig{Schema: 1, Port: 8086, AdapterPreference: syntheticGUID}
+	next := &lanConfig{Schema: 2, Port: 8086, InterfaceName: syntheticGUID}
 	lanTransitionConfigureBoundary = func(_ *controller, _, _ string) (*lanConfig, error) { copy := *next; return &copy, nil }
 	lanTransitionStartBoundary = func(work *controller) error {
 		work.child = &ownedChild{port: 8091, pid: 4242}
@@ -255,45 +284,45 @@ func TestFailedRefreshRevokesStaleCopyURL(t *testing.T) {
 
 func TestFreshDiscoveryMismatchRevokesCopyURL(t *testing.T) {
 	port := 8083
-	stale := &lanCandidate{AdapterID: syntheticGUID, Name: "Old Adapter", Address: "192.168.40.10", PrefixLength: 24, Subnet: "192.168.40.0/24"}
+	stale := &lanCandidate{InterfaceName: syntheticGUID, Name: syntheticGUID, Address: "192.168.40.10", PrefixLength: 24, Subnet: "192.168.40.0/24"}
 	c := &controller{
 		lanBusy: true,
 		lanURL:  "http://192.168.40.10:8083/login.html",
 		pendingLAN: &lanRefreshResult{
 			status:    networkChanged,
-			config:    &lanConfig{Schema: 1, Port: port, AdapterPreference: syntheticGUID},
-			discovery: &lanDiscovery{Schema: 1, Status: "NETWORK_CHANGED", Selected: nil},
-			state:     &lanServerState{Schema: 1, Status: "LAN_SERVER_READY", Port: &port, Selected: stale},
+			config:    &lanConfig{Schema: 2, Port: port, InterfaceName: syntheticGUID},
+			discovery: &lanDiscovery{Schema: 2, Status: "NETWORK_CHANGED", Selected: nil},
+			state:     &lanServerState{Schema: 2, Status: "LAN_SERVER_READY", Port: &port, Selected: stale},
 		},
 	}
 	c.applyLANRefresh()
 	if c.currentLANURL() != "" {
 		t.Fatal("stale server-selected IP remained copyable without a matching fresh discovery candidate")
 	}
-	if address, subnet, url := freshLANPresentation(&lanRefreshResult{config: c.lanConfig, discovery: &lanDiscovery{Schema: 1, Status: "NETWORK_CHANGED"}, state: &lanServerState{Schema: 1, Port: &port, Selected: stale}}); address != "-" || subnet != "-" || url != "" {
+	if address, subnet, url := freshLANPresentation(&lanRefreshResult{config: c.lanConfig, discovery: &lanDiscovery{Schema: 2, Status: "NETWORK_CHANGED"}, state: &lanServerState{Schema: 2, Port: &port, Selected: stale}}); address != "-" || subnet != "-" || url != "" {
 		t.Fatalf("stale server-selected endpoint remained presented as current: address=%q subnet=%q url=%q", address, subnet, url)
 	}
 }
 
 func TestFreshDiscoveryMatchPublishesURLWhenFirewallBlocked(t *testing.T) {
 	port := 8083
-	fresh := &lanCandidate{AdapterID: syntheticGUID, Name: "Current Adapter", Address: "192.168.40.11", PrefixLength: 24, Subnet: "192.168.40.0/24"}
+	fresh := &lanCandidate{InterfaceName: syntheticGUID, Name: syntheticGUID, Address: "192.168.40.11", PrefixLength: 24, Subnet: "192.168.40.0/24"}
 	server := *fresh
 	server.Name = ""
 	c := &controller{
 		lanBusy: true,
 		pendingLAN: &lanRefreshResult{
 			status:    firewallBlocked,
-			config:    &lanConfig{Schema: 1, Port: port, AdapterPreference: syntheticGUID},
-			discovery: &lanDiscovery{Schema: 1, Status: "SELECTED", Selected: fresh},
-			state:     &lanServerState{Schema: 1, Status: "FIREWALL_BLOCKED", Port: &port, Selected: &server},
+			config:    &lanConfig{Schema: 2, Port: port, InterfaceName: syntheticGUID},
+			discovery: &lanDiscovery{Schema: 2, Status: "SELECTED", Selected: fresh},
+			state:     &lanServerState{Schema: 2, Status: "FIREWALL_BLOCKED", Port: &port, Selected: &server},
 		},
 	}
 	c.applyLANRefresh()
 	if got, want := c.currentLANURL(), "http://192.168.40.11:8083/login.html"; got != want {
 		t.Fatalf("verified fresh address was not published for a non-address firewall gate: got %q want %q", got, want)
 	}
-	result := &lanRefreshResult{config: &lanConfig{Schema: 1, Port: port, AdapterPreference: syntheticGUID}, discovery: &lanDiscovery{Schema: 1, Status: "SELECTED", Selected: fresh}, state: &lanServerState{Schema: 1, Port: &port, Selected: &server}}
+	result := &lanRefreshResult{config: &lanConfig{Schema: 2, Port: port, InterfaceName: syntheticGUID}, discovery: &lanDiscovery{Schema: 2, Status: "SELECTED", Selected: fresh}, state: &lanServerState{Schema: 2, Port: &port, Selected: &server}}
 	if address, subnet, url := freshLANPresentation(result); address != fresh.Address || subnet != fresh.Subnet || url != "http://192.168.40.11:8083/login.html" {
 		t.Fatalf("verified fresh endpoint was hidden: address=%q subnet=%q url=%q", address, subnet, url)
 	}
@@ -315,7 +344,7 @@ func TestStrictLocalStatusAndActualPIDSocketOwnership(t *testing.T) {
 	}
 	defer listener.Close()
 	var body atomic.Value
-	body.Store(fmt.Sprintf(`{"schema":1,"status":"LOCAL_ONLY","serverReady":false,"initializationRequired":false,"port":%d,"localListening":true,"lanListening":false,"localHealth":true,"lanHealth":false,"remoteBootstrapClosed":true,"selected":null}`, port))
+	body.Store(fmt.Sprintf(`{"schema":2,"status":"LOCAL_ONLY","serverReady":false,"initializationRequired":false,"port":%d,"localListening":true,"lanListening":false,"localHealth":true,"lanHealth":false,"remoteBootstrapClosed":true,"selected":null}`, port))
 	login := []byte("synthetic login")
 	server := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -338,15 +367,15 @@ func TestStrictLocalStatusAndActualPIDSocketOwnership(t *testing.T) {
 	if !endpointHealthy("127.0.0.1", port, digest(login)) || endpointHealthy("127.0.0.1", port, digest([]byte("wrong"))) {
 		t.Fatal("fresh Host self-probe did not bind to current login hash")
 	}
-	body.Store(`{"schema":1,"schema":1}`)
+	body.Store(`{"schema":2,"schema":2}`)
 	if _, err = c.serverState(port); err == nil {
 		t.Fatal("duplicate status field accepted")
 	}
-	body.Store(`{"schema":1}{"schema":1}`)
+	body.Store(`{"schema":2}{"schema":2}`)
 	if _, err = c.serverState(port); err == nil {
 		t.Fatal("trailing status object accepted")
 	}
-	body.Store(fmt.Sprintf(`{"schema":1,"Status":"LOCAL_ONLY","serverReady":false,"initializationRequired":false,"port":%d,"localListening":true,"lanListening":false,"localHealth":true,"lanHealth":false,"remoteBootstrapClosed":true,"selected":null}`, port))
+	body.Store(fmt.Sprintf(`{"schema":2,"Status":"LOCAL_ONLY","serverReady":false,"initializationRequired":false,"port":%d,"localListening":true,"lanListening":false,"localHealth":true,"lanHealth":false,"remoteBootstrapClosed":true,"selected":null}`, port))
 	if _, err = c.serverState(port); err == nil {
 		t.Fatal("case-insensitive status key accepted")
 	}
