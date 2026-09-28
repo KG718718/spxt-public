@@ -2,6 +2,23 @@
 const test=require('node:test'),assert=require('node:assert/strict'),cp=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const repo=path.resolve(__dirname,'../../../..');
 const read=p=>fs.readFileSync(path.join(repo,p),'utf8');
+function workflowJob(source,name){
+ const workflow=source.replaceAll('\r\n','\n'),root=workflow.match(/^jobs:\n/m);
+ assert.ok(root);
+ const jobs=workflow.slice(root.index+root[0].length);
+ const headers=[...jobs.matchAll(/^  ([A-Za-z][A-Za-z0-9-]*):[ \t]*$/gm)];
+ const matches=headers.filter(header=>header[1]===name);
+ assert.equal(matches.length,1);
+ const index=headers.indexOf(matches[0]);
+ return jobs.slice(headers[index].index,headers[index+1]?.index ?? jobs.length);
+}
+
+test('sequence job boundary excludes later jobs but keeps forbidden content inside sequence',()=>{
+ const later="jobs:\n  sequence:\n    steps: []\n  later:\n    run: hosted-gate.cjs\n";
+ assert.doesNotMatch(workflowJob(later,'sequence'),/hosted-gate\.cjs/);
+ const inside="jobs:\n  sequence:\n    run: hosted-gate.cjs\n  later:\n    steps: []\n";
+ assert.throws(()=>assert.doesNotMatch(workflowJob(inside,'sequence'),/hosted-gate\.cjs/));
+});
 
 test('workflow rebuilds exact beta.1 and supplies a closed fresh plus historical bundle',()=>{
  const y=read('.github/workflows/setup-v3.yml'),rebuild=read('tools/windows-installer/rebuild-beta1.ps1'),source=read('tools/windows-installer/verify-beta1-source.cjs'),verify=read('tools/windows-installer/verify-beta1-build.cjs'),offline=read('tools/windows-installer/offline-ci.ps1');
@@ -59,7 +76,7 @@ test('qa-static is a closed manual route and reuses the full historical static g
 
 test('closed upgrade-fault sequence is manual, bounded, and does not build current portable or run regression',()=>{
  const workflow=read('.github/workflows/setup-v3.yml'),script=read('tools/windows-installer/sequence-diagnostic.ps1'),pathHelper=read('tools/windows-installer/sequence-diagnostic-path.ps1'),reportHelper=read('tools/windows-installer/sequence-diagnostic-report.ps1'),helper=read('tools/windows-installer/sequence-identity.cjs'),build=read('tools/windows-installer/build.cjs'),iss=read('tools/windows-installer/setup.iss'),go=read('tools/windows-launcher/upgrade_windows_test.go');
- const sequence=workflow.slice(workflow.indexOf('  sequence:'),workflow.indexOf('  historical-identity:'));
+ const sequence=workflowJob(workflow,'sequence');
  assert.match(sequence,/github\.event_name == 'workflow_dispatch' && inputs\.mode == 'sequence'/);
  for(const marker of ['rebuild-beta1.ps1','sequence-diagnostic.ps1','SEQUENCE-DIAGNOSTIC.json','upgrade-sequence-diagnostic-','Fixed sequence summary only','persist-credentials: false'])assert.match(sequence,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  for(const forbidden of ['windows-installer/ci.ps1','windows-portable/ci.ps1','npm test','hosted-gate.cjs','inputs.mode == \'full\'','testTotal','742'])assert.doesNotMatch(sequence,new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));

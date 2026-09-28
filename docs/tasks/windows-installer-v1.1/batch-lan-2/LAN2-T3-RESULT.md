@@ -1,6 +1,6 @@
 # LAN2-T3 执行回单（2026-09-28）
 
-> 当前追加状态：`RETURNED — LOCAL SYNTHETIC PASS; PARENT INTEGRATION PENDING`。下方独立基线与集成反例均为历史结果；本任务最新验证为集成 `56aed68` 源码只读快照上的 45/45 与 C01—C15 PASS，仍需 Master 整合本次修复并独立复跑。
+> 当前追加状态：`RETURNED — FULL #1 FROZEN REGRESSION TEST FIX; MASTER INTEGRATION PENDING`。Full #1 `36379556816@9ba5a337cc7c6d24a39d8ac21cec49280af8b7b4` 已消费 1/2，固定阶段 `FROZEN_REGRESSION FAIL`；本任务只修静态测试边界，尚未重新运行 Hosted，不能改写 Full #1 历史结果。
 
 ## 状态
 
@@ -47,3 +47,10 @@
 - 远端预检由 Master 确认：新建的 `lan2-beta4-v1.1.yml` 尚未登记在 GitHub workflow 列表，无法直接以 `gh workflow run` 调度。本轮授权在已登记的 `.github/workflows/setup-v3.yml` 最小增加 `lan2-full`/`lan2-qa` 两个手动 mode 与独立 caller job；仅在仓库 `KG718718/spxt-public`、分支 `codex/lan2-manual-host-v1.1`、`workflow_dispatch`、对应 mode 下调用 `./.github/workflows/lan2-beta4-v1.1.yml`，分别映射为 `full`/`qa`。原 Batch 4/4.5 modes/jobs 条件及调用语义未改。
 - T3 静态测试精确断言 caller job 全部文本、两个 option 恰各一次、callee `workflow_call` 输入与 candidate 的仓库/分支/mode 限制。PyYAML `BaseLoader` 对 caller/callee 两份 YAML 解析通过；T3 CJS 语法通过。
 - 在集成 `56aed68d08d8bd635f8b381d313a2f40889b9563` 的无 `.git` 源码快照中仅覆盖本轮 caller 与 T3 测试文件，完整 `compatibility-report.cjs` 为 45 tests、45 pass、0 fail、0 skipped，C01—C15 报告 `PASS`。这是本地静态/合成验证；Master Review、整合、push 后才可按预算调度 Full 0/2，本任务未运行 Hosted。
+
+## Full #1 frozen regression 静态边界返工（2026-09-28）
+
+- Full #1 Run `36379556816` / source `9ba5a337cc7c6d24a39d8ac21cec49280af8b7b4` / 失败 Artifact `10951969499`：固定阶段 `FROZEN_REGRESSION FAIL`；LAN Node 44/44 与 F3 Setup 下载精确校验已通过，实际 Setup/26 suites/742 checks/最终 Artifact 未到达。预算 Full 1/2、QA 0/1。
+- 在原任务工作树本地复现：历史 `upgrade-lifecycle/contract.test.cjs` 的 sequence 静态测试用从 `sequence:` 到 `historical-identity:` 的长切片，将中间后续 job 中的 `hosted-gate.cjs` 误算为 sequence 内容而失败。这不能证明 beta.1→beta.2 历史行为改变。
+- 只在该测试文件新增按 YAML `jobs:` 下两空格顶层 job header 截取单一 job 的辅助函数，并让 sequence 检查使用它；后续无关 job 含 `hosted-gate.cjs` 时不污染，sequence 自身含该字符串时必须被拒绝。未删除/跳过原检查，历史接受语义不变。
+- 在 `9ba5a337` 的无 `.git` 源码快照仅覆盖此测试文件后，原六个 frozen regression 文件：112 tests、110 pass、0 fail、2 skipped。两个 skip 分别为本机无可用 8.3 alias、无创建文件符号链接权限；不能记 fail0skip0。beta.4 compatibility+transaction：45/45、0 fail、0 skipped，C01—C15 报告 PASS。本地环境不足以证明 frozen skip0，须由 Master 在具备条件的环境独立复验；不得无修改重试 Full。
