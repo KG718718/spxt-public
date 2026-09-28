@@ -88,10 +88,10 @@ func walkPersistentInstance(t *testing.T, instance string) map[string]string {
 function injectRejectedSetupQuiescence(upgrade, target, source, oldVersion, newVersion) {
   upgrade = replaceOnce(upgrade,
     `\trunSetup(${target}, false)\n\trecord("U05", "real same-version Setup rejected")`,
-    `\trunSetup(${target}, false)\n\tif !equalMaps(upgradedOwned, owned()) || !equalMaps(upgradedInstance, persistentInventory()) { t.Fatal("same-version rejection changed state") }\n\trecord("U05", "real same-version Setup rejected")`);
+    `\trunSetup(${target}, false)\n\tpostSameVersionInstance := persistentInventory()\n\tif !equalMaps(upgradedOwned, owned()) || !equalMaps(upgradedInstance, postSameVersionInstance) { t.Fatal("same-version rejection changed state") }\n\trecord("U05", "real same-version Setup rejected")`);
   upgrade = replaceOnce(upgrade,
     `\trunSetup(${source}, false)\n\trecord("U06", "real old ${oldVersion} Setup rejected downgrade over installed ${newVersion}")`,
-    `\trunSetup(${source}, false)\n\tif !equalMaps(upgradedOwned, owned()) || !equalMaps(upgradedInstance, persistentInventory()) { t.Fatal("downgrade rejection changed state") }\n\trecord("U06", "real old ${oldVersion} Setup rejected downgrade over installed ${newVersion}")`);
+    `\trunSetup(${source}, false)\n\tpostDowngradeInstance := persistentInventory()\n\tif !equalMaps(upgradedOwned, owned()) || !equalMaps(upgradedInstance, postDowngradeInstance) { t.Fatal("downgrade rejection changed state") }\n\trecord("U06", "real old ${oldVersion} Setup rejected downgrade over installed ${newVersion}")`);
   return upgrade;
 }
 

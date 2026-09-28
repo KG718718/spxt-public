@@ -220,11 +220,13 @@ test('LCK03 real second Launcher cannot acquire the same lock or start a second 
   assert.match(generatedUpgrade,/if eventCount\(instance, "READY"\) != readyBeforeSecond \{ t\.Fatal\("second Launcher started a private Node session"\) \}/);
 });
 test('LCK04 U05 same-version rejection rechecks quiescence before comparison',()=>{
-  assert.match(generatedUpgrade,/runSetup\(beta2, false\)\n\tif !equalMaps\(upgradedOwned, owned\(\)\) \|\| !equalMaps\(upgradedInstance, persistentInventory\(\)\) \{ t.Fatal\("same-version rejection changed state"\) \}\n\trecord\("U05"/);
+  assert.match(generatedUpgrade,/runSetup\(beta2, false\)\n\tpostSameVersionInstance := persistentInventory\(\)\n\tif !equalMaps\(upgradedOwned, owned\(\)\) \|\| !equalMaps\(upgradedInstance, postSameVersionInstance\) \{ t.Fatal\("same-version rejection changed state"\) \}\n\trecord\("U05"/);
+  assert.doesNotMatch(generatedUpgrade,/runSetup\(beta2, false\)\n\tif [^\n]*\|\|[^\n]*persistentInventory\(\)/);
   assert.match(generatedUpgrade,/persistentInventory := func\(\) map\[string\]string \{[\s\S]+requireControlledProcessExited[\s\S]+waitLauncherLockReleased/);
 });
 test('LCK05 U06 downgrade rejection rechecks quiescence before comparison',()=>{
-  assert.match(generatedUpgrade,/runSetup\(beta1, false\)\n\tif !equalMaps\(upgradedOwned, owned\(\)\) \|\| !equalMaps\(upgradedInstance, persistentInventory\(\)\) \{ t.Fatal\("downgrade rejection changed state"\) \}\n\trecord\("U06"/);
+  assert.match(generatedUpgrade,/runSetup\(beta1, false\)\n\tpostDowngradeInstance := persistentInventory\(\)\n\tif !equalMaps\(upgradedOwned, owned\(\)\) \|\| !equalMaps\(upgradedInstance, postDowngradeInstance\) \{ t.Fatal\("downgrade rejection changed state"\) \}\n\trecord\("U06"/);
+  assert.doesNotMatch(generatedUpgrade,/runSetup\(beta1, false\)\n\tif [^\n]*\|\|[^\n]*persistentInventory\(\)/);
   assert.match(generatedUpgrade,/persistentInventory := func\(\) map\[string\]string \{[\s\S]+requireControlledProcessExited[\s\S]+waitLauncherLockReleased/);
 });
 test('LCK13 rollback checkpoint retains persistent inventory',t=>{

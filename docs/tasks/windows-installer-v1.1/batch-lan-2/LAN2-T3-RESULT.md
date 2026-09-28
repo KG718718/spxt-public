@@ -78,3 +78,7 @@
 - 运行期新增真实第二 Launcher 调用的测试 overlay：有界等待其退出，确认原 Launcher/Node 仍在、根锁仍被占用、READY 事件数未增加。生产 Launcher 对第二次调用可返回 busy 或成功 dispatch，两种退出形式都不视作取得第二把锁。该真实路径仍待 Hosted 运行确认，本地 LCK03 仅静态核对生成逻辑与受控持锁 fixture。
 - LCK01—LCK14 编号按正式清单逐项映射，另有嵌套锁名、日志、临时文件等 `EXTRA` 反例。本地受控 lock suite `27/27 PASS`、fail0skip0。在 Master 集成基线 `2a63c6aad4980df29f78f624fc740df68d7b8764` 的无 `.git` 源码快照覆盖本任务三份修改文件，`prepare-hosted-harness.cjs` 成功生成 Go overlay；compatibility report `72/72 PASS`、fail0skip0、C01—C15 与 LCK01—LCK14 均 PASS。快照内生成文件含 U05/U06 各自清单检查、运行期第二 Launcher 检查及唯一根锁排除函数。
 - 本机没有可调用的 Go 工具链，生成的 Go overlay 尚未本地编译，真实第二 Launcher、Setup、rollback/uninstall/reinstall 行为未在本轮实机复测。Master Review 应先编译生成文件，再决定是否按现有预算运行 Full #4；这些本地 PASS 不能改写 Full #3 FAIL。
+
+### Master Review 后最小修正
+
+Master 发现 U05/U06 的 `owned() || persistentInventory()` 比较存在 Go 短路：若 owned 已改变，后面的 quiescence 门禁不会运行。现两次 `runSetup` 各自返回后，先独立求值 `persistentInventory()`，完成受控进程退出和根锁独占探测，再比较 owned 与持久清单。LCK04/LCK05 精确断言此顺序，并排斥把门禁放在 `||` 右侧的形式。其余范围不变；仍待 Master 独立 Review、Go 编译和真实 Hosted 验证。
