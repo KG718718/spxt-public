@@ -1,6 +1,6 @@
 # LAN2-T3 执行回单（2026-09-28）
 
-> 当前追加状态：`RETURNED — FULL #1 FROZEN REGRESSION TEST FIX; MASTER INTEGRATION PENDING`。Full #1 `36379556816@9ba5a337cc7c6d24a39d8ac21cec49280af8b7b4` 已消费 1/2，固定阶段 `FROZEN_REGRESSION FAIL`；本任务只修静态测试边界，尚未重新运行 Hosted，不能改写 Full #1 历史结果。
+> 当前追加状态：`BLOCKED — FULL #2 LOCK HOLDER UNRESOLVED`。Full #2 `36380488652` 的 `OFFLINE_LIFECYCLE FAIL` 无法从固定证据唯一确认 `.launcher.lock` 的实际持有进程；本轮只保留受控合成反例，未提交等待/重试实现，也未运行新的 Hosted。下方各阶段结果均为历史记录。
 
 ## 状态
 
@@ -54,3 +54,10 @@
 - 在原任务工作树本地复现：历史 `upgrade-lifecycle/contract.test.cjs` 的 sequence 静态测试用从 `sequence:` 到 `historical-identity:` 的长切片，将中间后续 job 中的 `hosted-gate.cjs` 误算为 sequence 内容而失败。这不能证明 beta.1→beta.2 历史行为改变。
 - 只在该测试文件新增按 YAML `jobs:` 下两空格顶层 job header 截取单一 job 的辅助函数，并让 sequence 检查使用它；后续无关 job 含 `hosted-gate.cjs` 时不污染，sequence 自身含该字符串时必须被拒绝。未删除/跳过原检查，历史接受语义不变。
 - 在 `9ba5a337` 的无 `.git` 源码快照仅覆盖此测试文件后，原六个 frozen regression 文件：112 tests、110 pass、0 fail、2 skipped。两个 skip 分别为本机无可用 8.3 alias、无创建文件符号链接权限；不能记 fail0skip0。beta.4 compatibility+transaction：45/45、0 fail、0 skipped，C01—C15 报告 PASS。本地环境不足以证明 frozen skip0，须由 Master 在具备条件的环境独立复验；不得无修改重试 Full。
+
+## Full #2 `.launcher.lock` 持有进程归因止点（2026-09-28）
+
+- Master 固定 Full #2 Run `36380488652` / Artifact `10952926928` 为 `OFFLINE_LIFECYCLE FAIL`；实际 Setup 及部分 U 项已到达，`TestUpgradeLifecycle` 对 synthetic instance 的 `.launcher.lock` 读取发生 sharing violation。固定证据只提供阶段、固定检查和失败结论；没有失效瞬间的句柄所有者与 Launcher、Node 子进程、Setup 控制进程三者的完整退出状态。不能由报错文件名或最后已记录 U 项唯一推断持有人。
+- 受控 synthetic fixture 只使用临时 `.launcher.lock`，由本任务启动的 PowerShell 子进程以 `FileShare.None` 独占打开。8 项本地测试全部 PASS、fail0、skip0：确认受控持有进程、stop 请求未完成时仍不可读、graceful/abnormal 退出后释放、持锁超时 fail-closed、cleanup 后完整读回、重复启停无残留，以及另一个控制进程退出时锁仍可由存活进程持有。fixture 不接触真实业务路径/数据，不记录 PID 或路径正文。
+- 观察边界：该 fixture 证明“控制进程退出”与“锁已释放”不能等同，且可验证受控持有者的正常/异常释放；它**不**确定 Full #2 当时锁由 Launcher、Node 子进程、Setup 控制进程还是其他进程持有。已撤回未证实的 beta.4 harness 等待逻辑，未改生产、manifest/inventory、事务、身份或 rollback；未排除 `.launcher.lock`，未忽略 sharing violation、固定 sleep 或捕获后继续。
+- 结论：`UNRESOLVED — ACTUAL LOCK HOLDER NOT PROVEN`。依本轮 Master 补充门槛停止实现并回单。下一步须先取得安全且固定的进程/句柄归属及退出顺序证据，再决定最小生命周期修复；不能把有界等待当成唯一根因证明或据本轮派 Full #3。
