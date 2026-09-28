@@ -9,6 +9,8 @@ const {
 
 const STATUS = Object.freeze({
   LOCAL_ONLY: 'LOCAL_ONLY',
+  LAN_DISABLED: 'LAN_DISABLED',
+  NEEDS_NETWORK_SELECTION: 'NEEDS_NETWORK_SELECTION',
   HOST_INITIALIZATION_REQUIRED: 'HOST_INITIALIZATION_REQUIRED',
   NO_PRIVATE_LAN: 'NO_PRIVATE_LAN',
   MULTIPLE_LAN_ADAPTERS: 'MULTIPLE_LAN_ADAPTERS',
@@ -51,7 +53,7 @@ function publicState(state, needsInitialization) {
   const initializing = Boolean(needsInitialization());
   const status = fixedStatus(state.status, STATUS.LOCAL_ONLY);
   return {
-    schema: 1,
+    schema: 2,
     status,
     serverReady: status === STATUS.LAN_SERVER_READY,
     initializationRequired: initializing,
@@ -62,7 +64,7 @@ function publicState(state, needsInitialization) {
     lanHealth: Boolean(state.lanHealth),
     remoteBootstrapClosed: true,
     selected: selected ? {
-      adapterId: selected.adapterId,
+      interfaceName: selected.interfaceName,
       address: selected.address,
       prefixLength: selected.prefixLength,
       subnet: selected.subnet
@@ -173,14 +175,14 @@ function discoverLanInWorker(options = {}) {
       const {parentPort,workerData}=require('node:worker_threads');
       try {
         const network=require(workerData.modulePath);
-        parentPort.postMessage({ok:true,value:network.discoverWindowsLan({adapterPreference:workerData.adapterPreference})});
+        parentPort.postMessage({ok:true,value:network.discoverWindowsLan({interfaceName:workerData.interfaceName})});
       } catch (error) {
         parentPort.postMessage({ok:false,code:typeof error?.code==='string'?error.code:'NETWORK_DISCOVERY_FAILED'});
       }
     `, {
       eval: true,
       env: process.env.SystemRoot ? {SystemRoot: process.env.SystemRoot} : {},
-      workerData: {modulePath, adapterPreference: options.adapterPreference}
+      workerData: {modulePath, interfaceName: options.interfaceName}
     });
     let settled = false;
     const finish = (error, value) => {
@@ -228,8 +230,8 @@ function createLanHostController(options = {}) {
     return server;
   }
   function selectedForConfig(discovery, config) {
-    if (!discovery || discovery.status !== 'SELECTED' || !discovery.selected) return null;
-    return discovery.selected.adapterId === config.adapterPreference ? discovery.selected : null;
+    if (!config?.enabled || !discovery || discovery.status !== 'SELECTED' || !discovery.selected) return null;
+    return discovery.selected.interfaceName === config.interfaceName ? discovery.selected : null;
   }
   async function check(kind, address, port) {
     try { return await probe({address, port, kind, initializationRequired: options.needsInitialization()}); }
@@ -239,7 +241,7 @@ function createLanHostController(options = {}) {
   async function start(config, discovery) {
     const selected = selectedForConfig(discovery, config);
     if (!selected) {
-      const discoveryStatus = fixedStatus(discovery?.status, STATUS.NETWORK_CHANGED);
+      const discoveryStatus = config.enabled ? fixedStatus(discovery?.status, STATUS.NETWORK_CHANGED) : STATUS.LAN_DISABLED;
       update({status: discoveryStatus, port: config.port, selected: null});
       try {
         reservation = await reserve({
@@ -300,7 +302,7 @@ function createLanHostController(options = {}) {
 
   async function reconcile(discovery, config) {
     const next = selectedForConfig(discovery, config);
-    const same = next && state.selected && next.adapterId === state.selected.adapterId
+    const same = next && state.selected && next.interfaceName === state.selected.interfaceName
       && next.address === state.selected.address && next.prefixLength === state.selected.prefixLength
       && state.lanListening && state.lanHealth;
     if (same) return state;
@@ -310,7 +312,7 @@ function createLanHostController(options = {}) {
     if (lanServer) await closeServer(lanServer, true);
     lanServer = null;
     if (!next) {
-      update({status: fixedStatus(discovery?.status, STATUS.NETWORK_CHANGED)});
+      update({status: config.enabled ? fixedStatus(discovery?.status, STATUS.NETWORK_CHANGED) : STATUS.LAN_DISABLED});
       return state;
     }
     update({selected: next});

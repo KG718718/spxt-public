@@ -8,8 +8,8 @@ const path = require('node:path');
 const {spawnSync} = require('node:child_process');
 const {CONFIG_FILENAME, parseStrictJson, validateLanConfig, createLanConfigStore} = require('../../../public-lan-config');
 
-const ID = 'abcdef01-2345-6789-abcd-ef0123456789';
-const VALID = Object.freeze({schema: 1, port: 8083, adapterPreference: ID});
+const NAME = 'Ethernet';
+const VALID = Object.freeze({schema: 2, enabled: false, interfaceName: NAME, port: 8083});
 
 function fixture(label) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ksession-lan-' + label + '-'));
@@ -19,11 +19,11 @@ function fixture(label) {
 }
 function cleanup(root) { fs.rmSync(root, {recursive: true, force: true}); }
 
-test('strict schema accepts only port and stable adapter GUID, never an IP', () => {
+test('strict schema accepts only port and interface name, never an IP', () => {
   assert.deepEqual(validateLanConfig(VALID), VALID);
-  for (const invalid of [null, [], {}, {...VALID, schema: 2}, {...VALID, port: 8079}, {...VALID, port: 8100},
-    {...VALID, port: '8083'}, {...VALID, adapterPreference: 'Ethernet'}, {...VALID, adapterPreference: ID.toUpperCase()},
-    {...VALID, adapterPreference: '00000000-0000-0000-0000-000000000000'},
+  for (const invalid of [null, [], {}, {...VALID, schema: 1}, {...VALID, port: 8079}, {...VALID, port: 8100},
+    {...VALID, port: '8083'}, {...VALID, interfaceName: ' VPN Tunnel'}, {...VALID, interfaceName: 'x'.repeat(129)},
+    {...VALID, interfaceName: 'Docker Network'}, {...VALID, enabled: 'true'},
     {...VALID, address: '192.168.1.2'}, {...VALID, unknown: true}]) {
     assert.throws(() => validateLanConfig(invalid), {code: 'LAN_CONFIG_INVALID'});
   }
@@ -46,7 +46,7 @@ test('save and reload are isolated from byte-identical business data', () => {
 test('damaged or linked config is rejected and never overwritten', t => {
   const damaged = fixture('damaged');
   try {
-    const original = '{"schema":1,"port":8083,"adapterPreference":"bad"}\n'; fs.writeFileSync(damaged.config, original);
+    const original = '{"schema":2,"port":8083,"interfaceName":"bad"}\n'; fs.writeFileSync(damaged.config, original);
     assert.throws(() => createLanConfigStore({instanceDirectory: damaged.instance}), {code: 'LAN_CONFIG_INVALID'});
     assert.equal(fs.readFileSync(damaged.config, 'utf8'), original);
   } finally { cleanup(damaged.root); }
@@ -64,13 +64,13 @@ test('strict JSON rejects duplicate decoded keys recursively and trailing values
   const attachments = path.join(f.instance, 'attachments'); fs.mkdirSync(attachments);
   const attachment = path.join(attachments, 'synthetic.bin'); fs.writeFileSync(attachment, Buffer.from([9, 8, 7, 0, 255]));
   const sources = [
-    `{"schema":1,"port":8080,"port":8099,"adapterPreference":"${ID}"}`,
-    `{"schema":1,"port":8080,"po\\u0072t":8099,"adapterPreference":"${ID}"}`,
-    `{"schema":1,"port":8080,"adapterPreference":"${ID}","extra":{"x":1,"\\u0078":2}}`,
-    `{"schema":1,"port":8080,"adapterPreference":"${ID}","extra":[{"x":1,"x":2}]}`,
-    `{"schema":1,"port":8080,"adapterPreference":"${ID}","unknown":true}`,
-    `{"schema":1,"port":8080,"adapterPreference":"${ID}"}{"schema":1}`,
-    `{"schema":1,"port":8080,"adapterPreference":"${ID}"} true`
+    `{"schema":2,"port":8080,"port":8099,"interfaceName":"${NAME}"}`,
+    `{"schema":2,"port":8080,"po\\u0072t":8099,"interfaceName":"${NAME}"}`,
+    `{"schema":2,"port":8080,"interfaceName":"${NAME}","extra":{"x":1,"\\u0078":2}}`,
+    `{"schema":2,"port":8080,"interfaceName":"${NAME}","extra":[{"x":1,"x":2}]}`,
+    `{"schema":2,"port":8080,"interfaceName":"${NAME}","unknown":true}`,
+    `{"schema":2,"port":8080,"interfaceName":"${NAME}"}{"schema":2}`,
+    `{"schema":2,"port":8080,"interfaceName":"${NAME}"} true`
   ];
   try {
     assert.equal(JSON.parse(sources[0]).port, 8099, 'native JSON.parse demonstrates the old last-wins counterexample');
@@ -86,8 +86,8 @@ test('strict JSON rejects duplicate decoded keys recursively and trailing values
     const beforeSave = {config: fs.readFileSync(f.config), business: fs.readFileSync(f.business), attachment: fs.readFileSync(attachment)};
     const cli = path.join(__dirname, '../../lan-host/config-cli.cjs');
     const result = spawnSync(process.execPath, [cli, 'save', '--instance-dir', f.instance, '--port', '8083',
-      '--adapter-preference', ID], {encoding: 'utf8', windowsHide: true, timeout: 10000});
-    assert.equal(result.status, 20); assert.deepEqual(JSON.parse(result.stdout), {schema: 1, status: 'LAN_CONFIG_INVALID'});
+      '--interface-name', NAME, '--enabled', 'false'], {encoding: 'utf8', windowsHide: true, timeout: 10000});
+    assert.equal(result.status, 20); assert.deepEqual(JSON.parse(result.stdout), {schema: 2, status: 'LAN_CONFIG_INVALID'});
     assert.equal(result.stderr, '');
     assert.deepEqual(fs.readFileSync(f.config), beforeSave.config);
     assert.deepEqual(fs.readFileSync(f.business), beforeSave.business);
@@ -109,13 +109,13 @@ test('LAN config requires canonical integer tokens across load and save boundari
   const attachments = path.join(f.instance, 'attachments'); fs.mkdirSync(attachments);
   const attachment = path.join(attachments, 'synthetic.bin'); fs.writeFileSync(attachment, Buffer.from([4, 3, 2, 1, 0]));
   const variants = [
-    `{"schema":1,"port":8080.0,"adapterPreference":"${ID}"}`,
-    `{"schema":1,"port":8.08e3,"adapterPreference":"${ID}"}`,
-    `{"schema":1,"port":8.080E+3,"adapterPreference":"${ID}"}`,
-    `{"schema":1e0,"port":8080,"adapterPreference":"${ID}"}`,
-    `{"schema":1.0,"port":8080,"adapterPreference":"${ID}"}`,
-    `{"schema":1,"port":08080,"adapterPreference":"${ID}"}`,
-    `{"schema":1,"port":-0,"adapterPreference":"${ID}"}`
+    `{"schema":2,"port":8080.0,"interfaceName":"${NAME}"}`,
+    `{"schema":2,"port":8.08e3,"interfaceName":"${NAME}"}`,
+    `{"schema":2,"port":8.080E+3,"interfaceName":"${NAME}"}`,
+    `{"schema":2e0,"port":8080,"interfaceName":"${NAME}"}`,
+    `{"schema":2.0,"port":8080,"interfaceName":"${NAME}"}`,
+    `{"schema":2,"port":08080,"interfaceName":"${NAME}"}`,
+    `{"schema":2,"port":-0,"interfaceName":"${NAME}"}`
   ];
   const cli = path.join(__dirname, '../../lan-host/config-cli.cjs');
   try {
@@ -124,8 +124,8 @@ test('LAN config requires canonical integer tokens across load and save boundari
       const before = {config: fs.readFileSync(f.config), business: fs.readFileSync(f.business), attachment: fs.readFileSync(attachment)};
       assert.throws(() => createLanConfigStore({instanceDirectory: f.instance}), {code: 'LAN_CONFIG_INVALID'});
       const result = spawnSync(process.execPath, [cli, 'save', '--instance-dir', f.instance, '--port', '8083',
-        '--adapter-preference', ID], {encoding: 'utf8', windowsHide: true, timeout: 10000});
-      assert.equal(result.status, 20); assert.deepEqual(JSON.parse(result.stdout), {schema: 1, status: 'LAN_CONFIG_INVALID'});
+        '--interface-name', NAME, '--enabled', 'false'], {encoding: 'utf8', windowsHide: true, timeout: 10000});
+      assert.equal(result.status, 20); assert.deepEqual(JSON.parse(result.stdout), {schema: 2, status: 'LAN_CONFIG_INVALID'});
       assert.equal(result.stderr, '');
       assert.deepEqual(fs.readFileSync(f.config), before.config);
       assert.deepEqual(fs.readFileSync(f.business), before.business);
@@ -173,18 +173,18 @@ test('restricted config CLI reuses the schema and never echoes the instance path
   const run = args => spawnSync(process.execPath, [cli, ...args], {encoding: 'utf8', windowsHide: true, timeout: 10000});
   try {
     let result = run(['read', '--instance-dir', f.instance]);
-    assert.equal(result.status, 10); assert.deepEqual(JSON.parse(result.stdout), {schema: 1, status: 'NOT_CONFIGURED', config: null});
+    assert.equal(result.status, 10); assert.deepEqual(JSON.parse(result.stdout), {schema: 2, status: 'NOT_CONFIGURED', config: null});
     assert.equal(result.stdout.includes(f.instance), false); assert.equal(result.stderr, '');
 
-    result = run(['save', '--port', '8083', '--adapter-preference', ID, '--instance-dir', f.instance]);
-    assert.equal(result.status, 0); assert.deepEqual(JSON.parse(result.stdout), {schema: 1, status: 'SAVED', config: VALID});
+    result = run(['save', '--port', '8083', '--interface-name', NAME, '--enabled', 'false', '--instance-dir', f.instance]);
+    assert.equal(result.status, 0); assert.deepEqual(JSON.parse(result.stdout), {schema: 2, status: 'SAVED', config: VALID});
     assert.equal(result.stdout.includes(f.instance), false); assert.equal(result.stderr, '');
 
-    result = run(['save', '--instance-dir', f.instance, '--port', '9999', '--adapter-preference', ID]);
-    assert.equal(result.status, 20); assert.deepEqual(JSON.parse(result.stdout), {schema: 1, status: 'LAN_CONFIG_INVALID'});
+    result = run(['save', '--instance-dir', f.instance, '--port', '9999', '--interface-name', NAME, '--enabled', 'false']);
+    assert.equal(result.status, 20); assert.deepEqual(JSON.parse(result.stdout), {schema: 2, status: 'LAN_CONFIG_INVALID'});
     assert.equal(result.stdout.includes(f.instance), false); assert.equal(result.stderr, '');
 
     result = run(['read', '--instance-dir', f.instance, '--instance-dir', f.instance]);
-    assert.equal(result.status, 20); assert.deepEqual(JSON.parse(result.stdout), {schema: 1, status: 'CLI_ARGUMENT_INVALID'});
+    assert.equal(result.status, 20); assert.deepEqual(JSON.parse(result.stdout), {schema: 2, status: 'CLI_ARGUMENT_INVALID'});
   } finally { cleanup(f.root); }
 });

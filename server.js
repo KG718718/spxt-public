@@ -9645,7 +9645,7 @@ async function startServer(){
             if(lanConfig){
             try{
                 let discovery;
-                try{discovery=discoverWindowsLan({adapterPreference:lanConfig.adapterPreference});}
+                try{discovery=lanConfig.enabled?discoverWindowsLan({interfaceName:lanConfig.interfaceName}):{status:'LAN_DISABLED',selected:null,candidates:[]};}
                 catch{discovery={status:'LAN_START_FAILED',selected:null,candidates:[]};}
                 lanController=createLanHostController({handler:applicationHandler,needsInitialization:hostInitializationRequired});
                 activePort=lanConfig.port;
@@ -9654,7 +9654,7 @@ async function startServer(){
                 const monitor=()=>{
                     lanReconcile=(async()=>{
                         let next;
-                        try{next=await discoverLanInWorker({adapterPreference:lanConfig.adapterPreference});}
+                        try{next=lanConfig.enabled?await discoverLanInWorker({interfaceName:lanConfig.interfaceName}):{status:'LAN_DISABLED',selected:null,candidates:[]};}
                         catch{next={status:'LAN_START_FAILED',selected:null,candidates:[]};}
                         await lanController.reconcile(next,lanConfig);
                     })().catch(()=>lanController?.healthFailed()).finally(()=>{

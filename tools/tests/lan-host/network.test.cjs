@@ -108,7 +108,7 @@ test('PowerShell discovery is fixed, hidden, non-interactive and returns only pa
   assert.throws(() => network.parsePowerShellRecords('not json'), {code: 'NETWORK_DISCOVERY_FAILED'});
   const view = network.publicDiscoveryView(network.selectLanAdapter([adapter()]));
   assert.deepEqual(Object.keys(view).sort(), ['candidates', 'hostName', 'schema', 'selected', 'status']);
-  assert.deepEqual(Object.keys(view.selected).sort(), ['adapterId', 'address', 'name', 'prefixLength', 'subnet']);
+  assert.deepEqual(Object.keys(view.selected).sort(), ['address', 'interfaceName', 'name', 'prefixLength', 'subnet']);
 });
 
 test('system PowerShell resolution rejects empty, forged, missing and redirected roots', () => {

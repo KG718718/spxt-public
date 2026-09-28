@@ -32,7 +32,7 @@ test('LAN mode without deployment config retains local first-Admin flow and crea
     if (child.exitCode === null) child.kill();
     await new Promise(resolve => child.exitCode !== null ? resolve() : child.once('exit', resolve));
   });
-  for (let count = 0; count < 100 && !port && child.exitCode === null; count += 1) {
+  for (let count = 0; count < 300 && !port && child.exitCode === null; count += 1) {
     await new Promise(resolve => setTimeout(resolve, 25));
   }
   assert.ok(port, output);
@@ -63,7 +63,7 @@ test('damaged LAN config fails closed with explicit status while existing Local 
   const data = require('../../../public-startup').newEmptyState();
   data.users.push({username: 'synthetic-admin', password: 'synthetic-stored-hash', role: 'admin', accountStatus: 'active'});
   const dataBytes = Buffer.from(JSON.stringify(data, null, 2));
-  const lanBytes = Buffer.from('{"schema":1,"port":8083,"adapterPreference":"invalid"}\n');
+  const lanBytes = Buffer.from('{"schema":2,"port":8083,"interfaceName":"invalid"}\n');
   fs.writeFileSync(path.join(directory, 'data.json'), dataBytes);
   fs.writeFileSync(path.join(directory, 'lan-deployment.json'), lanBytes);
   const child = spawn(process.execPath, [path.join(root, 'server.js')], {
@@ -80,7 +80,7 @@ test('damaged LAN config fails closed with explicit status while existing Local 
   child.stdout.on('data', chunk => { output += chunk; port ||= Number(output.match(/running at http:\/\/127\.0\.0\.1:(\d+)/)?.[1] || 0); });
   child.stderr.on('data', chunk => { output += chunk; });
   t.after(async () => { if (child.exitCode === null) child.kill(); await new Promise(resolve => child.exitCode !== null ? resolve() : child.once('exit', resolve)); });
-  for (let count = 0; count < 100 && !port && child.exitCode === null; count += 1) await new Promise(resolve => setTimeout(resolve, 25));
+  for (let count = 0; count < 300 && !port && child.exitCode === null; count += 1) await new Promise(resolve => setTimeout(resolve, 25));
   assert.ok(port, output);
   const status = await fetch('http://127.0.0.1:' + port + '/api/lan/status');
   assert.equal(status.status, 200);

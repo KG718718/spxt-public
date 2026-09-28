@@ -31,7 +31,7 @@ test('LAN config is a prior-file anchor and is never created for a fresh local-o
   assert.equal(fs.existsSync(files.lan), false);
   assert.deepEqual(fs.readdirSync(files.directory), []);
 
-  const lanBytes = Buffer.from('{"schema":1,"port":8083,"adapterPreference":"11111111-1111-1111-1111-111111111111"}\n');
+  const lanBytes = Buffer.from('{"schema":2,"port":8083,"interfaceName":"11111111-1111-1111-1111-111111111111"}\n');
   fs.writeFileSync(files.lan, lanBytes);
   assert.throws(() => startup(files), error => error.code === 'ORPHANED_INSTALLATION');
   assert.deepEqual(fs.readFileSync(files.lan), lanBytes);
@@ -64,8 +64,8 @@ test('existing zero-user data does not reopen unsafe setup and remote guard rema
       (created ||= []).push(server); return server;
     }
   });
-  const selected = {adapterId: '11111111-1111-1111-1111-111111111111', address: '192.168.50.10', prefixLength: 24, subnet: '192.168.50.0/24'};
-  return controller.start({port: 8084, adapterPreference: selected.adapterId}, {status: 'SELECTED', selected}).then(async result => {
+  const selected = {interfaceName: 'Ethernet', address: '192.168.50.10', prefixLength: 24, subnet: '192.168.50.0/24'};
+  return controller.start({port: 8084, enabled: true, interfaceName: selected.interfaceName}, {status: 'SELECTED', selected}).then(async result => {
     assert.equal(result.status, STATUS.HOST_INITIALIZATION_REQUIRED);
     const req = {url: '/api/login', method: 'POST', headers: {}, socket: {remoteAddress: '192.168.50.22', localAddress: selected.address}, resume() {}};
     const res = {headers: {}, destroyed: false, writableEnded: false, writeHead(code) { this.statusCode = code; }, end(body) { this.body = body; this.writableEnded = true; }};
@@ -91,8 +91,8 @@ test('listener lifecycle does not rewrite synthetic business, account or attachm
     reservePersistedPort: reserve, probe: async () => true,
     createHttpServer: handler => ({handler, listening: false, closeAllConnections() {}, close(callback) { this.listening = false; callback?.(); },
       once() {}, off() {}, listen() { this.listening = true; }})});
-  const selected = {adapterId: '11111111-1111-1111-1111-111111111111', address: '10.20.30.40', prefixLength: 24, subnet: '10.20.30.0/24'};
-  const config = {port: 8085, adapterPreference: selected.adapterId};
+  const selected = {interfaceName: 'Ethernet', address: '10.20.30.40', prefixLength: 24, subnet: '10.20.30.0/24'};
+  const config = {port: 8085, enabled: true, interfaceName: selected.interfaceName};
   await controller.start(config, {status: 'SELECTED', selected});
   await controller.reconcile({status: 'NETWORK_CHANGED', selected: null}, config);
   await controller.close();

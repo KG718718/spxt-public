@@ -3,10 +3,10 @@
 const fsDefault = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const {PORT_MIN, PORT_MAX, adapterId} = require('./public-lan-network');
+const {PORT_MIN, PORT_MAX, interfaceName} = require('./public-lan-network');
 
 const CONFIG_FILENAME = 'lan-deployment.json';
-const KEYS = Object.freeze(['schema', 'port', 'adapterPreference']);
+const KEYS = Object.freeze(['schema', 'enabled', 'interfaceName', 'port']);
 const MAX_CONFIG_BYTES = 4096;
 const MAX_JSON_DEPTH = 16;
 
@@ -90,11 +90,12 @@ function parseStrictJson(source, options = {}) {
 
 function validateLanConfig(value) {
   if (!record(value) || Object.keys(value).length !== KEYS.length || KEYS.some(key => !Object.hasOwn(value, key))
-      || value.schema !== 1 || !Number.isInteger(value.port) || value.port < PORT_MIN || value.port > PORT_MAX
-      || adapterId(value.adapterPreference) !== value.adapterPreference) {
+      || value.schema !== 2 || typeof value.enabled !== 'boolean'
+      || !Number.isInteger(value.port) || value.port < PORT_MIN || value.port > PORT_MAX
+      || interfaceName(value.interfaceName) !== value.interfaceName) {
     fail('LAN_CONFIG_INVALID', 'LAN 配置损坏或结构非法；原文件不会被覆盖。');
   }
-  return Object.freeze({schema: 1, port: value.port, adapterPreference: value.adapterPreference});
+  return Object.freeze({schema: 2, enabled: value.enabled, interfaceName: value.interfaceName, port: value.port});
 }
 
 function safeInstance(instanceDirectory, fs) {
@@ -138,7 +139,7 @@ function parseSource(source) {
       if (location.length === 1 && location[0] === 'schema') schemaToken = token;
       if (location.length === 1 && location[0] === 'port') portToken = token;
     }});
-    if (schemaToken !== '1' || !/^80(?:8\d|9\d)$/.test(portToken || '')) throw Error('non-canonical config number');
+    if (schemaToken !== '2' || !/^80(?:8\d|9\d)$/.test(portToken || '')) throw Error('non-canonical config number');
     return validateLanConfig(parsed);
   }
   catch (error) {

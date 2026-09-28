@@ -8,7 +8,7 @@ const {
 } = require('../../../public-lan-server');
 
 const selectedA = Object.freeze({
-  adapterId: '11111111-1111-1111-1111-111111111111', name: 'Synthetic Ethernet',
+  interfaceName: 'Ethernet', name: 'Synthetic Ethernet',
   address: '192.168.40.10', prefixLength: 24, subnet: '192.168.40.0/24'
 });
 const selectedB = Object.freeze({...selectedA, address: '192.168.40.20'});
@@ -144,7 +144,7 @@ test('hung discovery is isolated in a timed worker while Local requests remain r
     terminate() { this.terminated = true; return Promise.resolve(0); }
   }
   const pending = discoverLanInWorker({
-    adapterPreference: selectedA.adapterId, timeoutMs: 25, Worker: HangingWorker
+    enabled: true, interfaceName: selectedA.interfaceName, timeoutMs: 25, Worker: HangingWorker
   });
   const gate = createRequestGate({
     getState: () => ({status: STATUS.LOCAL_ONLY, port: 8083, selected: null, localListening: true, lanListening: false}),
@@ -171,7 +171,7 @@ test('controller installs one shared business handler before reserving both real
     probe: async () => true,
     createHttpServer(handler) { const server = new FakeServer(handler); created.push(server); return server; }
   });
-  const config = {schema: 1, port: 8083, adapterPreference: selectedA.adapterId};
+  const config = {schema: 2, port: 8083, enabled: true, interfaceName: selectedA.interfaceName};
   const state = await controller.start(config, {status: 'SELECTED', selected: selectedA});
   assert.equal(state.status, STATUS.LAN_SERVER_READY);
   assert.equal(created.length, 2);
@@ -187,6 +187,23 @@ test('controller installs one shared business handler before reserving both real
   await controller.close();
 });
 
+test('disabled preference keeps only the saved local listener', async () => {
+  const addresses = [];
+  const controller = createLanHostController({handler() {}, needsInitialization: () => false,
+    reservePersistedPort: async options => {
+      addresses.push(options.addresses);
+      const local = options.createServer('127.0.0.1', options.port); local.listening = true;
+      return reservation([local], options.port);
+    }, probe: async () => true, createHttpServer: handler => new FakeServer(handler)});
+  const state = await controller.start({schema: 2, enabled: false, interfaceName: selectedA.interfaceName, port: 8083},
+    {status: 'SELECTED', selected: selectedA});
+  assert.equal(state.status, STATUS.LAN_DISABLED);
+  assert.equal(state.localListening, true);
+  assert.equal(state.lanListening, false);
+  assert.deepEqual(addresses, [['127.0.0.1']]);
+  await controller.close();
+});
+
 test('partial dual-bind failure cleans up and preserves local on the persisted port without fallback', async () => {
   const calls = [];
   const reserve = async options => {
@@ -197,7 +214,7 @@ test('partial dual-bind failure cleans up and preserves local on the persisted p
   };
   const controller = createLanHostController({handler() {}, needsInitialization: () => false,
     reservePersistedPort: reserve, probe: async () => true, createHttpServer: handler => new FakeServer(handler)});
-  const state = await controller.start({port: 8087, adapterPreference: selectedA.adapterId}, {status: 'SELECTED', selected: selectedA});
+  const state = await controller.start({port: 8087, enabled: true, interfaceName: selectedA.interfaceName}, {status: 'SELECTED', selected: selectedA});
   assert.equal(state.status, STATUS.PORT_OCCUPIED);
   assert.equal(state.localListening, true);
   assert.equal(state.lanListening, false);
@@ -220,7 +237,7 @@ test('LAN self-health failure closes LAN while retaining healthy Local access', 
     probe: async input => input.kind === 'local',
     createHttpServer(handler) { const server = new FakeServer(handler); created.push(server); return server; }
   });
-  const state = await controller.start({port: 8088, adapterPreference: selectedA.adapterId}, {status: 'SELECTED', selected: selectedA});
+  const state = await controller.start({port: 8088, enabled: true, interfaceName: selectedA.interfaceName}, {status: 'SELECTED', selected: selectedA});
   assert.equal(state.status, STATUS.LAN_HEALTH_FAILED);
   assert.equal(state.localListening, true); assert.equal(state.localHealth, true);
   assert.equal(state.lanListening, false); assert.equal(state.lanHealth, false);
@@ -238,7 +255,7 @@ test('network change revokes old guard before closing old LAN connections and re
   const controller = createLanHostController({handler() {}, needsInitialization: () => false,
     reservePersistedPort: reserve, probe: async () => true,
     createHttpServer(handler) { const server = new FakeServer(handler); created.push(server); return server; }});
-  const config = {port: 8089, adapterPreference: selectedA.adapterId};
+  const config = {port: 8089, enabled: true, interfaceName: selectedA.interfaceName};
   await controller.start(config, {status: 'SELECTED', selected: selectedA});
   const oldLan = created[1];
   controller.healthFailed();

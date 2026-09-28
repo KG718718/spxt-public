@@ -23,19 +23,20 @@ try {
   if (command === 'read') {
     const args = exact(process.argv.slice(3), ['--instance-dir']);
     const config = createLanConfigStore({instanceDirectory: args['--instance-dir']}).load();
-    output({schema: 1, status: config ? 'CONFIGURED' : 'NOT_CONFIGURED', config});
+    output({schema: 2, status: config ? 'CONFIGURED' : 'NOT_CONFIGURED', config});
     process.exitCode = config ? 0 : 10;
   } else if (command === 'save') {
-    const args = exact(process.argv.slice(3), ['--instance-dir', '--port', '--adapter-preference']);
+    const args = exact(process.argv.slice(3), ['--instance-dir', '--port', '--interface-name', '--enabled']);
     if (!/^\d{4}$/.test(args['--port'])) throw new LanConfigError('LAN_CONFIG_INVALID', 'LAN 配置参数非法。');
+    if (!['true', 'false'].includes(args['--enabled'])) throw new LanConfigError('LAN_CONFIG_INVALID', 'LAN 配置参数非法。');
     const store = createLanConfigStore({instanceDirectory: args['--instance-dir']});
-    const config = store.save({schema: 1, port: Number(args['--port']), adapterPreference: args['--adapter-preference']});
-    output({schema: 1, status: 'SAVED', config});
+    const config = store.save({schema: 2, port: Number(args['--port']), interfaceName: args['--interface-name'], enabled: args['--enabled'] === 'true'});
+    output({schema: 2, status: 'SAVED', config});
   } else {
     throw new LanConfigError('CLI_ARGUMENT_INVALID', 'LAN CLI 命令非法。');
   }
 } catch (error) {
   const code = error instanceof LanConfigError ? error.code : 'LAN_CONFIG_INTERNAL';
-  output({schema: 1, status: code});
+  output({schema: 2, status: code});
   process.exitCode = 20;
 }

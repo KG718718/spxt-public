@@ -9,8 +9,51 @@ const {spawnSync} = require('node:child_process');
 const PORT_MIN = 8080;
 const PORT_MAX = 8099;
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const VIRTUAL_HINT = /(?:\b(?:vpn|tunnel|tap|tun|wireguard|docker|wsl|virtual|vmware|virtualbox|loopback|bluetooth|teredo|isatap|6to4)\b|hyper[- ]?v)/i;
+const VIRTUAL_HINT = /(?:vpn|tunnel|tap|tun|wireguard|docker|wsl|virtual|vmware|virtualbox|loopback|bluetooth|teredo|isatap|6to4|hyper[- ]?v|vethernet)/i;
 const PHYSICAL_MEDIA = /(?:802\.3|ethernet|native\s*802\.11|wireless\s*lan|wi-?fi)/i;
+const INTERFACE_NAME_MAX = 128;
+
+function interfaceName(value) {
+  return typeof value === 'string' && value.length > 0 && value.length <= INTERFACE_NAME_MAX
+    && value === value.trim() && !/[\u0000-\u001f\u007f]/.test(value) && !VIRTUAL_HINT.test(value) ? value : null;
+}
+
+function prefixFromNetmask(value) {
+  const mask = ipv4Number(value);
+  if (mask === null) return null;
+  let bits = 0, gap = false;
+  for (let index = 31; index >= 0; index -= 1) {
+    if ((mask >>> index) & 1) { if (gap) return null; bits += 1; }
+    else gap = true;
+  }
+  return bits;
+}
+
+function nodeLanCandidates(interfaces = os.networkInterfaces()) {
+  if (!interfaces || typeof interfaces !== 'object' || Array.isArray(interfaces)) fail('NETWORK_DISCOVERY_INVALID', '网络接口结果结构非法。');
+  const candidates = [];
+  for (const [name, entries] of Object.entries(interfaces)) {
+    if (!interfaceName(name) || !Array.isArray(entries)) continue;
+    for (const entry of entries) {
+      if (!entry || entry.internal !== false || !['IPv4', 4].includes(entry.family)) continue;
+      const address = normalizeIPv4(entry.address);
+      const prefixLength = prefixFromNetmask(entry.netmask);
+      const subnet = subnetFor(address, prefixLength);
+      if (!subnet || prefixLength > 30 || address === subnet.network || address === subnet.broadcast) continue;
+      if (entry.cidr !== undefined && entry.cidr !== `${address}/${prefixLength}`) continue;
+      candidates.push(Object.freeze({interfaceName: name, name, address, prefixLength, subnet: subnet.cidr}));
+    }
+  }
+  return candidates.sort((a, b) => a.interfaceName.localeCompare(b.interfaceName) || a.address.localeCompare(b.address));
+}
+
+function selectNodeLan(interfaces, preference = null) {
+  if (preference !== null && !interfaceName(preference)) fail('LAN_CONFIG_INVALID', '保存的网络接口名称非法。');
+  const candidates = nodeLanCandidates(interfaces);
+  if (preference === null) return Object.freeze({status: candidates.length ? 'NEEDS_NETWORK_SELECTION' : 'NO_PRIVATE_LAN', selected: null, candidates});
+  const matches = candidates.filter(candidate => candidate.interfaceName === preference);
+  return Object.freeze({status: matches.length === 1 ? 'SELECTED' : 'NETWORK_CHANGED', selected: matches.length === 1 ? matches[0] : null, candidates});
+}
 
 const WINDOWS_DISCOVERY_SCRIPT = String.raw`$ErrorActionPreference='Stop'
 Import-Module Microsoft.PowerShell.Utility -ErrorAction Stop
@@ -200,7 +243,8 @@ function runWindowsDiscovery(options = {}) {
 }
 
 function discoverWindowsLan(options = {}) {
-  return selectLanAdapter(runWindowsDiscovery(options), options.adapterPreference ?? null);
+  if ((options.platform || process.platform) !== 'win32' && !options.interfaces) fail('NETWORK_PLATFORM_UNSUPPORTED', 'LAN Host 网络发现仅支持 Windows。');
+  return selectNodeLan(options.interfaces || (options.networkInterfaces || os.networkInterfaces)(), options.interfaceName ?? null);
 }
 
 function listen(server, address, port) {
@@ -267,14 +311,15 @@ async function reservePersistedPort(options = {}) {
 }
 
 function publicDiscoveryView(result) {
-  const view = candidate => ({adapterId: candidate.adapterId, name: candidate.name, address: candidate.address,
+  const view = candidate => ({interfaceName: candidate.interfaceName, name: candidate.name, address: candidate.address,
     prefixLength: candidate.prefixLength, subnet: candidate.subnet});
-  return {schema: 1, status: result.status, selected: result.selected ? view(result.selected) : null, candidates: result.candidates.map(view), hostName: os.hostname()};
+  return {schema: 2, status: result.status, selected: result.selected ? view(result.selected) : null, candidates: result.candidates.map(view), hostName: os.hostname()};
 }
 
 module.exports = {
   PORT_MIN, PORT_MAX, WINDOWS_DISCOVERY_SCRIPT, LanNetworkError,
   normalizeIPv4, ipv4Number, privateBlock, prefixMask, subnetFor, isAddressInSubnet,
+  interfaceName, prefixFromNetmask, nodeLanCandidates, selectNodeLan,
   adapterId, classifyAdapter, selectLanAdapter, parsePowerShellRecords, resolveSystemPowerShell,
   runWindowsDiscovery, discoverWindowsLan, reservePort, findAndReservePort,
   reservePersistedPort, publicDiscoveryView
