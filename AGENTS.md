@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-09-28 LAN-2 Final Full #4 新故障
+
+**BLOCKED — FINAL FULL #4 FAILED / OFFLINE_LIFECYCLE SECOND LAUNCHER TIMEOUT。** 唯一批准的 Full #4 Run `36388264496`@`2e9294d9a61426dac428f7c8ff8a12d36a4bbbb8` / 失败 Artifact `10955343405` 在实际 `TestUpgradeLifecycle` 的运行期第二 Launcher 门禁处失败：U01 PASS 后，第二 Launcher 未在有界时间内退出；U05/U06 及后续业务 inventory 未到达。固定阶段 `OFFLINE_LIFECYCLE FAIL`，升级总报告 FAIL。不能据此宣称第二 Launcher 取得了锁，也不能断言只是测试超时；根因未证。用户要求 Full #4 任意失败即停止，故不申请 Full #5、不派返工、不运行唯一 QA（0/1）。核心 26/742、最终 Artifact privacy、最终 beta.4 Artifact 均未到达；T1/T2/T3/原工作树冻结保留。仅治理收尾并非 force push 唯一开发分支，不操作 main/tag/Release/Batch5/OCR。正式用户基线仍受验 beta.2 单机版，LAN 未发布/未认证。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL4-STOP-20260928.md`；下方有界续行与 Full #3 止损均保留历史。
+
 ## 当前有界续行｜2026-09-28 LAN-2 volatile Launcher lock 验收语义
 
 网页版批准仅原 LAN2-T3 长期 Thread/原 `530d` 工作树修正 beta.4 测试验收：`.launcher.lock` 是运行期独占控制文件，可从 persistent business inventory **精确排除该文件**，但须以独立门禁证明 Launcher/私有 Node 退出、锁可独占打开且句柄关闭；Launcher 运行中锁被占用属预期，同时第二 Launcher 必须因同一 instance 锁拒绝。U05/U06 拒绝后、业务 inventory 前须再次查 quiescence，失败即 fail closed。data.json、附件、lan-deployment.json 和所有未知普通文件仍严格 hash；不得通用忽略 sharing violation、固定 sleep、扩大排除到 launcher-logs/temp 或修改生产 Launcher/身份/事务/rollback/schema。先 LCK01—LCK14 本地 fail0skip0 与 Master Review，之后仅新增 Final Full #4 最多 1 次；无 diagnostic Hosted，QA 原 0/1 仅 Full 完整 PASS 后使用。Full #4 任意 FAIL 或 QA FAIL 即停，不申请 Full #5。Full #3 历史 FAIL 不改写；下方止损是本次授权前状态。禁止普通 sub-agent/main/tag/Release/Batch5/OCR。

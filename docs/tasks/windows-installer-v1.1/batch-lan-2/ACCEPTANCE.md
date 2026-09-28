@@ -2,7 +2,7 @@
 
 本表是目标，不能把 Batch 4.5 局部测试或 Batch 4 PASS 代入为本 Batch PASS。每项须记录源码 SHA、环境、证据与 Review；人工项单独标记。
 
-当前停在 Final Full #3 同阶段失败止损：Run `36383900353`@`e84e494` 于 `OFFLINE_LIFECYCLE` 再次 FAIL；下表的 `NOT RUN` 表示该项尚未形成可采纳的 LAN-2 最终验收结论，并不否定 `LAN2-FULL3-STOP-20260928.md` 记录的局部测试 PASS。L2-19 的升级生命周期整体失败；L2-23/L2-24 未到达，独立 QA 未运行。
+当前停在 Final Full #4 失败止损：Run `36388264496`@`2e9294d` 于 `OFFLINE_LIFECYCLE` 的第二 Launcher 有界退出门禁 FAIL；下表的 `NOT RUN` 表示该项尚未形成可采纳的 LAN-2 最终验收结论，Full #1—#3 的局部测试和失败历史均保留。L2-19 的完整升级生命周期仍失败；L2-23/L2-24 未到达，独立 QA 未运行。见 `LAN2-FULL4-STOP-20260928.md`。
 
 | ID | 核心语义 | 当前 |
 |---|---|---|
@@ -24,7 +24,7 @@
 | L2-16 | UAC 拒绝时 Local 仍可用 | NOT RUN / HUMAN REQUIRED |
 | L2-17 | Launcher 展示身份、网络、URL、状态正确 | NOT RUN |
 | L2-18 | 复制 LAN URL 正确 | NOT RUN |
-| L2-19 | 受验 F3 beta.2→beta.4，instance/账号/附件保持 | FAIL — Full #2/#3 lifecycle lock-file read；局部 U 项 PASS |
+| L2-19 | 受验 F3 beta.2→beta.4，instance/账号/附件保持 | FAIL — Full #2/#3 lock-file read，Full #4 第二 Launcher 有界退出；局部 U 项 PASS 不等于完整验收 |
 | L2-20 | 卸载/重装保持 instance 与 LAN config | NOT RUN |
 | L2-21 | 双客户端 session 隔离 | NOT RUN |
 | L2-22 | Host 重启与 DHCP 改变恢复 | NOT RUN / HUMAN REQUIRED |
