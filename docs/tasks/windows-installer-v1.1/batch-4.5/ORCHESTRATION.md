@@ -1,5 +1,9 @@
 # Batch 4.5 Orchestration
 
+## 当前止损：B45-T6 本轮门槛 FAIL，回网页版｜2026-09-28
+
+唯一 Execution `01a0e33e-7152-7d92-bbc2-cbf06efaed94` 于 `E:\CodexWorkspace\CodexWorktrees\1ed3\public-source` 主动回单 local `b993dc60e8e1141426984e72db243a1349db1125`；Master 核验七文件 research/报告范围、无新依赖/cgo、不安全 DLL 搜索、无 production 修改，并独立复验 F01—F15 15/15、go vet/build PASS，整合 `cd9b75a`。T6 状态 COMPLETE（研究交付）/ 本轮 feasibility FAIL：仅合成与未调用的 IP Helper 入口代码，NLM COM/完整数据/标准用户均未证；不满足 PASS 或 PARTIAL。没有真实 PoC（0/1）、Hosted/Actions、Final Full0/1、Final QA0/1。T6/旧 T1—T5/QA 冻结；Batch 仍 `BLOCKED — PRODUCTION DISCOVERY P02 FAILED`，无 beta.3 最终 Artifact。下一步只交 `NATIVE-DISCOVERY-FEASIBILITY-DECISION.md` 给网页版选择 A、重定义 B 或 C。下方 DISPATCHED 是已完成阶段。
+
 ## 当前：B45-T6 原生可行性门槛获批｜2026-09-27
 
 网页版批准 Route B 有界 research：唯一新任务 `B45-T6-NATIVE-FEASIBILITY`，原 T1—T5/QA 历史不改。Execution thread `01a0e33e-7152-7d92-bbc2-cbf06efaed94`，准确回单 Master `01a0db0e-c950-79e0-8e11-07155e0742f2`，唯一 worktree `E:\CodexWorkspace\CodexWorktrees\1ed3\public-source`，基线公开 `b00749acee445d0a81b90748df851f1190a33cf0`（detached/clean 已核对），local task branch 由 Execution 建 `codex/b45-t6-native-feasibility`。阶段 1 源码/合成/build **DISPATCHED**；实机仍冻结，必须 F01—F15、go test/vet/build 与 Master Review 后另行放行最多一次。GPT-6 Sol/Medium、零 Hosted/Actions/Final Full/QA；生产、Utility 行、Setup/manifest/rollback 冻结；Batch 仍 P02 FAIL/BLOCKED。完整卡 `tasks/B45-T6-NATIVE-FEASIBILITY.md`，批准 `NATIVE-DISCOVERY-FEASIBILITY-APPROVAL.md`。

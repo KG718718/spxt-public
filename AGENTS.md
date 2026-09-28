@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-09-28 Native feasibility 未证
+
+唯一 B45-T6 执行 thread `01a0e33e-7152-7d92-bbc2-cbf06efaed94` 在原 `1ed3` 工作树完成有界研究并主动回单，local `b993dc6` 经 Master 独立 Review/复验后整合为 `cd9b75a`。F01—F15 合成 15/15、go vet/build 通过；研究 EXE 与任何真实 IP Helper/NLM 调用**均未运行**，普通用户权限和 Win10 真实行为未证。小 PoC 的安全 ABI/COM 成本超出本轮边界，故仅本轮可行性门槛记 `FAIL — NATIVE ROUTE NOT ACCEPTABLE`，不宣称原生路线永远不可行。唯一实机 0/1、本轮新增 Hosted/Actions 0，历史 H1/H2 2/2 保留；Final Full0/1、Final QA0/1 未用；生产 P02 仍 FAIL，Utility 行不变，无 beta.3 最终 Artifact。T6 冻结；待网页版选 A、重新定义 B 或 C。见 `docs/tasks/windows-installer-v1.1/batch-4.5/NATIVE-DISCOVERY-FEASIBILITY-DECISION.md`；下方有限授权已用完。
+
 ## 当前有限授权｜2026-09-27 原生网络发现可行性门槛
 
 网页版批准 Route B **仅原生 Windows API/COM 可行性**，见 `docs/tasks/windows-installer-v1.1/batch-4.5/NATIVE-DISCOVERY-FEASIBILITY-APPROVAL.md`。仅 B45-T6 一个 Execution/一个任务 worktree，GPT-6 Sol/Medium；零 Hosted/Actions/Final Full/QA，最多一次真实 Win10 只读 research PoC，须先源码、F01—F15、go test/vet/build 和 Master Review。生产（含现有 Utility 行）、manifest/Setup/rollback/业务全部冻结；研究不得打包。PASS/PARTIAL/FAIL 均回网页版决定，不能自动实施；Batch 4.5 仍 `BLOCKED — PRODUCTION DISCOVERY P02 FAILED`。下方架构评审停点是本次授权前状态。

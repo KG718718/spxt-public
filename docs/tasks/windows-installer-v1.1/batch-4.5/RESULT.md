@@ -1,5 +1,9 @@
 # 当前最终停点：受控Win10 proof P02失败｜2026-09-27
 
+## 当前结论｜2026-09-28 B45-T6 Native feasibility 本轮止损
+
+**FAIL — NATIVE ROUTE NOT ACCEPTABLE（仅本轮有界零新依赖小 PoC）；Batch 4.5 仍 BLOCKED/P02 FAIL。** 原 T6 local `b993dc6` 主动回单，经 Master 七文件 Review 和固定 Go1.27.1/CGO0/离线独立复验：F01—F15 合成15/15、go vet/build PASS，整合 `cd9b75a`。研究 EXE 未运行，IP Helper 实际读取、NLM profile 关联和普通用户权限均未证，因此不得标 PASS/PARTIAL，亦不能断言原生方案永不可行。唯一实机 PoC 0/1、Hosted/Actions 0、Final Full0/1、Final QA0/1 未用；生产 Utility 行及 P02 失败保持，无 beta.3 最终 Artifact。决策卡 `NATIVE-DISCOVERY-FEASIBILITY-DECISION.md`；T6 冻结待网页版选 A、重定义 B 或 C。下方架构评审/授权为历史阶段。
+
 ## 当前结论｜2026-09-27 生产网络发现路线只读评审
 
 只读评审交付完成；**Batch 4.5 仍 BLOCKED — PRODUCTION DISCOVERY P02 FAILED**。M00/M01 PASS、M02 FAIL、M03 PASS 及 F01—F12 合成 12/12 是历史结果，本轮未复测。唯一真实 Win10 proof：P01 PASS、P02 FAIL/`DISCOVERY_COMMAND_FAILED`、P03—P08 NOT_REACHED；未证无私网候选。对 Route A/B/C 的安全、Win10/Win11、依赖、打包、升级/回滚与验证成本已形成 `NETWORK-DISCOVERY-ARCHITECTURE-REVIEW.md` 和决策卡；工程有条件建议先验证 B 的 API/COM 可行性，待网页版决定。本轮无生产修改、无新测试/实机/Hosted/Actions；Utility 一行仍在，Final Full0/1、Final QA0/1，未生成 beta.3 最终 Artifact。下方旧 P02 止损保持历史事实。

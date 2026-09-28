@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## Batch 4.5 当前止损｜2026-09-28 Native feasibility 未证
+
+B45-T6 有界研究 F01—F15 合成 15/15、go vet/build 经 Master 复验通过，但未运行 research EXE 或真实 IP Helper/NLM，普通用户权限未证；安全 ABI/COM 完整采集超出本轮小 PoC 范围。仅本轮门槛判 `FAIL — NATIVE ROUTE NOT ACCEPTABLE`，不推断原生方案永不可行。唯一实机 PoC 0/1、本轮新增 Hosted/Actions 0（历史 H1/H2 2/2 保留）、Final Full0/1、Final QA0/1 未用。生产 P02 FAIL、Batch 4.5 BLOCKED，无 beta.3 最终 Artifact。决策卡：`docs/tasks/windows-installer-v1.1/batch-4.5/NATIVE-DISCOVERY-FEASIBILITY-DECISION.md`。等待网页版选择 A、重定义 B 或 C；下方批准为已执行历史。
+
 ## Batch 4.5 当前有限授权｜2026-09-27 Native feasibility
 
 网页版批准 B，但仅准一个 Execution/工作树验证 IP Helper + NLM COM 原生只读发现可行性；不准生产、Launcher/Setup/Runtime 接入。零 Hosted/Actions/Final Full/QA，最多一次真实 Win10 research PoC，须先合成门禁与 Master Review。详见 `docs/tasks/windows-installer-v1.1/batch-4.5/NATIVE-DISCOVERY-FEASIBILITY-APPROVAL.md`。原生产 P02 FAIL、P03—P08 未到达，Batch 4.5 仍 BLOCKED；前次架构评审报告与结论为本次授权的基线。
