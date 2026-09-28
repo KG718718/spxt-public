@@ -25,3 +25,10 @@
 - 当前开发机真实 Firewall/UAC、第二设备访问和用户人工门禁未验证；Firewall 状态复核在启用时使用系统接口并 fail closed。
 - 本任务测试产生的未跟踪 `.test-work/` 与两个 Go build EXE 位于本工作树；自动审批拒绝了删除命令，未将其纳入提交。Master 审查时应忽略这些生成物，并按工作树清理规则处理。
 - Master 应独立核对文件范围、Go 固定名单、T1 CLI 契约及整合后的 beta.4 全链门禁。
+
+## 2026-09-28 联合门禁返工补充
+
+- Master 指出 `tools/windows-launcher/build.ps1` 的 `-run` 选择器仍含已删除的 UAC 测试名，实际构建门禁会漏测回滚。该文件经追加授权后，仅替换为两个真实测试名并加完整名称锚定；固定 28 项名单与选择器逐项相同。
+- 同脚本 `build-info.json` 的版本描述从历史 Batch 4.5 改为 Batch LAN-2，避免 beta.4 构建元数据误标。其余构建输入、工具链要求和安全契约不变。
+- PowerShell 解析器静态检查 PASS；选择器集合 28/28 精确匹配 `expected-go-tests.cjs`，元数据描述静态检查 PASS；直接使用 `build.ps1` 中的原始正则运行 Launcher Go 测试 28/28，fail 0、skip 0。`git diff --check` PASS。
+- 本轮未运行 Hosted、真实 UAC/Firewall 或发行构建；本地静态/单元验证不替代联合门禁与 Master Review。
