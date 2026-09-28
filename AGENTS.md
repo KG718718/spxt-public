@@ -1,5 +1,11 @@
 # K⁺-SESSION 协作边界
 
+## 当前活动 Batch｜2026-09-28 LAN-2 Manual Adapter LAN Host
+
+用户已批准新独立 Batch LAN-2，集成分支 `codex/lan2-manual-host-v1.1` 从冻结 `43914744c0b74031fb2d20c849c7500408e0a85a` 创建；唯一 Master 不变。目标 beta.4，由用户明确选 RFC1918 公司/家庭网卡并确认后，才允许 LAN；生产路径不依赖旧 PowerShell/NLM/Native 自动可信判断。Batch 4.5 下方冻结结论和全部历史证据继续有效；不是解冻旧任务/工作树。普通工程问题在既定产品/安全边界内自主处理，Full≤2、Final QA≤1，最终停 LAN HUMAN PENDING；产品/安全路线变化等按 `docs/tasks/windows-installer-v1.1/batch-lan-2/SPEC.md` 升级。禁止 main/tag/Release、改历史受验 beta.2 或启动 Batch5/OCR。
+
+2026-09-28 用户重申本 Batch 继续沿用下方 THREAD ORCHESTRATION：默认禁止普通 sub-agent / `collaboration.spawn_agent`；生产实现必须由独立长期 Execution Thread 在每任务独立 worktree/local branch 完成，最终 QA 用独立 QA Thread。主控仅拆分、Review、整合、Git/Actions 与治理；Execution/QA 不得创建后代。前期 child-agent 草稿不算正式 RETURNED/REVIEWED；LAN2-T1/T2/T3 已在正式长期 Thread 重新核验并主动回单，主控正在完成集成门禁。见 `docs/tasks/windows-installer-v1.1/batch-lan-2/ORCHESTRATION.md`。
+
 ## 当前最终决定｜2026-09-28 Batch 4.5 LAN Host 冻结
 
 网页版选择 Route C：Batch 4.5 正式 `FROZEN — LAN HOST DEFERRED`。唯一 Master `01a0db0e-c950-79e0-8e11-07155e0742f2`；旧 Master 永久只读。T1—T6、B4.5-QA 及原工作树全部冻结并保留；不再派生产开发、实机 probe、Hosted 网络诊断、Final Full 或 Final QA，不进入 Batch5/OCR。Final Full 0/1、Final QA 0/1 记 `UNUSED — BATCH FROZEN`。当前生产 Utility 显式导入虽已测试，未解决真实 Win10 P02，标记 `NOT APPROVED FOR RELEASE`；`codex/lan-host-v1.1` 及任何 beta.3 构建均不可作为用户交付版，尚无最终 beta.3 Artifact。Batch 4 的受验 F3 beta.2 单机轨道保持 PASS；LAN 未发布/未认证，Win11 未获物理机认证。仅允许本次治理文档收尾并非 force push 开发分支；禁止 main/tag/Release、删历史或清理工作树。未来恢复须另立 Batch LAN-2 并重新定路线、预算和实机门禁。详见 `docs/tasks/windows-installer-v1.1/batch-4.5/BATCH45-FROZEN.md`；以下阶段状态均为历史。

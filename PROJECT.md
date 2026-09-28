@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前活动｜2026-09-28 Batch LAN-2
+
+用户已从 Batch 4.5 冻结 HEAD `43914744c0b74031fb2d20c849c7500408e0a85a` 授权新分支 `codex/lan2-manual-host-v1.1`：手动选择并确认 RFC1918 网卡的 LAN Host、候选 `1.1.0-beta.4`、受验 F3 beta.2 直接升级。当前 `IN PROGRESS — T1/T2/T3 INTEGRATED; COMBINED GATES IN PROGRESS`；集成 beta.4 测试发现旧 Go 名单断言，原 T3 正在返工，不能记集成门禁 PASS。Full0/2、Final QA0/1，尚无 beta.4 Artifact。Batch 4.5 继续 FROZEN；正式用户产品仍 beta.2 单机轨道。规格/验收见 `docs/tasks/windows-installer-v1.1/batch-lan-2/`；下方冻结状态为历史 Batch 的独立结论，不能当作 LAN-2 PASS。
+
 ## 当前正式状态｜2026-09-28
 
 - Batch 4：`PASS — Windows 10 x64 Beta Upgrade Track`；用户人工 1—10 PASS。受验 F3 beta.2：source `c8886e6b6d413c2fd73d6716621d07a80b337e58` / Run `36246132535` / Artifact `10907910968`。这是历史受验身份，不代表 Artifact 永久在线。
