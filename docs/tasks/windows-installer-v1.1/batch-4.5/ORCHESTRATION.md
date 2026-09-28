@@ -2,7 +2,7 @@
 
 ## 当前：B45-T6 原生可行性门槛获批｜2026-09-27
 
-网页版批准 Route B 有界 research：唯一新任务 `B45-T6-NATIVE-FEASIBILITY`，原 T1—T5/QA 历史不改。仅一个 Execution/一个任务 worktree、GPT-6 Sol/Medium、零 Hosted/Actions/Final Full/QA；唯一实机只读 PoC 必须等 F01—F15、go test/vet/build 与 Master Review 后单独放行。执行任务创建请求已提交，正式 thread/worktree/branch 和状态待工具返回后登记；不得重复创建。源基线公开 `b00749acee445d0a81b90748df851f1190a33cf0`。生产、Utility 行、Setup/manifest/rollback 冻结；Batch 仍 P02 FAIL/BLOCKED。批准全文 `NATIVE-DISCOVERY-FEASIBILITY-APPROVAL.md`。
+网页版批准 Route B 有界 research：唯一新任务 `B45-T6-NATIVE-FEASIBILITY`，原 T1—T5/QA 历史不改。Execution thread `01a0e33e-7152-7d92-bbc2-cbf06efaed94`，准确回单 Master `01a0db0e-c950-79e0-8e11-07155e0742f2`，唯一 worktree `E:\CodexWorkspace\CodexWorktrees\1ed3\public-source`，基线公开 `b00749acee445d0a81b90748df851f1190a33cf0`（detached/clean 已核对），local task branch 由 Execution 建 `codex/b45-t6-native-feasibility`。阶段 1 源码/合成/build **DISPATCHED**；实机仍冻结，必须 F01—F15、go test/vet/build 与 Master Review 后另行放行最多一次。GPT-6 Sol/Medium、零 Hosted/Actions/Final Full/QA；生产、Utility 行、Setup/manifest/rollback 冻结；Batch 仍 P02 FAIL/BLOCKED。完整卡 `tasks/B45-T6-NATIVE-FEASIBILITY.md`，批准 `NATIVE-DISCOVERY-FEASIBILITY-APPROVAL.md`。
 
 ## 当前只读路线评审完成，待网页版决定｜2026-09-27
 
