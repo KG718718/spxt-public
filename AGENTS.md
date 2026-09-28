@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-09-28 LAN-2 Full 2/2
+
+**BLOCKED — FULL HOSTED BUDGET EXHAUSTED; OFFLINE_LIFECYCLE FAILED。** LAN-2 Full #1 Run `36379556816` / Artifact `10951969499` 在历史静态测试跨 job 假报处 FAIL；原 LAN2-T3 在原长期 Thread/工作树返工，Master Review 后整合 `502c81d`，不得改写 Full #1 历史。Full #2 Run `36380488652`@`f15170389a915dcf245c8ae721ef46d0d9201c38` / 失败 Artifact `10952926928` 在真实 Setup、受验 F3 beta.2→beta.4 的部分检查通过后，于 `OFFLINE_LIFECYCLE` 因读取被占用的 `.launcher.lock` 失败。固定证据显示网络适配器已恢复、Firewall 未改变；尚不能判定锁的唯一根因或整个升级 PASS。核心 26/742、最终 Artifact privacy、独立 QA 均未到达；Full 2/2、QA 0/1，QA 不得挪作调试。本 Batch 无 beta.4 最终 Artifact，不是 LAN HUMAN PENDING。T1/T2/T3 与原工作树冻结保留；仅治理收尾、非 force push 唯一开发分支，停止工程/Hosted，等待网页版新决定。Batch 4.5 仍冻结，正式用户产品仍受验 beta.2 单机轨道；不改 main/tag/Release。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL2-STOP-20260928.md`。下方“当前活动”授权是本次止损前历史。
+
 ## 当前活动 Batch｜2026-09-28 LAN-2 Manual Adapter LAN Host
 
 用户已批准新独立 Batch LAN-2，集成分支 `codex/lan2-manual-host-v1.1` 从冻结 `43914744c0b74031fb2d20c849c7500408e0a85a` 创建；唯一 Master 不变。目标 beta.4，由用户明确选 RFC1918 公司/家庭网卡并确认后，才允许 LAN；生产路径不依赖旧 PowerShell/NLM/Native 自动可信判断。Batch 4.5 下方冻结结论和全部历史证据继续有效；不是解冻旧任务/工作树。普通工程问题在既定产品/安全边界内自主处理，Full≤2、Final QA≤1，最终停 LAN HUMAN PENDING；产品/安全路线变化等按 `docs/tasks/windows-installer-v1.1/batch-lan-2/SPEC.md` 升级。禁止 main/tag/Release、改历史受验 beta.2 或启动 Batch5/OCR。

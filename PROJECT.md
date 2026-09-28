@@ -2,7 +2,7 @@
 
 ## 当前活动｜2026-09-28 Batch LAN-2
 
-用户已从 Batch 4.5 冻结 HEAD `43914744c0b74031fb2d20c849c7500408e0a85a` 授权新分支 `codex/lan2-manual-host-v1.1`：手动选择并确认 RFC1918 网卡的 LAN Host、候选 `1.1.0-beta.4`、受验 F3 beta.2 直接升级。当前 `IN PROGRESS — FULL #1 FROZEN_REGRESSION FAIL; FIX REVIEWED; FULL #2 PENDING`；T1/T2/T3 正式长期 Thread 已回单并整合，本地 Node/Go/beta.4 合成门禁通过。Full #1 Run `36379556816` 在历史静态测试跨 job 假报处失败，Setup/26/742 未到达；原 T3 的测试边界修复已由 Master Review 并整合 `502c81d`，本机六文件复验 110 PASS/0 FAIL/2 环境跳过，兼容事务 45/45。Full1/2、Final QA0/1，尚无 beta.4 Artifact。Batch 4.5 继续 FROZEN；正式用户产品仍 beta.2 单机轨道。规格/验收见 `docs/tasks/windows-installer-v1.1/batch-lan-2/`；下方冻结状态为历史 Batch 的独立结论，不能当作 LAN-2 PASS。
+用户已从 Batch 4.5 冻结 HEAD `43914744c0b74031fb2d20c849c7500408e0a85a` 授权新分支 `codex/lan2-manual-host-v1.1`：手动选择并确认 RFC1918 网卡的 LAN Host、候选 `1.1.0-beta.4`、受验 F3 beta.2 直接升级。当前 `BLOCKED — FULL HOSTED BUDGET EXHAUSTED; OFFLINE_LIFECYCLE FAILED`。Full #1 Run `36379556816` 在历史静态测试假报处 FAIL，修复经原 T3 回单/Master Review 整合；Full #2 Run `36380488652`@`f151703` 在真实 Setup 和部分升级检查通过后因 `.launcher.lock` 被占用而 FAIL。Full 2/2、Final QA 0/1；26/742、最终 Artifact privacy、独立 QA 未到达，无 beta.4 最终 Artifact。T1/T2/T3 冻结保留，不追加工程或 Hosted，等待网页版新决定。Batch 4.5 继续 FROZEN；正式用户产品仍受验 beta.2 单机轨道。证据/停点见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL2-STOP-20260928.md`；下方旧活动记录为历史，不能当作 LAN-2 PASS。
 
 ## 当前正式状态｜2026-09-28
 

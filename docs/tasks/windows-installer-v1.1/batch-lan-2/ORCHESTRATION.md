@@ -37,3 +37,7 @@ Full #1 Run `36379556816` 结果 FAIL，固定失败 Artifact `10951969499`。`b
 ## 2026-09-28 — 原 T3 正式回单与 Master Review
 
 原长期 LAN2-T3 thread `01a0e644-b6de-74a1-8fc7-ce454eadce57` 在原 `530d` 工作树主动回单 local `e517c2266b89d68fcaa6cd98aad08786e4062baa`，仅改历史 `upgrade-lifecycle/contract.test.cjs` 和 T3 RESULT。Master 审查两文件 diff：按 `jobs:` 下两空格顶层 job header 精确截取 `sequence`，保留原 forbidden 断言；正反例分别验证后续 job 不污染、sequence 内违规仍拒绝。整合为 `502c81db0f0f35170b44618c973cb40b6740af6f`。主控独立六文件回归 112 tests/110 pass/0 fail/2 skip：本机缺 8.3 alias 与文件 symlink 权限，不能报告 skip0；beta.4 兼容事务 45/45、C01—C15 PASS。Full #1 Hosted 日志同样显示 8.3 alias 不可用，此项按历史环境能力缺口单列；核心 26/742 fail0skip0 要求不变。此修复改变了 Full #1 受测源码，满足禁止无修改 retry 条件；仅余 Full #2 1 次，必须在公开分支新 HEAD 三方一致后派发。Full #2 若 FAIL 则依预算止损，不启动 QA。
+
+## 2026-09-28 — Full #2 固定失败与预算止损
+
+Master 将原 T3 修复与治理记录非 force 推唯一开发分支，核验本地 HEAD、origin 跟踪及 GitHub 远端同为 `f15170389a915dcf245c8ae721ef46d0d9201c38` 后，通过已登记 workflow ID `362562346` 仅派发 `mode=lan2-full`。Run `36380488652` 结果 FAIL，失败 Artifact `10952926928`，固定 `beta4-ci-stage.json` 为 `OFFLINE_LIFECYCLE FAIL`。受验 F3 Setup 精确下载/校验、Node LAN 44/44、兼容事务 45/45、真实 beta.4 Setup 构建与安装、多个 beta.2→beta.4 实际升级检查通过；升级总报告 FAIL。日志指向 instance `.launcher.lock` 被其他进程占用时的读取失败，不能据此确认锁的唯一根因、也不能判定整个升级安全验收通过。固定 offline 报告显示 externalDuring=false、restored=true、firewallChanged=false；状态 FAIL 与流水线失败并存，不能误记网络隔离门禁 PASS。核心 26/742、最终 Artifact privacy、独立 QA 未到达；无最终 beta.4 Artifact。Full 2/2 已耗尽，QA 0/1 不挪用；依授权冻结 LAN2-T1/T2/T3 与原工作树，禁止追加工程/Hosted/QA，只完成治理收尾并返回网页版决定。详见 `LAN2-FULL2-STOP-20260928.md`。
