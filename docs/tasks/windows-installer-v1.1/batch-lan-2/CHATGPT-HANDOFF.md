@@ -8,7 +8,7 @@
 - 原 LAN2-T3 长期 Execution Thread 在原工作树把根目录 .launcher.lock 从持久业务 byte inventory 精确分离，并补运行期锁占用、第二 Launcher、停机后进程/独占锁验证及 U05/U06 拒绝后门禁；Master 独立 Review 后整合。
 - 本地 LCK01—LCK14 与兼容报告 PASS，生成 Go overlay 用固定 Go 1.27.1 离线编译 PASS；生产 Launcher、Setup、升级身份、事务、rollback 和业务 schema 未改。
 - 派发一次且仅一次 Final Full #4，保存固定失败证据。Full #1—#3 失败历史继续保留。
-- Full #2 和 #3 都在读取被合法独占的锁文件时发生 sharing violation；这一历史发现促成业务数据与运行控制状态分层。Full #4 的新失败则更早，发生在首个 Launcher 仍运行时验证第二 Launcher 的步骤，不能与旧失败合并成同一个已证根因。两类失败均如实保留，不因本地合成测试通过而追认旧 Run 为 PASS。
+- Full #2 和 #3 都在读取锁文件时发生 sharing violation，实际持锁进程未证；这一历史发现促成业务数据与运行控制状态分层。Full #4 的新失败则更早，发生在首个 Launcher 仍运行时验证第二 Launcher 的步骤，不能与旧失败合并成同一个已证根因。两类失败均如实保留，不因本地合成测试通过而追认旧 Run 为 PASS。
 
 【关键数字 / 技术事实】
 - source commit：2e9294d9a61426dac428f7c8ff8a12d36a4bbbb8
