@@ -36,6 +36,90 @@ function injectLockRelease(upgrade) {
     '\t})\n' +
     '}\n';
 }
+function injectPersistentInstanceInventory(upgrade) {
+  const firstPID = '\tpid := uint32(ready["pid"].(float64))';
+  const control = `	controlledLaunchers := []uint32{uint32(app.Process.Pid)}
+	controlledNodes := []uint32{pid}
+	persistentInventory := func() map[string]string {
+		for _, processID := range controlledLaunchers { requireControlledProcessExited(t, processID) }
+		for _, processID := range controlledNodes { requireControlledProcessExited(t, processID) }
+		waitLauncherLockReleased(t, instance)
+		return walkPersistentInstance(t, instance)
+	}`;
+  upgrade = replaceOnce(upgrade, firstPID, firstPID + '\n' + control);
+  upgrade = replaceCount(upgrade, '\tapp = startApp()',
+    '\tapp = startApp()\n\tcontrolledLaunchers = append(controlledLaunchers, uint32(app.Process.Pid))', 2);
+  upgrade = replaceCount(upgrade, '\tpid = uint32(ready["pid"].(float64))',
+    '\tpid = uint32(ready["pid"].(float64))\n\tcontrolledNodes = append(controlledNodes, pid)', 2);
+  upgrade = replaceCount(upgrade, 'walkHash(instance)', 'persistentInventory()', 11);
+  return upgrade + `
+func requireControlledProcessExited(t *testing.T, processID uint32) {
+	t.Helper()
+	h, err := syscall.OpenProcess(0x100000, false, processID)
+	if err == syscall.Errno(87) { return } // no process with this controlled PID
+	if err != nil { t.Fatal("controlled process state unavailable") }
+	defer func() { if e := syscall.CloseHandle(h); e != nil { t.Fatal("controlled process handle close failed") } }()
+	result, err := syscall.WaitForSingleObject(h, 0)
+	if err != nil || result != 0 { t.Fatal("controlled process not exited") }
+}
+
+func walkPersistentInstance(t *testing.T, instance string) map[string]string {
+	t.Helper()
+	out := map[string]string{}
+	err := filepath.Walk(instance, func(file string, info os.FileInfo, walkErr error) error {
+		if walkErr != nil { return walkErr }
+		relative, relErr := filepath.Rel(instance, file)
+		if relErr != nil { return relErr }
+		if relative == ".launcher.lock" {
+			if !info.Mode().IsRegular() { return fmt.Errorf("runtime lock is not a regular file") }
+			return nil
+		}
+		if info.IsDir() { return nil }
+		if !info.Mode().IsRegular() { return fmt.Errorf("instance contains nonregular file") }
+		out[filepath.ToSlash(relative)] = digest(mustRead(t, file))
+		return nil
+	})
+	if err != nil { t.Fatal("persistent instance inventory failed") }
+	return out
+}
+`;
+}
+
+function injectRejectedSetupQuiescence(upgrade, target, source, oldVersion, newVersion) {
+  upgrade = replaceOnce(upgrade,
+    `\trunSetup(${target}, false)\n\trecord("U05", "real same-version Setup rejected")`,
+    `\trunSetup(${target}, false)\n\tif !equalMaps(upgradedOwned, owned()) || !equalMaps(upgradedInstance, persistentInventory()) { t.Fatal("same-version rejection changed state") }\n\trecord("U05", "real same-version Setup rejected")`);
+  upgrade = replaceOnce(upgrade,
+    `\trunSetup(${source}, false)\n\trecord("U06", "real old ${oldVersion} Setup rejected downgrade over installed ${newVersion}")`,
+    `\trunSetup(${source}, false)\n\tif !equalMaps(upgradedOwned, owned()) || !equalMaps(upgradedInstance, persistentInventory()) { t.Fatal("downgrade rejection changed state") }\n\trecord("U06", "real old ${oldVersion} Setup rejected downgrade over installed ${newVersion}")`);
+  return upgrade;
+}
+
+function injectSecondLauncherLockRejection(upgrade) {
+  upgrade = replaceOnce(upgrade, '\t"encoding/base64"', '\t"context"\n\t"encoding/base64"');
+  const marker = '\tport := int(ready["port"].(float64))';
+  const proof = `	readyBeforeSecond := eventCount(instance, "READY")
+	secondContext, cancelSecond := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancelSecond()
+	second := exec.CommandContext(secondContext, launcher)
+	second.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	second.Env = append(os.Environ(), "PATH="+filepath.Join(os.Getenv("SystemRoot"), "System32"))
+	_ = second.Run() // an explicit busy result and successful dispatch are both valid
+	if secondContext.Err() != nil { t.Fatal("second Launcher did not exit") }
+	if !alivePID(pid) || !alivePID(uint32(app.Process.Pid)) { t.Fatal("second Launcher displaced controlled session") }
+	requireLauncherLockOccupied(t, instance)
+	if eventCount(instance, "READY") != readyBeforeSecond { t.Fatal("second Launcher started a private Node session") }`;
+  upgrade = replaceOnce(upgrade, marker, marker + '\n' + proof);
+  return upgrade + `
+func requireLauncherLockOccupied(t *testing.T, instance string) {
+	t.Helper()
+	h, err := syscall.CreateFile(syscall.StringToUTF16Ptr(filepath.Join(instance, ".launcher.lock")), syscall.GENERIC_READ, 0, nil, syscall.OPEN_EXISTING, syscall.FILE_ATTRIBUTE_NORMAL, 0)
+	if err == syscall.Errno(32) || err == syscall.Errno(33) { return }
+	if err == nil { _ = syscall.CloseHandle(h) }
+	t.Fatal("running Launcher did not retain exclusive lock")
+}
+`;
+}
 
 function main(argv) {
   assert.equal(argv.length, 2, 'launcher source and fresh output required');
@@ -105,10 +189,13 @@ function main(argv) {
   upgrade = replaceOnce(upgrade, '\tif len(ids) != 30 || ids[0] != "U01" || ids[29] != "U30" {',
     '\tif diagnostic { _, u22 := checks["U22"]; _, u23 := checks["U23"]; if !u22 || !u23 || len(checks) < 21 { t.Fatal("diagnostic coverage incomplete") } }\n' +
     '\tif !diagnostic && (len(ids) != 30 || ids[0] != "U01" || ids[29] != "U30") {');
-  // The existing PID checks and Wait establish Node/Launcher exit. Test the
-  // actual lock-release condition before the full instance inventory; never
-  // omit .launcher.lock or treat an arbitrary file error as transient.
+  // Stop/Wait and the exclusive lock probe establish quiescence. Only the
+  // volatile root lock is omitted from persistent business byte comparison;
+  // every other instance file remains in the inventory.
   upgrade = injectLockRelease(upgrade);
+  upgrade = injectPersistentInstanceInventory(upgrade);
+  upgrade = injectRejectedSetupQuiescence(upgrade, 'targetBeta4', 'sourceBeta2', 'beta.2', 'beta.4');
+  upgrade = injectSecondLauncherLockRejection(upgrade);
   assert.match(upgrade, /KSESSION_BETA2_SETUP/);
   assert.match(upgrade, /K-SESSION-Setup-1\.1\.0-beta\.4\.exe/);
   assert.match(upgrade, /state\["upgradeFrom"\] != "1\.1\.0-beta\.2"/);
@@ -126,4 +213,4 @@ function main(argv) {
 }
 
 if (require.main === module) main(process.argv.slice(2));
-module.exports = {injectFirewallIdentity, injectLockRelease, transformIntegration, transformPortable};
+module.exports = {injectFirewallIdentity, injectLockRelease, injectPersistentInstanceInventory, injectRejectedSetupQuiescence, injectSecondLauncherLockRejection, transformIntegration, transformPortable};

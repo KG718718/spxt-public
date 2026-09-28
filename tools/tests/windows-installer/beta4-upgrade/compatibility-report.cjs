@@ -30,8 +30,28 @@ for(let n=1;n<=15;n++){
   const id='C'+String(n).padStart(2,'0');
   checks[id]={status:result.status===0&&expected[id].every(name=>passedNames.has(name))?'PASS':'FAIL',method:'node:test exact passed-subtest mapping'};
 }
-const status=result.status===0&&fail===0&&skipped===0&&Object.values(checks).every(check=>check.status==='PASS')?'PASS':'FAIL';
+const lockNames=[
+  'LCK01 runtime lock occupancy is expected',
+  'LCK02 quiescent checkpoint requires exit and exclusive lock release before inventory',
+  'LCK03 real second Launcher cannot acquire the same lock or start a second private session',
+  'LCK04 U05 same-version rejection rechecks quiescence before comparison',
+  'LCK05 U06 downgrade rejection rechecks quiescence before comparison',
+  'LCK06 only the root volatile lock is absent from persistent inventory',
+  'LCK07 data.json remains hash-protected',
+  'LCK08 attachments/synthetic.bin remains hash-protected',
+  'LCK09 lan-deployment.json remains hash-protected',
+  'LCK10 an unknown ordinary file is included and mutation is detected',
+  'LCK11 sharing violation on an unknown file fails the full inventory',
+  'LCK12 lock probe failure and a missing lock fail closed',
+  'LCK13 rollback checkpoint retains persistent inventory',
+  'LCK14 uninstall reinstall checkpoints retain business bytes and repeat cleanly'
+];
+const locks=Object.fromEntries(lockNames.map((name,index)=>[
+  'LCK'+String(index+1).padStart(2,'0'),
+  {status:result.status===0&&passedNames.has(name)?'PASS':'FAIL',method:'node:test exact passed-subtest mapping'}
+]));
+const status=result.status===0&&fail===0&&skipped===0&&Object.values(checks).every(check=>check.status==='PASS')&&Object.values(locks).every(check=>check.status==='PASS')?'PASS':'FAIL';
 const report={schema:1,status,sourceCommit:commit,acceptedProfile:'accepted-f3-run-36246132535',
-  runtimeTrust:'REPOSITORY_FIXED_ANCHORS',onlineArtifactRequiredAtRuntime:false,tests,pass,fail,skipped,checks};
+  runtimeTrust:'REPOSITORY_FIXED_ANCHORS',onlineArtifactRequiredAtRuntime:false,tests,pass,fail,skipped,checks,locks};
 fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n',{flag:'wx'});
 if(status!=='PASS')process.exitCode=1;

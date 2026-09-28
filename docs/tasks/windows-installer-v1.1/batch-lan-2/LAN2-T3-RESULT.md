@@ -1,6 +1,6 @@
 # LAN2-T3 执行回单（2026-09-28）
 
-> 当前追加状态：`RETURNED — LOCAL LOCK RELEASE GATE PASS; MASTER REVIEW PENDING`。Full #2 `36380488652` 的 `OFFLINE_LIFECYCLE FAIL` 与实际持锁者仍为历史未唯一归因；Master 后续明确允许在受控反例基础上加入锁释放的确定性测试门禁。此轮仅改 beta.4 `TestUpgradeLifecycle` harness，未运行新的 Hosted/QA。下方较早的 `UNRESOLVED` 为此次有界续行前停点。
+> 当前追加状态：`RETURNED — VOLATILE LOCK INVENTORY CORRECTION LOCAL PASS; MASTER REVIEW PENDING`。Full #3 `36383900353` 在 `OFFLINE_LIFECYCLE` 的持久清单读取 `.launcher.lock` 时失败；本轮按 Master 有界授权只改 beta.4 测试 harness 与回单，未运行新的 Hosted/QA。下方较早状态均为历史。
 
 ## 状态
 
@@ -69,3 +69,12 @@
 - harness 三处停机均维持现有 Node/Launcher PID 退出检查，随后要求 `app.Wait()` 正常完成，再对**现有** `.launcher.lock` 使用 `OPEN_EXISTING`、share mode 0 作条件式独占探测。仅 sharing/lock violation（Windows 32/33）进入现有有界 `until` 轮询；其他错误、句柄关闭失败、超时均 fail closed。探测通过后才按原逻辑完整 `walkHash`/inventory/readback，不从清单排除锁文件，不修改数据、身份、事务、rollback 或产品运行代码。
 - 本地受控 fixture 现为 10/10、fail0skip0，覆盖持锁者、控制进程提前退出、graceful/abnormal 退出、sharing timeout、缺少锁对象时非 sharing 错误立即拒绝、cleanup 后完整读回、重复运行无残留，以及生成 Go 文件三处停止顺序、独占探测与非 sharing fail-closed 的静态反例。将 fixture 纳入 beta.4 compatibility report 后，在 Full #2 受测源码 `f15170389a915dcf245c8ae721ef46d0d9201c38` 的无 `.git` 快照覆盖本任务文件：55 tests、55 pass、0 fail、0 skipped，C01—C15 报告 PASS；真实 harness 生成成功，目标文件含三处调用和一个探测函数。
 - 本机无项目 pin 的 Go 工具链，未编译生成的 Go 测试，也未运行真实 Setup/Full #3/Final QA。Master 必须先 Review/整合，并在工具链/Hosted 受控门禁中复验；这些本地结果不把 Full #2 历史 FAIL 改称 PASS。
+
+## Full #3 后续返工：volatile Launcher lock 清单语义（2026-09-28）
+
+- Master 固定 Full #3 Run `36383900353` / source `e84e494` 为 `OFFLINE_LIFECYCLE FAIL`：U05/U06 已到达，完整 instance inventory 读取根目录 `.launcher.lock` 时遇 sharing violation。此证据不唯一确定当时持锁进程。Full #4 仅可在 Master Review 后另行调度；本任务未消费 Hosted/QA。
+- 生成的 beta.4 `TestUpgradeLifecycle` 只把**根目录** `.launcher.lock` 当作 volatile runtime control file，从 persistent inventory 中排除。嵌套同名文件、未知普通文件、`data.json`、附件、`lan-deployment.json`、日志及临时文件均继续读取并哈希；未知文件读取失败、非普通文件和 lock 探测异常均 fail closed。未修改生产 Launcher、Setup、身份、schema、事务或 rollback。
+- 所有 persistent inventory 调用先检查已记录的受控 Launcher 和私有 Node PID 均已退出，再独占打开并关闭根锁。三处明确停机继续 `app.Wait()` 加有界独占探测。U05 same-version 与 U06 downgrade **每次拒绝后**分别执行持久清单比对，因此各自再次经过进程退出与 lock exclusive 门禁；运行期不调用该停机门禁。
+- 运行期新增真实第二 Launcher 调用的测试 overlay：有界等待其退出，确认原 Launcher/Node 仍在、根锁仍被占用、READY 事件数未增加。生产 Launcher 对第二次调用可返回 busy 或成功 dispatch，两种退出形式都不视作取得第二把锁。该真实路径仍待 Hosted 运行确认，本地 LCK03 仅静态核对生成逻辑与受控持锁 fixture。
+- LCK01—LCK14 编号按正式清单逐项映射，另有嵌套锁名、日志、临时文件等 `EXTRA` 反例。本地受控 lock suite `27/27 PASS`、fail0skip0。在 Master 集成基线 `2a63c6aad4980df29f78f624fc740df68d7b8764` 的无 `.git` 源码快照覆盖本任务三份修改文件，`prepare-hosted-harness.cjs` 成功生成 Go overlay；compatibility report `72/72 PASS`、fail0skip0、C01—C15 与 LCK01—LCK14 均 PASS。快照内生成文件含 U05/U06 各自清单检查、运行期第二 Launcher 检查及唯一根锁排除函数。
+- 本机没有可调用的 Go 工具链，生成的 Go overlay 尚未本地编译，真实第二 Launcher、Setup、rollback/uninstall/reinstall 行为未在本轮实机复测。Master Review 应先编译生成文件，再决定是否按现有预算运行 Full #4；这些本地 PASS 不能改写 Full #3 FAIL。
