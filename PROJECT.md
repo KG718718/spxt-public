@@ -2,7 +2,7 @@
 
 ## 当前活动｜2026-09-28 Batch LAN-2
 
-网页版已在下述 Full #3 止损之后新增一次严格有界的验收语义修正授权：原 LAN2-T3 仅把 `.launcher.lock` 从持久业务 byte inventory 精确分离，并以独立进程/锁门禁验收运行期状态；LCK01—LCK14 本地 fail0skip0 与 Master Review PASS 才能使用 Final Full #4 0/1。无新 diagnostic Hosted；QA 0/1 仍仅在 Full 完整 PASS 后使用。Full #3 的 FAIL 不改写，当前状态为 `IN PROGRESS — VOLATILE LOCK SEMANTICS LOCAL REVIEW PENDING`。Full #4 或 QA FAIL 即停，不申请 Full #5；没有 beta.4 最终 Artifact，正式用户基线仍为 beta.2 单机轨道。
+网页版已在下述 Full #3 止损之后新增一次严格有界的验收语义修正授权：原 LAN2-T3 仅把 `.launcher.lock` 从持久业务 byte inventory 精确分离，并以独立进程/锁门禁验收运行期状态。T3 local `197932d`/`bfa84d3` 经 Master Review 整合 `d135f64`/`003cdb3`；主控在整合源码上独立复验 LCK01—LCK14、兼容 72/72 fail0skip0、生成 Go overlay 固定 Go 1.27.1 离线编译 PASS。Full #3 的 FAIL 不改写，当前状态为 `IN PROGRESS — VOLATILE LOCK REVIEW PASS; FINAL FULL #4 PENDING`。无新 diagnostic Hosted；Final Full #4 仍 0/1，QA 0/1 仅在 Full 完整 PASS 后使用。Full #4 或 QA FAIL 即停，不申请 Full #5；没有 beta.4 最终 Artifact，正式用户基线仍为 beta.2 单机轨道。
 
 用户已从 Batch 4.5 冻结 HEAD `43914744c0b74031fb2d20c849c7500408e0a85a` 授权新分支 `codex/lan2-manual-host-v1.1`：手动选择并确认 RFC1918 网卡的 LAN Host、候选 `1.1.0-beta.4`、受验 F3 beta.2 直接升级。Full #1 Run `36379556816` 历史 FAIL；Full #2 Run `36380488652` 和新增 Final Full #3 Run `36383900353` 均在 `OFFLINE_LIFECYCLE / TestUpgradeLifecycle` 因 `.launcher.lock` 被占用 FAIL。#3 受测 `e84e4948b202b7e084edfb05e6753c5e91fd07e6` / 失败 Artifact `10953579335`；此前本地 55/55 与生成 Go 编译 PASS 不等于 Hosted PASS。当前 `BLOCKED — FINAL FULL #3 FAILED / OFFLINE_LIFECYCLE LOCK OCCUPIED`；新增 Full #3 1/1 已用，QA 0/1 未用且不启动；26/742、最终 Artifact privacy 未到达，无 beta.4 最终 Artifact。T1/T2/T3 冻结原工作树，等待网页版决定。Batch 4.5 继续 FROZEN；正式用户产品仍受验 beta.2 单机轨道，LAN 未发布/未认证。见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL3-STOP-20260928.md`。
 
