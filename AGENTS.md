@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-09-28 LAN-2 Final Full #3 同阶段失败
+
+**BLOCKED — FINAL FULL #3 FAILED / OFFLINE_LIFECYCLE LOCK OCCUPIED。** 用户批准的唯一新增 Full #3 Run `36383900353`@`e84e4948b202b7e084edfb05e6753c5e91fd07e6` / 失败 Artifact `10953579335` 再次在 `TestUpgradeLifecycle` 的 U05/U06 PASS 后读取 `.launcher.lock` 遭 sharing violation，固定阶段 `OFFLINE_LIFECYCLE FAIL`。此前本地锁反例、55/55 合成及生成 Go 离线编译 PASS 不等于 Hosted PASS；Full #2/Full #3 同阶段失败均保留，实际持锁者仍未知。按用户止损规则立即停止，不申请 Full #4、不派返工、不运行唯一 QA（0/1）。26/742、最终 Artifact privacy、独立 QA 未到达，无 beta.4 最终 Artifact；T1/T2/T3 及原工作树冻结保留。仅治理文档收尾并非 force push 唯一开发分支；不操作 main/tag/Release/Batch5/OCR。正式用户基线仍受验 beta.2 单机版，LAN 未发布/未认证。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL3-STOP-20260928.md`；下方 Full #3 待运行授权已执行完毕。
+
 ## 当前有界续行｜2026-09-28 LAN-2 Full #2 锁占用
 
 用户批准方案 A，仅解除下方 Full 2/2 止损对 `OFFLINE_LIFECYCLE / TestUpgradeLifecycle / .launcher.lock occupied` 的有限冻结。唯一 Master、原 LAN2-T3 长期 Execution Thread `01a0e644-b6de-74a1-8fc7-ce454eadce57`、原 `530d` 工作树/本地分支继续；禁止普通 sub-agent、新任务树或改产品/LAN/安全/升级架构。T3 先本地构造锁占用反例，证明持锁进程、退出、释放及 cleanup/readback 顺序，做确定性生命周期最小修复与正常/异常/超时/占用/重复运行 fail0skip0 门禁；不得忽略 sharing violation、排除锁文件或用固定 sleep。Master Review PASS 后仅新增 Final Full #3 最多一次，QA 原 0/1 保留且不得调试。Full #3 FAIL 或 QA FAIL 即停；Full PASS 后才运行唯一 QA。最终自动停 `BLOCKED — AUTOMATION PASS / QA PASS / LAN HUMAN PENDING`；不进 main/tag/Release/Batch5/OCR。下方 Full 2/2 FAIL 为不可改写历史，详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/ORCHESTRATION.md`。

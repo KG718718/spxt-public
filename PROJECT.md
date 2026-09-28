@@ -2,7 +2,7 @@
 
 ## 当前活动｜2026-09-28 Batch LAN-2
 
-用户已从 Batch 4.5 冻结 HEAD `43914744c0b74031fb2d20c849c7500408e0a85a` 授权新分支 `codex/lan2-manual-host-v1.1`：手动选择并确认 RFC1918 网卡的 LAN Host、候选 `1.1.0-beta.4`、受验 F3 beta.2 直接升级。Full #1 Run `36379556816` 与 Full #2 Run `36380488652` 均历史 FAIL；#2 在 `OFFLINE_LIFECYCLE` 因 `.launcher.lock` 被占用失败。网页版批准原 LAN2-T3 长期 Thread/工作树有界续行，测试专用锁释放门禁经本地反例、Master Review、55/55 合成及固定 Go 工具链编译通过；历史 #2 实际持锁者仍未知。当前 `IN PROGRESS — LOCK LIFECYCLE REVIEW PASS; FULL #3 PENDING`，仅余新增 Full #3 0/1 与 QA 原 0/1；26/742、最终 Artifact privacy、独立 QA 未到达，无 beta.4 最终 Artifact。Batch 4.5 继续 FROZEN；正式用户产品仍受验 beta.2 单机轨道。历史止损证据见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL2-STOP-20260928.md`；本轮范围见 `ORCHESTRATION.md`。
+用户已从 Batch 4.5 冻结 HEAD `43914744c0b74031fb2d20c849c7500408e0a85a` 授权新分支 `codex/lan2-manual-host-v1.1`：手动选择并确认 RFC1918 网卡的 LAN Host、候选 `1.1.0-beta.4`、受验 F3 beta.2 直接升级。Full #1 Run `36379556816` 历史 FAIL；Full #2 Run `36380488652` 和新增 Final Full #3 Run `36383900353` 均在 `OFFLINE_LIFECYCLE / TestUpgradeLifecycle` 因 `.launcher.lock` 被占用 FAIL。#3 受测 `e84e4948b202b7e084edfb05e6753c5e91fd07e6` / 失败 Artifact `10953579335`；此前本地 55/55 与生成 Go 编译 PASS 不等于 Hosted PASS。当前 `BLOCKED — FINAL FULL #3 FAILED / OFFLINE_LIFECYCLE LOCK OCCUPIED`；新增 Full #3 1/1 已用，QA 0/1 未用且不启动；26/742、最终 Artifact privacy 未到达，无 beta.4 最终 Artifact。T1/T2/T3 冻结原工作树，等待网页版决定。Batch 4.5 继续 FROZEN；正式用户产品仍受验 beta.2 单机轨道，LAN 未发布/未认证。见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL3-STOP-20260928.md`。
 
 ## 当前正式状态｜2026-09-28
 
