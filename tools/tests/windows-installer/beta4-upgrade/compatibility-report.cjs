@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),cp=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
 const [output,commit]=process.argv.slice(2);
 assert.ok(output&&/^[a-f0-9]{40}$/.test(commit));assert.equal(fs.existsSync(output),false);
-const files=['compatibility.test.cjs','transaction.test.cjs'].map(name=>path.join(__dirname,name));
+const files=['compatibility.test.cjs','transaction.test.cjs','lock-lifecycle.test.cjs'].map(name=>path.join(__dirname,name));
 const result=cp.spawnSync(process.execPath,['--test','--test-concurrency=1','--test-reporter=tap',...files],
   {encoding:'utf8',windowsHide:true,maxBuffer:4*1024*1024});
 process.stdout.write(result.stdout||'');process.stderr.write(result.stderr||'');

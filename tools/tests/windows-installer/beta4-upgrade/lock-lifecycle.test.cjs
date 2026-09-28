@@ -6,13 +6,14 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const test=require('node:test');
+const {injectLockRelease}=require('./prepare-hosted-harness.cjs');
 
 const holderScript=path.join(__dirname,'lock-holder.ps1');
 function fixture(t){
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ksession-lock-lifecycle-'));
   const lock=path.join(dir,'.launcher.lock');
   fs.writeFileSync(lock,'synthetic-lock');
-  t.after(()=>{fs.unlinkSync(lock);fs.rmdirSync(dir);});
+  t.after(()=>{if(fs.existsSync(lock))fs.unlinkSync(lock);fs.rmdirSync(dir);});
   return {dir,lock};
 }
 function startHolder(t,lock){
@@ -79,6 +80,11 @@ test('lock wait times out closed while the holder is still alive',async t=>{
   assert.equal(child.exitCode,null);
   await release(child);
 });
+test('a missing lock object is a hard error rather than a sharing retry',async t=>{
+  const {lock}=fixture(t);
+  fs.unlinkSync(lock);
+  await assert.rejects(waitReadback(lock,100),error=>error.code==='ENOENT');
+});
 test('cleanup completion precedes complete instance inventory and readback',async t=>{
   const {dir,lock}=fixture(t),child=await startHolder(t,lock);
   const other=path.join(dir,'synthetic.json');fs.writeFileSync(other,'{}');
@@ -105,4 +111,19 @@ test('a separate control process can exit while another process still owns the l
   assert.throws(()=>readback(lock),error=>['EBUSY','EPERM','EACCES'].includes(error.code));
   await release(holder);
   assert.equal(await waitReadback(lock,1000),'synthetic-lock');
+});
+test('generated beta4 lifecycle gates all three inventories on bounded exclusive lock release',()=>{
+  const source=fs.readFileSync(path.join(__dirname,'../../../windows-launcher/upgrade_windows_test.go'),'utf8').replaceAll('\r\n','\n');
+  const generated=injectLockRelease(source);
+  const release='\twaitLauncherLockReleased(t, instance)';
+  assert.equal(generated.split(release).length-1,3);
+  assert.equal(generated.includes('\t_ = app.Wait()'),false);
+  const order=/until\(t, func\(\) bool \{ return !alivePID\(pid\) && !alivePID\(uint32\(app\.Process\.Pid\)\) \}\)\n\tif e := app\.Wait\(\); e != nil \{ t\.Fatal\("launcher exit failed"\) \}\n\twaitLauncherLockReleased\(t, instance\)/g;
+  assert.equal([...generated.matchAll(order)].length,3);
+  assert.ok(generated.indexOf(release)<generated.indexOf('instanceStable := walkHash(instance)'));
+  assert.match(generated,/syscall\.CreateFile\([^\n]+syscall\.GENERIC_READ, 0, nil, syscall\.OPEN_EXISTING/);
+  assert.match(generated,/err == syscall\.Errno\(32\) \|\| err == syscall\.Errno\(33\) \{ return false \}/);
+  assert.match(generated,/if err != nil \{ t\.Fatal\("lock release probe failed"\) \}/);
+  assert.match(generated,/if e := syscall\.CloseHandle\(h\); e != nil \{ t\.Fatal\("lock probe close failed"\) \}/);
+  assert.throws(()=>injectLockRelease(source.replace('\t_ = app.Wait()','')),/expected 3 harness markers/);
 });

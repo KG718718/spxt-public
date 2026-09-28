@@ -21,6 +21,21 @@ function transformPortable(source) {
     'tools/windows-portable/package-lan.cjs', 4), 'info');
 }
 function transformIntegration(source) { return injectFirewallIdentity(source, 'build'); }
+function injectLockRelease(upgrade) {
+  const gated = replaceCount(upgrade, '\t_ = app.Wait()',
+    '\tif e := app.Wait(); e != nil { t.Fatal("launcher exit failed") }\n\twaitLauncherLockReleased(t, instance)', 3);
+  return gated + '\nfunc waitLauncherLockReleased(t *testing.T, instance string) {\n' +
+    '\tt.Helper()\n' +
+    '\tlockPath := filepath.Join(instance, ".launcher.lock")\n' +
+    '\tuntil(t, func() bool {\n' +
+    '\t\th, err := syscall.CreateFile(syscall.StringToUTF16Ptr(lockPath), syscall.GENERIC_READ, 0, nil, syscall.OPEN_EXISTING, syscall.FILE_ATTRIBUTE_NORMAL, 0)\n' +
+    '\t\tif err == syscall.Errno(32) || err == syscall.Errno(33) { return false }\n' +
+    '\t\tif err != nil { t.Fatal("lock release probe failed") }\n' +
+    '\t\tif e := syscall.CloseHandle(h); e != nil { t.Fatal("lock probe close failed") }\n' +
+    '\t\treturn true\n' +
+    '\t})\n' +
+    '}\n';
+}
 
 function main(argv) {
   assert.equal(argv.length, 2, 'launcher source and fresh output required');
@@ -90,6 +105,10 @@ function main(argv) {
   upgrade = replaceOnce(upgrade, '\tif len(ids) != 30 || ids[0] != "U01" || ids[29] != "U30" {',
     '\tif diagnostic { _, u22 := checks["U22"]; _, u23 := checks["U23"]; if !u22 || !u23 || len(checks) < 21 { t.Fatal("diagnostic coverage incomplete") } }\n' +
     '\tif !diagnostic && (len(ids) != 30 || ids[0] != "U01" || ids[29] != "U30") {');
+  // The existing PID checks and Wait establish Node/Launcher exit. Test the
+  // actual lock-release condition before the full instance inventory; never
+  // omit .launcher.lock or treat an arbitrary file error as transient.
+  upgrade = injectLockRelease(upgrade);
   assert.match(upgrade, /KSESSION_BETA2_SETUP/);
   assert.match(upgrade, /K-SESSION-Setup-1\.1\.0-beta\.4\.exe/);
   assert.match(upgrade, /state\["upgradeFrom"\] != "1\.1\.0-beta\.2"/);
@@ -107,4 +126,4 @@ function main(argv) {
 }
 
 if (require.main === module) main(process.argv.slice(2));
-module.exports = {injectFirewallIdentity, transformIntegration, transformPortable};
+module.exports = {injectFirewallIdentity, injectLockRelease, transformIntegration, transformPortable};

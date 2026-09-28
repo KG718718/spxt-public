@@ -1,6 +1,6 @@
 # LAN2-T3 执行回单（2026-09-28）
 
-> 当前追加状态：`BLOCKED — FULL #2 LOCK HOLDER UNRESOLVED`。Full #2 `36380488652` 的 `OFFLINE_LIFECYCLE FAIL` 无法从固定证据唯一确认 `.launcher.lock` 的实际持有进程；本轮只保留受控合成反例，未提交等待/重试实现，也未运行新的 Hosted。下方各阶段结果均为历史记录。
+> 当前追加状态：`RETURNED — LOCAL LOCK RELEASE GATE PASS; MASTER REVIEW PENDING`。Full #2 `36380488652` 的 `OFFLINE_LIFECYCLE FAIL` 与实际持锁者仍为历史未唯一归因；Master 后续明确允许在受控反例基础上加入锁释放的确定性测试门禁。此轮仅改 beta.4 `TestUpgradeLifecycle` harness，未运行新的 Hosted/QA。下方较早的 `UNRESOLVED` 为此次有界续行前停点。
 
 ## 状态
 
@@ -61,3 +61,11 @@
 - 受控 synthetic fixture 只使用临时 `.launcher.lock`，由本任务启动的 PowerShell 子进程以 `FileShare.None` 独占打开。8 项本地测试全部 PASS、fail0、skip0：确认受控持有进程、stop 请求未完成时仍不可读、graceful/abnormal 退出后释放、持锁超时 fail-closed、cleanup 后完整读回、重复启停无残留，以及另一个控制进程退出时锁仍可由存活进程持有。fixture 不接触真实业务路径/数据，不记录 PID 或路径正文。
 - 观察边界：该 fixture 证明“控制进程退出”与“锁已释放”不能等同，且可验证受控持有者的正常/异常释放；它**不**确定 Full #2 当时锁由 Launcher、Node 子进程、Setup 控制进程还是其他进程持有。已撤回未证实的 beta.4 harness 等待逻辑，未改生产、manifest/inventory、事务、身份或 rollback；未排除 `.launcher.lock`，未忽略 sharing violation、固定 sleep 或捕获后继续。
 - 结论：`UNRESOLVED — ACTUAL LOCK HOLDER NOT PROVEN`。依本轮 Master 补充门槛停止实现并回单。下一步须先取得安全且固定的进程/句柄归属及退出顺序证据，再决定最小生命周期修复；不能把有界等待当成唯一根因证明或据本轮派 Full #3。
+
+## 后续有界授权：beta.4 锁释放测试门禁（2026-09-28）
+
+- Master 更正门槛：历史 Full #2 日志没有失败瞬间句柄归属，不能回补唯一持有人；允许基于受控 fixture 增加**仅 beta.4 `TestUpgradeLifecycle` harness** 的条件式锁释放门禁。对 Full #2 根因仍不作唯一归因。
+- 源码路径核对：Launcher `main_windows.go` 以 share mode 0 `CreateFile` 打开 `.launcher.lock`，在 `controller.cleanup` 中 `CloseHandle`，且进程退出有 defer cleanup；Setup `setup-beta4.iss` 的 `AcquireExistingInstanceLock` 也以 share mode 0 打开现有锁对象，由 `ReleaseLocks` 关闭。Node 子进程的本仓库生产源码未见直接打开该锁的路径。上述只界定受控代码中的可能持有者，不能排除失败现场其他进程，也不能确定 Full #2 的实际持有者。
+- harness 三处停机均维持现有 Node/Launcher PID 退出检查，随后要求 `app.Wait()` 正常完成，再对**现有** `.launcher.lock` 使用 `OPEN_EXISTING`、share mode 0 作条件式独占探测。仅 sharing/lock violation（Windows 32/33）进入现有有界 `until` 轮询；其他错误、句柄关闭失败、超时均 fail closed。探测通过后才按原逻辑完整 `walkHash`/inventory/readback，不从清单排除锁文件，不修改数据、身份、事务、rollback 或产品运行代码。
+- 本地受控 fixture 现为 10/10、fail0skip0，覆盖持锁者、控制进程提前退出、graceful/abnormal 退出、sharing timeout、缺少锁对象时非 sharing 错误立即拒绝、cleanup 后完整读回、重复运行无残留，以及生成 Go 文件三处停止顺序、独占探测与非 sharing fail-closed 的静态反例。将 fixture 纳入 beta.4 compatibility report 后，在 Full #2 受测源码 `f15170389a915dcf245c8ae721ef46d0d9201c38` 的无 `.git` 快照覆盖本任务文件：55 tests、55 pass、0 fail、0 skipped，C01—C15 报告 PASS；真实 harness 生成成功，目标文件含三处调用和一个探测函数。
+- 本机无项目 pin 的 Go 工具链，未编译生成的 Go 测试，也未运行真实 Setup/Full #3/Final QA。Master 必须先 Review/整合，并在工具链/Hosted 受控门禁中复验；这些本地结果不把 Full #2 历史 FAIL 改称 PASS。
