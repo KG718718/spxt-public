@@ -33,18 +33,24 @@ test('upload is exactly one validated JSON, push requires trigger path/marker an
  const uses=[...workflow.matchAll(/uses: ([^\s]+)/g)].map(m=>m[1]);assert.equal(uses.length,3);
  for(const value of uses)assert.match(value,/^actions\/[a-z-]+@[a-f0-9]{40}$/);
  for(const name of fs.readdirSync(path.join(repo,'.github/workflows')).filter(n=>n.endsWith('.yml')&&n!=='lc01-hosted.yml')){
-  const text=fs.readFileSync(path.join(repo,'.github/workflows',name),'utf8');
+  const text=fs.readFileSync(path.join(repo,'.github/workflows',name),'utf8').replaceAll('\r\n','\n');
   const push=text.match(/\n  push:\r?\n([\s\S]*?)(?=\n(?:  [a-z_]+:|[a-z]+:))/)?.[1];
   if(push?.includes('codex/lan2-manual-host-v1.1'))checkApprovedOtherPush(name,text);
  }
  assert.ok(workflow.includes("!contains(github.event.head_commit.message, '[lan2-candidate]')"));
  assert.ok(workflow.includes("!contains(github.event.head_commit.message, '[lan2-final-qa]')"));
- const fixture="\n  push:\n    branches: [codex/lan2-manual-host-v1.1]\n    paths:\n      - docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FINAL-TRIGGER.md\npermissions:\njobs:\n  approved-once:\n    if: contains(github.event.head_commit.message, '[lan2-candidate]') || contains(github.event.head_commit.message, '[lan2-final-qa]')\n    uses: ./.github/workflows/lan2-beta4-v1.1.yml\n";
+ const fixture="name: LAN2 final acceptance marker\r\non:\r\n  push:\r\n    branches: [codex/lan2-manual-host-v1.1]\r\n    paths:\r\n      - docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FINAL-TRIGGER.md\r\npermissions:\r\n  contents: read\r\n  actions: read\r\nconcurrency:\r\n  group: lan2-final-acceptance-${{ github.ref }}\r\n  cancel-in-progress: false\r\njobs:\r\n  approved-once:\r\n    if: >-\r\n      github.repository == 'KG718718/spxt-public' &&\r\n      github.ref == 'refs/heads/codex/lan2-manual-host-v1.1' &&\r\n      github.run_attempt == 1 &&\r\n      ((contains(github.event.head_commit.message, '[lan2-candidate]') &&\r\n        !contains(github.event.head_commit.message, '[lan2-final-qa]')) ||\r\n       (contains(github.event.head_commit.message, '[lan2-final-qa]') &&\r\n        !contains(github.event.head_commit.message, '[lan2-candidate]')))\r\n    permissions:\r\n      contents: read\r\n      actions: read\r\n    uses: ./.github/workflows/lan2-beta4-v1.1.yml\r\n    with:\r\n      mode: ${{ contains(github.event.head_commit.message, '[lan2-candidate]') && 'full' || 'qa' }}\r\n";
  checkApprovedOtherPush('lan2-final-acceptance.yml',fixture);
+ const crlf=fixture.replaceAll('\r\n','\n').replaceAll('\n','\r\n');
+ assert.ok(crlf.includes('\r\n  push:\r\n'));
+ checkApprovedOtherPush('lan2-final-acceptance.yml',crlf);
+ assert.throws(()=>checkApprovedOtherPush('unknown.yml',crlf));
+ assert.throws(()=>checkApprovedOtherPush('lan2-final-acceptance.yml',crlf.replace('batch-lan-2/LAN2-FINAL-TRIGGER.md','lan2-lc01/HOSTED-TRIGGER.json')));
  assert.throws(()=>checkApprovedOtherPush('unknown.yml',fixture));
  assert.throws(()=>checkApprovedOtherPush('lan2-final-acceptance.yml',fixture.replace('batch-lan-2/LAN2-FINAL-TRIGGER.md','lan2-lc01/HOSTED-TRIGGER.json')));
 });
 function checkApprovedOtherPush(name,text){
+ text=text.replaceAll('\r\n','\n');
  assert.equal(name,'lan2-final-acceptance.yml');
  const push=text.match(/\n  push:\n([\s\S]*?)\npermissions:/)?.[1];assert.ok(push);
  assert.match(push,/^    branches: \[codex\/lan2-manual-host-v1.1\]\r?\n    paths:\r?\n      - ['"]?docs\/tasks\/windows-installer-v1.1\/batch-lan-2\/LAN2-FINAL-TRIGGER.md['"]?\s*$/);
