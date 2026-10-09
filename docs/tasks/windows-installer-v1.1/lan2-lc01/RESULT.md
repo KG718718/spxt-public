@@ -56,3 +56,6 @@ Full #4 Run36388264496@2e9294d9a61426dac428f7c8ff8a12d36a4bbbb8 / Artifact109553
 Master最终Review：已独立核验报告源码链、生成门禁和固定证据；结论接受为静态诊断交付，历史根因UNKNOWN。只读核验及文档diff-check完成，不以此宣称任何产品/Hosted测试PASS；具体Review见ORCHESTRATION.md。实机额度未用，不恢复LAN-2、不实施建议，停止等待网页版决定。本地独立任务文档可审查，未推GitHub、未整合冻结分支。
 
 2026-10-09有限续行阶段1：最新TEST-FIX-AUTHORIZATION.md批准仅测试修复及本地反例；当前成果见LOCAL-TEST-FIX-RESULT.md/LOCAL-GATES.json，未来唯一专项门槛见REAL-RUN-PLAN.md。此增量不改上方静态诊断/历史FAIL，实机0/1仍未用，真实历史根因UNKNOWN，LAN-2继续冻结。
+
+## 2026-10-09 新 Hosted 接线
+本地联合 Node61/61、纯 Go65PASS、专项与 Full overlay 编译 PASS；最终专项反例8/8。见 HOSTED-LOCAL-RETURN.md。无 Hosted 产品运行或新认证，当前 LOCAL RETURNED / MASTER REVIEW PENDING。

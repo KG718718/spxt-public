@@ -1,0 +1,58 @@
+name: LC01 accepted F3 single-instance proof
+on:
+  push:
+    branches: [codex/lan2-manual-host-v1.1]
+    paths:
+      - 'docs/tasks/windows-installer-v1.1/lan2-lc01/HOSTED-TRIGGER.json'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: lc01-hosted-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  lc01:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan2-manual-host-v1.1' && github.run_attempt == 1 && contains(github.event.head_commit.message, '[lc01-hosted]') && !contains(github.event.head_commit.message, '[lan2-candidate]') && !contains(github.event.head_commit.message, '[lan2-final-qa]')
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - name: Exact checkout byte policy
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.21.0'
+      - name: Accepted F3 install and one second-launcher path
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          & ./tools/tests/windows-installer/beta4-upgrade/lc01-hosted.ps1 -TestedCommit '${{ github.sha }}'
+          if ($LASTEXITCODE -ne 0) { throw 'LC01 proof failed; no retry or Full authorization' }
+      - name: Validate fixed public evidence or write early failure
+        if: always()
+        shell: pwsh
+        run: |
+          $out=Join-Path $env:RUNNER_TEMP 'lc01-evidence'
+          [void][IO.Directory]::CreateDirectory($out)
+          $file=Join-Path $out 'LC01-HOSTED-REPORT.json'
+          $cli='./tools/tests/windows-installer/beta4-upgrade/lc01-hosted-report.cjs'
+          $canValidate=(Test-Path -LiteralPath $cli) -and [bool](Get-Command node -ErrorAction SilentlyContinue)
+          if (!(Test-Path -LiteralPath $file) -or !$canValidate) {
+            $report=@{schema=1;kind='lc01-hosted';status='FAIL';stage='SOURCE';testedCommit='${{ github.sha }}';f3=@{runId=36246132535;artifactId=10907910968;sourceCommit='c8886e6b6d413c2fd73d6716621d07a80b337e58';setupSha256='877383fe14bf089eb0a4e130641a957062c07ab258d22d59895c46f9b3f671b6'};identity=$null;lifecycle=$null;cleanupVerified=$false;physicalWin10Certified=$false;dualDeviceLanCertified=$false}
+            [IO.File]::WriteAllText($file,($report|ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false))
+          }
+          if ($canValidate) {
+            & node $cli verify $file
+            if ($LASTEXITCODE -ne 0) { Remove-Item -LiteralPath $file; throw 'Unsafe report refused' }
+          }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: lc01-hosted-${{ github.sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/lc01-evidence/LC01-HOSTED-REPORT.json
+          if-no-files-found: error
+          retention-days: 30

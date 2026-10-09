@@ -1,0 +1,110 @@
+//go:build windows
+package main
+
+import (
+ "crypto/sha256"
+ "encoding/json"
+ "errors"
+ "fmt"
+ "os"
+ "path/filepath"
+ "strings"
+ "sync"
+ "syscall"
+ "testing"
+ "time"
+ "unicode/utf16"
+ "unsafe"
+)
+
+var user32 = syscall.NewLazyDLL("user32.dll")
+var kernel32 = syscall.NewLazyDLL("kernel32.dll")
+func ptr(s string) *uint16 { return syscall.StringToUTF16Ptr(s) }
+func sameFile(a,b string) bool { return strings.EqualFold(filepath.Clean(a),filepath.Clean(b)) }
+type hostedResult struct {
+ Status string `json:"status"`
+ Stage string `json:"stage"`
+ Second lcResult `json:"second"`
+ FirstIdentity bool `json:"firstIdentity"`
+ NodeIdentity bool `json:"nodeIdentity"`
+ ExclusiveLock bool `json:"exclusiveLock"`
+ NoSecondBackend bool `json:"noSecondBackend"`
+ FirstNaturalExit bool `json:"firstNaturalExit"`
+ FirstExitCode uint32 `json:"firstExitCode"`
+ NodeExited bool `json:"nodeExited"`
+ Quiescence bool `json:"quiescence"`
+ HandlesClosed bool `json:"handlesClosed"`
+ CleanupTerminated bool `json:"cleanupTerminated"`
+ ModalProof string `json:"modalProof"`
+}
+func hostedWait(p lcPinned, budget time.Duration) bool {
+ if p.handle==0 { return false }; r,e:=syscall.WaitForSingleObject(p.handle,uint32(budget/time.Millisecond)); return e==nil&&r==0
+}
+func hostedLock(instance string, occupied bool) bool {
+ h,e:=syscall.CreateFile(ptr(filepath.Join(instance,".launcher.lock")),syscall.GENERIC_READ,0,nil,syscall.OPEN_EXISTING,syscall.FILE_ATTRIBUTE_NORMAL,0)
+ if occupied { if e==nil { _=syscall.CloseHandle(h);return false };return e==syscall.Errno(32)||e==syscall.Errno(33) }
+ return e==nil&&syscall.CloseHandle(h)==nil
+}
+func hostedNodePID(instance string) (uint32,bool) {
+ b,e:=os.ReadFile(filepath.Join(instance,"launcher-logs","launcher.log")); if e!=nil||len(b)>1024*1024{return 0,false}
+ for _,line:=range strings.Split(strings.TrimSuffix(string(b),"\n"),"\n") {
+  var row map[string]json.RawMessage; if json.Unmarshal([]byte(line),&row)!=nil{return 0,false}
+  var event string; if json.Unmarshal(row["event"],&event)!=nil{return 0,false}
+  if event=="READY" {var pid uint32;if json.Unmarshal(row["pid"],&pid)!=nil||pid==0{return 0,false};return pid,true}
+ };return 0,false
+}
+func TestHostedLC01(t *testing.T) {
+ r:=hostedResult{Status:"FAIL",Stage:"ENV",Second:lcResult{Status:"FAIL",Path:"NOT_RUN"},ModalProof:"UNPROVEN"}
+ install,instance,report:=os.Getenv("LC01_INSTALL"),os.Getenv("LC01_INSTANCE"),os.Getenv("LC01_LIFECYCLE_REPORT")
+ var first *lcWindows;var node lcPinned
+ defer func(){
+  if first!=nil {
+   killed,e:=first.Cleanup();r.CleanupTerminated=killed
+   if killed||e!=nil {r.Status="FAIL"}
+   if node.handle!=0 {r.NodeExited=hostedWait(node,3*time.Second);if !r.NodeExited{r.Status="FAIL"};if syscall.CloseHandle(node.handle)!=nil{r.Status="FAIL";r.HandlesClosed=false}}
+   if first.Close()!=nil{r.Status="FAIL";r.HandlesClosed=false}
+  }
+  if t.Failed(){r.Status="FAIL"}
+  b,e:=json.Marshal(r);if e!=nil||os.WriteFile(report,append(b,'\n'),0600)!=nil{t.Error("FIXED_REPORT_FAILED")}
+ }()
+ if os.Getenv("GITHUB_ACTIONS")!="true"||os.Getenv("RUNNER_ENVIRONMENT")!="github-hosted"||
+  install!=`C:\KSESSION-LC01-HOSTED-WORK\installed`||instance!=`C:\KSESSION-LC01-HOSTED-WORK\instance`||report=="" {t.Fatal("HOSTED_REQUIRED")}
+ launcher:=filepath.Join(install,"program","K-SESSION.exe")
+ r.Stage="FIRST"
+ first=&lcWindows{exe:launcher,instance:instance,started:time.Now()}
+ if first.Start()!=nil{t.Fatal("FIRST_START_FAILED")}
+ r.FirstIdentity=first.second.identity()&&first.second.live();if !r.FirstIdentity{t.Fatal("FIRST_IDENTITY_FAILED")}
+ deadline:=time.Now().Add(25*time.Second)
+ for time.Now().Before(deadline){
+  if !first.second.live(){t.Fatal("FIRST_EXITED_EARLY")}
+  pid,ready:=hostedNodePID(instance);if ready {
+   var e error;node,e=lcPin(pid,filepath.Join(install,"program","runtime","node.exe"));if e!=nil{t.Fatal("NODE_PIN_FAILED")};break
+  };time.Sleep(50*time.Millisecond)
+ }
+ r.NodeIdentity=node.handle!=0&&node.identity()&&node.live();if !r.NodeIdentity{t.Fatal("READY_NOT_PROVEN")}
+ ready,spawn,e:=lcReadCounts(instance);if e!=nil||ready!=1||spawn!=1{t.Fatal("INITIAL_EVENTS_FAILED")}
+ r.ExclusiveLock=hostedLock(instance,true);if !r.ExclusiveLock{t.Fatal("LOCK_NOT_EXCLUSIVE")}
+ r.Stage="SECOND"
+ second:=&lcWindows{exe:launcher,instance:instance,started:time.Now(),ready:ready,spawns:spawn}
+ second.first,e=lcPin(first.second.pid,launcher);if e!=nil{_ = second.Close();t.Fatal("FIRST_PIN_FAILED")}
+ second.node,e=lcPin(node.pid,node.image);if e!=nil{_ = second.Close();t.Fatal("NODE_PIN_FAILED")}
+ r.Second=lcRun(second,lcSecondBudget)
+ if r.Second.BusyClosed&&r.Second.Status=="PASS"{r.ModalProof="OBSERVED"}else if r.Second.Path=="DISPATCH_SUCCESS"{r.ModalProof="NOT_EXERCISED"}
+ if r.Second.Status!="PASS"||!r.Second.NaturalExit||r.Second.CleanupTerminated||!r.Second.HandlesClosed{t.Fatal("SECOND_NOT_PROVEN")}
+ endReady,endSpawn,e:=lcReadCounts(instance)
+ r.NoSecondBackend=e==nil&&endReady==ready&&endSpawn==spawn&&first.second.live()&&first.second.identity()&&node.live()&&node.identity()&&hostedLock(instance,true)
+ if !r.NoSecondBackend{t.Fatal("SESSION_CHANGED")}
+ r.Stage="STOP"
+ class:=fmt.Sprintf("KSESSION_%x",sha256.Sum256([]byte(strings.ToLower(instance))))
+ hwnd,_,_:=user32.NewProc("FindWindowW").Call(uintptr(unsafe.Pointer(ptr(class))),0)
+ owner,ok:=lcWindowPID(hwnd);actualClass,classOK:=lcClass(hwnd)
+ if hwnd==0||!ok||owner!=first.second.pid||!classOK||actualClass!=class||!first.second.identity()||!first.second.live(){t.Fatal("STOP_WINDOW_UNPROVEN")}
+ var reply uintptr
+ sent,_,_:=user32.NewProc("SendMessageTimeoutW").Call(hwnd,0x8002,0,0,2,15000,uintptr(unsafe.Pointer(&reply)))
+ if sent==0||reply!=1||!hostedWait(first.second,15*time.Second){t.Fatal("FIRST_STOP_FAILED")}
+ if syscall.GetExitCodeProcess(first.second.handle,&r.FirstExitCode)!=nil||r.FirstExitCode!=0{t.Fatal("FIRST_EXIT_FAILED")}
+ r.FirstNaturalExit=true;r.NodeExited=hostedWait(node,15*time.Second)
+ r.Quiescence=r.NodeExited&&hostedLock(instance,false)
+ if !r.Quiescence{t.Fatal("QUIESCENCE_NOT_PROVEN")}
+ r.HandlesClosed=true;r.Stage="FINALIZE";r.Status="PASS"
+}
