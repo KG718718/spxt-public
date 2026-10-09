@@ -22,6 +22,9 @@ type lcPinned struct {
 	creation uint64
 	image    string
 }
+// Test-only: accepted beta.2 may use ~10s window lookup plus 15s dispatch.
+// All second-launcher checks share this finite budget; no fixed startup sleep.
+const lcSecondBudget = 30 * time.Second
 
 // Exactly two callback trampolines. Repeated polling must not exhaust Go's
 // finite Windows callback registry. Inspect/Confirm serialize this test helper.
@@ -175,7 +178,7 @@ func (w *lcWindows) Guards() error {
 		count := 0
 		for e == nil {
 			count++
-			if count > 4096 || w.Now() >= 20*time.Second {
+			if count > 4096 || w.Now() >= lcSecondBudget {
 				e = syscall.Errno(1460)
 				break
 			}
@@ -241,7 +244,7 @@ func (w *lcWindows) dialog(hwnd uintptr) (lcDialog, error) {
 	children := 0
 	failed := false
 	lcChildVisitor = func(child uintptr) uintptr {
-		if w.Now() >= 20*time.Second {
+		if w.Now() >= lcSecondBudget {
 			failed = true
 			return 0
 		}
@@ -307,7 +310,7 @@ func (w *lcWindows) Inspect() (lcDialog, bool, error) {
 	present := false
 	var failure error
 	lcWindowVisitor = func(hwnd uintptr) uintptr {
-		if w.Now() >= 20*time.Second {
+		if w.Now() >= lcSecondBudget {
 			failure = lcError("WINDOW_TIME_LIMIT")
 			return 0
 		}
@@ -360,13 +363,13 @@ func (w *lcWindows) Inspect() (lcDialog, bool, error) {
 func (w *lcWindows) Confirm(original lcDialog) error {
 	lcScanMutex.Lock()
 	defer lcScanMutex.Unlock()
-	if w.confirmed != 0 || w.Now() >= 20*time.Second || w.Guards() != nil {
+	if w.confirmed != 0 || w.Now() >= lcSecondBudget || w.Guards() != nil {
 		return lcError("CONFIRM_GUARD_FAILED")
 	}
 	// Re-read owner, class, complete title/text and control identity immediately
 	// before the only message. Never send WM_CLOSE or click an unknown dialog.
 	now, err := w.dialog(original.Window)
-	if err != nil || now != original || !lcExactBusy(now) || !w.second.live() || !w.second.identity() || w.Now() >= 20*time.Second {
+	if err != nil || now != original || !lcExactBusy(now) || !w.second.live() || !w.second.identity() || w.Now() >= lcSecondBudget {
 		return lcError("CONFIRM_IDENTITY_CHANGED")
 	}
 	r, _, _ := user32.NewProc("PostMessageW").Call(now.Window, 0x0111, 1, now.Button)
@@ -457,7 +460,7 @@ func checkSecondLauncher(t *testing.T, launcher, instance string, firstPID, node
 		}
 		t.Fatal("second Launcher node identity unavailable")
 	}
-	result := lcRun(w, 20*time.Second)
+	result := lcRun(w, lcSecondBudget)
 	t.Logf("SECOND_LAUNCHER status=%s path=%s busyClosed=%t naturalExit=%t cleanupTerminated=%t handlesClosed=%t", result.Status, result.Path, result.BusyClosed, result.NaturalExit, result.CleanupTerminated, result.HandlesClosed)
 	if result.Status != "PASS" {
 		t.Fatalf("second Launcher gate failed: %s", result.Path)

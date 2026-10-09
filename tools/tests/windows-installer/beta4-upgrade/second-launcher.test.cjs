@@ -39,3 +39,9 @@ test('LC05 finite callback registration is independent of polling duration',()=>
   assert.match(generated,/lcScanMutex\.Lock\(\)\s*defer lcScanMutex\.Unlock\(\)/);
   assert.throws(()=>injectSecondLauncherLockRejection(original.replace('\tport := int(ready["port"].(float64))','')),/expected one harness marker/);
 });
+test('LC06 all second-launcher deadlines share finite 30s in candidate and dedicated proof',()=>{
+  assert.match(generated,/const lcSecondBudget = 30 \* time.Second/);
+  assert.doesNotMatch(generated,/20\s*\*\s*time.Second/);
+  assert.equal((generated.match(/w.Now\(\) >= lcSecondBudget/g)||[]).length,5);
+  assert.match(generated,/lcRun\(w, lcSecondBudget\)/);
+});
