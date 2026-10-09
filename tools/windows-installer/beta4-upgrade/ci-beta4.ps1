@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference='Stop'
 $taskStageReport=[IO.Path]::GetFullPath($StageReport)
 $taskStages=@('PREFLIGHT','PORTABLE','IDENTITY','COMPATIBILITY','FROZEN_REGRESSION','TOOLCHAIN','SETUP_BUILD',
-  'OFFLINE_LIFECYCLE','FIREWALL','ARTIFACT_ASSEMBLY','COMPLETE')
+  'OFFLINE_LIFECYCLE','PRIVATE_SESSION','FIREWALL','ARTIFACT_ASSEMBLY','COMPLETE')
 $script:taskStage='PREFLIGHT'
 function Set-FixedStage([string]$Stage,[string]$Status='RUNNING'){
   if($Stage -notin $taskStages -or $Status -notin @('RUNNING','PASS','FAIL')){throw 'Invalid fixed CI stage'}
@@ -90,6 +90,18 @@ if($FullHosted){
   & (Join-Path $PSScriptRoot 'offline-ci-beta4.ps1') -Work (Join-Path $taskWork 'offline-gate') `
     -Go $taskGo -Node $taskNode -LauncherSource (Join-Path $taskRepo 'tools/windows-launcher')
   if($LASTEXITCODE -ne 0){throw 'Offline beta4 lifecycle failed'}
+  Set-FixedStage 'PRIVATE_SESSION'
+  $taskSessionReport=Join-Path $taskWork 'private-session/production-sessions-beta4.json'
+  $taskSessionEnvironment=Save-KSessionProcessEnvironment @('NODE_PATH','KSESSION_BETA4_SESSION_REPORT','KSESSION_BETA4_SESSION_LOOPBACK')
+  try{
+    $env:NODE_PATH=Join-Path $taskPortable '解包程序 中文 with spaces/K-SESSION/app/node_modules'
+    $env:KSESSION_BETA4_SESSION_REPORT=$taskSessionReport
+    Remove-Item Env:KSESSION_BETA4_SESSION_LOOPBACK -ErrorAction SilentlyContinue
+    & $taskNode --test --test-concurrency=1 (Join-Path $taskRepo 'tools/tests/windows-installer/beta4-upgrade/production-sessions.test.cjs')
+    if($LASTEXITCODE -ne 0){throw 'Beta4 private-session gate failed'}
+    if(!(Test-Path -LiteralPath $taskSessionReport -PathType Leaf)){throw 'Beta4 private-session report missing'}
+  }finally{Restore-KSessionProcessEnvironment $taskSessionEnvironment}
+  Copy-Item -LiteralPath $taskSessionReport -Destination $taskArtifact
   $taskInstalled=Join-Path $env:KSESSION_SETUP_UPGRADE_EVIDENCE 'installed-program/program'
   $taskInstance=Join-Path 'D:\' ('KSESSION-B4-UPGRADE-'+$Commit.Substring(0,12)+'/synthetic-instance')
   $taskFirewallReport=Join-Path $taskWork 'firewall-tests/firewall-hosted-gate.json'

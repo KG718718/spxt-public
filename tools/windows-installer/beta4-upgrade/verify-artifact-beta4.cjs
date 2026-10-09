@@ -1,12 +1,13 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {sha,inventory}=require('../../windows-runtime/common.cjs');
+const {verifySessionReport}=require('./session-report.cjs');
 const {FIREWALL:firewallUnitExpected,LAUNCHER:launcherUnitExpected,INTEGRATION_IDS:integrationExpected}=require('../../tests/lan-host/expected-go-tests.cjs');
 const [root,commit]=process.argv.slice(2);
 const names=['K-SESSION-Setup-1.1.0-beta.4.exe','K-SESSION-Setup-1.1.0-beta.4.exe.sha256','build-info.json',
  'installer-manifest.json','LICENSE-Inno-Setup.txt','license-summary.json','portable-test-report.json',
  'toolchain-verification.json','beta4-compatibility-report.json','ci-test-environment.json','BETA4-INSTALLER-TEST-REPORT.json',
- 'BETA4-UPGRADE-TEST-REPORT.json','offline-network.json','public-regression.json'];
+ 'BETA4-UPGRADE-TEST-REPORT.json','offline-network.json','production-sessions-beta4.json','public-regression.json'];
 names.push('firewall-hosted-gate.json');
 names.push('beta4-ci-stage.json');
 assert.deepEqual(fs.readdirSync(root).sort(),names.sort());
@@ -46,6 +47,7 @@ assert.equal(upgrade.beta4SourceCommit,commit);assert.equal(upgrade.status,'PASS
 const offline=json('offline-network.json');
 assert.equal(offline.sourceCommit,commit);assert.equal(offline.status,'PASS');assert.equal(offline.externalBefore,true);
 assert.equal(offline.externalDuring,false);assert.equal(offline.restored,true);assert.equal(offline.firewallChanged,false);
+verifySessionReport(json('production-sessions-beta4.json'));
 const firewall=json('firewall-hosted-gate.json');
 assert.equal(firewall.status,'PASS');assert.equal(firewall.productionHelperHostedVirtualRejected,true);
 assert.equal(firewall.productRuleCreated,false);assert.equal(firewall.netSecurityPersistentExact,true);

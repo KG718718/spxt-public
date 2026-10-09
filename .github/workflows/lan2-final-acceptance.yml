@@ -1,0 +1,28 @@
+name: LAN2 final acceptance marker
+on:
+  push:
+    branches: [codex/lan2-manual-host-v1.1]
+    paths:
+      - docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FINAL-TRIGGER.md
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: lan2-final-acceptance-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  approved-once:
+    if: >-
+      github.repository == 'KG718718/spxt-public' &&
+      github.ref == 'refs/heads/codex/lan2-manual-host-v1.1' &&
+      github.run_attempt == 1 &&
+      ((contains(github.event.head_commit.message, '[lan2-candidate]') &&
+        !contains(github.event.head_commit.message, '[lan2-final-qa]')) ||
+       (contains(github.event.head_commit.message, '[lan2-final-qa]') &&
+        !contains(github.event.head_commit.message, '[lan2-candidate]')))
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/lan2-beta4-v1.1.yml
+    with:
+      mode: ${{ contains(github.event.head_commit.message, '[lan2-candidate]') && 'full' || 'qa' }}

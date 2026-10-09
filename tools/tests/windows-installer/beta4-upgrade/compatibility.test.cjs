@@ -233,7 +233,8 @@ test('LAN-2 full CI has no legacy production discovery precondition', () => {
   const ci = fs.readFileSync(path.join(repo,'tools/windows-installer/beta4-upgrade/ci-beta4.ps1'),'utf8');
   const verifier = fs.readFileSync(path.join(repo,'tools/windows-installer/beta4-upgrade/verify-artifact-beta4.cjs'),'utf8');
   const workflow = fs.readFileSync(path.join(repo,'.github/workflows/lan2-beta4-v1.1.yml'),'utf8');
-  assert.doesNotMatch(ci + verifier + workflow, /lan-host\/hosted-gate\.cjs|production-sessions\.test\.cjs|PRODUCTION_DISCOVERY_REJECT/);
+  assert.doesNotMatch(ci + verifier + workflow, /lan-host\/hosted-gate\.cjs|lan-host\/production-sessions\.test\.cjs|PRODUCTION_DISCOVERY_REJECT/);
+  assert.match(ci, /beta4-upgrade\/production-sessions\.test\.cjs/);
   assert.doesNotMatch(ci + workflow, /DiagnosticHosted|diagnostic-extension|HOSTED_LAN/);
   assert.match(ci, /offline-ci-beta4\.ps1/);
   assert.match(ci, /firewall-hosted-gate\.ps1/);

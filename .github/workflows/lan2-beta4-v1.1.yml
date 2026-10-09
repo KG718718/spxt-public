@@ -124,6 +124,7 @@ jobs:
             E:/lan-build/installer-tests/BETA4-INSTALLER-TEST-REPORT.json
             E:/lan-build/upgrade-tests/BETA4-UPGRADE-TEST-REPORT.json
             E:/lan-build/offline-gate/offline-network.json
+            E:/lan-build/private-session/production-sessions-beta4.json
             E:/lan-build/firewall-tests/firewall-hosted-gate.json
             E:/lan-build/portable/lan-node-test-environment.json
             E:/lan-build/ci-test-environment.json
