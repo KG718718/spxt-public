@@ -1,5 +1,10 @@
 # K⁺-SESSION｜项目状态
 
+## 当前止损｜2026-10-09 唯一 Launcher 专项 IDENTITY FAIL
+
+GitHub 登录恢复并完成非 force 同步后，唯一 Launcher 专项 Run `37909613607`@`b78012a623155c15a479e5bb79302fabb06ee7af` / Artifact `11605578093` 已 FAIL，run_attempt=1。严格固定报告为 `stage=IDENTITY`、identity=null、lifecycle=null、cleanupVerified=false；未闭合安装后身份与生命周期门禁，不能称第二 Launcher 再次超时或产品缺陷已证。历史 Full #4 根因仍 UNKNOWN。专项预算1/1耗尽，Full Candidate0/1与独立FinalQA0/1未用且冻结；无重跑、无本机安装/解包/VM/网络操作、无 beta.4 最终包。当前 `BLOCKED — LC01 SPECIALTY FAILED / IDENTITY NOT PROVEN`；仅保全失败证据与治理，停止工程/Hosted，等待网页版新决定。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LC01-HOSTED-STOP-20261009.md`。下方认证阻断及待运行记载保留为历史。
+
+
 ## 当前停点｜2026-10-09 GitHub 写入认证阻断
 
 测试与CI已本地Review/整合至受审代码 `ef51b16`，不改生产。相关 Node 整合唯一CRLF误报已修复、专项局部8/8和主控纯Go65/65、编译/语法/差异检查PASS；双会话loopback仅本地反例，不是私网/物理认证。当前 Git/gh凭据失效、连接器写403，远端仍冻结 `5121d819`，尚未推送；新专项/Candidate/QA均0/1、26/742与最终Artifact待运行。状态 `BLOCKED — GITHUB WRITE AUTHENTICATION REQUIRED`；恢复认证后按专项→Candidate→独立QA顺序继续，不追加额度。正式用户基线beta.2单机版和Full #4历史FAIL均不变。见 `docs/tasks/windows-installer-v1.1/batch-lan-2/GITHUB-FIRST-MASTER-REVIEW-20261009.md`。

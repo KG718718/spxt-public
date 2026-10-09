@@ -1,4 +1,9 @@
 ===== CHATGPT HANDOFF BEGIN =====
+
+## 当前止损｜2026-10-09 唯一 Launcher 专项 IDENTITY FAIL
+
+GitHub 登录恢复并完成非 force 同步后，唯一 Launcher 专项 Run `37909613607`@`b78012a623155c15a479e5bb79302fabb06ee7af` / Artifact `11605578093` 已 FAIL，run_attempt=1。严格固定报告为 `stage=IDENTITY`、identity=null、lifecycle=null、cleanupVerified=false；未闭合安装后身份与生命周期门禁，不能称第二 Launcher 再次超时或产品缺陷已证。历史 Full #4 根因仍 UNKNOWN。专项预算1/1耗尽，Full Candidate0/1与独立FinalQA0/1未用且冻结；无重跑、无本机安装/解包/VM/网络操作、无 beta.4 最终包。当前 `BLOCKED — LC01 SPECIALTY FAILED / IDENTITY NOT PROVEN`；仅保全失败证据与治理，停止工程/Hosted，等待网页版新决定。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LC01-HOSTED-STOP-20261009.md`。下方认证阻断及待运行记载保留为历史。
+
 项目：K⁺-SESSION 公开版 Windows 一键安装重构
 当前 Batch：LAN-2 Manual LAN Host / beta.4
 结论：BLOCKED

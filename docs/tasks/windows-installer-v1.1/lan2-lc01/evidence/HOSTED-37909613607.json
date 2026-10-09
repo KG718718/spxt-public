@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "kind": "lc01-hosted",
+  "status": "FAIL",
+  "stage": "IDENTITY",
+  "testedCommit": "b78012a623155c15a479e5bb79302fabb06ee7af",
+  "f3": {
+    "runId": 36246132535,
+    "artifactId": 10907910968,
+    "sourceCommit": "c8886e6b6d413c2fd73d6716621d07a80b337e58",
+    "setupSha256": "877383fe14bf089eb0a4e130641a957062c07ab258d22d59895c46f9b3f671b6"
+  },
+  "identity": null,
+  "lifecycle": null,
+  "cleanupVerified": false,
+  "physicalWin10Certified": false,
+  "dualDeviceLanCertified": false
+}

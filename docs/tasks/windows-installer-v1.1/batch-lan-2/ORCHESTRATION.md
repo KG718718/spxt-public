@@ -1,5 +1,10 @@
 # Batch LAN-2 Orchestration
 
+## 当前止损｜2026-10-09 唯一 Launcher 专项 IDENTITY FAIL
+
+GitHub 登录恢复并完成非 force 同步后，唯一 Launcher 专项 Run `37909613607`@`b78012a623155c15a479e5bb79302fabb06ee7af` / Artifact `11605578093` 已 FAIL，run_attempt=1。严格固定报告为 `stage=IDENTITY`、identity=null、lifecycle=null、cleanupVerified=false；未闭合安装后身份与生命周期门禁，不能称第二 Launcher 再次超时或产品缺陷已证。历史 Full #4 根因仍 UNKNOWN。专项预算1/1耗尽，Full Candidate0/1与独立FinalQA0/1未用且冻结；无重跑、无本机安装/解包/VM/网络操作、无 beta.4 最终包。当前 `BLOCKED — LC01 SPECIALTY FAILED / IDENTITY NOT PROVEN`；仅保全失败证据与治理，停止工程/Hosted，等待网页版新决定。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LC01-HOSTED-STOP-20261009.md`。下方认证阻断及待运行记载保留为历史。
+
+
 ## 2026-10-09 — GitHub 认证恢复，唯一 Launcher 专项 reserve
 
 用户确认设备登录完成，Master 实际核验 KG718718 的 gh/Git 登录可用。已审代码/治理先单独非 force push，随后显式 fetch 核对本地、origin 开发跟踪、GitHub 开发 ref 均为 `0d4078b29f3a388c514d741590ae1abe6b144d17`。原 F3 Artifact 10907910968 再核验 expired=false。现在仅以独立 `[lc01-hosted]` trigger 提交 reserve 专项 1/1；Run/source 在 GitHub 接收后补记。Full Candidate 0/1、Final QA 0/1 均未用且继续冻结，专项任何 FAIL/未闭合即停止，不 retry。原 Execution 与工作树继续保留。下方认证阻断记录属于恢复前历史。
