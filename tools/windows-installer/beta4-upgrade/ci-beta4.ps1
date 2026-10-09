@@ -92,10 +92,12 @@ if($FullHosted){
   if($LASTEXITCODE -ne 0){throw 'Offline beta4 lifecycle failed'}
   Set-FixedStage 'PRIVATE_SESSION'
   $taskSessionReport=Join-Path $taskWork 'private-session/production-sessions-beta4.json'
-  $taskSessionEnvironment=Save-KSessionProcessEnvironment @('NODE_PATH','KSESSION_BETA4_SESSION_REPORT','KSESSION_BETA4_SESSION_LOOPBACK')
+  $taskSessionEnvironment=Save-KSessionProcessEnvironment @('NODE_PATH','KSESSION_BETA4_SESSION_REPORT','KSESSION_BETA4_SESSION_LOOPBACK','KSESSION_BETA4_SOURCE_COMMIT')
   try{
+    if($env:GITHUB_SHA -ne $Commit){throw 'Beta4 private-session source mismatch'}
     $env:NODE_PATH=Join-Path $taskPortable '解包程序 中文 with spaces/K-SESSION/app/node_modules'
     $env:KSESSION_BETA4_SESSION_REPORT=$taskSessionReport
+    $env:KSESSION_BETA4_SOURCE_COMMIT=$Commit
     Remove-Item Env:KSESSION_BETA4_SESSION_LOOPBACK -ErrorAction SilentlyContinue
     & $taskNode --test --test-concurrency=1 (Join-Path $taskRepo 'tools/tests/windows-installer/beta4-upgrade/production-sessions.test.cjs')
     if($LASTEXITCODE -ne 0){throw 'Beta4 private-session gate failed'}

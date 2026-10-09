@@ -4,7 +4,7 @@ const crypto=require('node:crypto');
 const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
-const {spawn}=require('node:child_process');
+const {spawn,execFileSync}=require('node:child_process');
 const test=require('node:test');
 const network=require('../../../../public-lan-network');
 const {fixedSessionReport}=require('../../../windows-installer/beta4-upgrade/session-report.cjs');
@@ -142,7 +142,13 @@ test('beta4 production handler serves independent concurrent sessions on a contr
     const output=process.env.KSESSION_BETA4_SESSION_REPORT;
     assert.ok(output&&path.isAbsolute(output));
     assert.equal(fs.existsSync(output),false);
+    const sourceCommit=String(process.env.KSESSION_BETA4_SOURCE_COMMIT||'');
+    assert.match(sourceCommit,/^[a-f0-9]{40}$/);
+    assert.equal(process.env.GITHUB_SHA,sourceCommit,'runner source identity mismatch');
+    const checkedOut=execFileSync('git',['-C',repo,'rev-parse','HEAD'],
+      {encoding:'utf8',windowsHide:true,timeout:10000}).trim();
+    assert.equal(checkedOut,sourceCommit,'tested checkout identity mismatch');
     fs.mkdirSync(path.dirname(output),{recursive:true});
-    fs.writeFileSync(output,JSON.stringify(fixedSessionReport(),null,2)+'\n',{flag:'wx'});
+    fs.writeFileSync(output,JSON.stringify(fixedSessionReport(sourceCommit),null,2)+'\n',{flag:'wx'});
   }
 });

@@ -8,6 +8,9 @@ const PASS=Object.freeze({schema:1,status:'PASS',productionBusinessHandler:true,
   oneSessionLogoutIsolated:true,basicBusinessOperation:true,realSecondDeviceClaim:false,
   realPhysicalLanClaim:false,browserUiClaim:false});
 
-function fixedSessionReport(){return {...PASS};}
-function verifySessionReport(value){assert.deepEqual(value,PASS);}
+function fixedSessionReport(sourceCommit){
+  assert.match(sourceCommit,/^[a-f0-9]{40}$/);
+  return {...PASS,sourceCommit};
+}
+function verifySessionReport(value,sourceCommit){assert.deepEqual(value,fixedSessionReport(sourceCommit));}
 module.exports={fixedSessionReport,verifySessionReport};

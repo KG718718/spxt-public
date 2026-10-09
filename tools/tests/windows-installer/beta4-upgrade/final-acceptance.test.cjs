@@ -8,15 +8,20 @@ const repo=path.resolve(__dirname,'../../../..');
 const read=file=>fs.readFileSync(path.join(repo,file),'utf8');
 
 test('beta4 private-session report rejects extra identity, token, network and false success fields',()=>{
-  const pass=fixedSessionReport();
-  assert.doesNotThrow(()=>verifySessionReport(pass));
+  const commit='a'.repeat(40),other='b'.repeat(40),pass=fixedSessionReport(commit);
+  assert.doesNotThrow(()=>verifySessionReport(pass,commit));
+  assert.throws(()=>verifySessionReport(pass,other));
+  assert.throws(()=>verifySessionReport({...pass,sourceCommit:other},commit));
+  assert.throws(()=>verifySessionReport({...pass,sourceCommit:'not-a-sha'},commit));
+  assert.throws(()=>verifySessionReport(pass,'not-a-sha'));
+  assert.throws(()=>verifySessionReport({...pass,sourceCommit:undefined},commit));
   for(const field of ['username','token','address','port','body','instancePath','windowText'])
-    assert.throws(()=>verifySessionReport({...pass,[field]:'synthetic'}));
+    assert.throws(()=>verifySessionReport({...pass,[field]:'synthetic'},commit));
   for(const field of ['concurrentRequests','oneSessionLogoutIsolated','roleBoundaryPreserved','loginPageServed'])
-    assert.throws(()=>verifySessionReport({...pass,[field]:false}));
+    assert.throws(()=>verifySessionReport({...pass,[field]:false},commit));
   for(const field of ['realSecondDeviceClaim','realPhysicalLanClaim','browserUiClaim'])
-    assert.throws(()=>verifySessionReport({...pass,[field]:true}));
-  assert.throws(()=>verifySessionReport({...pass,socketClass:'LOOPBACK'}));
+    assert.throws(()=>verifySessionReport({...pass,[field]:true},commit));
+  assert.throws(()=>verifySessionReport({...pass,socketClass:'LOOPBACK'},commit));
 });
 
 test('beta4 CI runs private-session gate after offline restoration and before firewall',()=>{
@@ -27,11 +32,16 @@ test('beta4 CI runs private-session gate after offline restoration and before fi
   assert.ok(offline>=0&&session>offline&&firewall>session);
   assert.match(ci,/production-sessions\.test\.cjs/);
   assert.match(ci,/KSESSION_BETA4_SESSION_REPORT/);
+  assert.match(ci,/KSESSION_BETA4_SOURCE_COMMIT=\$Commit/);
+  assert.match(ci,/\$env:GITHUB_SHA -ne \$Commit/);
   assert.match(ci,/Remove-Item Env:KSESSION_BETA4_SESSION_LOOPBACK/);
   assert.match(ci,/Copy-Item -LiteralPath \$taskSessionReport -Destination \$taskArtifact/);
   const verifier=read('tools/windows-installer/beta4-upgrade/verify-artifact-beta4.cjs');
   assert.match(verifier,/production-sessions-beta4\.json/);
-  assert.match(verifier,/verifySessionReport\(json\('production-sessions-beta4\.json'\)\)/);
+  assert.match(verifier,/verifySessionReport\(json\('production-sessions-beta4\.json'\),commit\)/);
+  const sessions=read('tools/tests/windows-installer/beta4-upgrade/production-sessions.test.cjs');
+  assert.match(sessions,/git'\,\['-C',repo,'rev-parse','HEAD'\]/);
+  assert.match(sessions,/process\.env\.GITHUB_SHA,sourceCommit/);
   const workflow=read('.github/workflows/lan2-beta4-v1.1.yml');
   assert.match(workflow,/E:\/lan-build\/private-session\/production-sessions-beta4\.json/);
   assert.match(workflow,/testTotal -ne 742.*suitePass -ne 26.*fail -ne 0.*skipped -ne 0/);

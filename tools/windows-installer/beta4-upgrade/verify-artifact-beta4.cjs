@@ -47,7 +47,7 @@ assert.equal(upgrade.beta4SourceCommit,commit);assert.equal(upgrade.status,'PASS
 const offline=json('offline-network.json');
 assert.equal(offline.sourceCommit,commit);assert.equal(offline.status,'PASS');assert.equal(offline.externalBefore,true);
 assert.equal(offline.externalDuring,false);assert.equal(offline.restored,true);assert.equal(offline.firewallChanged,false);
-verifySessionReport(json('production-sessions-beta4.json'));
+verifySessionReport(json('production-sessions-beta4.json'),commit);
 const firewall=json('firewall-hosted-gate.json');
 assert.equal(firewall.status,'PASS');assert.equal(firewall.productionHelperHostedVirtualRejected,true);
 assert.equal(firewall.productRuleCreated,false);assert.equal(firewall.netSecurityPersistentExact,true);
