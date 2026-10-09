@@ -214,10 +214,11 @@ test('LCK12 lock probe failure and a missing lock fail closed',async t=>{
   assert.match(generatedUpgrade,/if e := syscall\.CloseHandle\(h\); e != nil \{ t\.Fatal\("lock probe close failed"\) \}/);
 });
 test('LCK03 real second Launcher cannot acquire the same lock or start a second private session',()=>{
-  assert.match(generatedUpgrade,/second := exec\.CommandContext\(secondContext, launcher\)/);
+  assert.match(generatedUpgrade,/secondResult := checkSecondLauncher\(t, launcher, instance, uint32\(app\.Process\.Pid\), pid, readyBeforeSecond, spawnBeforeSecond\)/);
   assert.match(generatedUpgrade,/if !alivePID\(pid\) \|\| !alivePID\(uint32\(app\.Process\.Pid\)\) \{ t\.Fatal\("second Launcher displaced controlled session"\) \}/);
   assert.match(generatedUpgrade,/requireLauncherLockOccupied\(t, instance\)/);
-  assert.match(generatedUpgrade,/if eventCount\(instance, "READY"\) != readyBeforeSecond \{ t\.Fatal\("second Launcher started a private Node session"\) \}/);
+  assert.match(generatedUpgrade,/eventCount\(instance, "READY"\) != readyBeforeSecond \|\| eventCount\(instance, "NODE_SPAWN"\) != spawnBeforeSecond/);
+  assert.match(generatedUpgrade,/!secondResult\.NaturalExit \|\| secondResult\.CleanupTerminated \|\| !secondResult\.HandlesClosed/);
 });
 test('LCK04 U05 same-version rejection rechecks quiescence before comparison',()=>{
   assert.match(generatedUpgrade,/runSetup\(beta2, false\)\n\tpostSameVersionInstance := persistentInventory\(\)\n\tif !equalMaps\(upgradedOwned, owned\(\)\) \|\| !equalMaps\(upgradedInstance, postSameVersionInstance\) \{ t.Fatal\("same-version rejection changed state"\) \}\n\trecord\("U05"/);

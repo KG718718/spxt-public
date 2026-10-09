@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "taskId": "LAN2-LC01",
+  "stage": "STAGE1_LOCAL_ONLY",
+  "date": "2026-10-09",
+  "sourceBaseline": "d07b0bf558f5463c81bff7fa6fe982f761fb06fe",
+  "status": "PASS",
+  "goPure": {
+    "fail": 0,
+    "skipped": 0,
+    "pass": 64,
+    "qualification": "ACTUAL_GO_POLICY_WITH_SIMULATED_BOUNDARIES",
+    "tests": 64
+  },
+  "nodeRegression": {
+    "fail": 0,
+    "skipped": 0,
+    "pass": 77,
+    "tests": 77
+  },
+  "goVersion": "1.27.1",
+  "goArchiveSha256": "a3911b5e0e1b1053f25ed0675f4c1c6aad1e2bfcf253df2b9be4caabd2edd95d",
+  "goPureVet": "PASS",
+  "goOverlayCompile": "PASS",
+  "goOverlayExecuted": false,
+  "windowsAdapterExecuted": false,
+  "syntax": "PASS",
+  "diffCheck": "PASS",
+  "productionChanged": false,
+  "realRunUsed": 0,
+  "realRunLimit": 1,
+  "realRunStatus": "BLOCKED_EXACT_F3_RESOURCES_UNAVAILABLE",
+  "actions": 0,
+  "full": 0,
+  "qa": 0,
+  "historicalRootCause": "UNKNOWN",
+  "sourceFilesSha256": {
+    "tools/research/lan2-lc01/policy.go": "9462e6a174c8248442a8e741cb1e9c4407036137e5686e8bb82d8616810f041a",
+    "tools/tests/windows-installer/beta4-upgrade/lock-lifecycle.test.cjs": "a417652ccdd90390e6503eb50f6a353368c8fd05a88f1c9d33a1147b443492f2",
+    "tools/tests/windows-installer/beta4-upgrade/prepare-hosted-harness.cjs": "a55b039b42e46c6176f42f302957a7ea560a466fd13cd7bf273634b7be100415",
+    "tools/tests/windows-installer/beta4-upgrade/second-launcher.test.cjs": "1e1ada67e8017c1af729e010d4581537773de25d899bff8092b53c10bb8ab8f6",
+    "tools/tests/windows-installer/beta4-upgrade/second-launcher-windows.go.in": "677bc54a8406da1c6b5ba4691a9474a999dccefb5b7bd0e773d6c046bb4a6ec8",
+    "tools/research/lan2-lc01/policy_test.go": "bc50e4b6c9f3e24aa893a88dff7c70a780ae8d22312ffcbe91f7999ea1bd7c30"
+  }
+}

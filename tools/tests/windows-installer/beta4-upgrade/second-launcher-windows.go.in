@@ -1,0 +1,466 @@
+//go:build windows
+
+// Test overlay only. No production build imports this file.
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"syscall"
+	"testing"
+	"time"
+	"unicode/utf16"
+	"unsafe"
+)
+
+type lcPinned struct {
+	handle   syscall.Handle
+	pid      uint32
+	creation uint64
+	image    string
+}
+
+// Exactly two callback trampolines. Repeated polling must not exhaust Go's
+// finite Windows callback registry. Inspect/Confirm serialize this test helper.
+var lcScanMutex sync.Mutex
+var lcWindowVisitor func(uintptr) uintptr
+var lcChildVisitor func(uintptr) uintptr
+var lcWindowCallback = syscall.NewCallback(func(hwnd uintptr, _ uintptr) uintptr { return lcWindowVisitor(hwnd) })
+var lcChildCallback = syscall.NewCallback(func(hwnd uintptr, _ uintptr) uintptr { return lcChildVisitor(hwnd) })
+
+type lcWindows struct {
+	exe, instance       string
+	first, node, second lcPinned
+	thread              syscall.Handle
+	started             time.Time
+	ready, spawns       int
+	confirmed           uintptr
+	closeFailed         bool
+}
+
+func lcError(code string) error { return fmt.Errorf("%s", code) }
+func lcCreation(h syscall.Handle) (uint64, error) {
+	var c, e, k, u syscall.Filetime
+	if err := syscall.GetProcessTimes(h, &c, &e, &k, &u); err != nil {
+		return 0, lcError("PROCESS_TIME_FAILED")
+	}
+	return uint64(c.HighDateTime)<<32 | uint64(c.LowDateTime), nil
+}
+func lcImage(h syscall.Handle) (string, error) {
+	buffer := make([]uint16, 32768)
+	n := uint32(len(buffer))
+	r, _, _ := kernel32.NewProc("QueryFullProcessImageNameW").Call(uintptr(h), 0, uintptr(unsafe.Pointer(&buffer[0])), uintptr(unsafe.Pointer(&n)))
+	if r == 0 || n == 0 || n >= uint32(len(buffer)) {
+		return "", lcError("PROCESS_IMAGE_FAILED")
+	}
+	return syscall.UTF16ToString(buffer[:n]), nil
+}
+func lcPin(pid uint32, image string) (lcPinned, error) {
+	h, err := syscall.OpenProcess(0x100000|0x1000, false, pid)
+	if err != nil {
+		return lcPinned{}, lcError("PROCESS_PIN_FAILED")
+	}
+	p := lcPinned{handle: h, pid: pid, image: image}
+	p.creation, err = lcCreation(h)
+	actual, imageErr := lcImage(h)
+	if err != nil || imageErr != nil || !sameFile(actual, image) || p.creation == 0 {
+		if syscall.CloseHandle(h) != nil {
+			return p, lcError("HANDLE_CLOSE_FAILED")
+		}
+		return lcPinned{}, lcError("PROCESS_PIN_IDENTITY_FAILED")
+	}
+	return p, nil
+}
+func (p lcPinned) live() bool {
+	if p.handle == 0 {
+		return false
+	}
+	r, err := syscall.WaitForSingleObject(p.handle, 0)
+	return err == nil && r == syscall.WAIT_TIMEOUT
+}
+func (p lcPinned) identity() bool {
+	c, err := lcCreation(p.handle)
+	image, imageErr := lcImage(p.handle)
+	return err == nil && imageErr == nil && c != 0 && c == p.creation && sameFile(image, p.image)
+}
+func (w *lcWindows) Now() time.Duration { return time.Since(w.started) }
+func (w *lcWindows) Start() error {
+	// CreateProcess returns the original handle, avoiding OpenProcess-by-PID reuse.
+	app, err := syscall.UTF16PtrFromString(w.exe)
+	if err != nil {
+		return lcError("START_FAILED")
+	}
+	command, err := syscall.UTF16PtrFromString(syscall.EscapeArg(w.exe))
+	if err != nil {
+		return lcError("START_FAILED")
+	}
+	var env []uint16
+	for _, entry := range os.Environ() {
+		if strings.HasPrefix(strings.ToUpper(entry), "PATH=") {
+			continue
+		}
+		if strings.ContainsRune(entry, 0) {
+			return lcError("START_ENV_FAILED")
+		}
+		env = append(env, utf16.Encode([]rune(entry))...)
+		env = append(env, 0)
+	}
+	env = append(env, utf16.Encode([]rune("PATH="+filepath.Join(os.Getenv("SystemRoot"), "System32")))...)
+	env = append(env, 0, 0)
+	si := syscall.StartupInfo{Flags: 1, ShowWindow: 0}
+	si.Cb = uint32(unsafe.Sizeof(si))
+	var pi syscall.ProcessInformation
+	if syscall.CreateProcess(app, command, nil, nil, false, 0x08000000|0x400, &env[0], nil, &si, &pi) != nil {
+		return lcError("START_FAILED")
+	}
+	w.second = lcPinned{handle: pi.Process, pid: pi.ProcessId, image: w.exe}
+	w.thread = pi.Thread
+	if syscall.CloseHandle(w.thread) != nil {
+		w.closeFailed = true
+		return lcError("THREAD_CLOSE_FAILED")
+	}
+	w.thread = 0
+	w.second.creation, err = lcCreation(w.second.handle)
+	if err != nil || !w.second.identity() {
+		return lcError("SECOND_IDENTITY_FAILED")
+	}
+	return nil
+}
+func (w *lcWindows) Guards() error {
+	if !w.first.live() || !w.first.identity() || !w.node.live() || !w.node.identity() {
+		return lcError("CONTROLLED_SESSION_CHANGED")
+	}
+	ready, spawns, logErr := lcReadCounts(w.instance)
+	if logErr != nil {
+		return logErr
+	}
+	if ready != w.ready || spawns != w.spawns {
+		return lcError("SECOND_NODE_EVENT")
+	}
+	h, err := syscall.CreateFile(ptr(filepath.Join(w.instance, ".launcher.lock")), syscall.GENERIC_READ, 0, nil, syscall.OPEN_EXISTING, syscall.FILE_ATTRIBUTE_NORMAL, 0)
+	if err != syscall.Errno(32) && err != syscall.Errno(33) {
+		if err == nil && syscall.CloseHandle(h) != nil {
+			return lcError("LOCK_HANDLE_CLOSE_FAILED")
+		}
+		return lcError("LOCK_NOT_EXCLUSIVE")
+	}
+	if w.second.handle != 0 {
+		state, stateErr := syscall.WaitForSingleObject(w.second.handle, 0)
+		created, createdErr := lcCreation(w.second.handle)
+		if stateErr != nil || createdErr != nil || created != w.second.creation || created == 0 {
+			return lcError("SECOND_IDENTITY_FAILED")
+		}
+		if state == syscall.WAIT_TIMEOUT {
+			if !w.second.identity() {
+				return lcError("SECOND_IDENTITY_FAILED")
+			}
+		} else if state != 0 {
+			return lcError("SECOND_STATE_UNAVAILABLE")
+		}
+		// A valid second Launcher must create no process, including a private Node.
+		// Identity relies on the original handle, creation time and live image checks.
+		// PID ancestry is only a conservative auxiliary check; after exit it cannot
+		// establish permanent PID identity or exclude every short-lived descendant.
+		snapshot, e := syscall.CreateToolhelp32Snapshot(2, 0)
+		if e != nil {
+			return lcError("PROCESS_CHAIN_UNAVAILABLE")
+		}
+		var row syscall.ProcessEntry32
+		row.Size = uint32(unsafe.Sizeof(row))
+		e = syscall.Process32First(snapshot, &row)
+		bad := false
+		count := 0
+		for e == nil {
+			count++
+			if count > 4096 || w.Now() >= 20*time.Second {
+				e = syscall.Errno(1460)
+				break
+			}
+			if row.ParentProcessID == w.second.pid {
+				bad = true
+			}
+			e = syscall.Process32Next(snapshot, &row)
+		}
+		closeErr := syscall.CloseHandle(snapshot)
+		if closeErr != nil {
+			return lcError("SNAPSHOT_CLOSE_FAILED")
+		}
+		if e != syscall.Errno(18) {
+			return lcError("PROCESS_CHAIN_UNAVAILABLE")
+		}
+		if bad {
+			return lcError("SECOND_PROCESS_CHAIN")
+		}
+	}
+	return nil
+}
+
+func lcReadCounts(instance string) (int, int, error) {
+	b, err := os.ReadFile(filepath.Join(instance, "launcher-logs", "launcher.log"))
+	if err != nil {
+		return 0, 0, lcError("EVENT_LOG_UNAVAILABLE")
+	}
+	return lcParseCounts(b)
+}
+
+func lcWindowPID(hwnd uintptr) (uint32, bool) {
+	var pid uint32
+	thread, _, _ := user32.NewProc("GetWindowThreadProcessId").Call(hwnd, uintptr(unsafe.Pointer(&pid)))
+	return pid, thread != 0 && pid != 0
+}
+func lcClass(hwnd uintptr) (string, bool) {
+	var b [128]uint16
+	n, _, _ := user32.NewProc("GetClassNameW").Call(hwnd, uintptr(unsafe.Pointer(&b[0])), uintptr(len(b)))
+	return syscall.UTF16ToString(b[:]), n != 0 && n < uintptr(len(b)-1)
+}
+func lcText(hwnd uintptr) (string, bool) {
+	var b [512]uint16
+	var reply uintptr
+	r, _, _ := user32.NewProc("SendMessageTimeoutW").Call(hwnd, 0x000D, uintptr(len(b)), uintptr(unsafe.Pointer(&b[0])), 2, 50, uintptr(unsafe.Pointer(&reply)))
+	return syscall.UTF16ToString(b[:]), r != 0 && reply < uintptr(len(b)-1)
+}
+func (w *lcWindows) dialog(hwnd uintptr) (lcDialog, error) {
+	d := lcDialog{Window: hwnd, ExpectedPID: w.second.pid, ExpectedCreation: w.second.creation}
+	d.PID, d.ThreadOK = lcWindowPID(hwnd)
+	d.Class, d.ClassOK = lcClass(hwnd)
+	d.Live = w.second.live()
+	d.ImageOK = w.second.identity()
+	d.Creation, _ = lcCreation(w.second.handle)
+	if !d.ThreadOK || d.PID != w.second.pid || !d.ClassOK || !d.Live || !d.ImageOK {
+		return d, lcError("WINDOW_OWNER_FAILED")
+	}
+	var ok bool
+	d.Title, ok = lcText(hwnd)
+	if !ok {
+		return d, lcError("DIALOG_TEXT_UNAVAILABLE")
+	}
+	d.Visible, _, _ = lcBoolWindow("IsWindowVisible", hwnd)
+	children := 0
+	failed := false
+	lcChildVisitor = func(child uintptr) uintptr {
+		if w.Now() >= 20*time.Second {
+			failed = true
+			return 0
+		}
+		children++
+		if children > 32 {
+			failed = true
+			return 0
+		}
+		pid, ownerOK := lcWindowPID(child)
+		class, classOK := lcClass(child)
+		if !ownerOK || pid != w.second.pid || !classOK {
+			failed = true
+			return 0
+		}
+		text, textOK := lcText(child)
+		if !textOK {
+			failed = true
+			return 0
+		}
+		if class == "Static" && text != "" {
+			d.TextCount++
+			d.Text = text
+		}
+		if class == "Button" {
+			d.ButtonCount++
+			d.Button = child
+			d.ButtonClass = class
+			d.ButtonOwnerOK = ownerOK
+			id, _, _ := user32.NewProc("GetDlgCtrlID").Call(child)
+			d.ButtonID = int(int32(id))
+			parent, _, _ := user32.NewProc("GetParent").Call(child)
+			d.ParentOK = parent == hwnd
+			visible, _, _ := lcBoolWindow("IsWindowVisible", child)
+			enabled, _, _ := lcBoolWindow("IsWindowEnabled", child)
+			d.Visible = d.Visible && visible
+			d.Enabled = enabled
+		}
+		return 1
+	}
+	r, _, _ := user32.NewProc("EnumChildWindows").Call(hwnd, lcChildCallback, 0)
+	lcChildVisitor = nil
+	// EnumChildWindows return is not meaningful; callback observations are checked.
+	_ = r
+	if failed || children == 0 {
+		return d, lcError("DIALOG_CONTROLS_UNAVAILABLE")
+	}
+	return d, nil
+}
+func lcBoolWindow(name string, hwnd uintptr) (bool, uintptr, error) {
+	r, _, e := user32.NewProc(name).Call(hwnd)
+	return r != 0, r, e
+}
+func (w *lcWindows) Inspect() (lcDialog, bool, error) {
+	lcScanMutex.Lock()
+	defer lcScanMutex.Unlock()
+	if !w.second.live() {
+		return lcDialog{}, false, nil
+	}
+	if !w.second.identity() {
+		return lcDialog{}, false, lcError("SECOND_IDENTITY_FAILED")
+	}
+	var found lcDialog
+	present := false
+	var failure error
+	lcWindowVisitor = func(hwnd uintptr) uintptr {
+		if w.Now() >= 20*time.Second {
+			failure = lcError("WINDOW_TIME_LIMIT")
+			return 0
+		}
+		pid, ok := lcWindowPID(hwnd)
+		if !ok {
+			return 1
+		}
+		if pid != w.second.pid {
+			return 1
+		}
+		class, classOK := lcClass(hwnd)
+		if !classOK {
+			failure = lcError("WINDOW_CLASS_FAILED")
+			return 0
+		}
+		visible, _, _ := lcBoolWindow("IsWindowVisible", hwnd)
+		if !visible {
+			return 1
+		}
+		if class != "#32770" {
+			failure = lcError("UNEXPECTED_SECOND_WINDOW")
+			return 0
+		}
+		d, err := w.dialog(hwnd)
+		if err != nil {
+			failure = err
+			return 0
+		}
+		if w.confirmed != 0 && hwnd == w.confirmed && lcExactBusy(d) {
+			return 1
+		}
+		if present {
+			failure = lcError("MULTIPLE_SECOND_DIALOGS")
+			return 0
+		}
+		found = d
+		present = true
+		return 1
+	}
+	r, _, _ := user32.NewProc("EnumWindows").Call(lcWindowCallback, 0)
+	lcWindowVisitor = nil
+	if failure != nil {
+		return found, present, failure
+	}
+	if r == 0 {
+		return found, present, lcError("WINDOW_ENUM_FAILED")
+	}
+	return found, present, nil
+}
+func (w *lcWindows) Confirm(original lcDialog) error {
+	lcScanMutex.Lock()
+	defer lcScanMutex.Unlock()
+	if w.confirmed != 0 || w.Now() >= 20*time.Second || w.Guards() != nil {
+		return lcError("CONFIRM_GUARD_FAILED")
+	}
+	// Re-read owner, class, complete title/text and control identity immediately
+	// before the only message. Never send WM_CLOSE or click an unknown dialog.
+	now, err := w.dialog(original.Window)
+	if err != nil || now != original || !lcExactBusy(now) || !w.second.live() || !w.second.identity() || w.Now() >= 20*time.Second {
+		return lcError("CONFIRM_IDENTITY_CHANGED")
+	}
+	r, _, _ := user32.NewProc("PostMessageW").Call(now.Window, 0x0111, 1, now.Button)
+	if r == 0 {
+		return lcError("CONFIRM_POST_FAILED")
+	}
+	w.confirmed = now.Window
+	return nil
+}
+func (w *lcWindows) Wait(d time.Duration) (bool, uint32, error) {
+	ms := uint32(d / time.Millisecond)
+	if ms == 0 {
+		ms = 1
+	}
+	r, err := syscall.WaitForSingleObject(w.second.handle, ms)
+	if err != nil {
+		return false, 0, lcError("WAIT_FAILED")
+	}
+	if r == syscall.WAIT_TIMEOUT {
+		return false, 0, nil
+	}
+	if r != 0 {
+		return false, 0, lcError("WAIT_FAILED")
+	}
+	var code uint32
+	if syscall.GetExitCodeProcess(w.second.handle, &code) != nil {
+		return false, 0, lcError("EXIT_CODE_FAILED")
+	}
+	return true, code, nil
+}
+func (w *lcWindows) Cleanup() (bool, error) {
+	if w.second.handle == 0 {
+		return false, nil
+	}
+	r, err := syscall.WaitForSingleObject(w.second.handle, 0)
+	if err != nil {
+		return false, lcError("CLEANUP_STATE_FAILED")
+	}
+	if r == 0 {
+		return false, nil
+	}
+	if r != syscall.WAIT_TIMEOUT {
+		return false, lcError("CLEANUP_STATE_FAILED")
+	}
+	// Safety only: the exact handle returned by our CreateProcess. Never a PID lookup.
+	if syscall.TerminateProcess(w.second.handle, 97) != nil {
+		return true, lcError("CLEANUP_TERMINATE_FAILED")
+	}
+	r, err = syscall.WaitForSingleObject(w.second.handle, 3000)
+	if err != nil || r != 0 {
+		return true, lcError("CLEANUP_WAIT_FAILED")
+	}
+	return true, nil
+}
+func (w *lcWindows) Close() error {
+	failed := w.closeFailed
+	for _, h := range []syscall.Handle{w.thread, w.second.handle, w.node.handle, w.first.handle} {
+		if h != 0 && syscall.CloseHandle(h) != nil {
+			failed = true
+		}
+	}
+	w.thread = 0
+	w.second.handle = 0
+	w.node.handle = 0
+	w.first.handle = 0
+	if failed {
+		return lcError("HANDLE_CLOSE_FAILED")
+	}
+	return nil
+}
+func checkSecondLauncher(t *testing.T, launcher, instance string, firstPID, nodePID uint32, readyBefore, spawnBefore int) lcResult {
+	t.Helper()
+	w := &lcWindows{exe: launcher, instance: instance, started: time.Now(), ready: readyBefore, spawns: spawnBefore}
+	var err error
+	w.first, err = lcPin(firstPID, launcher)
+	if err != nil {
+		closeErr := w.Close()
+		if closeErr != nil {
+			t.Fatal("second Launcher handle close failed")
+		}
+		t.Fatal("second Launcher first identity unavailable")
+	}
+	w.node, err = lcPin(nodePID, filepath.Join(filepath.Dir(launcher), "runtime", "node.exe"))
+	if err != nil {
+		closeErr := w.Close()
+		if closeErr != nil {
+			t.Fatal("second Launcher handle close failed")
+		}
+		t.Fatal("second Launcher node identity unavailable")
+	}
+	result := lcRun(w, 20*time.Second)
+	t.Logf("SECOND_LAUNCHER status=%s path=%s busyClosed=%t naturalExit=%t cleanupTerminated=%t handlesClosed=%t", result.Status, result.Path, result.BusyClosed, result.NaturalExit, result.CleanupTerminated, result.HandlesClosed)
+	if result.Status != "PASS" {
+		t.Fatalf("second Launcher gate failed: %s", result.Path)
+	}
+	return result
+}

@@ -96,29 +96,33 @@ function injectRejectedSetupQuiescence(upgrade, target, source, oldVersion, newV
 }
 
 function injectSecondLauncherLockRejection(upgrade) {
-  upgrade = replaceOnce(upgrade, '\t"encoding/base64"', '\t"context"\n\t"encoding/base64"');
   const marker = '\tport := int(ready["port"].(float64))';
   const proof = `	readyBeforeSecond := eventCount(instance, "READY")
-	secondContext, cancelSecond := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancelSecond()
-	second := exec.CommandContext(secondContext, launcher)
-	second.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
-	second.Env = append(os.Environ(), "PATH="+filepath.Join(os.Getenv("SystemRoot"), "System32"))
-	_ = second.Run() // an explicit busy result and successful dispatch are both valid
-	if secondContext.Err() != nil { t.Fatal("second Launcher did not exit") }
+	spawnBeforeSecond := eventCount(instance, "NODE_SPAWN")
+	secondResult := checkSecondLauncher(t, launcher, instance, uint32(app.Process.Pid), pid, readyBeforeSecond, spawnBeforeSecond)
+	if secondResult.Status != "PASS" || !secondResult.NaturalExit || secondResult.CleanupTerminated || !secondResult.HandlesClosed { t.Fatal("second Launcher exit not proven") }
 	if !alivePID(pid) || !alivePID(uint32(app.Process.Pid)) { t.Fatal("second Launcher displaced controlled session") }
 	requireLauncherLockOccupied(t, instance)
-	if eventCount(instance, "READY") != readyBeforeSecond { t.Fatal("second Launcher started a private Node session") }`;
+	if eventCount(instance, "READY") != readyBeforeSecond || eventCount(instance, "NODE_SPAWN") != spawnBeforeSecond { t.Fatal("second Launcher started a private Node session") }`;
   upgrade = replaceOnce(upgrade, marker, marker + '\n' + proof);
   return upgrade + `
 func requireLauncherLockOccupied(t *testing.T, instance string) {
 	t.Helper()
 	h, err := syscall.CreateFile(syscall.StringToUTF16Ptr(filepath.Join(instance, ".launcher.lock")), syscall.GENERIC_READ, 0, nil, syscall.OPEN_EXISTING, syscall.FILE_ATTRIBUTE_NORMAL, 0)
 	if err == syscall.Errno(32) || err == syscall.Errno(33) { return }
-	if err == nil { _ = syscall.CloseHandle(h) }
+  if err == nil { if e := syscall.CloseHandle(h); e != nil { t.Fatal("lock probe close failed") } }
 	t.Fatal("running Launcher did not retain exclusive lock")
 }
 `;
+}
+
+function appendSecondLauncherHelpers(upgrade, repo) {
+  const policy = fs.readFileSync(path.join(repo, 'tools/research/lan2-lc01/policy.go'), 'utf8').replaceAll('\r\n', '\n');
+  const windows = fs.readFileSync(path.join(__dirname, 'second-launcher-windows.go.in'), 'utf8').replaceAll('\r\n', '\n');
+  assert.equal(policy.split('const lcBusyText').length, 2);
+  assert.equal(windows.split('type lcPinned').length, 2);
+  upgrade = replaceOnce(upgrade, '\t"time"', '\t"time"\n\t"errors"\n\t"sync"\n\t"unicode/utf16"\n\t"unsafe"');
+  return upgrade + '\n' + policy.slice(policy.indexOf('const lcBusyText')) + '\n' + windows.slice(windows.indexOf('type lcPinned'));
 }
 
 function main(argv) {
@@ -196,6 +200,7 @@ function main(argv) {
   upgrade = injectPersistentInstanceInventory(upgrade);
   upgrade = injectRejectedSetupQuiescence(upgrade, 'targetBeta4', 'sourceBeta2', 'beta.2', 'beta.4');
   upgrade = injectSecondLauncherLockRejection(upgrade);
+  upgrade = appendSecondLauncherHelpers(upgrade, repo);
   assert.match(upgrade, /KSESSION_BETA2_SETUP/);
   assert.match(upgrade, /K-SESSION-Setup-1\.1\.0-beta\.4\.exe/);
   assert.match(upgrade, /state\["upgradeFrom"\] != "1\.1\.0-beta\.2"/);
@@ -213,4 +218,4 @@ function main(argv) {
 }
 
 if (require.main === module) main(process.argv.slice(2));
-module.exports = {injectFirewallIdentity, injectLockRelease, injectPersistentInstanceInventory, injectRejectedSetupQuiescence, injectSecondLauncherLockRejection, transformIntegration, transformPortable};
+module.exports = {injectFirewallIdentity, injectLockRelease, injectPersistentInstanceInventory, injectRejectedSetupQuiescence, injectSecondLauncherLockRejection, appendSecondLauncherHelpers, transformIntegration, transformPortable};
