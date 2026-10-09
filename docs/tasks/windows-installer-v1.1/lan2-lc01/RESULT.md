@@ -50,3 +50,5 @@ Full #4 Run36388264496@2e9294d9a61426dac428f7c8ff8a12d36a4bbbb8 / Artifact109553
 诊断本身无需新产品/安全决定。测试方案须Master审查并另批实施范围和实机资源；生产第二次启动用户交互/退出语义改变须产品决定。锁、同EXE owner验证及数据安全边界不得放宽；LAN-2止损继续，本报告不授权Full。
 
 主动回单目标01a0db0e-c950-79e0-8e11-07155e0742f2；local commit在发送时提供。冻结报告后发送结构化回单，核验返回目标；失败另记DELIVERY FAILED。主控负责Review与最终五项返回。
+
+送达回执：报告local commit e11d9a53ee6256ac29d65bbc6d2ba57a4404658c已主动发送；send_message_to_thread返回threadId精确匹配上述Master，isError=false。状态RETURNED，非REVIEWED/INTEGRATED；本回执另作本地治理提交。
