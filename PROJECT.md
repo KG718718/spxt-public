@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前停点｜2026-10-09 GitHub 写入认证阻断
+
+测试与CI已本地Review/整合至受审代码 `ef51b16`，不改生产。相关 Node 整合唯一CRLF误报已修复、专项局部8/8和主控纯Go65/65、编译/语法/差异检查PASS；双会话loopback仅本地反例，不是私网/物理认证。当前 Git/gh凭据失效、连接器写403，远端仍冻结 `5121d819`，尚未推送；新专项/Candidate/QA均0/1、26/742与最终Artifact待运行。状态 `BLOCKED — GITHUB WRITE AUTHENTICATION REQUIRED`；恢复认证后按专项→Candidate→独立QA顺序继续，不追加额度。正式用户基线beta.2单机版和Full #4历史FAIL均不变。见 `docs/tasks/windows-installer-v1.1/batch-lan-2/GITHUB-FIRST-MASTER-REVIEW-20261009.md`。
+
 ## 当前有限续行｜2026-10-09 GitHub 优先验收
 
 仅测试/CI有界恢复：LC01 修复 `f52f9ca` 已核验整合 `b76ef4e`，主控相关 Node 测试 77/77、fail0skip0，生产 Launcher/身份/事务/rollback 未改。顺序为独立 Launcher 专项 Actions 0/1 → 专项门禁闭合后 Full Candidate 0/1 → Full 完整 PASS 后独立 Final QA 0/1，失败即停且不追加。停止本机 F3 解包、VM/沙盒研究；GitHub Runner 只使用精确受验 F3 beta.2。真实桌面、防火墙授权及双物理设备单列人工待验。历史 Full #1—#4 FAIL 不改写；当前仍无 beta.4 最终包，正式产品仍受验 beta.2 单机轨道、LAN 未认证。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/GITHUB-FIRST-ACCEPTANCE-20261009.md`；下方停止点保持历史。

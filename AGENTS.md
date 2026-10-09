@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前停点｜2026-10-09 测试/CI Review PASS，GitHub 写入认证阻断
+
+新方案仅测试/CI已完成 Master Review，受审代码 HEAD `ef51b16a3c293da624cada8a3e2268b0a2a34c64`。原 LC01 和 LAN2-T3 已回单并冻结；生产 Launcher/Setup/身份/事务/rollback/schema 零改动。主控整合首轮 Node 88/89，唯一 CRLF 静态误报经原 LC01 修正后局部 8/8 PASS；独立 Go 纯策略65/65、专项仅编译、PS/YAML/diff-check PASS，双会话 loopback反例1/1及证据反例3/3 PASS。不是 Hosted PASS，核心26/742和最终 Artifact/QA仍待运行。Git/gh旧凭据失效，GitHub连接写入403；远端/跟踪仍 `5121d8195c1986c83dca9ad0f681463868084f04`，本地未推送，专项/Candidate/Final QA均0/1。当前 `BLOCKED — GITHUB WRITE AUTHENTICATION REQUIRED`，仅待恢复认证后非force同步唯一开发分支，再单独触发专项；不能跳过专项或提前 Full/QA。来源和Review详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/GITHUB-FIRST-MASTER-REVIEW-20261009.md`。历史 Full #4 FAIL/根因UNKNOWN不变，无beta.4最终人工包。
+
 ## 当前有限续行｜2026-10-09 GitHub 优先验收
 
 用户批准新的闭合顺序：原 LC01 长期 Execution Thread 的测试修复 `f52f9ca` 经 Master 核验整合为 `b76ef4e`，先独立 Launcher 专项 Actions 最多 1 次；专项门禁全部闭合后，Full Candidate 最多 1 次；Full 完整通过后独立 Final QA 最多 1 次。当前新预算均 0/1，不追加、不挪用 QA 调试。停止本机 F3 解包、VM/沙盒及本机安装研究；仅复用 GitHub Windows Runner 的原受验 F3 下载、SHA256、隔离安装和身份流程。第二 Launcher 必须自然退出，精确归属的 INSTANCE_BUSY 模态窗允许受控关闭；强制终止不得计 PASS。无法证明的桌面交互、真实防火墙授权或物理第二设备能力单独登记 HUMAN PENDING，不伪称 Hosted 认证。历史 Full #1—#4 FAIL、具体根因 UNKNOWN 和旧预算原样保留；本授权不改变产品 Launcher、升级身份、事务、rollback 或业务 schema。唯一 Master 不变，禁止普通 sub-agent，仅原长期 Execution/QA Thread；不操作内部 SPXT、main/tag/Release/Batch5/OCR。新预算与验收边界见 `docs/tasks/windows-installer-v1.1/batch-lan-2/GITHUB-FIRST-ACCEPTANCE-20261009.md`。下方停止点为本次有限续行前历史，尚无 beta.4 最终人工验收包。

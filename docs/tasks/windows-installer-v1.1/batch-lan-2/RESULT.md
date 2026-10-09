@@ -1,5 +1,9 @@
 # Batch LAN-2 Result
 
+## 2026-10-09 — 新方案准备通过，认证阻断
+
+新授权测试/CI已Review并整合，受审源码 `ef51b16a3c293da624cada8a3e2268b0a2a34c64`；原LC01/T3安全冻结。主控Node首轮88/89，CRLF误报由原LC01修正后专项8/8 PASS；纯Go65/65、compile-only、PS/YAML/diff-check PASS；双会话本地loopback1/1、固定证据反例3/3 PASS。生产/升级信任/事务/rollback/schema未改。Git/gh失效、GitHub连接写403，未推送，远端/跟踪仍 `5121d8195c1986c83dca9ad0f681463868084f04`。新专项/Candidate/FinalQA均0/1；无新Actions Run，核心26/742、最终privacy/QA和beta.4包未到达。当前 `BLOCKED — GITHUB WRITE AUTHENTICATION REQUIRED`，恢复认证后才按新方案依赖继续。下方Full #1—#4失败继续保留历史；具体超时根因UNKNOWN。详见 `GITHUB-FIRST-MASTER-REVIEW-20261009.md`。
+
 当前结论：`BLOCKED — FINAL FULL #4 FAILED / OFFLINE_LIFECYCLE SECOND LAUNCHER TIMEOUT`。唯一新增 Full #4 已失败并耗尽 1/1；QA 0/1 未用且不得用于调试。T1/T2/T3 与原长期 Thread/工作树冻结保留，不申请 Full #5。下方 Full #3 止损及更早历史结果不改写；无 beta.4 最终 Artifact，正式用户基线仍为受验 beta.2 单机轨道，Batch 4.5 仍冻结。
 
 状态：`BLOCKED — FINAL FULL #3 FAILED / OFFLINE_LIFECYCLE LOCK OCCUPIED`。Full #1/#2 历史 FAIL 不改写；网页版批准的原 LAN2-T3 测试专用锁释放门禁已 Master Review、合成 55/55 fail0skip0、生成 Go 测试固定工具链离线编译 PASS，但新增 Final Full #3 同阶段 FAIL。生产身份/事务/rollback 未改，实际持锁进程仍未知，不能宣称唯一根因。新增 Full #3 1/1 已用，QA 原 0/1 未用且不启动。既有局部门禁 Node LAN 44/44、Launcher 固定 Go 28/28 + vet、Firewall build 13/13 + compile PASS 不能代替最终 Full。Batch 4.5 仍冻结。
