@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前有限续行｜2026-10-09 GitHub 优先验收
+
+仅测试/CI有界恢复：LC01 修复 `f52f9ca` 已核验整合 `b76ef4e`，主控相关 Node 测试 77/77、fail0skip0，生产 Launcher/身份/事务/rollback 未改。顺序为独立 Launcher 专项 Actions 0/1 → 专项门禁闭合后 Full Candidate 0/1 → Full 完整 PASS 后独立 Final QA 0/1，失败即停且不追加。停止本机 F3 解包、VM/沙盒研究；GitHub Runner 只使用精确受验 F3 beta.2。真实桌面、防火墙授权及双物理设备单列人工待验。历史 Full #1—#4 FAIL 不改写；当前仍无 beta.4 最终包，正式产品仍受验 beta.2 单机轨道、LAN 未认证。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/GITHUB-FIRST-ACCEPTANCE-20261009.md`；下方停止点保持历史。
+
 ## 当前活动｜2026-09-28 Batch LAN-2
 
 唯一新增 Final Full #4 Run `36388264496`@`2e9294d9a61426dac428f7c8ff8a12d36a4bbbb8` / 失败 Artifact `10955343405` 在 `OFFLINE_LIFECYCLE / TestUpgradeLifecycle` 的第二 Launcher 有界退出门禁失败：U01 PASS 后第二 Launcher 未按测试要求退出，U05/U06、完整升级、核心 26/742、Artifact privacy、QA 未到达。当前 `BLOCKED — FINAL FULL #4 FAILED / OFFLINE_LIFECYCLE SECOND LAUNCHER TIMEOUT`；Full #4 1/1 已用，QA 0/1 未用且不得作为调试。不能从此证明第二 Launcher 已取得锁或唯一根因；Full #1—#3 历史 FAIL 保留。按用户规则冻结 LAN-2，不申请 Full #5、不改生产或测试；仅治理收尾并返回网页版。无 beta.4 最终 Artifact，正式用户基线仍是受验 beta.2 单机轨道。见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL4-STOP-20260928.md`。下方 Full #4 待运行状态现为历史。

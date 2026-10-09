@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前有限续行｜2026-10-09 GitHub 优先验收
+
+用户批准新的闭合顺序：原 LC01 长期 Execution Thread 的测试修复 `f52f9ca` 经 Master 核验整合为 `b76ef4e`，先独立 Launcher 专项 Actions 最多 1 次；专项门禁全部闭合后，Full Candidate 最多 1 次；Full 完整通过后独立 Final QA 最多 1 次。当前新预算均 0/1，不追加、不挪用 QA 调试。停止本机 F3 解包、VM/沙盒及本机安装研究；仅复用 GitHub Windows Runner 的原受验 F3 下载、SHA256、隔离安装和身份流程。第二 Launcher 必须自然退出，精确归属的 INSTANCE_BUSY 模态窗允许受控关闭；强制终止不得计 PASS。无法证明的桌面交互、真实防火墙授权或物理第二设备能力单独登记 HUMAN PENDING，不伪称 Hosted 认证。历史 Full #1—#4 FAIL、具体根因 UNKNOWN 和旧预算原样保留；本授权不改变产品 Launcher、升级身份、事务、rollback 或业务 schema。唯一 Master 不变，禁止普通 sub-agent，仅原长期 Execution/QA Thread；不操作内部 SPXT、main/tag/Release/Batch5/OCR。新预算与验收边界见 `docs/tasks/windows-installer-v1.1/batch-lan-2/GITHUB-FIRST-ACCEPTANCE-20261009.md`。下方停止点为本次有限续行前历史，尚无 beta.4 最终人工验收包。
+
 ## 当前止损｜2026-09-28 LAN-2 Final Full #4 新故障
 
 **BLOCKED — FINAL FULL #4 FAILED / OFFLINE_LIFECYCLE SECOND LAUNCHER TIMEOUT。** 唯一批准的 Full #4 Run `36388264496`@`2e9294d9a61426dac428f7c8ff8a12d36a4bbbb8` / 失败 Artifact `10955343405` 在实际 `TestUpgradeLifecycle` 的运行期第二 Launcher 门禁处失败：U01 PASS 后，第二 Launcher 未在有界时间内退出；U05/U06 及后续业务 inventory 未到达。固定阶段 `OFFLINE_LIFECYCLE FAIL`，升级总报告 FAIL。不能据此宣称第二 Launcher 取得了锁，也不能断言只是测试超时；根因未证。用户要求 Full #4 任意失败即停止，故不申请 Full #5、不派返工、不运行唯一 QA（0/1）。核心 26/742、最终 Artifact privacy、最终 beta.4 Artifact 均未到达；T1/T2/T3/原工作树冻结保留。仅治理收尾并非 force push 唯一开发分支，不操作 main/tag/Release/Batch5/OCR。正式用户基线仍受验 beta.2 单机版，LAN 未发布/未认证。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-FULL4-STOP-20260928.md`；下方有界续行与 Full #3 止损均保留历史。

@@ -1,5 +1,11 @@
 # Batch LAN-2 Orchestration
 
+## 2026-10-09 — GitHub 优先验收有限授权
+
+用户批准先专项、后 Full、最后独立 QA，各最多 1 次，当前均 0/1；失败不得自动追加或挪 QA 调试。唯一 Master `01a0db0e-c950-79e0-8e11-07155e0742f2`、唯一集成 `codex/lan2-manual-host-v1.1`。历史冻结 HEAD `5121d8195c1986c83dca9ad0f681463868084f04` 和 Full #1—#4 FAIL 保留。LC01 `f52f9ca` 仅测试修复整合 `b76ef4e`，相关77/77 fail0skip0、生产安全契约未改。
+
+原 LC01 Thread `01a11f35-5133-7ab0-9101-d9d01a69ccea` 在原隔离工作树准备独立 Launcher 专项 workflow/harness；禁止本地 F3 解包、安装、VM/沙盒、真实业务或网络操作，Execution 不 push、不触发 Actions。Master Review 后才单次运行。原 LAN2-T3 Thread `01a0e644-b6de-74a1-8fc7-ce454eadce57` 当前仅只读核对 Full 客户流程覆盖，原530d工作树保留；未授权恢复生产开发。独立 QA 在专项和 Full 全部通过后安排，不能用于调试。详细预算和判定见 `GITHUB-FIRST-ACCEPTANCE-20261009.md`。
+
 ## 2026-09-28 — 已授权 / 基线核对
 
 唯一 Master `01a0db0e-c950-79e0-8e11-07155e0742f2`；旧 Master 只读。集成 `codex/lan2-manual-host-v1.1` 已从 Batch 4.5 冻结 HEAD `43914744c0b74031fb2d20c849c7500408e0a85a` 建立；Batch 4.5 仍冻结，原 worktree/任务/证据不清理。当前阶段正在独立 Review 可复用的 T1—T5 代码及 beta.4 最小改造。Full 0/2、Final QA 0/1；不把过去 Batch 的 Hosted 次数混入本 Batch。
