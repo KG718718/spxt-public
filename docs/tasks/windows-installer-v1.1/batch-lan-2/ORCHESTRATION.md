@@ -1,5 +1,9 @@
 # Batch LAN-2 Orchestration
 
+## 2026-10-09 — GitHub 认证恢复，唯一 Launcher 专项 reserve
+
+用户确认设备登录完成，Master 实际核验 KG718718 的 gh/Git 登录可用。已审代码/治理先单独非 force push，随后显式 fetch 核对本地、origin 开发跟踪、GitHub 开发 ref 均为 `0d4078b29f3a388c514d741590ae1abe6b144d17`。原 F3 Artifact 10907910968 再核验 expired=false。现在仅以独立 `[lc01-hosted]` trigger 提交 reserve 专项 1/1；Run/source 在 GitHub 接收后补记。Full Candidate 0/1、Final QA 0/1 均未用且继续冻结，专项任何 FAIL/未闭合即停止，不 retry。原 Execution 与工作树继续保留。下方认证阻断记录属于恢复前历史。
+
 ## 2026-10-09 — Master Review 已闭合，等待 GitHub 认证
 
 | 原任务 | Execution local | Master 集成 | 当前 |

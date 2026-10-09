@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "task": "LAN2-LC01",
+  "attempt": 1,
+  "budget": "1/1 RESERVED",
+  "reviewedCodeCommit": "ef51b16a3c293da624cada8a3e2268b0a2a34c64",
+  "synchronizedCommit": "0d4078b29f3a388c514d741590ae1abe6b144d17",
+  "f3RunId": 36246132535,
+  "f3ArtifactId": 10907910968,
+  "fullCandidate": "0/1 FROZEN UNTIL SPECIALTY PASS",
+  "finalQA": "0/1 FROZEN UNTIL FULL PASS"
+}
