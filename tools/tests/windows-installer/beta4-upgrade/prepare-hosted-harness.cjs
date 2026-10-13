@@ -248,9 +248,9 @@ func u27PreInstallDiagnostic(result setupRunResult, source string) map[string]an
 	}
 	success := result.exitStatus == "INNO_EXIT_SUCCESS"
 	if pre { report["preInstallState"] = "PASS" } else { report["preInstallState"] = "UNKNOWN" }
-	if installed || postFailure || (pre && dataReject) { report["copyState"] = "PASS" } else { report["copyState"] = "UNKNOWN" }
-	if installed { report["postInstallVerificationState"] = "PASS" } else if postFailure || (pre && dataReject) { report["postInstallVerificationState"] = "FAILED" } else { report["postInstallVerificationState"] = "UNKNOWN" }
-	ambiguous := preRejects > 1 || (preRejects > 0 && (pre || dataReject || postFailure || installed)) || (dataReject && postFailure) || upgradeMarker || unexpected
+	if installed || postFailure { report["copyState"] = "PASS" } else { report["copyState"] = "UNKNOWN" }
+	if installed { report["postInstallVerificationState"] = "PASS" } else if postFailure { report["postInstallVerificationState"] = "FAILED" } else { report["postInstallVerificationState"] = "UNKNOWN" }
+	ambiguous := preRejects > 1 || (preRejects > 0 && (pre || dataReject || postFailure || installed)) || upgradeMarker || unexpected
 	if success && pre && installed && !ambiguous {
 		report["status"], report["classification"] = "PASS", "SUCCESS"
 		report["preInstallState"], report["copyState"], report["postInstallVerificationState"] = "PASS", "PASS", "PASS"
@@ -260,8 +260,6 @@ func u27PreInstallDiagnostic(result setupRunResult, source string) map[string]an
 		report["classification"] = "LATE_FAILURE_AFTER_VERIFICATION"
 	} else if postFailure {
 		report["classification"] = "POSTINSTALL_FAILED"
-	} else if pre && dataReject {
-		report["classification"] = "POSTINSTALL_DATA_REJECTED"
 	} else if dataReject {
 		report["classification"] = "DATA_REJECTED_PHASE_UNKNOWN"
 	} else if preRejects == 1 && !pre {

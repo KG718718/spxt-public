@@ -58,15 +58,18 @@ test('U27 later nonzero after installed verification preserves positive stages b
   assert.deepEqual([report.status,report.classification,report.preInstallState,report.copyState,report.postInstallVerificationState],
     ['FAIL','LATE_FAILURE_AFTER_VERIFICATION','PASS','PASS','PASS']);
 });
-test('U27 READY plus data rejection is post-install evidence rather than a pre-install guess',()=>{
-  const report=observe({exitCode:4,observedMarkers:['KSESSION_PREINSTALL_READY','KSESSION_DATA_REJECT_']});
-  assert.deepEqual([report.classification,report.preInstallState,report.copyState,report.postInstallVerificationState],
-    ['POSTINSTALL_DATA_REJECTED','PASS','PASS','FAILED']);
-  const phaseUnknown=observe({exitCode:7,observedMarkers:['KSESSION_DATA_REJECT_']});
-  assert.equal(phaseUnknown.classification,'DATA_REJECTED_PHASE_UNKNOWN');
+test('U27 READY plus data rejection cannot prove copy or post-install phase',()=>{
+  for(const exitCode of [7,4]){
+    const report=observe({exitCode,observedMarkers:['KSESSION_PREINSTALL_READY','KSESSION_DATA_REJECT_']});
+    assert.deepEqual([report.classification,report.preInstallState,report.copyState,report.postInstallVerificationState],
+      ['DATA_REJECTED_PHASE_UNKNOWN','PASS','UNKNOWN','UNKNOWN']);
+  }
+  const withoutReady=observe({exitCode:7,observedMarkers:['KSESSION_DATA_REJECT_']});
+  assert.deepEqual([withoutReady.classification,withoutReady.copyState,withoutReady.postInstallVerificationState],
+    ['DATA_REJECTED_PHASE_UNKNOWN','UNKNOWN','UNKNOWN']);
 });
 test('U27 post-install failure is positive copy evidence while overall status remains FAIL',()=>{
-  const report=observe({exitCode:4,observedMarkers:['KSESSION_PREINSTALL_READY','KSESSION_UPGRADE_POSTINSTALL_FAILED']});
+  const report=observe({exitCode:4,observedMarkers:['KSESSION_DATA_REJECT_','KSESSION_PREINSTALL_READY','KSESSION_UPGRADE_POSTINSTALL_FAILED']});
   assert.deepEqual([report.status,report.classification,report.copyState,report.postInstallVerificationState],
     ['FAIL','POSTINSTALL_FAILED','PASS','FAILED']);
 });

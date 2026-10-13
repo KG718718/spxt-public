@@ -94,10 +94,10 @@ function normalizedReport({processState,logState,exitStatus,observedMarkers},sou
       ].includes(marker)&&!definitePreInstallRejections.has(marker));
       const success=exitStatus==='INNO_EXIT_SUCCESS';
       preInstallState=pre?'PASS':'UNKNOWN';
-      copyState=(installed||postFailure||(pre&&dataReject))?'PASS':'UNKNOWN';
-      postInstallVerificationState=installed?'PASS':postFailure||(pre&&dataReject)?'FAILED':'UNKNOWN';
+      copyState=(installed||postFailure)?'PASS':'UNKNOWN';
+      postInstallVerificationState=installed?'PASS':postFailure?'FAILED':'UNKNOWN';
       const ambiguous=(preRejects.length>1)||(preRejects.length>0&&(pre||dataReject||postFailure||installed))||
-        (dataReject&&postFailure)||upgradeMarkers.length>0||unexpected.length>0;
+        upgradeMarkers.length>0||unexpected.length>0;
       if(success&&pre&&installed&&!ambiguous){
         status='PASS';classification='SUCCESS';preInstallState='PASS';copyState='PASS';postInstallVerificationState='PASS';
       }else if(ambiguous){
@@ -106,8 +106,6 @@ function normalizedReport({processState,logState,exitStatus,observedMarkers},sou
         classification='LATE_FAILURE_AFTER_VERIFICATION';
       }else if(postFailure){
         classification='POSTINSTALL_FAILED';
-      }else if(pre&&dataReject){
-        classification='POSTINSTALL_DATA_REJECTED';
       }else if(dataReject){
         classification='DATA_REJECTED_PHASE_UNKNOWN';
       }else if(preRejects.length===1&&!pre){
