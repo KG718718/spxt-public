@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "task": "LC01-ID-R2",
+  "task": "LC01-DIALOG-R2",
   "attempt": 1,
   "budget": "1/1 RESERVED - NO RETRY",
-  "reviewedCodeCommit": "018b108f6143a052a5b76548ffbdc622071a4333",
-  "synchronizedCommit": "49af0829d471c665e14f49377c1ff2a22578b58c",
+  "reviewedCodeCommit": "2da7513ba7c8a96dbb25e27120ca3f292d403dbf",
+  "synchronizedCommit": "f6d08099d498a76f32cea46694e6660ac1f5e4c0",
   "f3RunId": 36246132535,
   "f3ArtifactId": 10907910968,
   "fullCandidate": "0 AUTHORIZED THIS ROUND",
