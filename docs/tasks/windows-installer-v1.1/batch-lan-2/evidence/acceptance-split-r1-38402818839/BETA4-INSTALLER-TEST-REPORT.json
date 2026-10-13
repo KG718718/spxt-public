@@ -1,0 +1,268 @@
+{
+  "checks": {
+    "I01": {
+      "method": "silent installer actually executed; double-click visible wizard remains human",
+      "status": "PENDING"
+    },
+    "I02": {
+      "method": "lowest/asInvoker contract; hosted token not a standard-user human UAC test",
+      "status": "PENDING"
+    },
+    "I03": {
+      "method": "actual silent install without /DIR uses current-user LocalApplicationData/Programs/K-SESSION-Beta; payload and both shortcut targets verified; uninstall retains data",
+      "status": "PASS"
+    },
+    "I04": {
+      "method": "program and uninstall physically separate",
+      "status": "PASS"
+    },
+    "I05": {
+      "method": "actual desktop shortcut target",
+      "status": "PASS"
+    },
+    "I06": {
+      "method": "actual start menu shortcut target",
+      "status": "PASS"
+    },
+    "I07": {
+      "method": "installed real Launcher starts",
+      "status": "PASS"
+    },
+    "I08": {
+      "method": "real process console visibility probe",
+      "status": "PASS"
+    },
+    "I09": {
+      "method": "ShellExecute accepted; visible page requires human",
+      "status": "PENDING"
+    },
+    "I10": {
+      "method": "actual zero-data setup and synthetic Admin login",
+      "status": "PASS"
+    },
+    "I11": {
+      "method": "process image is installed package Node; PATH only Windows",
+      "status": "PASS"
+    },
+    "I12": {
+      "method": "actual install, initial Admin, login, PDF/Chinese PDF, Excel, upload and backup with all hosted-runner external adapters disabled; offline-network.json separately gates restoration and duration",
+      "status": "PASS"
+    },
+    "I13": {
+      "method": "actual Chinese installation path and simulated Chinese LOCALAPPDATA; real Chinese account name not certified",
+      "status": "PASS"
+    },
+    "I14": {
+      "method": "actual spaces installation/start/core/uninstall",
+      "status": "PASS"
+    },
+    "I15": {
+      "method": "static ArchitecturesAllowed=x64os compiler gate; non-x64 hardware not available",
+      "status": "PASS"
+    },
+    "I16": {
+      "method": "every installed file equals frozen payload and Launcher manifest verification",
+      "status": "PASS"
+    },
+    "I17": {
+      "method": "R2 selected empty directory/identity marker only, no data.json or seeded accounts",
+      "status": "PASS"
+    },
+    "I18": {
+      "method": "reinstallation leaves existing instance bytes unchanged",
+      "status": "PASS"
+    },
+    "I19": {
+      "method": "actual second installer refused even at another path",
+      "status": "PASS"
+    },
+    "I20": {
+      "method": "unregistered running Portable blocks new install; running installed instance blocks uninstall; no process killed, unrelated Node preserved",
+      "status": "PASS"
+    },
+    "I21": {
+      "method": "actual Setup refuses nonempty target, marker unchanged",
+      "status": "PASS"
+    },
+    "I22": {
+      "method": "actual Setup under denied-write ACL fails before payload",
+      "status": "PASS"
+    },
+    "I23": {
+      "method": "separately hashed compile-time fault-space fixture; real Inno failure/rollback, no production test switch",
+      "status": "PASS"
+    },
+    "I24": {
+      "method": "separately hashed compile-time fault-cancel fixture; real Inno failure/rollback, no production test switch",
+      "status": "PASS"
+    },
+    "I25": {
+      "method": "installed tampered and missing files refused by unchanged Launcher verifier; exact original bytes restored",
+      "status": "PASS"
+    },
+    "I26": {
+      "method": "actual uninstall removes recorded files only",
+      "status": "PASS"
+    },
+    "I27": {
+      "method": "data.json byte-identical and marker/attachments/backups preserved",
+      "status": "PASS"
+    },
+    "I28": {
+      "method": "both shortcuts gone",
+      "status": "PASS"
+    },
+    "I29": {
+      "method": "HKCU uninstall registration gone",
+      "status": "PASS"
+    },
+    "I30": {
+      "method": "original synthetic Admin login after uninstall/reinstall",
+      "status": "PASS"
+    },
+    "I31": {
+      "method": "synthetic employee/config/attachment data retained",
+      "status": "PASS"
+    },
+    "I32": {
+      "method": "artifact allowlist excludes instances, passwords, raw installer logs and caches",
+      "status": "PASS"
+    }
+  },
+  "dataChecks": {
+    "D01": {
+      "method": "fresh install without INSTANCE selects legacy LOCALAPPDATA default, no business data seeded",
+      "status": "PASS"
+    },
+    "D02": {
+      "method": "actual custom D-drive data directory selected independently of E program",
+      "status": "PASS"
+    },
+    "D03": {
+      "method": "actual Chinese and spaces data directory",
+      "status": "PASS"
+    },
+    "D04": {
+      "method": "actual installer rejects data beneath program installation root",
+      "status": "PASS"
+    },
+    "D05": {
+      "method": "actual installer refuses denied-write data ACL without elevation",
+      "status": "PASS"
+    },
+    "D06": {
+      "method": "actual installer rejects unknown nonempty directory; original file unchanged",
+      "status": "PASS"
+    },
+    "D07": {
+      "method": "actual reinstall accepts existing instance without reinitializing",
+      "status": "PASS"
+    },
+    "D08": {
+      "method": "actual Unicode desktop shortcut arguments select custom instance",
+      "status": "PASS"
+    },
+    "D09": {
+      "method": "actual Unicode start-menu shortcut arguments select custom instance",
+      "status": "PASS"
+    },
+    "D10": {
+      "method": "actual visible Setup Finish Run starts bound custom instance; no default data initialized",
+      "status": "PASS"
+    },
+    "D11": {
+      "method": "direct installed EXE without parameters uses bound custom instance, not default",
+      "status": "PASS"
+    },
+    "D12": {
+      "method": "actual uninstall preserves all selected D instance files byte-for-byte",
+      "status": "PASS"
+    },
+    "D13": {
+      "method": "actual reinstall original synthetic Admin login and data/attachment preservation",
+      "status": "PASS"
+    }
+  },
+  "existingCore": {
+    "checks": [
+      "admin",
+      "login",
+      "english-pdf",
+      "chinese-pdf",
+      "multipage-pdf",
+      "xlsx",
+      "chinese-upload",
+      "structured-backup"
+    ],
+    "mode": "existing",
+    "pdf": {
+      "cases": [
+        {
+          "file": "english.pdf",
+          "pages": 1,
+          "status": "PASS"
+        },
+        {
+          "file": "chinese.pdf",
+          "pages": 1,
+          "status": "PASS"
+        },
+        {
+          "file": "multipage.pdf",
+          "pages": 3,
+          "status": "PASS"
+        }
+      ],
+      "network": [],
+      "status": "PASS",
+      "warnings": [
+        "Warning: Please use the `legacy` build in Node.js environments."
+      ]
+    },
+    "status": "PASS"
+  },
+  "initialCore": {
+    "checks": [
+      "admin",
+      "login",
+      "english-pdf",
+      "chinese-pdf",
+      "multipage-pdf",
+      "xlsx",
+      "chinese-upload",
+      "structured-backup"
+    ],
+    "mode": "initial",
+    "pdf": {
+      "cases": [
+        {
+          "file": "english.pdf",
+          "pages": 1,
+          "status": "PASS"
+        },
+        {
+          "file": "chinese.pdf",
+          "pages": 1,
+          "status": "PASS"
+        },
+        {
+          "file": "multipage.pdf",
+          "pages": 3,
+          "status": "PASS"
+        }
+      ],
+      "network": [],
+      "status": "PASS",
+      "warnings": [
+        "Warning: Please use the `legacy` build in Node.js environments."
+      ]
+    },
+    "status": "PASS"
+  },
+  "instanceDataPreserved": true,
+  "qualification": "Hosted Windows Server; automated installation, NOT Win10 human wizard acceptance",
+  "setupSha256": "4aaf695b70dddca9f62dc21cd43192c56b6a25fa63a9d3c2440de7228e791dbc",
+  "sourceCommit": "27de942346b511c17a651d20e8e766173bc241f0",
+  "status": "AUTOMATED_PASS_HUMAN_PENDING",
+  "unrelatedNodePreserved": true
+}

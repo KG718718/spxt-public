@@ -1,0 +1,116 @@
+{
+  "beta2SourceCommit": "c8886e6b6d413c2fd73d6716621d07a80b337e58",
+  "beta4SourceCommit": "27de942346b511c17a651d20e8e766173bc241f0",
+  "checks": {
+    "U01": {
+      "method": "accepted F3 beta.2 installed with exact registration and binding",
+      "status": "PASS"
+    },
+    "U02": {
+      "method": "real running beta.2 rejected without terminating Launcher or private Node",
+      "status": "PASS"
+    },
+    "U05": {
+      "method": "real same-version Setup rejected",
+      "status": "PASS"
+    },
+    "U06": {
+      "method": "real old beta.2 Setup rejected downgrade over installed beta.4",
+      "status": "PASS"
+    },
+    "U07": {
+      "method": "real binding retained original instance",
+      "status": "PASS"
+    },
+    "U08": {
+      "method": "silent upgrade accepted no data-location decision",
+      "status": "PASS"
+    },
+    "U09": {
+      "method": "lowest per-user Setup completed without elevation",
+      "status": "PASS"
+    },
+    "U10": {
+      "method": "accepted F3 beta.2 upgraded in place to beta.4",
+      "status": "PASS"
+    },
+    "U11": {
+      "method": "beta.4 Setup post-copy payload verification passed",
+      "status": "PASS"
+    },
+    "U12": {
+      "method": "original synthetic Admin login through upgraded program",
+      "status": "PASS"
+    },
+    "U13": {
+      "method": "original synthetic attachment plus download/upload core checks through upgraded program",
+      "status": "PASS"
+    },
+    "U14": {
+      "method": "complete instance inventory byte-identical before first beta.4 launch",
+      "status": "PASS"
+    },
+    "U15": {
+      "method": "real beta.2 corruption rejected before persistent changes",
+      "status": "PASS"
+    },
+    "U16": {
+      "method": "real beta.2 corruption rejected before persistent changes",
+      "status": "PASS"
+    },
+    "U17": {
+      "method": "real beta.2 corruption rejected before persistent changes",
+      "status": "PASS"
+    },
+    "U18": {
+      "method": "real Inno fault fixture restored program, metadata, registration, binding, shortcuts and byte-identical instance",
+      "status": "PASS"
+    },
+    "U19": {
+      "method": "real deny-write ACL rejected upgrade and preserved exact old state",
+      "status": "PASS"
+    },
+    "U20": {
+      "method": "real Inno fault fixture restored program, metadata, registration, binding, shortcuts and byte-identical instance",
+      "status": "PASS"
+    },
+    "U21": {
+      "method": "real Inno fault fixture restored program, metadata, registration, binding, shortcuts and byte-identical instance",
+      "status": "PASS"
+    },
+    "U22": {
+      "method": "target manifest hash mismatch rejected before program rewrite; old owned state and byte-identical instance retained",
+      "status": "PASS"
+    },
+    "U23": {
+      "method": "real Inno fault fixture restored program, metadata, registration, binding, shortcuts and byte-identical instance",
+      "status": "PASS"
+    },
+    "U24": {
+      "method": "both real shortcuts target upgraded Launcher and carry the exact original instance argument",
+      "status": "PASS"
+    },
+    "U25": {
+      "method": "beta.4 HKCU registration and binding are unique after exact 32/64 shared-alias normalization; HKLM is empty",
+      "status": "PASS"
+    },
+    "U26": {
+      "method": "real beta.4 uninstall retained complete instance",
+      "status": "PASS"
+    }
+  },
+  "singleInstanceBaseline": {
+    "doubleLaunchProven": false,
+    "launcherAlive": false,
+    "nodeAlive": false,
+    "nodeSpawnStable": false,
+    "observationCount": 0,
+    "qualification": "AUTOMATED_SINGLE_INSTANCE_BASELINE_ONLY",
+    "readyStable": false,
+    "rootLockExclusive": false,
+    "schema": 1,
+    "secondLauncherStarted": false,
+    "status": "FAIL"
+  },
+  "status": "FAIL"
+}

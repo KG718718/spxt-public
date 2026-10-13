@@ -1,0 +1,12 @@
+{
+  "sourceCommit": "27de942346b511c17a651d20e8e766173bc241f0",
+  "status": "FAIL",
+  "route": "accepted F3 beta2 to beta4",
+  "externalDuring": false,
+  "restored": true,
+  "adapterCount": 4,
+  "offlineStarted": "2026-10-13T13:18:06.9860807Z",
+  "method": "all initially-up hosted-runner adapters disabled; loopback retained",
+  "firewallChanged": false,
+  "externalBefore": true
+}

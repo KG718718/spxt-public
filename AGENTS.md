@@ -1,5 +1,11 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-10-13 LAN2-ACCEPTANCE-SPLIT-R1 Full Candidate FAIL
+
+唯一Run38402818839@27de942346b511c17a651d20e8e766173bc241f0、attempt1/失败Artifact11816921345，固定OFFLINE_LIFECYCLE FAIL。局部Setup29自动PASS+3人工PENDING；Upgrade总FAIL，U01/U02/U05-U26共24项PASS，U03/U04/U27-U30未记录，阻塞区间U26后/U27记录前，具体原因UNKNOWN。单实例摘要未最终化，默认false/0不代表已证进程/锁失败。网络restored=true、Firewall未改变；PRIVATE_SESSION/最终Firewall/26/742/privacy/QA未到达。Full1/1用完、QA0/1未用且冻结，无LC01/额外诊断；任一FAIL STOP，禁止retry/修复/自动申请预算。无成功beta.4安装包，不能交人工验收或称LAN ready。仅保全6份固定JSON、治理非force同步并交网页版；原Thread/worktrees与历史FAIL/UNKNOWN保留。见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-ACCEPTANCE-SPLIT-R1-FULL-RESULT.md。下方运行/Review/授权为历史。
+## 当前Full运行中｜2026-10-13 LAN2-ACCEPTANCE-SPLIT-R1 / IN PROGRESS
+
+唯一Full Candidate Run38402818839@27de942346b511c17a651d20e8e766173bc241f0、attempt1已启动，Full1/1已使用，不retry；独立FinalQA0/1仅Full完整PASS后可用，LC01/额外诊断0。受审代码2150b82/Review同步72ea03f，Git普通连接失败后API逐blob/tree/commit核验相同SHA并仅非force快进开发ref，local/origin/GitHub现27de942一致。结果PENDING，不宣称自动验收已通过；实际GUI/双启动/物理Win10/企业LAN仍HUMAN_PENDING。原Execution冻结，任何Full FAIL即STOP，PASS才独立QA；下方Review待运行和历史状态保留。
 ## 当前Review PASS｜2026-10-13 LAN2-ACCEPTANCE-SPLIT-R1 / FULL PENDING
 
 原LC01正式RETURN的282e9be/7845866/3cc99ff已整合aed3627/88ca759/2150b82。Master独立81/81 fail0skip0、Windows Go overlay仅编译、CJS/PS语法/diff-check PASS，五个测试/验收文件加治理，生产/历史F3身份/安全/事务/rollback/workflow零改。Full移除实际第二Launcher/弹窗交互，保留7次真实first/Node/锁/事件观察及原持久数据/生命周期门禁；新报告AUTOMATION_PASS_HUMAN_PENDING，17人工项和实际LCK03明确HUMAN_PENDING，原静态LCK03合成记录不冒充实机。当前Full Candidate0/1待同步三方HEAD后唯一触发，QA0/1须Full PASS才使用；LC01/额外诊断0，任一FAIL STOP。见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-ACCEPTANCE-SPLIT-R1-MASTER-REVIEW.md；下方派单/旧停止均保留历史。
