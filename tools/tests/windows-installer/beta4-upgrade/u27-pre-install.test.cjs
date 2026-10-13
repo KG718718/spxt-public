@@ -73,6 +73,22 @@ test('U27 post-install failure is positive copy evidence while overall status re
   assert.deepEqual([report.status,report.classification,report.copyState,report.postInstallVerificationState],
     ['FAIL','POSTINSTALL_FAILED','PASS','FAILED']);
 });
+test('U27 exit zero cannot hide contradictory installed and rejection evidence',()=>{
+  const postConflict=observe({observedMarkers:['KSESSION_PREINSTALL_READY','KSESSION_INSTALLED_PAYLOAD_VERIFIED','KSESSION_UPGRADE_POSTINSTALL_FAILED']});
+  assert.deepEqual([postConflict.status,postConflict.classification,postConflict.copyState,postConflict.postInstallVerificationState],
+    ['FAIL','UNKNOWN','PASS','UNKNOWN']);
+  const dataConflict=observe({observedMarkers:['KSESSION_PREINSTALL_READY','KSESSION_INSTALLED_PAYLOAD_VERIFIED','KSESSION_DATA_REJECT_']});
+  assert.deepEqual([dataConflict.status,dataConflict.classification,dataConflict.copyState,dataConflict.postInstallVerificationState],
+    ['FAIL','UNKNOWN','PASS','PASS']);
+  assert.throws(()=>api.verifyU27PreInstallReport(postConflict,source,{requirePass:true}));
+  assert.throws(()=>api.verifyU27PreInstallReport(dataConflict,source,{requirePass:true}));
+});
+test('U27 classifier rejects coercible process and exit input types',()=>{
+  const valid={processStarted:true,exitCode:0,logState:'OBSERVED',observedMarkers:['KSESSION_PREINSTALL_READY','KSESSION_INSTALLED_PAYLOAD_VERIFIED']};
+  assert.throws(()=>api.classifyU27PreInstall({...valid,processStarted:'false'},source));
+  assert.throws(()=>api.classifyU27PreInstall({...valid,exitCode:'0'},source));
+  assert.throws(()=>api.classifyU27PreInstall({...valid,exitCode:0.5},source));
+});
 test('U27 unordered conflicting phase markers remain UNKNOWN',()=>{
   const report=observe({exitCode:7,observedMarkers:['KSESSION_PREINSTALL_READY','KSESSION_REJECT_NONEMPTY']});
   assert.equal(report.classification,'UNKNOWN');assert.equal(report.status,'FAIL');assert.equal(report.preInstallState,'PASS');

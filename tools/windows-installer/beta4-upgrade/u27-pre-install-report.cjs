@@ -95,9 +95,9 @@ function normalizedReport({processState,logState,exitStatus,observedMarkers},sou
       const success=exitStatus==='INNO_EXIT_SUCCESS';
       preInstallState=pre?'PASS':'UNKNOWN';
       copyState=(installed||postFailure)?'PASS':'UNKNOWN';
-      postInstallVerificationState=installed?'PASS':postFailure?'FAILED':'UNKNOWN';
+      postInstallVerificationState=installed&&postFailure?'UNKNOWN':installed?'PASS':postFailure?'FAILED':'UNKNOWN';
       const ambiguous=(preRejects.length>1)||(preRejects.length>0&&(pre||dataReject||postFailure||installed))||
-        upgradeMarkers.length>0||unexpected.length>0;
+        (installed&&(dataReject||postFailure))||upgradeMarkers.length>0||unexpected.length>0;
       if(success&&pre&&installed&&!ambiguous){
         status='PASS';classification='SUCCESS';preInstallState='PASS';copyState='PASS';postInstallVerificationState='PASS';
       }else if(ambiguous){
@@ -122,6 +122,8 @@ function normalizedReport({processState,logState,exitStatus,observedMarkers},sou
 }
 function classifyU27PreInstall(input,sourceCommit){
   assert.deepEqual(Object.keys(input).sort(),['exitCode','logState','observedMarkers','processStarted'].sort());
+  assert.equal(typeof input.processStarted,'boolean');
+  assert.ok(Number.isInteger(input.exitCode));
   const processState=input.processStarted?'STARTED':'START_FAILED';
   return normalizedReport({processState,logState:input.logState,exitStatus:safeInnoExitStatus(input.exitCode,input.processStarted),
     observedMarkers:markers([...input.observedMarkers].sort())},sourceCommit);
