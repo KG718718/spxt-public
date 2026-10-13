@@ -74,6 +74,8 @@ test('final verification proves restoration but never converts UNKNOWN into PASS
     const driver=report.driverFailure(top('SETUP_SUCCEEDED_CLONE_UNKNOWN',{status:'UNKNOWN',stage:'COMPLETE',u27PreInstall:observed()}),source,classification);
     assert.equal(driver.status,'FAIL');assert.equal(driver.classification,classification);assert.doesNotThrow(()=>report.validateFinal(driver,source));
   }
+  const nestedFailure=report.driverFailure(top('U27_NON_SUCCESS',{u27PreInstall:observed({exitCode:7,observedMarkers:['KSESSION_REJECT_NONEMPTY']})}),source,'EXECUTION_FAILURE');
+  assert.equal(nestedFailure.u27PreInstall.classification,'PREINSTALL_REJECTED');
   const ci=fs.readFileSync(path.join(repo,'tools/windows-installer/beta4-upgrade/u27-specialty-ci.ps1'),'utf8');
   assert.match(ci,/status -cne 'UNKNOWN'[\s\S]*classification -cne 'SETUP_SUCCEEDED_CLONE_UNKNOWN'[\s\S]*U27_SPECIALTY_OUTCOME_UNKNOWN/);
   assert.match(ci,/KSESSION_SETUP_ARTIFACT=\(Join-Path/);assert.match(ci,/KSESSION_SETUP_EVIDENCE=\(Join-Path/);
