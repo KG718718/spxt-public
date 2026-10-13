@@ -1,5 +1,8 @@
 # K⁺-SESSION｜项目状态
 
+## 当前有限授权｜2026-10-13 LAN2-U27-R1 / LOCAL DIAGNOSTIC DISPATCHED
+
+用户/网页版既有日志已核实Run38402818839在U26后runSetup(targetBeta4,true)报setup candidate success=false want=true，U27未记录，persistent inventory重新比较尚未执行。原LC01长期Thread/原工作树仅核查fresh Setup前提并修测试固定U27_PRE_INSTALL退出/白名单marker/阶段诊断及本地反例；生产、版本、卸载/信任/数据安全零改。Master基线1c6015a，原local3cc99ff。Actions/Hosted0、Full0、QA0，不实际安装；本地fail0skip0和Go overlay仅编译、独立Review后保全提交与建议即STOP交网页版。前次Full及LC01 FAIL不改，具体拒绝原因仍UNKNOWN，不再泛称instance比较失败。详见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-U27-R1-AUTHORIZATION.md。
 ## 当前止损｜2026-10-13 LAN2-ACCEPTANCE-SPLIT-R1 Full Candidate FAIL
 
 唯一Run38402818839@27de942346b511c17a651d20e8e766173bc241f0、attempt1/失败Artifact11816921345，固定OFFLINE_LIFECYCLE FAIL。局部Setup29自动PASS+3人工PENDING；Upgrade总FAIL，U01/U02/U05-U26共24项PASS，U03/U04/U27-U30未记录，阻塞区间U26后/U27记录前，具体原因UNKNOWN。单实例摘要未最终化，默认false/0不代表已证进程/锁失败。网络restored=true、Firewall未改变；PRIVATE_SESSION/最终Firewall/26/742/privacy/QA未到达。Full1/1用完、QA0/1未用且冻结，无LC01/额外诊断；任一FAIL STOP，禁止retry/修复/自动申请预算。无成功beta.4安装包，不能交人工验收或称LAN ready。仅保全6份固定JSON、治理非force同步并交网页版；原Thread/worktrees与历史FAIL/UNKNOWN保留。见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-ACCEPTANCE-SPLIT-R1-FULL-RESULT.md。下方运行/Review/授权为历史。
