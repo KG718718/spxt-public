@@ -1,0 +1,84 @@
+name: LAN2 U27 historical-prefix specialty
+on:
+  push:
+    branches: [codex/lan2-manual-host-v1.1]
+    paths:
+      - 'docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-U27-R2-HOSTED-TRIGGER.json'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: lan2-u27-specialty-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  u27-specialty:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan2-manual-host-v1.1' && github.run_attempt == 1 && contains(github.event.head_commit.message, '[lan2-u27-r2]') && !contains(github.event.head_commit.message, '[lan2-candidate]') && !contains(github.event.head_commit.message, '[lan2-final-qa]') && !contains(github.event.head_commit.message, '[lc01-hosted]')
+    runs-on: windows-2025
+    timeout-minutes: 120
+    steps:
+      - name: Exact checkout byte policy
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.21.0'
+      - name: Isolate exact source and initialize fixed evidence
+        shell: pwsh
+        run: |
+          $private=Join-Path $env:RUNNER_TEMP 'u27-source-private.log'
+          try {
+            if (!(Test-Path E:/)) { $root=Join-Path $env:RUNNER_TEMP 'ksession-u27-e';New-Item -ItemType Directory -Path $root | Out-Null;subst E: $root;if($LASTEXITCODE -ne 0){throw 'E_DRIVE_FAILED'} }
+            git clone --no-hardlinks --no-checkout . E:/u27-source *> $private
+            if($LASTEXITCODE -ne 0){throw 'SOURCE_CLONE_FAILED'}
+            git -C E:/u27-source -c core.autocrlf=false checkout --detach '${{ github.sha }}' *>> $private
+            if($LASTEXITCODE -ne 0 -or (git -C E:/u27-source rev-parse HEAD) -ne '${{ github.sha }}'){throw 'SOURCE_CHECKOUT_FAILED'}
+            $trigger=Get-Content -Raw -LiteralPath E:/u27-source/docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-U27-R2-HOSTED-TRIGGER.json|ConvertFrom-Json
+            if($trigger.schema -ne 1 -or $trigger.authorization -cne 'LAN2-U27-R2-ONE-SHOT' -or @($trigger.psobject.Properties).Count -ne 2){throw 'TRIGGER_CONTRACT_FAILED'}
+            $out=Join-Path $env:RUNNER_TEMP 'u27-specialty-evidence';New-Item -ItemType Directory -Path $out -Force | Out-Null
+            & node E:/u27-source/tools/windows-installer/beta4-upgrade/u27-specialty-report.cjs init (Join-Path $out 'U27-SPECIALTY-REPORT.json') '${{ github.sha }}' *> $private
+            if($LASTEXITCODE -ne 0){throw 'REPORT_INIT_FAILED'}
+          } catch { throw 'U27_SPECIALTY_SOURCE_GATE_FAILED' }
+      - name: Verify exact accepted F3 metadata and Setup
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $report=Join-Path $env:RUNNER_TEMP 'u27-specialty-evidence/U27-SPECIALTY-REPORT.json';$cli='E:/u27-source/tools/windows-installer/beta4-upgrade/u27-specialty-report.cjs'
+          try {
+            $headers=@{Authorization="Bearer $env:GH_TOKEN";Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28'}
+            $artifact=Invoke-RestMethod -Uri 'https://api.github.com/repos/KG718718/spxt-public/actions/artifacts/10907910968' -Headers $headers -TimeoutSec 60
+            $run=Invoke-RestMethod -Uri 'https://api.github.com/repos/KG718718/spxt-public/actions/runs/36246132535' -Headers $headers -TimeoutSec 60
+            if([Int64]$artifact.id -ne 10907910968 -or [bool]$artifact.expired -or [Int64]$artifact.workflow_run.id -ne 36246132535 -or [string]$artifact.workflow_run.head_sha -cne 'c8886e6b6d413c2fd73d6716621d07a80b337e58' -or [Int64]$run.id -ne 36246132535 -or [string]$run.head_sha -cne 'c8886e6b6d413c2fd73d6716621d07a80b337e58' -or [string]$run.repository.full_name -cne 'KG718718/spxt-public'){throw 'F3_METADATA_FAILED'}
+            Invoke-WebRequest -Uri 'https://api.github.com/repos/KG718718/spxt-public/actions/artifacts/10907910968/zip' -Headers $headers -OutFile E:/accepted-f3.zip -TimeoutSec 240
+            if((Get-Item E:/accepted-f3.zip).Length -ne 32538249 -or (Get-FileHash E:/accepted-f3.zip -Algorithm SHA256).Hash.ToLower() -ne 'e6b01fe7c4499526eb99a837892a0c0641ad2232c84981b191b2ac6f7c18f3c6'){throw 'F3_ARCHIVE_FAILED'}
+            Expand-Archive -LiteralPath E:/accepted-f3.zip -DestinationPath E:/accepted-f3
+            $setup=@(Get-ChildItem -LiteralPath E:/accepted-f3 -Recurse -File|Where-Object Name -eq 'K-SESSION-Setup-1.1.0-beta.2.exe')
+            if($setup.Count -ne 1 -or $setup[0].Length -ne 33018840 -or (Get-FileHash $setup[0].FullName -Algorithm SHA256).Hash.ToLower() -ne '877383fe14bf089eb0a4e130641a957062c07ab258d22d59895c46f9b3f671b6'){throw 'F3_SETUP_FAILED'}
+            "KSESSION_U27_F3=$($setup[0].FullName)"|Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          } catch { & node $cli prefix-failed $report '${{ github.sha }}' ENVIRONMENT_FAILED *> $null;throw 'U27_SPECIALTY_F3_GATE_FAILED' }
+      - name: Build seven beta4 fixtures and run historical prefix through U27
+        shell: pwsh
+        run: |
+          Set-Location E:/u27-source
+          & ./tools/windows-installer/beta4-upgrade/u27-specialty-ci.ps1 -Work E:/u27-specialty-build -Commit '${{ github.sha }}' -Report (Join-Path $env:RUNNER_TEMP 'u27-specialty-evidence/U27-SPECIALTY-REPORT.json') -Beta2Setup $env:KSESSION_U27_F3 *> (Join-Path $env:RUNNER_TEMP 'u27-specialty-driver-private.log')
+          if($LASTEXITCODE -ne 0){throw 'U27_SPECIALTY_OUTCOME_NOT_PASS'}
+      - name: Verify fixed U27 evidence
+        id: verify
+        if: always()
+        shell: pwsh
+        run: |
+          $file=Join-Path $env:RUNNER_TEMP 'u27-specialty-evidence/U27-SPECIALTY-REPORT.json'
+          & node E:/u27-source/tools/windows-installer/beta4-upgrade/u27-specialty-report.cjs verify-final $file '${{ github.sha }}' *> (Join-Path $env:RUNNER_TEMP 'u27-specialty-verify-private.log')
+          if($LASTEXITCODE -ne 0){throw 'UNSAFE_U27_REPORT_REFUSED'}
+          'safe=true'|Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always() && steps.verify.outputs.safe == 'true'
+        with:
+          name: lan2-u27-specialty-${{ github.sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/u27-specialty-evidence/U27-SPECIALTY-REPORT.json
+          if-no-files-found: error
+          retention-days: 30

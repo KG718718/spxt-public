@@ -50,11 +50,20 @@ test('upload is exactly one validated JSON, push requires trigger path/marker an
  assert.throws(()=>checkApprovedOtherPush('lan2-final-acceptance.yml',crlf.replace('batch-lan-2/LAN2-FINAL-TRIGGER.md','lan2-lc01/HOSTED-TRIGGER.json')));
  assert.throws(()=>checkApprovedOtherPush('unknown.yml',fixture));
  assert.throws(()=>checkApprovedOtherPush('lan2-final-acceptance.yml',fixture.replace('batch-lan-2/LAN2-FINAL-TRIGGER.md','lan2-lc01/HOSTED-TRIGGER.json')));
+ const u27=fs.readFileSync(path.join(repo,'.github/workflows/lan2-u27-specialty.yml'),'utf8');
+ checkApprovedOtherPush('lan2-u27-specialty.yml',u27);
+ assert.throws(()=>checkApprovedOtherPush('lan2-u27-specialty.yml',u27.replace('[lan2-u27-r2]','[unknown-u27]')));
+ assert.throws(()=>checkApprovedOtherPush('lan2-u27-specialty.yml',u27.replace('LAN2-U27-R2-HOSTED-TRIGGER.json','LAN2-FINAL-TRIGGER.md')));
 });
 function checkApprovedOtherPush(name,text){
  text=text.replaceAll('\r\n','\n');
- assert.equal(name,'lan2-final-acceptance.yml');
  const push=text.match(/\n  push:\n([\s\S]*?)\npermissions:/)?.[1];assert.ok(push);
+ if(name==='lan2-u27-specialty.yml'){
+  assert.match(push,/^    branches: \[codex\/lan2-manual-host-v1\.1\]\n    paths:\n      - ['"]?docs\/tasks\/windows-installer-v1\.1\/batch-lan-2\/LAN2-U27-R2-HOSTED-TRIGGER\.json['"]?\s*$/);
+  for(const marker of ["contains(github.event.head_commit.message, '[lan2-u27-r2]')","!contains(github.event.head_commit.message, '[lan2-candidate]')","!contains(github.event.head_commit.message, '[lan2-final-qa]')","!contains(github.event.head_commit.message, '[lc01-hosted]')",'github.run_attempt == 1'])assert.ok(text.includes(marker));
+  assert.equal(text.includes('uses: ./.github/workflows/lan2-beta4-v1.1.yml'),false);return;
+ }
+ assert.equal(name,'lan2-final-acceptance.yml');
  assert.match(push,/^    branches: \[codex\/lan2-manual-host-v1.1\]\r?\n    paths:\r?\n      - ['"]?docs\/tasks\/windows-installer-v1.1\/batch-lan-2\/LAN2-FINAL-TRIGGER.md['"]?\s*$/);
  assert.equal(text.includes('[lc01-hosted]'),false);
  for(const marker of ['[lan2-candidate]','[lan2-final-qa]'])assert.ok(text.includes("contains(github.event.head_commit.message, '"+marker+"')"));
