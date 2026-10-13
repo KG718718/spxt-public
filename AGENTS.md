@@ -1,5 +1,10 @@
 # K⁺-SESSION 协作边界
 
+## 当前条件准备｜2026-10-13 LAN2-U27-R2
+
+用户仅批准原LC01 Thread/原worktree先证明历史U26终态等价，实施独立U27测试入口/固定只读prestate与13字段诊断及本地反例；生产/Setup成功条件/F3信任/事务/rollback不改。Master基线db4ee2c，GitHub同SHA，受验F3仍有效。现有diagnostic删减链不能直接复用，删任何历史前缀须有状态不变量证明，无法证明立即STOP。等价性/隔离/安全失败报告/本地fail0skip0/独立Review全PASS才允许U27-R2 Hosted最多1次，目前0/1，Full0/QA0/LC010，不触发旧Full/QA。任何专项结果STOP交网页；LAN2及全部历史FAIL继续冻结，禁sub-agent/内部SPXT/main/tag/Release/清理。详见LAN2-U27-R2-AUTHORIZATION.md。
+
+
 ## 当前本地任务完成｜2026-10-13 LAN2-U27-R1 / REVIEW PASS / STOP
 
 原LC01完成固定U27_PRE_INSTALL测试诊断，Master独立92/92、历史26/26 fail0skip0、Go/CJS纯helper14组等价及Windows overlay仅编译PASS。受审集成78813a3；仅7个测试/报告/接线文件加治理，生产/卸载/版本/F3信任/安全/事务/rollback/schema/workflow零改。原Setup成功谓词保留；缺日志、拒绝、异常退出或矛盾/未知证据不转PASS，新报告不包含raw日志/路径/PID/业务/hash长度。原Thread超范围删除14旧F3文件已按原blob/mode恢复并独立核验，删除/restore未整合主线。历史Run38402818839已由用户日志收窄为U26后fresh Setup结果失败，inventory未执行；真实exit/拒绝marker未保存，根因/生产修复需求仍UNKNOWN。Actions/Hosted/Full/QA本轮全0，停止交网页版，仅建议另行批准一次同等U27状态专项，不执行。见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-U27-R1-MASTER-REVIEW.md。旧FAIL和冻结保留。
