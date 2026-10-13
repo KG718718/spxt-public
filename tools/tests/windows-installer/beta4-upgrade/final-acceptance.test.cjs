@@ -82,6 +82,7 @@ test('beta4 CI runs private-session gate after offline restoration and before fi
   assert.match(verifier,/verifyAcceptanceReport\(json\(acceptanceName\),commit\)/);
   assert.match(verifier,/compatibility\.locks.*id!=='LCK03'/s);
   assert.match(verifier,/verifyHistoricalLCK03SyntheticGate\(compatibility\.locks\.LCK03\)/);
+  assert.match(verifier,/verifyU27PreInstallReport\(upgrade\.u27PreInstall,commit,\{requirePass:true\}\)/);
   const acceptanceSource=read('tools/windows-installer/beta4-upgrade/acceptance-report.cjs');
   assert.match(acceptanceSource,/AUTOMATION_PASS_HUMAN_PENDING/);
   assert.match(acceptanceSource,/actualSecondLauncherStart.*HUMAN_PENDING/s);

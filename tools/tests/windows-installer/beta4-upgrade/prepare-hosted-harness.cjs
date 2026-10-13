@@ -144,6 +144,151 @@ func requireLauncherLockOccupied(t *testing.T, instance string) {
 `;
 }
 
+function injectU27PreInstallDiagnostic(upgrade) {
+  upgrade = replaceOnce(upgrade, `type setupRunResult struct {
+	logText             string
+	exitCode            int
+	exitStatus          string
+	elapsedMilliseconds int64
+}`, `type setupRunResult struct {
+	logText             string
+	logState            string
+	processStarted      bool
+	exitCode            int
+	exitStatus          string
+	elapsedMilliseconds int64
+}`);
+  upgrade = replaceOnce(upgrade, `		_ = c.Run()
+		elapsed := time.Since(startedAt).Milliseconds()
+		exitCode, processStarted := -1, c.ProcessState != nil
+		if processStarted {
+			exitCode = c.ProcessState.ExitCode()
+		}
+		text := decodeInstallerLog(mustRead(t, log))
+		return setupRunResult{logText: text, exitCode: exitCode, exitStatus: safeInnoExitStatus(exitCode, processStarted), elapsedMilliseconds: elapsed}`, `		_ = c.Run()
+		elapsed := time.Since(startedAt).Milliseconds()
+		exitCode, processStarted := -1, c.ProcessState != nil
+		if processStarted {
+			exitCode = c.ProcessState.ExitCode()
+		}
+		text, logState := "", "OBSERVED"
+		logBytes, logErr := os.ReadFile(log)
+		if logErr != nil {
+			if os.IsNotExist(logErr) { logState = "MISSING" } else { logState = "READ_FAILED" }
+		} else {
+			text = decodeInstallerLog(logBytes)
+		}
+		return setupRunResult{logText: text, logState: logState, processStarted: processStarted, exitCode: exitCode,
+			exitStatus: safeInnoExitStatus(exitCode, processStarted), elapsedMilliseconds: elapsed}`);
+  upgrade = replaceOnce(upgrade, `		result := runSetupRaw(binary)
+		if (result.exitCode == 0) != want {`, `		result := runSetupRaw(binary)
+		if result.logState != "OBSERVED" {
+			t.Fatalf("setup diagnostic unavailable processStarted=%t logState=%s exitStatus=%s", result.processStarted, result.logState, result.exitStatus)
+		}
+		if (result.exitCode == 0) != want {`);
+  const reportLine = '\treport := map[string]any{"status": "RUNNING", "checks": checks, "beta2SourceCommit": "c8886e6b6d413c2fd73d6716621d07a80b337e58", "beta4SourceCommit": os.Getenv("GITHUB_SHA")}';
+  upgrade = replaceOnce(upgrade, reportLine, reportLine + '\n' +
+    '\tu27PreInstall := u27NotObserved(os.Getenv("GITHUB_SHA"))\n\treport["u27PreInstall"] = u27PreInstall');
+  upgrade = replaceOnce(upgrade, '\trecord("U26", "real beta.4 uninstall retained complete instance")\n\trunSetup(targetBeta4, true)',
+    `\trecord("U26", "real beta.4 uninstall retained complete instance")
+	u27Result := runSetupRaw(targetBeta4)
+	u27PreInstall = u27PreInstallDiagnostic(u27Result, os.Getenv("GITHUB_SHA"))
+	report["u27PreInstall"] = u27PreInstall
+	if u27Result.logState != "OBSERVED" {
+		t.Fatalf("U27_PRE_INSTALL diagnostic unavailable processStarted=%t logState=%s exitStatus=%s", u27Result.processStarted, u27Result.logState, u27Result.exitStatus)
+	}
+	if (u27Result.exitCode == 0) != true {
+		t.Fatalf("setup targetBeta4 success=%v want=true; U27_PRE_INSTALL classification=%s exitStatus=%s markerState=%s",
+			u27Result.exitCode == 0, u27PreInstall["classification"], u27PreInstall["exitStatus"], u27PreInstall["markerState"])
+	}
+	if u27PreInstall["status"] != "PASS" {
+		t.Fatalf("U27_PRE_INSTALL failed classification=%s processState=%s logState=%s exitStatus=%s markerState=%s",
+			u27PreInstall["classification"], u27PreInstall["processState"], u27PreInstall["logState"],
+			u27PreInstall["exitStatus"], u27PreInstall["markerState"])
+	}`);
+  return upgrade + `
+func u27NotObserved(source string) map[string]any {
+	return map[string]any{"schema": 1, "phase": "U27_PRE_INSTALL", "status": "FAIL", "classification": "NOT_OBSERVED",
+		"sourceCommit": source, "processState": "NOT_OBSERVED", "logState": "NOT_OBSERVED", "exitStatus": "NOT_OBSERVED",
+		"markerState": "NOT_OBSERVED", "observedMarkers": []string{}, "preInstallState": "NOT_OBSERVED",
+		"copyState": "NOT_OBSERVED", "postInstallVerificationState": "NOT_OBSERVED"}
+}
+
+func u27PreInstallDiagnostic(result setupRunResult, source string) map[string]any {
+	report := u27NotObserved(source)
+	processState := "STARTED"
+	if !result.processStarted { processState = "START_FAILED" }
+	report["processState"], report["logState"], report["exitStatus"] = processState, result.logState, result.exitStatus
+	markers := []string{}
+	if result.logState == "OBSERVED" {
+		fixed := safeInstallerMarkers(result.logText)
+		if fixed != "NONE" { markers = strings.Split(fixed, ",") }
+	}
+	report["observedMarkers"] = markers
+	if len(markers) > 0 { report["markerState"] = "OBSERVED" }
+	if !result.processStarted {
+		report["classification"] = "PROCESS_START_FAILED"
+		return report
+	}
+	if result.logState != "OBSERVED" {
+		if result.logState == "MISSING" { report["classification"] = "LOG_MISSING" } else if result.logState == "READ_FAILED" { report["classification"] = "LOG_READ_FAILED" }
+		report["preInstallState"], report["copyState"], report["postInstallVerificationState"] = "UNKNOWN", "UNKNOWN", "UNKNOWN"
+		return report
+	}
+	pre, installed, dataReject, postFailure, upgradeMarker, unexpected := false, false, false, false, false, false
+	preRejects := 0
+	for _, marker := range markers {
+		if marker == "KSESSION_PREINSTALL_READY" { pre = true }
+		if marker == "KSESSION_INSTALLED_PAYLOAD_VERIFIED" { installed = true }
+		if marker == "KSESSION_DATA_REJECT_" { dataReject = true }
+		if marker == "KSESSION_UPGRADE_POSTINSTALL_FAILED" { postFailure = true }
+		if u27DefinitePreInstallRejection(marker) { preRejects++ }
+		if strings.HasPrefix(marker, "KSESSION_UPGRADE_") && !u27DefinitePreInstallRejection(marker) && marker != "KSESSION_UPGRADE_POSTINSTALL_FAILED" { upgradeMarker = true }
+		if marker != "KSESSION_PREINSTALL_READY" && marker != "KSESSION_INSTALLED_PAYLOAD_VERIFIED" && marker != "KSESSION_PROCESS_INSPECTION_UNAVAILABLE" && marker != "KSESSION_DATA_REJECT_" && marker != "KSESSION_UPGRADE_POSTINSTALL_FAILED" && !u27DefinitePreInstallRejection(marker) { unexpected = true }
+	}
+	success := result.exitStatus == "INNO_EXIT_SUCCESS"
+	if pre { report["preInstallState"] = "PASS" } else { report["preInstallState"] = "UNKNOWN" }
+	if installed || postFailure || (pre && dataReject) { report["copyState"] = "PASS" } else { report["copyState"] = "UNKNOWN" }
+	if installed { report["postInstallVerificationState"] = "PASS" } else if postFailure || (pre && dataReject) { report["postInstallVerificationState"] = "FAILED" } else { report["postInstallVerificationState"] = "UNKNOWN" }
+	ambiguous := preRejects > 1 || (preRejects > 0 && (pre || dataReject || postFailure || installed)) || (dataReject && postFailure) || upgradeMarker || unexpected
+	if success && pre && installed && !ambiguous {
+		report["status"], report["classification"] = "PASS", "SUCCESS"
+		report["preInstallState"], report["copyState"], report["postInstallVerificationState"] = "PASS", "PASS", "PASS"
+	} else if ambiguous {
+		report["classification"] = "UNKNOWN"
+	} else if !success && installed {
+		report["classification"] = "LATE_FAILURE_AFTER_VERIFICATION"
+	} else if postFailure {
+		report["classification"] = "POSTINSTALL_FAILED"
+	} else if pre && dataReject {
+		report["classification"] = "POSTINSTALL_DATA_REJECTED"
+	} else if dataReject {
+		report["classification"] = "DATA_REJECTED_PHASE_UNKNOWN"
+	} else if preRejects == 1 && !pre {
+		report["classification"], report["preInstallState"] = "PREINSTALL_REJECTED", "REJECTED"
+		report["copyState"], report["postInstallVerificationState"] = "NOT_OBSERVED", "NOT_OBSERVED"
+	} else if pre {
+		if success { report["classification"] = "UNKNOWN" } else { report["classification"] = "ABNORMAL_EXIT_AFTER_PREINSTALL" }
+	} else {
+		report["classification"] = "UNKNOWN"
+		report["preInstallState"], report["copyState"], report["postInstallVerificationState"] = "UNKNOWN", "UNKNOWN", "UNKNOWN"
+	}
+	return report
+}
+
+func u27DefinitePreInstallRejection(marker string) bool {
+	switch marker {
+	case "KSESSION_DATA_PRIOR_MISSING", "KSESSION_DATA_SWITCH_UNCONFIRMED", "KSESSION_REJECT_INSTANCE_LOCK",
+		"KSESSION_REJECT_NONEMPTY", "KSESSION_REJECT_PATH", "KSESSION_REJECT_REGISTERED", "KSESSION_REJECT_RUNNING",
+		"KSESSION_REJECT_SPACE", "KSESSION_REJECT_SPACE_QUERY", "KSESSION_REJECT_WRITE", "KSESSION_UPGRADE_PREFLIGHT_REJECTED",
+		"KSESSION_UPGRADE_RECOVERY_PREPARE_FAILED", "KSESSION_UPGRADE_REGISTRATION_REJECTED", "KSESSION_UPGRADE_ROOT_MISMATCH":
+		return true
+	}
+	return false
+}
+`;
+}
+
 function injectSecondLauncherLockRejection(upgrade) {
   const marker = '\tport := int(ready["port"].(float64))';
   const proof = `	readyBeforeSecond := eventCount(instance, "READY")
@@ -250,6 +395,7 @@ function main(argv) {
   upgrade = injectLockRelease(upgrade);
   upgrade = injectPersistentInstanceInventory(upgrade);
   upgrade = injectRejectedSetupQuiescence(upgrade, 'targetBeta4', 'sourceBeta2', 'beta.2', 'beta.4');
+  upgrade = injectU27PreInstallDiagnostic(upgrade);
   upgrade = injectAutomatedSingleInstanceBaseline(upgrade);
   assert.match(upgrade, /KSESSION_BETA2_SETUP/);
   assert.match(upgrade, /K-SESSION-Setup-1\.1\.0-beta\.4\.exe/);
@@ -268,4 +414,4 @@ function main(argv) {
 }
 
 if (require.main === module) main(process.argv.slice(2));
-module.exports = {injectFirewallIdentity, injectLockRelease, injectPersistentInstanceInventory, injectRejectedSetupQuiescence, injectAutomatedSingleInstanceBaseline, injectSecondLauncherLockRejection, appendSecondLauncherHelpers, transformIntegration, transformPortable};
+module.exports = {injectFirewallIdentity, injectLockRelease, injectPersistentInstanceInventory, injectRejectedSetupQuiescence, injectU27PreInstallDiagnostic, injectAutomatedSingleInstanceBaseline, injectSecondLauncherLockRejection, appendSecondLauncherHelpers, transformIntegration, transformPortable};

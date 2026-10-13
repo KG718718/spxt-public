@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 
 const automaticKeys=Object.freeze([
-  'portable','setupLifecycle','upgradeU01U30','singleInstanceBaseline','firstLauncherAlive','privateNodeAlive',
+  'portable','setupLifecycle','upgradeU01U30','u27PreInstall','singleInstanceBaseline','firstLauncherAlive','privateNodeAlive',
   'rootLockExclusive','readyStable','nodeSpawnStable','u05u06StateInvariant','persistentInventoryQuiescence',
   'compatibilityC01C15','historicalLCK03SyntheticGate','offlineLifecycle','privateSession','firewallHosted','publicRegression26Suites742Checks',
   'artifactPrivacyAndIdentity'

@@ -2,6 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {sha,inventory}=require('../../windows-runtime/common.cjs');
 const {verifySessionReport}=require('./session-report.cjs');
+const {verifyU27PreInstallReport}=require('./u27-pre-install-report.cjs');
 const {lockIds,verifyAcceptanceEvidence,ensureAcceptanceReport,verifyAcceptanceReport,verifyArtifactFileSet,verifyHistoricalLCK03SyntheticGate}=require('./acceptance-report.cjs');
 const {FIREWALL:firewallUnitExpected,LAUNCHER:launcherUnitExpected,INTEGRATION_IDS:integrationExpected}=require('../../tests/lan-host/expected-go-tests.cjs');
 const [root,commit]=process.argv.slice(2);
@@ -50,6 +51,7 @@ assert.equal(upgrade.beta4SourceCommit,commit);assert.equal(upgrade.status,'PASS
 assert.deepEqual(upgrade.singleInstanceBaseline,{schema:1,status:'PASS',qualification:'AUTOMATED_SINGLE_INSTANCE_BASELINE_ONLY',
  observationCount:7,launcherAlive:true,nodeAlive:true,rootLockExclusive:true,readyStable:true,nodeSpawnStable:true,
  secondLauncherStarted:false,doubleLaunchProven:false});
+verifyU27PreInstallReport(upgrade.u27PreInstall,commit,{requirePass:true});
 const offline=json('offline-network.json');
 assert.equal(offline.sourceCommit,commit);assert.equal(offline.status,'PASS');assert.equal(offline.externalBefore,true);
 assert.equal(offline.externalDuring,false);assert.equal(offline.restored,true);assert.equal(offline.firewallChanged,false);
@@ -81,7 +83,7 @@ const acceptanceEvidence={schema:1,sourceCommit:stage.sourceCommit,setupChecks:O
  singleInstanceObservations:upgrade.singleInstanceBaseline.observationCount,regressionSuites:regression.suitePass,
  regressionChecks:regression.testTotal,regressionFail:regression.fail,regressionSkipped:regression.skipped,
  portable:portable.status,setupLifecycle:pass(setup.status==='AUTOMATED_PASS_HUMAN_PENDING'),
- upgradeU01U30:upgrade.status,singleInstanceBaseline:upgrade.singleInstanceBaseline.status,
+ upgradeU01U30:upgrade.status,u27PreInstall:upgrade.u27PreInstall.status,singleInstanceBaseline:upgrade.singleInstanceBaseline.status,
  firstLauncherAlive:pass(upgrade.singleInstanceBaseline.launcherAlive),privateNodeAlive:pass(upgrade.singleInstanceBaseline.nodeAlive),
  rootLockExclusive:pass(upgrade.singleInstanceBaseline.rootLockExclusive),readyStable:pass(upgrade.singleInstanceBaseline.readyStable),
  nodeSpawnStable:pass(upgrade.singleInstanceBaseline.nodeSpawnStable),
