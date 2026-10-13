@@ -5,69 +5,54 @@ const expected=require('../../../../docs/tasks/windows-installer-v1.1/batch-4.5/
 const NODE_SHA='ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32';
 const ANCHORS=['programManifestSha256','programInventorySha256','runtimeManifestSha256','launcherSha256','buildInfoSha256'];
 const paths=new Set(['NOT_RUN','START_FAILED','INVALID_BUDGET','SESSION_GUARD_FAILED','TIMEOUT','WINDOW_IDENTITY_FAILED','DIALOG_MISMATCH','DIALOG_CONFIRM_FAILED','WAIT_FAILED','DISPATCH_SUCCESS','INSTANCE_BUSY_REJECTED','UNEXPECTED_EXIT','CLEANUP_FAILED','CLEANUP_TERMINATED','HANDLE_CLOSE_FAILED']);
-const stages=new Set(['ENV','SOURCE','TOOLCHAIN','IDENTITY','FIRST','SECOND','STOP','FINALIZE']);
+const outerStages=new Set(['ENV','SOURCE','TOOLCHAIN','IDENTITY','FIRST','SECOND','STOP','FINALIZE']);
+const identityStages=new Set(['HOSTED_PREFLIGHT','API_METADATA','ARTIFACT_DOWNLOAD','ARCHIVE_IDENTITY','EXTRACT','SETUP_IDENTITY','INSTALL','INSTALL_LOG','OWNED_PROCESS_QUIESCE','INSTALLED_FOOTPRINT','REGISTRY_READ','REGISTRY_NORMALIZE','COLLECT','RETENTION_PROBE','UNINSTALL','UNINSTALL_EXIT','UNINSTALL_SELF_CLEANUP','UNINSTALL_SELF_CLEANUP_TIMEOUT','CLEANUP_VERIFY','CLEANUP_READ_PROGRAM_ROOT','CLEANUP_PROGRAM_ROOT','CLEANUP_READ_UNINSTALL_REGISTRATION','CLEANUP_UNINSTALL_REGISTRATION','CLEANUP_READ_DESKTOP_SHORTCUT','CLEANUP_DESKTOP_SHORTCUT','CLEANUP_READ_START_MENU_SHORTCUT','CLEANUP_START_MENU_SHORTCUT','CLEANUP_READ_BINDING_RETAINED','CLEANUP_BINDING_RETAINED','CLEANUP_READ_INSTANCE_RETAINED','CLEANUP_INSTANCE_RETAINED','CLEANUP_READ_PROBE_RETAINED','CLEANUP_PROBE_RETAINED','CLEANUP_BINDING_REMOVE','CLEANUP_READ_BINDING_AFTER_HARNESS','CLEANUP_INSTANCE_REMOVE','CLEANUP_READ_INSTANCE_AFTER_HARNESS','CLEANUP_PAYLOAD_REMOVE','CLEANUP_READ_PAYLOAD_AFTER_HARNESS','CLEANUP_FINAL_STATE','CLEANUP_EVIDENCE_WRITE','FINALIZE','LC01_LIFECYCLE']);
+const classifications=new Set(['NOT_STARTED','REPORT_MISSING','INITIAL_PLACEHOLDER','VERIFIED_BLOCKED','REPORT_INVALID','IDENTITY_VALIDATION_FAILED','LIFECYCLE_FAILED','UNKNOWN','PASS']);
+identityStages.add('STATIC_GATE');
+identityStages.add('LC01_IDENTITY_VALIDATION');
 function keys(v,wanted){assert.ok(v&&typeof v==='object'&&!Array.isArray(v));assert.deepEqual(Object.keys(v).sort(),wanted.slice().sort());}
+function source(v){keys(v,['repository','runId','artifactId','headSha']);assert.deepEqual(v,{repository:api.REPOSITORY,runId:api.RUN_ID,artifactId:api.ARTIFACT_ID,headSha:api.SOURCE_COMMIT});return v;}
 function identity(draft,root){
- assert.equal(draft.kind,'k-session-beta2-identity-evidence');assert.equal(draft.status,'PASS');
- // Actual API metadata was already validated by reused invoke.ps1; compare actual captured source as well.
- assert.equal(draft.source.runId,api.RUN_ID);assert.equal(draft.source.artifactId,api.ARTIFACT_ID);
- assert.equal(draft.source.headSha,api.SOURCE_COMMIT);assert.equal(draft.source.setupSha256,api.SETUP_SHA256);
- for(const field of ANCHORS)assert.equal(draft.profile.policy[field],expected[field]);
- for(const field of ['sourceCommit','sourceTree','fromInstallerVersion'])assert.equal(draft.profile.policy[field],expected[field]);
- assert.equal(draft.verification.installedAnchors,'PASS');assert.equal(draft.verification.registrationBinding,'PASS');
- const manifest=JSON.parse(fs.readFileSync(path.join(root,'uninstall/installer-manifest.json')));
- assert.equal(manifest.payload.length,1042);
- assert.equal(api.sha(fs.readFileSync(path.join(root,'program/runtime/node.exe'))),NODE_SHA);
+ assert.equal(draft.kind,'k-session-beta2-identity-evidence');assert.equal(draft.status,'PASS');assert.equal(draft.source.runId,api.RUN_ID);assert.equal(draft.source.artifactId,api.ARTIFACT_ID);assert.equal(draft.source.headSha,api.SOURCE_COMMIT);assert.equal(draft.source.setupSha256,api.SETUP_SHA256);
+ for(const field of ANCHORS)assert.equal(draft.profile.policy[field],expected[field]);for(const field of ['sourceCommit','sourceTree','fromInstallerVersion'])assert.equal(draft.profile.policy[field],expected[field]);assert.equal(draft.verification.installedAnchors,'PASS');assert.equal(draft.verification.registrationBinding,'PASS');
+ const manifest=JSON.parse(fs.readFileSync(path.join(root,'uninstall/installer-manifest.json')));assert.equal(manifest.payload.length,1042);assert.equal(api.sha(fs.readFileSync(path.join(root,'program/runtime/node.exe'))),NODE_SHA);
  return {status:'PASS',inventoryFiles:1042,nodeSha256:NODE_SHA,...Object.fromEntries(ANCHORS.map(k=>[k,draft.profile.policy[k]]))};
 }
 function lifecycle(v){
- keys(v,['status','stage','second','firstIdentity','nodeIdentity','exclusiveLock','noSecondBackend','firstNaturalExit','firstExitCode','nodeExited','quiescence','handlesClosed','cleanupTerminated','modalProof']);
- assert.ok(['PASS','FAIL'].includes(v.status)&&stages.has(v.stage));
- assert.ok(['OBSERVED','NOT_EXERCISED','UNPROVEN'].includes(v.modalProof));
- for(const k of ['firstIdentity','nodeIdentity','exclusiveLock','noSecondBackend','firstNaturalExit','nodeExited','quiescence','handlesClosed','cleanupTerminated'])assert.equal(typeof v[k],'boolean');
- assert.ok(Number.isInteger(v.firstExitCode)&&v.firstExitCode>=0&&v.firstExitCode<=0xffffffff);
- keys(v.second,['Status','Path','BusyClosed','NaturalExit','CleanupTerminated','HandlesClosed','ExitCode']);
- assert.ok(['PASS','FAIL'].includes(v.second.Status)&&paths.has(v.second.Path));
- for(const k of ['BusyClosed','NaturalExit','CleanupTerminated','HandlesClosed'])assert.equal(typeof v.second[k],'boolean');
- assert.ok(Number.isInteger(v.second.ExitCode)&&v.second.ExitCode>=0&&v.second.ExitCode<=0xffffffff);
- if(v.status==='PASS'){
-  assert.equal(v.stage,'FINALIZE');for(const k of ['firstIdentity','nodeIdentity','exclusiveLock','noSecondBackend','firstNaturalExit','nodeExited','quiescence','handlesClosed'])assert.equal(v[k],true);
-  assert.equal(v.firstExitCode,0);assert.equal(v.cleanupTerminated,false);assert.equal(v.second.Status,'PASS');assert.equal(v.second.NaturalExit,true);assert.equal(v.second.HandlesClosed,true);assert.equal(v.second.CleanupTerminated,false);
-  if(v.second.Path==='DISPATCH_SUCCESS'){assert.equal(v.second.ExitCode,0);assert.equal(v.second.BusyClosed,false);assert.equal(v.modalProof,'NOT_EXERCISED');}
-  else{assert.equal(v.second.Path,'INSTANCE_BUSY_REJECTED');assert.equal(v.second.ExitCode,1);assert.equal(v.second.BusyClosed,true);assert.equal(v.modalProof,'OBSERVED');}
- }
+ keys(v,['status','stage','second','firstIdentity','nodeIdentity','exclusiveLock','noSecondBackend','firstNaturalExit','firstExitCode','nodeExited','quiescence','handlesClosed','cleanupTerminated','modalProof']);assert.ok(['PASS','FAIL'].includes(v.status)&&outerStages.has(v.stage));assert.ok(['OBSERVED','NOT_EXERCISED','UNPROVEN'].includes(v.modalProof));
+ for(const k of ['firstIdentity','nodeIdentity','exclusiveLock','noSecondBackend','firstNaturalExit','nodeExited','quiescence','handlesClosed','cleanupTerminated'])assert.equal(typeof v[k],'boolean');assert.ok(Number.isInteger(v.firstExitCode)&&v.firstExitCode>=0&&v.firstExitCode<=0xffffffff);
+ keys(v.second,['Status','Path','BusyClosed','NaturalExit','CleanupTerminated','HandlesClosed','ExitCode']);assert.ok(['PASS','FAIL'].includes(v.second.Status)&&paths.has(v.second.Path));for(const k of ['BusyClosed','NaturalExit','CleanupTerminated','HandlesClosed'])assert.equal(typeof v.second[k],'boolean');assert.ok(Number.isInteger(v.second.ExitCode)&&v.second.ExitCode>=0&&v.second.ExitCode<=0xffffffff);
+ if(v.status==='PASS'){assert.equal(v.stage,'FINALIZE');for(const k of ['firstIdentity','nodeIdentity','exclusiveLock','noSecondBackend','firstNaturalExit','nodeExited','quiescence','handlesClosed'])assert.equal(v[k],true);assert.equal(v.firstExitCode,0);assert.equal(v.cleanupTerminated,false);assert.equal(v.second.Status,'PASS');assert.equal(v.second.NaturalExit,true);assert.equal(v.second.HandlesClosed,true);assert.equal(v.second.CleanupTerminated,false);if(v.second.Path==='DISPATCH_SUCCESS'){assert.equal(v.second.ExitCode,0);assert.equal(v.second.BusyClosed,false);assert.equal(v.modalProof,'NOT_EXERCISED');}else{assert.equal(v.second.Path,'INSTANCE_BUSY_REJECTED');assert.equal(v.second.ExitCode,1);assert.equal(v.second.BusyClosed,true);assert.equal(v.modalProof,'OBSERVED');}}
  return v;
 }
+function interpreter(v,commit){keys(v,['schema','kind','status','testedCommit','source','edition','versionMajor','api','utf8','signature','reparse']);assert.equal(v.schema,1);assert.equal(v.kind,'lc01-powershell-proof');assert.equal(v.status,'PASS');assert.equal(v.testedCommit,commit);source(v.source);assert.equal(v.edition,'Core');assert.ok(Number.isInteger(v.versionMajor)&&v.versionMajor>=7);for(const k of ['api','utf8','signature'])assert.equal(v[k],'PASS');assert.equal(v.reparse,false);return v;}
+function progress(v,commit){keys(v,['schema','kind','testedCommit','source','stage','reason']);assert.equal(v.schema,1);assert.equal(v.kind,'lc01-inner-progress');assert.equal(v.testedCommit,commit);source(v.source);assert.ok(identityStages.has(v.stage));assert.equal(v.reason,'ENTERED_'+v.stage);return v;}
+function inner(v){
+ keys(v,['classification','stage','reason']);assert.ok(classifications.has(v.classification));assert.ok(identityStages.has(v.stage)||outerStages.has(v.stage));
+ const fixed={REPORT_MISSING:['INNER_REPORT_MISSING'],INITIAL_PLACEHOLDER:['INITIAL_PLACEHOLDER'],IDENTITY_VALIDATION_FAILED:['IDENTITY_VALIDATION_FAILED'],LIFECYCLE_FAILED:['LIFECYCLE_FAILED'],PASS:['VERIFIED_PASS'],REPORT_INVALID:['INNER_REPORT_INVALID','INNER_PROGRESS_INVALID'],NOT_STARTED:['CHILD_NOT_STARTED','POWERSHELL_TRUST_REJECTED','CHILD_START_FAILED'],UNKNOWN:['POWERSHELL_PROOF_INVALID','INNER_PROGRESS_MISSING','INNER_STAGE_INCONSISTENT','INNER_RESULT_INCONSISTENT','INNER_OUTER_INCONSISTENT','INNER_LC01_IDENTITY_VALIDATION_BLOCKED','INNER_LC01_LIFECYCLE_BLOCKED']};
+ if(v.classification==='VERIFIED_BLOCKED')assert.equal(v.reason,'BLOCKED_'+v.stage);else assert.ok(fixed[v.classification].includes(v.reason));return v;
+}
+function outer(v){keys(v,['stage','runnerOutcome']);assert.ok(outerStages.has(v.stage));assert.ok(['SUCCESS','FAIL'].includes(v.runnerOutcome));return v;}
+function validateCommon(v){keys(v.f3,['runId','artifactId','sourceCommit','setupSha256']);assert.equal(v.f3.runId,api.RUN_ID);assert.equal(v.f3.artifactId,api.ARTIFACT_ID);assert.equal(v.f3.sourceCommit,api.SOURCE_COMMIT);assert.equal(v.f3.setupSha256,api.SETUP_SHA256);assert.equal(typeof v.cleanupVerified,'boolean');assert.equal(v.physicalWin10Certified,false);assert.equal(v.dualDeviceLanCertified,false);if(v.identity!==null){keys(v.identity,['status','inventoryFiles','nodeSha256',...ANCHORS]);assert.equal(v.identity.status,'PASS');assert.equal(v.identity.inventoryFiles,1042);assert.equal(v.identity.nodeSha256,NODE_SHA);for(const f of ANCHORS)assert.equal(v.identity[f],expected[f]);}if(v.lifecycle!==null)lifecycle(v.lifecycle);}
+function validateV1(v){keys(v,['schema','kind','status','stage','testedCommit','f3','identity','lifecycle','cleanupVerified','physicalWin10Certified','dualDeviceLanCertified']);assert.equal(v.schema,1);assert.equal(v.kind,'lc01-hosted');assert.ok(['PASS','FAIL'].includes(v.status)&&outerStages.has(v.stage));assert.match(v.testedCommit,/^[a-f0-9]{40}$/);validateCommon(v);if(v.status==='PASS'){assert.equal(v.stage,'FINALIZE');assert.ok(v.identity&&v.lifecycle);assert.equal(v.lifecycle.status,'PASS');assert.equal(v.cleanupVerified,true);}return v;}
 function validate(v){
- keys(v,['schema','kind','status','stage','testedCommit','f3','identity','lifecycle','cleanupVerified','physicalWin10Certified','dualDeviceLanCertified']);
- assert.equal(v.schema,1);assert.equal(v.kind,'lc01-hosted');assert.ok(['PASS','FAIL'].includes(v.status)&&stages.has(v.stage));assert.match(v.testedCommit,/^[a-f0-9]{40}$/);
- keys(v.f3,['runId','artifactId','sourceCommit','setupSha256']);assert.equal(v.f3.runId,api.RUN_ID);assert.equal(v.f3.artifactId,api.ARTIFACT_ID);assert.equal(v.f3.sourceCommit,api.SOURCE_COMMIT);assert.equal(v.f3.setupSha256,api.SETUP_SHA256);
- assert.equal(typeof v.cleanupVerified,'boolean');assert.equal(v.physicalWin10Certified,false);assert.equal(v.dualDeviceLanCertified,false);
- if(v.identity!==null){keys(v.identity,['status','inventoryFiles','nodeSha256',...ANCHORS]);assert.equal(v.identity.status,'PASS');assert.equal(v.identity.inventoryFiles,1042);assert.equal(v.identity.nodeSha256,NODE_SHA);for(const f of ANCHORS)assert.equal(v.identity[f],expected[f]);}
- if(v.lifecycle!==null)lifecycle(v.lifecycle);
- if(v.status==='PASS'){assert.equal(v.stage,'FINALIZE');assert.ok(v.identity&&v.lifecycle);assert.equal(v.lifecycle.status,'PASS');assert.equal(v.cleanupVerified,true);}
- return v;
+ if(v?.schema===1)return validateV1(v);
+ keys(v,['schema','kind','status','stage','reason','testedCommit','f3','interpreter','outer','inner','identity','lifecycle','cleanupVerified','physicalWin10Certified','dualDeviceLanCertified']);assert.equal(v.schema,2);assert.equal(v.kind,'lc01-hosted');assert.ok(['PASS','FAIL'].includes(v.status));assert.match(v.testedCommit,/^[a-f0-9]{40}$/);validateCommon(v);if(v.interpreter!==null)interpreter(v.interpreter,v.testedCommit);outer(v.outer);inner(v.inner);assert.equal(v.stage,v.inner.stage);assert.equal(v.reason,v.inner.reason);
+ if(v.status==='PASS'){assert.equal(v.outer.stage,'IDENTITY');assert.equal(v.outer.runnerOutcome,'SUCCESS');assert.equal(v.inner.classification,'PASS');assert.equal(v.stage,'FINALIZE');assert.ok(v.interpreter&&v.identity&&v.lifecycle);assert.equal(v.lifecycle.status,'PASS');assert.equal(v.cleanupVerified,true);}else assert.notEqual(v.inner.classification,'PASS');return v;
 }
-function base(commit,stage='ENV'){return {schema:1,kind:'lc01-hosted',status:'FAIL',stage,testedCommit:commit,f3:{runId:api.RUN_ID,artifactId:api.ARTIFACT_ID,sourceCommit:api.SOURCE_COMMIT,setupSha256:api.SETUP_SHA256},identity:null,lifecycle:null,cleanupVerified:false,physicalWin10Certified:false,dualDeviceLanCertified:false};}
-function publish(dir,commit,stage,runnerOutcome='SUCCESS'){
- assert.ok(['SUCCESS','FAIL'].includes(runnerOutcome));
- const v=base(commit,stage);
- try{
-  const read=name=>JSON.parse(fs.readFileSync(path.join(dir,name),'utf8'));
-  if(fs.existsSync(path.join(dir,'identity-fixed.json')))v.identity=read('identity-fixed.json');
-  if(fs.existsSync(path.join(dir,'lifecycle-fixed.json')))v.lifecycle=lifecycle(read('lifecycle-fixed.json'));
-  if(fs.existsSync(path.join(dir,'beta2-identity-evidence.json'))){api.validateEvidence(read('beta2-identity-evidence.json'));const run=api.validateRunReport(read('BETA2-IDENTITY-REPORT.json'));v.cleanupVerified=run.status==='PASS';}
-  if(runnerOutcome==='SUCCESS'&&v.identity&&v.lifecycle?.status==='PASS'&&v.cleanupVerified){v.status='PASS';v.stage='FINALIZE';}
-  validate(v);
- }catch{Object.assign(v,base(commit,stage));}
- validate(v);fs.writeFileSync(path.join(dir,'LC01-HOSTED-REPORT.json'),JSON.stringify(v,null,2)+'\n');return v;
+function base(commit,classification='NOT_STARTED',stage='IDENTITY',reason='CHILD_NOT_STARTED'){return {schema:2,kind:'lc01-hosted',status:'FAIL',stage,reason,testedCommit:commit,f3:{runId:api.RUN_ID,artifactId:api.ARTIFACT_ID,sourceCommit:api.SOURCE_COMMIT,setupSha256:api.SETUP_SHA256},interpreter:null,outer:{stage:'ENV',runnerOutcome:'FAIL'},inner:{classification,stage,reason},identity:null,lifecycle:null,cleanupVerified:false,physicalWin10Certified:false,dualDeviceLanCertified:false};}
+function classify(dir,commit,childState){
+ assert.ok(['NOT_STARTED','STARTED'].includes(childState));const read=name=>JSON.parse(fs.readFileSync(path.join(dir,name),'utf8'));let proof=null;try{proof=interpreter(read('LC01-POWERSHELL-PROOF.json'),commit);}catch{}
+ const reportFile=path.join(dir,'BETA2-IDENTITY-REPORT.json'),progressFile=path.join(dir,'LC01-INNER-PROGRESS.json');if(childState==='NOT_STARTED')return {v:base(commit,'NOT_STARTED','IDENTITY',proof?'CHILD_START_FAILED':'POWERSHELL_TRUST_REJECTED'),proof};if(!proof)return {v:base(commit,'UNKNOWN','IDENTITY','POWERSHELL_PROOF_INVALID'),proof};if(!fs.existsSync(reportFile))return {v:base(commit,'REPORT_MISSING','HOSTED_PREFLIGHT','INNER_REPORT_MISSING'),proof};
+ let run;try{run=api.validateRunReport(read('BETA2-IDENTITY-REPORT.json'));assert.equal(run.testedCommit,commit);source(run.source);}catch{return {v:base(commit,'REPORT_INVALID','HOSTED_PREFLIGHT','INNER_REPORT_INVALID'),proof};}
+ const placeholder=run.status==='BLOCKED'&&run.stage==='HOSTED_PREFLIGHT'&&run.reason==='BLOCKED_HOSTED_PREFLIGHT';if(!fs.existsSync(progressFile))return {v:base(commit,placeholder?'INITIAL_PLACEHOLDER':'UNKNOWN',run.stage,placeholder?'INITIAL_PLACEHOLDER':'INNER_PROGRESS_MISSING'),proof};
+ let entered;try{entered=progress(read('LC01-INNER-PROGRESS.json'),commit);}catch{return {v:base(commit,'REPORT_INVALID',run.stage,'INNER_PROGRESS_INVALID'),proof};}const mapped=['LC01_IDENTITY_VALIDATION','LC01_LIFECYCLE'].includes(entered.stage)?'COLLECT':entered.stage;if(run.stage!==mapped&&run.status!=='PASS')return {v:base(commit,'UNKNOWN',run.stage,'INNER_STAGE_INCONSISTENT'),proof};if(run.status==='BLOCKED'&&['LC01_IDENTITY_VALIDATION','LC01_LIFECYCLE'].includes(entered.stage))return {v:base(commit,'UNKNOWN',entered.stage,'INNER_'+entered.stage+'_BLOCKED'),proof,run,entered};if(run.status==='BLOCKED')return {v:base(commit,'VERIFIED_BLOCKED',run.stage,run.reason),proof};if(run.status!=='PASS'||run.stage!=='FINALIZE')return {v:base(commit,'REPORT_INVALID',run.stage,'INNER_REPORT_INVALID'),proof};if(entered.stage!=='FINALIZE')return {v:base(commit,'UNKNOWN','FINALIZE','INNER_STAGE_INCONSISTENT'),proof};return {v:base(commit,'UNKNOWN','FINALIZE','INNER_RESULT_INCONSISTENT'),proof,run,entered};
 }
-module.exports={identity,lifecycle,validate,base,publish};
-if(require.main===module){try{
- const [command,...args]=process.argv.slice(2);
- if(command==='identity'){assert.equal(args.length,3);fs.writeFileSync(args[2],JSON.stringify(identity(JSON.parse(fs.readFileSync(args[0])),args[1]))+'\n',{flag:'wx'});}
- else if(command==='publish'){assert.equal(args.length,4);const v=publish(...args);if(v.status!=='PASS')process.exitCode=1;}
- else if(command==='verify'){assert.equal(args.length,1);validate(JSON.parse(fs.readFileSync(args[0])));}
- else if(command==='initialize'){assert.equal(args.length,2);fs.writeFileSync(args[0],JSON.stringify(validate(base(args[1],'SOURCE')))+'\n',{flag:'wx'});}
- else throw Error('USAGE');
-}catch{process.stderr.write('LC01_REPORT_REJECTED\n');process.exitCode=1;}}
+function write(dir,v){validate(v);fs.writeFileSync(path.join(dir,'LC01-HOSTED-REPORT.json'),JSON.stringify(v,null,2)+'\n');return v;}
+function publish(dir,commit,outerStage,runnerOutcome='SUCCESS',childState='STARTED'){
+ assert.ok(outerStages.has(outerStage));assert.ok(['SUCCESS','FAIL'].includes(runnerOutcome));if(childState==='STARTED')assert.equal(outerStage,'IDENTITY');const applyOuter=v=>{v.outer={stage:outerStage,runnerOutcome};return v;};let {v,proof,run,entered}=classify(dir,commit,childState);v.interpreter=proof;applyOuter(v);const read=name=>JSON.parse(fs.readFileSync(path.join(dir,name),'utf8'));
+ if(run){try{v.identity=read('identity-fixed.json');keys(v.identity,['status','inventoryFiles','nodeSha256',...ANCHORS]);for(const f of ANCHORS)assert.equal(v.identity[f],expected[f]);assert.equal(v.identity.status,'PASS');assert.equal(v.identity.inventoryFiles,1042);assert.equal(v.identity.nodeSha256,NODE_SHA);}catch{v=applyOuter(base(commit,'IDENTITY_VALIDATION_FAILED',entered?.stage==='LC01_IDENTITY_VALIDATION'?'LC01_IDENTITY_VALIDATION':'COLLECT','IDENTITY_VALIDATION_FAILED'));v.interpreter=proof;return write(dir,v);}try{v.lifecycle=lifecycle(read('lifecycle-fixed.json'));if(v.lifecycle.status!=='PASS')throw Error();}catch{const verifiedIdentity=v.identity;v=applyOuter(base(commit,'LIFECYCLE_FAILED','LC01_LIFECYCLE','LIFECYCLE_FAILED'));v.interpreter=proof;v.identity=verifiedIdentity;return write(dir,v);}try{api.validateEvidence(read('beta2-identity-evidence.json'));const finalRun=api.validateRunReport(read('BETA2-IDENTITY-REPORT.json'));assert.equal(finalRun.testedCommit,commit);v.cleanupVerified=finalRun.status==='PASS';}catch{v.cleanupVerified=false;}if(runnerOutcome==='SUCCESS'&&proof&&v.cleanupVerified){v.status='PASS';v.stage='FINALIZE';v.reason='VERIFIED_PASS';v.inner={classification:'PASS',stage:'FINALIZE',reason:'VERIFIED_PASS'};}else{v.status='FAIL';v.stage='FINALIZE';v.reason='INNER_OUTER_INCONSISTENT';v.inner={classification:'UNKNOWN',stage:'FINALIZE',reason:'INNER_OUTER_INCONSISTENT'};}}
+ return write(dir,v);
+}
+module.exports={identity,lifecycle,interpreter,progress,validate,base,publish};
+if(require.main===module){try{const [command,...args]=process.argv.slice(2);if(command==='identity'){assert.equal(args.length,3);fs.writeFileSync(args[2],JSON.stringify(identity(JSON.parse(fs.readFileSync(args[0])),args[1]))+'\n',{flag:'wx'});}else if(command==='publish'){assert.equal(args.length,5);const v=publish(...args);if(v.status!=='PASS')process.exitCode=1;}else if(command==='verify'){assert.equal(args.length,1);validate(JSON.parse(fs.readFileSync(args[0])));}else if(command==='initialize'){assert.equal(args.length,2);write(path.dirname(args[0]),base(args[1]));}else if(command==='interpreter'){assert.equal(args.length,3);const v=JSON.parse(fs.readFileSync(args[0]));interpreter(v,args[1]);fs.writeFileSync(args[2],JSON.stringify(v)+'\n',{flag:'wx'});}else throw Error('USAGE');}catch{process.stderr.write('LC01_REPORT_REJECTED\n');process.exitCode=1;}}

@@ -12,7 +12,13 @@ function generate(out){
  let ps=fs.readFileSync(path.join(REPO,'tools/windows-installer/beta2-identity/invoke.ps1'),'utf8').replaceAll('\r\n','\n');
  ps=once(ps,'[Parameter(Mandatory=$true)][string]$TestedCommit','[Parameter(Mandatory=$true)][string]$LifecycleExe,\n  [Parameter(Mandatory=$true)][string]$TestedCommit');
  ps=ps.replaceAll('C:\\KSESSION-B45-BETA2-IDENTITY-WORK','C:\\KSESSION-LC01-HOSTED-WORK');
- ps=once(ps,"$taskAllowedPhases=@('STATIC_GATE'","$taskAllowedPhases=@('LC01_LIFECYCLE','STATIC_GATE'");
+ ps=once(ps,"$taskAllowedPhases=@('STATIC_GATE'","$taskAllowedPhases=@('LC01_IDENTITY_VALIDATION','LC01_LIFECYCLE','STATIC_GATE'");
+  ps=once(ps,"function Set-TaskPhase([string]$Phase){if($taskAllowedPhases -notcontains $Phase){throw 'PHASE_NOT_ALLOWED'};$script:taskPhase=$Phase}",`$taskLC01Progress=Join-Path $OutputDirectory 'LC01-INNER-PROGRESS.json'
+function Write-LC01Progress([string]$Phase){
+  $progress=[ordered]@{schema=1;kind='lc01-inner-progress';testedCommit=$TestedCommit;source=[ordered]@{repository='KG718718/spxt-public';runId=[Int64]36246132535;artifactId=[Int64]10907910968;headSha='c8886e6b6d413c2fd73d6716621d07a80b337e58'};stage=$Phase;reason=('ENTERED_'+$Phase)}
+  [IO.File]::WriteAllText($taskLC01Progress,($progress|ConvertTo-Json -Depth 4 -Compress),[Text.UTF8Encoding]::new($false))
+}
+function Set-TaskPhase([string]$Phase){if($taskAllowedPhases -notcontains $Phase){throw 'PHASE_NOT_ALLOWED'};$script:taskPhase=$Phase;Write-LC01Progress $Phase}`);
  ps=once(ps,"if($env:GITHUB_ACTIONS -ne 'true' -or", "if($env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public' -or $env:GITHUB_REF -ne 'refs/heads/codex/lan2-manual-host-v1.1' -or $env:GITHUB_ACTIONS -ne 'true' -or");
  // Reuse exact F3 metadata/download/install/collect/uninstall contracts; no forced PID cleanup.
  const start=ps.indexOf('function Stop-OwnedProcesses{'),end=ps.indexOf('\ntry{\n  $taskNode=',start);
@@ -27,7 +33,8 @@ function generate(out){
  ps=once(ps,'try{$process.ExitCode}finally{$process.Dispose()}',"try{if(!$process.WaitForExit(120000)){$process.Kill();[void]$process.WaitForExit(3000);throw 'SETUP_TIMEOUT'};$process.ExitCode}finally{$process.Dispose()}");
  ps=once(ps,'try{$uninstallExit=$process.ExitCode}finally{$process.Dispose()}',"try{if(!$process.WaitForExit(120000)){$process.Kill();[void]$process.WaitForExit(3000);throw 'UNINSTALL_TIMEOUT'};$uninstallExit=$process.ExitCode}finally{$process.Dispose()}");
  ps=once(ps,';$p.Dispose()}}catch{}',";if(!$p.WaitForExit(120000)){$p.Kill();[void]$p.WaitForExit(3000)};$p.Dispose()}}catch{}");
- const insertion=`  & $taskNode (Join-Path $RepositoryRoot 'tools/tests/windows-installer/beta4-upgrade/lc01-hosted-report.cjs') identity $taskDraft $taskInstall (Join-Path $OutputDirectory 'identity-fixed.json')
+ const insertion=`  Set-TaskPhase 'LC01_IDENTITY_VALIDATION'
+  & $taskNode (Join-Path $RepositoryRoot 'tools/tests/windows-installer/beta4-upgrade/lc01-hosted-report.cjs') identity $taskDraft $taskInstall (Join-Path $OutputDirectory 'identity-fixed.json')
   if($LASTEXITCODE-ne 0){throw 'EXACT_F3_ANCHORS_FAILED'}
   Set-TaskPhase 'LC01_LIFECYCLE'
   $env:LC01_INSTALL=$taskInstall;$env:LC01_INSTANCE=$taskInstance
@@ -38,7 +45,7 @@ function generate(out){
 `;
  ps=once(ps,"  Set-TaskPhase 'RETENTION_PROBE'",insertion+"  Set-TaskPhase 'RETENTION_PROBE'");
  // Identity module stage vocabulary stays unchanged; its run-report stage maps lifecycle failure to COLLECT.
- ps=once(ps,"if($Status -cnotin @('PASS','BLOCKED')", "if($taskPhase -eq 'LC01_LIFECYCLE'){$script:taskPhase='COLLECT'}\n  if($Status -cnotin @('PASS','BLOCKED')");
+ ps=once(ps,"if($Status -cnotin @('PASS','BLOCKED')", "if($taskPhase -cin @('LC01_IDENTITY_VALIDATION','LC01_LIFECYCLE')){$script:taskPhase='COLLECT'}\n  if($Status -cnotin @('PASS','BLOCKED')");
  fs.writeFileSync(path.join(out,'invoke-lc01.ps1'),ps,{flag:'wx'});
 }
 module.exports={generate,once};
