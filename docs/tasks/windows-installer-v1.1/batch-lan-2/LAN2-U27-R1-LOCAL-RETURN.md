@@ -15,7 +15,7 @@
 ## 已确认事实
 
 - 原分支从 `3cc99ff0d481634073a0e6dc9412da34e2906668` 以普通 merge 同步 Master 基线 `1c6015aaeb3329dd6b8493694c0695f5ce2cbaa4`；merge commit 为 `13eeb7a591ae9f15e8828e53a5ae02800dc7049a`，未 reset、clean 或 rebase。
-- merge 带回的 14 个已退役 F3 解包研究文件已按 Master 基线删除，单独提交 `bd4110d`，未把旧未审研究交回 Master。
+- `bd4110d` 删除 merge 带回的 14 个历史 F3 研究文件，超出本轮范围且未经 Master 接纳。收到更正后，已由 restore-only 提交 `8506f37901fba24f2586ce8ea7154e5274b26d17` 将这 14 个路径恢复为 `bd4110d` 父提交 `13eeb7a` 的精确原 blob 和 `100644` mode；未读取、运行或继续研究其内容。历史现场继续保留。
 - 诊断实现提交 `78e25ff9a0566ea98985fecb5800f1a42afd59e1`；阶段证据收窄提交 `d5bb808bedffcab396b53d1cfb2f5323018d776c`。两笔提交均含 `[skip ci]`。
 - 只修改 Full 测试 overlay 生成器、纯合成测试、固定报告模块、Artifact verifier 和验收接线；未修改生产 Launcher、Setup、Node、版本/卸载规则、可信身份、安全条件、事务、rollback 或业务 schema，未修改 workflow。
 - `runSetupRaw` 对进程启动失败、日志缺失和日志读取失败返回固定状态，不再由 `mustRead` 提前中断诊断。通用 `runSetup` 对这些状态仍 fail closed。
