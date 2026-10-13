@@ -1,5 +1,10 @@
 # K⁺-SESSION｜项目状态
 
+## 当前Review通过｜2026-10-14 LAN2-U27-R2 / HOSTED PENDING
+
+原LC01完整TestSetup+正常U01-U27专项已整合83caf72，Master独立99/99、历史26/26 fail0skip0、实际Go纯prestate反例/overlay仅编译/PS语法/提交范围diff PASS。历史27de overlay独立文本核对通过；保留7构建与全fault/rollback链，两独立Go进程同一offline区间，U27后停止。生产/接受条件/F3信任/事务/rollback/旧workflow零改，clone未证仍UNKNOWN，新只读观测不等待/清理。只上传严格固定JSON，UNKNOWN非成功，失败真实13字段保留；非force同步+三方HEAD/F3核验后才唯一U27-R2 Hosted0/1，Full0/QA0/LC010。任意结果STOP交网页，LAN2继续冻结。详见LAN2-U27-R2-MASTER-REVIEW.md；通用YAMLparser未提供，采用明确源码/结构Review，不虚称机器parse。
+
+
 ## 当前条件准备｜2026-10-13 LAN2-U27-R2
 
 用户仅批准原LC01 Thread/原worktree先证明历史U26终态等价，实施独立U27测试入口/固定只读prestate与13字段诊断及本地反例；生产/Setup成功条件/F3信任/事务/rollback不改。Master基线db4ee2c，GitHub同SHA，受验F3仍有效。现有diagnostic删减链不能直接复用，删任何历史前缀须有状态不变量证明，无法证明立即STOP。等价性/隔离/安全失败报告/本地fail0skip0/独立Review全PASS才允许U27-R2 Hosted最多1次，目前0/1，Full0/QA0/LC010，不触发旧Full/QA。任何专项结果STOP交网页；LAN2及全部历史FAIL继续冻结，禁sub-agent/内部SPXT/main/tag/Release/清理。详见LAN2-U27-R2-AUTHORIZATION.md。
