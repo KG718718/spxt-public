@@ -44,15 +44,19 @@ type lcDialog struct {
 	Visible, Enabled                                          bool
 	Class, Title, Text, ButtonClass                           string
 	ButtonID                                                  int
-	TextCount, ButtonCount                                    int
+	TextCount, IconCount, ButtonCount                         int
+	BodyStyleOK, BodyIDOK, BodyTextOK, IconStyleOK, IconIDOK  bool
+	IconSemanticOK, ButtonStyleOK, ControlsKnown              bool
+	Controls                                                  []lcControlSnapshot
 }
 
 func lcExactBusy(d lcDialog) bool {
 	return d.PID != 0 && d.PID == d.ExpectedPID && d.Creation != 0 && d.Creation == d.ExpectedCreation &&
 		d.Window != 0 && d.Button != 0 && d.ThreadOK && d.ClassOK && d.ImageOK && d.Live &&
 		d.ParentOK && d.ButtonOwnerOK && d.Visible && d.Enabled && d.Class == "#32770" &&
-		d.Title == lcProductTitle && d.Text == lcBusyText && d.ButtonClass == "Button" &&
-		d.ButtonID == 1 && d.TextCount == 1 && d.ButtonCount == 1
+		d.Title == lcProductTitle && d.Text == lcBusyText && d.ButtonClass == "Button" && d.ControlsKnown &&
+		d.BodyStyleOK && d.BodyIDOK && d.BodyTextOK && d.IconStyleOK && d.IconIDOK && d.IconSemanticOK && d.ButtonStyleOK &&
+		d.ButtonID == 1 && d.TextCount == 1 && d.IconCount == 1 && d.ButtonCount == 1
 }
 
 type lcResult struct {

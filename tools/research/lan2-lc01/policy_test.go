@@ -24,7 +24,9 @@ func lcFixture() lcDialog {
 	return lcDialog{PID: 71, ExpectedPID: 71, Creation: 19, ExpectedCreation: 19, Window: 10, Button: 11,
 		ThreadOK: true, ClassOK: true, ImageOK: true, Live: true, ParentOK: true, ButtonOwnerOK: true,
 		Visible: true, Enabled: true, Class: "#32770", Title: lcProductTitle, Text: lcBusyText,
-		ButtonClass: "Button", ButtonID: 1, TextCount: 1, ButtonCount: 1}
+		ButtonClass: "Button", ButtonID: 1, TextCount: 1, IconCount: 1, ButtonCount: 1,
+		BodyStyleOK: true, BodyIDOK: true, BodyTextOK: true, IconStyleOK: true, IconIDOK: true,
+		IconSemanticOK: true, ButtonStyleOK: true, ControlsKnown: true}
 }
 
 type lcFake struct {
@@ -132,6 +134,12 @@ func TestExactBusyCorpus(t *testing.T) {
 		"prefix": func(d *lcDialog) { d.Text = "extra" + d.Text }, "suffix": func(d *lcDialog) { d.Text += "extra" },
 		"nonstandard-button": func(d *lcDialog) { d.ButtonClass = "TButton" }, "wrong-control-ID": func(d *lcDialog) { d.ButtonID = 2 },
 		"missing-body": func(d *lcDialog) { d.TextCount = 0 }, "multiple-text": func(d *lcDialog) { d.TextCount = 2 },
+		"missing-icon": func(d *lcDialog) { d.IconCount = 0 }, "multiple-icon": func(d *lcDialog) { d.IconCount = 2 },
+		"body-style": func(d *lcDialog) { d.BodyStyleOK = false }, "body-id": func(d *lcDialog) { d.BodyIDOK = false },
+		"body-text-api": func(d *lcDialog) { d.BodyTextOK = false },
+		"icon-style":    func(d *lcDialog) { d.IconStyleOK = false }, "icon-id": func(d *lcDialog) { d.IconIDOK = false },
+		"icon-semantic": func(d *lcDialog) { d.IconSemanticOK = false }, "button-style": func(d *lcDialog) { d.ButtonStyleOK = false },
+		"unknown-controls": func(d *lcDialog) { d.ControlsKnown = false },
 		"multiple-buttons": func(d *lcDialog) { d.ButtonCount = 2 },
 	}
 	for name, mutate := range cases {
