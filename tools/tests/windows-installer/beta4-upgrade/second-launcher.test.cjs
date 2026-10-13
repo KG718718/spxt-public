@@ -8,6 +8,8 @@ test('LC01 generated overlay embeds the actual pure Go policy and Windows adapte
   const policy=fs.readFileSync(path.join(repo,'tools/research/lan2-lc01/policy.go'),'utf8').replaceAll('\r\n','\n');
   assert.ok(generated.includes(policy.slice(policy.indexOf('const lcBusyText'))));
   const adapter=fs.readFileSync(path.join(__dirname,'second-launcher-windows.go.in'),'utf8').replaceAll('\r\n','\n');
+  const dialog=fs.readFileSync(path.join(repo,'tools/research/lan2-lc01/dialog_adapter_policy.go'),'utf8').replaceAll('\r\n','\n');
+  assert.ok(generated.includes(dialog.slice(dialog.indexOf('const (\n\tlcBodyStylePlain'))));
   assert.ok(generated.includes(adapter.slice(adapter.indexOf('type lcPinned'))));
   assert.match(generated,/secondResult := checkSecondLauncher/);
   assert.doesNotMatch(generated,/second\.Run\(\)|exec\.CommandContext\(secondContext/);
@@ -17,12 +19,17 @@ test('LC02 guards retain original session, lock, both event counts and second pr
   assert.match(generated,/!secondResult\.NaturalExit \|\| secondResult\.CleanupTerminated \|\| !secondResult\.HandlesClosed/);
 });
 test('LC03 dialog messages require complete exact proof and immediate reinspection',()=>{
-  assert.match(generated,/now != original \|\| !lcExactBusy\(now\)/);
+  assert.match(generated,/same := [^\n]*lcSameDialog\(now, original\)/);
+  assert.match(generated,/!present \|\| !same \|\| !lcExactBusy\(now\)/);
   assert.match(generated,/thread != 0 && pid != 0/);
   assert.match(generated,/n != 0 && n < uintptr\(len\(b\)-1\)/);
   assert.match(generated,/d\.Text == lcBusyText/);
   assert.match(generated,/d\.Title == lcProductTitle/);
-  assert.match(generated,/d\.ButtonID == 1 && d\.TextCount == 1 && d\.ButtonCount == 1/);
+  assert.match(generated,/d\.ButtonID == 1 && d\.TextCount == 1 && d\.IconCount == 1 && d\.ButtonCount == 1/);
+  assert.match(generated,/GetWindowLongPtrW/);
+  assert.match(generated,/0x0171/);
+  assert.match(generated,/0x0173/);
+  assert.doesNotMatch(generated,/SS_TYPEMASK|BS_TYPEMASK/);
   assert.equal((generated.match(/NewProc\("PostMessageW"\)/g)||[]).length,1);
   assert.doesNotMatch(generated,/NewProc\("(?:SendMessageW|FindWindowW|WM_CLOSE)"\)/);
 });

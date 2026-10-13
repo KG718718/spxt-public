@@ -39,6 +39,8 @@ type lcFake struct {
 	forceCleanup, confirmIdentityChanged                            bool
 	inspectCost, confirmCost                                        time.Duration
 	trace                                                           []string
+	dialogReason                                                    string
+	firstDiagnostic, recheckDiagnostic                              lcDialogDiagnostic
 }
 
 func (f *lcFake) Now() time.Duration { return f.clock }
@@ -105,6 +107,12 @@ func (f *lcFake) Close() error {
 	f.trace = append(f.trace, "close")
 	f.closed = f.closeErr == nil
 	return f.closeErr
+}
+func (f *lcFake) DialogDiagnostics() (string, lcDialogDiagnostic, lcDialogDiagnostic) {
+	if f.dialogReason != "" {
+		return f.dialogReason, f.firstDiagnostic, f.recheckDiagnostic
+	}
+	return "SYNTHETIC_NOT_EXERCISED", lcNotReachedDialogDiagnostic("stageEnumToplevel"), lcNotReachedDialogDiagnostic("stageRecheck")
 }
 func lcAssert(t *testing.T, f *lcFake, status, path string) lcResult {
 	t.Helper()
@@ -262,6 +270,18 @@ func TestGuardFailureDuringPolling(t *testing.T) {
 }
 func TestMultipleDialogsFailClosed(t *testing.T) {
 	lcAssert(t, &lcFake{dialogs: []lcDialog{lcFixture(), lcFixture()}, exitAt: 3, code: 1}, "FAIL", "DIALOG_MISMATCH")
+}
+func TestFailureDiagnosticSurvivesCleanupAndClose(t *testing.T) {
+	first := lcNewDialogDiagnostic("stageEnumChildren", "classificationUnknown", true)
+	lcSetDialogFact(first, "dialogAlreadyConfirmed", true, false)
+	lcSetDialogFact(first, "bodyCountMatch", true, false)
+	first = lcFinishDialogDiagnostic(first)
+	recheck := lcNotReachedDialogDiagnostic("stageRecheck")
+	f := &lcFake{dialogs: []lcDialog{{Window: 10}}, forceCleanup: true, dialogReason: "BODY_COUNT_MISMATCH", firstDiagnostic: first, recheckDiagnostic: recheck}
+	r := lcAssert(t, f, "FAIL", "DIALOG_MISMATCH")
+	if r.DialogReason != "BODY_COUNT_MISMATCH" || !r.DialogFirst["bodyCountMatchObserved"] || r.DialogFirst["bodyCountMatchMatch"] || !r.DialogRecheck["classificationNotReached"] {
+		t.Fatal("failure diagnostic changed during cleanup")
+	}
 }
 func TestWindowInspectionError(t *testing.T) {
 	lcAssert(t, &lcFake{inspectErr: errors.New("synthetic")}, "FAIL", "WINDOW_IDENTITY_FAILED")

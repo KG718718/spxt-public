@@ -54,7 +54,7 @@ func hostedNodePID(instance string) (uint32,bool) {
  };return 0,false
 }
 func TestHostedLC01(t *testing.T) {
- r:=hostedResult{Status:"FAIL",Stage:"ENV",Second:lcResult{Status:"FAIL",Path:"NOT_RUN"},ModalProof:"UNPROVEN"}
+ r:=hostedResult{Status:"FAIL",Stage:"ENV",Second:lcResult{Status:"FAIL",Path:"NOT_RUN",DialogReason:"DIALOG_NOT_REACHED",DialogFirst:lcNotReachedDialogDiagnostic("stageEnumToplevel"),DialogRecheck:lcNotReachedDialogDiagnostic("stageRecheck")},ModalProof:"UNPROVEN"}
  install,instance,report:=os.Getenv("LC01_INSTALL"),os.Getenv("LC01_INSTANCE"),os.Getenv("LC01_LIFECYCLE_REPORT")
  var first *lcWindows;var node lcPinned
  defer func(){

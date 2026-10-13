@@ -63,6 +63,8 @@ type lcResult struct {
 	Status, Path                                              string
 	BusyClosed, NaturalExit, CleanupTerminated, HandlesClosed bool
 	ExitCode                                                  uint32
+	DialogReason                                              string
+	DialogFirst, DialogRecheck                                lcDialogDiagnostic
 }
 
 // Every side effect is behind this boundary. Pure tests use a virtual clock and
@@ -76,6 +78,7 @@ type lcBoundary interface {
 	Wait(time.Duration) (bool, uint32, error)
 	Cleanup() (bool, error)
 	Close() error
+	DialogDiagnostics() (string, lcDialogDiagnostic, lcDialogDiagnostic)
 }
 
 func lcRun(b lcBoundary, budget time.Duration) (result lcResult) {
@@ -97,6 +100,7 @@ func lcRun(b lcBoundary, budget time.Duration) (result lcResult) {
 		} else {
 			result.HandlesClosed = true
 		}
+		result.DialogReason, result.DialogFirst, result.DialogRecheck = b.DialogDiagnostics()
 	}()
 	if budget <= 0 {
 		result.Path = "INVALID_BUDGET"

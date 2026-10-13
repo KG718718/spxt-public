@@ -143,7 +143,7 @@ func TestR1AdditionalControlsFailClosed(t *testing.T) {
 }
 
 func r1SameForConfirm(original, now lcDialog) bool {
-	return now == original && lcExactBusy(now)
+	return lcSameDialog(now, original) && lcExactBusy(now)
 }
 
 func TestR1ImmediateRecheckRejectsEveryIdentityOrControlChange(t *testing.T) {

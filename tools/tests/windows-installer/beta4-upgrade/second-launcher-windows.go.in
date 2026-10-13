@@ -42,6 +42,11 @@ type lcWindows struct {
 	ready, spawns       int
 	confirmed           uintptr
 	closeFailed         bool
+	dialogReason        string
+	firstDiagnostic     lcDialogDiagnostic
+	recheckDiagnostic   lcDialogDiagnostic
+	firstFrozen         bool
+	recheckFrozen       bool
 }
 
 func lcError(code string) error { return fmt.Errorf("%s", code) }
@@ -225,24 +230,85 @@ func lcText(hwnd uintptr) (string, bool) {
 	r, _, _ := user32.NewProc("SendMessageTimeoutW").Call(hwnd, 0x000D, uintptr(len(b)), uintptr(unsafe.Pointer(&b[0])), 2, 50, uintptr(unsafe.Pointer(&reply)))
 	return syscall.UTF16ToString(b[:]), r != 0 && reply < uintptr(len(b)-1)
 }
-func (w *lcWindows) dialog(hwnd uintptr) (lcDialog, error) {
+func lcStyle(hwnd uintptr) (uint32, bool) {
+	// Every accepted full style is nonzero. A zero result is therefore
+	// unproven without relying on thread-local last-error state.
+	r, _, _ := user32.NewProc("GetWindowLongPtrW").Call(hwnd, ^uintptr(15))
+	return uint32(r), r != 0
+}
+func lcIconSemantics(hwnd uintptr) (uintptr, bool, uintptr, bool) {
+	var byIcon, byImage uintptr
+	rIcon, _, _ := user32.NewProc("SendMessageTimeoutW").Call(hwnd, 0x0171, 0, 0, 2, 50, uintptr(unsafe.Pointer(&byIcon)))
+	rImage, _, _ := user32.NewProc("SendMessageTimeoutW").Call(hwnd, 0x0173, 1, 0, 2, 50, uintptr(unsafe.Pointer(&byImage)))
+	return byIcon, rIcon != 0, byImage, rImage != 0
+}
+func lcCloneDiagnostic(d lcDialogDiagnostic) lcDialogDiagnostic {
+	if d == nil {
+		return nil
+	}
+	out := make(lcDialogDiagnostic, len(d))
+	for key, value := range d {
+		out[key] = value
+	}
+	return out
+}
+func (w *lcWindows) captureDialog(stage string, diagnostic lcDialogDiagnostic, reason string, freeze bool) {
+	if stage == "stageRecheck" {
+		if !w.recheckFrozen {
+			w.recheckDiagnostic, w.dialogReason = lcCloneDiagnostic(diagnostic), reason
+			w.recheckFrozen = freeze
+		}
+		return
+	}
+	if !w.firstFrozen {
+		w.firstDiagnostic, w.dialogReason = lcCloneDiagnostic(diagnostic), reason
+		w.firstFrozen = freeze
+	}
+}
+func (w *lcWindows) DialogDiagnostics() (string, lcDialogDiagnostic, lcDialogDiagnostic) {
+	if w.dialogReason == "" {
+		w.dialogReason = "DIALOG_NOT_REACHED"
+	}
+	if w.firstDiagnostic == nil {
+		w.firstDiagnostic = lcNotReachedDialogDiagnostic("stageEnumToplevel")
+	}
+	if w.recheckDiagnostic == nil {
+		w.recheckDiagnostic = lcNotReachedDialogDiagnostic("stageRecheck")
+	}
+	return w.dialogReason, lcCloneDiagnostic(w.firstDiagnostic), lcCloneDiagnostic(w.recheckDiagnostic)
+}
+func (w *lcWindows) dialog(hwnd uintptr, stage string) (lcDialog, lcDialogDiagnostic, string, error) {
 	d := lcDialog{Window: hwnd, ExpectedPID: w.second.pid, ExpectedCreation: w.second.creation}
+	diagnostic := lcNewDialogDiagnostic(stage, "classificationUnknown", true)
+	lcSetDialogFact(diagnostic, "dialogPresent", true, hwnd != 0)
+	lcSetDialogFact(diagnostic, "dialogHandlePresent", true, hwnd != 0)
+	lcSetDialogFact(diagnostic, "dialogAlreadyConfirmed", true, w.confirmed != 0)
 	d.PID, d.ThreadOK = lcWindowPID(hwnd)
+	lcSetDialogFact(diagnostic, "threadQueryOK", true, d.ThreadOK)
+	lcSetDialogFact(diagnostic, "ownerPIDMatch", d.ThreadOK, d.ThreadOK && d.PID == w.second.pid)
 	d.Class, d.ClassOK = lcClass(hwnd)
+	lcSetDialogFact(diagnostic, "dialogClassMatch", d.ClassOK, d.ClassOK && d.Class == "#32770")
 	d.Live = w.second.live()
-	d.ImageOK = w.second.identity()
-	d.Creation, _ = lcCreation(w.second.handle)
-	if !d.ThreadOK || d.PID != w.second.pid || !d.ClassOK || !d.Live || !d.ImageOK {
-		return d, lcError("WINDOW_OWNER_FAILED")
+	lcSetDialogFact(diagnostic, "liveMatch", true, d.Live)
+	creation, creationErr := lcCreation(w.second.handle)
+	d.Creation = creation
+	lcSetDialogFact(diagnostic, "creationMatch", creationErr == nil, creationErr == nil && creation != 0 && creation == w.second.creation)
+	image, imageErr := lcImage(w.second.handle)
+	d.ImageOK = imageErr == nil && sameFile(image, w.second.image)
+	lcSetDialogFact(diagnostic, "imageMatch", imageErr == nil, d.ImageOK)
+	if !d.ThreadOK || d.PID != w.second.pid || !d.ClassOK || d.Class != "#32770" || !d.Live || creationErr != nil || creation != w.second.creation || creation == 0 || !d.ImageOK {
+		return d, lcFinishDialogDiagnostic(diagnostic), "WINDOW_IDENTITY_UNPROVEN", lcError("WINDOW_OWNER_FAILED")
 	}
 	var ok bool
 	d.Title, ok = lcText(hwnd)
+	lcSetDialogFact(diagnostic, "titleMatch", ok, ok && d.Title == lcProductTitle)
 	if !ok {
-		return d, lcError("DIALOG_TEXT_UNAVAILABLE")
+		return d, lcFinishDialogDiagnostic(diagnostic), "DIALOG_TITLE_API_UNPROVEN", lcError("DIALOG_TEXT_UNAVAILABLE")
 	}
 	d.Visible, _, _ = lcBoolWindow("IsWindowVisible", hwnd)
 	children := 0
 	failed := false
+	controls := []lcControlSnapshot{}
 	lcChildVisitor = func(child uintptr) uintptr {
 		if w.Now() >= lcSecondBudget {
 			failed = true
@@ -253,130 +319,195 @@ func (w *lcWindows) dialog(hwnd uintptr) (lcDialog, error) {
 			failed = true
 			return 0
 		}
-		pid, ownerOK := lcWindowPID(child)
+		control := lcControlSnapshot{Window: child}
+		control.PID, control.ThreadOK = lcWindowPID(child)
+		pid, ownerOK := control.PID, control.ThreadOK
 		class, classOK := lcClass(child)
-		if !ownerOK || pid != w.second.pid || !classOK {
-			failed = true
-			return 0
+		control.Class, control.ClassOK = class, classOK
+		control.Style, control.StyleOK = lcStyle(child)
+		id, _, _ := user32.NewProc("GetDlgCtrlID").Call(child)
+		control.ID = int(int32(id))
+		control.IDOK = id != 0
+		control.Parent, _, _ = user32.NewProc("GetParent").Call(child)
+		control.ParentOK = control.Parent != 0
+		control.Visible, _, _ = lcBoolWindow("IsWindowVisible", child)
+		control.Enabled, _, _ = lcBoolWindow("IsWindowEnabled", child)
+		if ownerOK && pid == w.second.pid && classOK && control.StyleOK && class == "Static" {
+			if lcBodyStyle(control.Style) {
+				control.Text, control.TextOK = lcText(child)
+			} else if lcIconStyle(control.Style) {
+				control.IconGet, control.IconGetOK, control.IconImage, control.IconImageOK = lcIconSemantics(child)
+			}
 		}
-		text, textOK := lcText(child)
-		if !textOK {
-			failed = true
-			return 0
-		}
-		if class == "Static" && text != "" {
-			d.TextCount++
-			d.Text = text
-		}
-		if class == "Button" {
-			d.ButtonCount++
-			d.Button = child
-			d.ButtonClass = class
-			d.ButtonOwnerOK = ownerOK
-			id, _, _ := user32.NewProc("GetDlgCtrlID").Call(child)
-			d.ButtonID = int(int32(id))
-			parent, _, _ := user32.NewProc("GetParent").Call(child)
-			d.ParentOK = parent == hwnd
-			visible, _, _ := lcBoolWindow("IsWindowVisible", child)
-			enabled, _, _ := lcBoolWindow("IsWindowEnabled", child)
-			d.Visible = d.Visible && visible
-			d.Enabled = enabled
-		}
+		control.WindowOK, _, _ = lcBoolWindow("IsWindow", child)
+		controls = append(controls, control)
 		return 1
 	}
 	r, _, _ := user32.NewProc("EnumChildWindows").Call(hwnd, lcChildCallback, 0)
 	lcChildVisitor = nil
-	// EnumChildWindows return is not meaningful; callback observations are checked.
-	_ = r
-	if failed || children == 0 {
-		return d, lcError("DIALOG_CONTROLS_UNAVAILABLE")
+	if !lcChildEnumerationComplete(failed, children, r) {
+		return d, lcFinishDialogDiagnostic(diagnostic), "CHILD_ENUM_API_UNPROVEN", lcError("DIALOG_CONTROLS_UNAVAILABLE")
 	}
-	return d, nil
+	d, diagnostic, reason := lcClassifyDialogControls(d, controls, diagnostic)
+	if strings.HasSuffix(reason, "API_UNPROVEN") {
+		return d, diagnostic, reason, lcError("DIALOG_CONTROLS_UNAVAILABLE")
+	}
+	return d, diagnostic, reason, nil
 }
 func lcBoolWindow(name string, hwnd uintptr) (bool, uintptr, error) {
 	r, _, e := user32.NewProc(name).Call(hwnd)
 	return r != 0, r, e
 }
-func (w *lcWindows) Inspect() (lcDialog, bool, error) {
-	lcScanMutex.Lock()
-	defer lcScanMutex.Unlock()
+func (w *lcWindows) scanDialogs(stage string, skipConfirmed bool) (lcDialog, bool, error) {
 	if !w.second.live() {
+		diagnostic := lcNewDialogDiagnostic(stage, "classificationUnknown", true)
+		lcSetDialogFact(diagnostic, "liveMatch", true, false)
+		lcSetDialogFact(diagnostic, "dialogAlreadyConfirmed", true, w.confirmed != 0)
+		w.captureDialog(stage, lcFinishDialogDiagnostic(diagnostic), "SECOND_NOT_LIVE", true)
 		return lcDialog{}, false, nil
 	}
 	if !w.second.identity() {
+		diagnostic := lcNewDialogDiagnostic(stage, "classificationUnknown", true)
+		lcSetDialogFact(diagnostic, "imageMatch", true, false)
+		lcSetDialogFact(diagnostic, "dialogAlreadyConfirmed", true, w.confirmed != 0)
+		w.captureDialog(stage, lcFinishDialogDiagnostic(diagnostic), "SECOND_IDENTITY_UNPROVEN", true)
 		return lcDialog{}, false, lcError("SECOND_IDENTITY_FAILED")
 	}
-	var found lcDialog
-	present := false
+	found := []lcDialog{}
+	diagnostics := []lcDialogDiagnostic{}
+	reasons := []string{}
 	var failure error
+	var failureDiagnostic lcDialogDiagnostic
+	failureReason := ""
 	lcWindowVisitor = func(hwnd uintptr) uintptr {
 		if w.Now() >= lcSecondBudget {
 			failure = lcError("WINDOW_TIME_LIMIT")
+			failureDiagnostic = lcNewDialogDiagnostic(stage, "classificationUnknown", true)
+			lcSetDialogFact(failureDiagnostic, "dialogAlreadyConfirmed", true, w.confirmed != 0)
+			failureDiagnostic = lcFinishDialogDiagnostic(failureDiagnostic)
+			failureReason = "TOPLEVEL_ENUM_TIMEOUT"
 			return 0
 		}
 		pid, ok := lcWindowPID(hwnd)
-		if !ok {
+		if !ok || pid != w.second.pid {
 			return 1
-		}
-		if pid != w.second.pid {
-			return 1
-		}
-		class, classOK := lcClass(hwnd)
-		if !classOK {
-			failure = lcError("WINDOW_CLASS_FAILED")
-			return 0
 		}
 		visible, _, _ := lcBoolWindow("IsWindowVisible", hwnd)
 		if !visible {
 			return 1
 		}
-		if class != "#32770" {
-			failure = lcError("UNEXPECTED_SECOND_WINDOW")
+		class, classOK := lcClass(hwnd)
+		selected, fatal, selectionReason := lcTopLevelCandidate(w.second.pid, pid, ok, visible, classOK, class)
+		if fatal {
+			failure = lcError("WINDOW_CLASS_FAILED")
+			failureDiagnostic = lcNewDialogDiagnostic(stage, "classificationUnknown", true)
+			lcSetDialogFact(failureDiagnostic, "dialogPresent", true, true)
+			lcSetDialogFact(failureDiagnostic, "dialogHandlePresent", true, true)
+			lcSetDialogFact(failureDiagnostic, "ownerPIDMatch", true, true)
+			lcSetDialogFact(failureDiagnostic, "dialogClassMatch", classOK, false)
+			lcSetDialogFact(failureDiagnostic, "dialogAlreadyConfirmed", true, w.confirmed != 0)
+			failureDiagnostic = lcFinishDialogDiagnostic(failureDiagnostic)
+			failureReason = selectionReason
 			return 0
 		}
-		d, err := w.dialog(hwnd)
-		if err != nil {
-			failure = err
-			return 0
-		}
-		if w.confirmed != 0 && hwnd == w.confirmed && lcExactBusy(d) {
+		if !selected {
 			return 1
 		}
-		if present {
-			failure = lcError("MULTIPLE_SECOND_DIALOGS")
+		d, diagnostic, reason, err := w.dialog(hwnd, stage)
+		if err != nil {
+			failure = err
+			failureDiagnostic, failureReason = diagnostic, reason
 			return 0
 		}
-		found = d
-		present = true
+		found = append(found, d)
+		diagnostics = append(diagnostics, diagnostic)
+		reasons = append(reasons, reason)
 		return 1
 	}
 	r, _, _ := user32.NewProc("EnumWindows").Call(lcWindowCallback, 0)
 	lcWindowVisitor = nil
 	if failure != nil {
-		return found, present, failure
+		w.captureDialog(stage, failureDiagnostic, failureReason, true)
+		return lcDialog{}, false, failure
 	}
 	if r == 0 {
-		return found, present, lcError("WINDOW_ENUM_FAILED")
+		diagnostic := lcNewDialogDiagnostic(stage, "classificationUnknown", true)
+		lcSetDialogFact(diagnostic, "dialogAlreadyConfirmed", true, w.confirmed != 0)
+		w.captureDialog(stage, lcFinishDialogDiagnostic(diagnostic), "TOPLEVEL_ENUM_API_UNPROVEN", true)
+		return lcDialog{}, false, lcError("WINDOW_ENUM_FAILED")
 	}
-	return found, present, nil
+	if len(found) == 0 {
+		diagnostic := lcNewDialogDiagnostic(stage, "classificationUnknown", true)
+		lcSetDialogFact(diagnostic, "dialogPresent", true, false)
+		lcSetDialogFact(diagnostic, "dialogCountMatch", true, false)
+		lcSetDialogFact(diagnostic, "dialogAlreadyConfirmed", true, w.confirmed != 0)
+		w.captureDialog(stage, lcFinishDialogDiagnostic(diagnostic), "DIALOG_NOT_PRESENT", false)
+		return lcDialog{}, false, nil
+	}
+	diagnostic := diagnostics[0]
+	lcSetDialogFact(diagnostic, "dialogCountMatch", true, len(found) == 1)
+	if stage != "stageRecheck" {
+		lcSetDialogFact(diagnostic, "structureMatch", true, true)
+	}
+	diagnostic = lcFinishDialogDiagnostic(diagnostic)
+	if len(found) != 1 {
+		w.captureDialog(stage, diagnostic, "MULTIPLE_SECOND_DIALOGS", true)
+		return found[0], true, lcError("MULTIPLE_SECOND_DIALOGS")
+	}
+	reason := reasons[0]
+	if reason == "DIALOG_MATCH" && !diagnostic["classificationMatch"] {
+		reason = "DIALOG_FIELDS_MISMATCH"
+	} else if reason == "DIALOG_MATCH" && stage != "stageRecheck" {
+		reason = "DIALOG_FIRST_MATCH"
+	}
+	w.captureDialog(stage, diagnostic, reason, true)
+	if skipConfirmed && w.confirmed != 0 && found[0].Window == w.confirmed && lcExactBusy(found[0]) {
+		return lcDialog{}, false, nil
+	}
+	return found[0], true, nil
+}
+func (w *lcWindows) Inspect() (lcDialog, bool, error) {
+	lcScanMutex.Lock()
+	defer lcScanMutex.Unlock()
+	return w.scanDialogs("stageEnumChildren", true)
 }
 func (w *lcWindows) Confirm(original lcDialog) error {
 	lcScanMutex.Lock()
 	defer lcScanMutex.Unlock()
-	if w.confirmed != 0 || w.Now() >= lcSecondBudget || w.Guards() != nil {
+	if w.confirmed != 0 {
+		w.dialogReason = "CONFIRM_ALREADY_USED"
+		return lcError("CONFIRM_GUARD_FAILED")
+	}
+	if w.Now() >= lcSecondBudget {
+		w.dialogReason = "CONFIRM_BUDGET_EXPIRED"
+		return lcError("CONFIRM_GUARD_FAILED")
+	}
+	if w.Guards() != nil {
+		w.dialogReason = "CONFIRM_GUARD_FAILED"
 		return lcError("CONFIRM_GUARD_FAILED")
 	}
 	// Re-read owner, class, complete title/text and control identity immediately
 	// before the only message. Never send WM_CLOSE or click an unknown dialog.
-	now, err := w.dialog(original.Window)
-	if err != nil || now != original || !lcExactBusy(now) || !w.second.live() || !w.second.identity() || w.Now() >= lcSecondBudget {
+	now, present, err := w.scanDialogs("stageRecheck", false)
+	same := err == nil && present && lcSameDialog(now, original)
+	if w.recheckDiagnostic != nil {
+		diagnostic := lcCloneDiagnostic(w.recheckDiagnostic)
+		lcSetDialogFact(diagnostic, "structureMatch", true, same)
+		w.recheckDiagnostic = lcFinishDialogDiagnostic(diagnostic)
+	}
+	if err != nil || !present || !same || !lcExactBusy(now) || !w.second.live() || !w.second.identity() || w.Now() >= lcSecondBudget {
+		if err == nil {
+			w.dialogReason = "RECHECK_STRUCTURE_CHANGED"
+		}
 		return lcError("CONFIRM_IDENTITY_CHANGED")
 	}
 	r, _, _ := user32.NewProc("PostMessageW").Call(now.Window, 0x0111, 1, now.Button)
 	if r == 0 {
+		w.dialogReason = "POST_IDOK_API_UNPROVEN"
 		return lcError("CONFIRM_POST_FAILED")
 	}
 	w.confirmed = now.Window
+	w.dialogReason = "DIALOG_MATCH"
 	return nil
 }
 func (w *lcWindows) Wait(d time.Duration) (bool, uint32, error) {

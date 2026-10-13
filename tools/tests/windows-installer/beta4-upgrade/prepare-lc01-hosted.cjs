@@ -5,10 +5,11 @@ function once(text,from,to){assert.equal(text.split(from).length-1,1,'single fix
 function generate(out){
  assert.ok(path.isAbsolute(out)&&!fs.existsSync(out),'fresh absolute output required');fs.mkdirSync(out);
  const policy=fs.readFileSync(path.join(REPO,'tools/research/lan2-lc01/policy.go'),'utf8').replaceAll('\r\n','\n');
+ const dialog=fs.readFileSync(path.join(REPO,'tools/research/lan2-lc01/dialog_adapter_policy.go'),'utf8').replaceAll('\r\n','\n');
  const windows=fs.readFileSync(path.join(DIR,'second-launcher-windows.go.in'),'utf8').replaceAll('\r\n','\n');
  const hosted=fs.readFileSync(path.join(DIR,'lc01-hosted.go.in'),'utf8').replaceAll('\r\n','\n');
  fs.writeFileSync(path.join(out,'go.mod'),'module ksession/lc01-hosted\n\ngo 1.27.1\n',{flag:'wx'});
- fs.writeFileSync(path.join(out,'hosted_windows_test.go'),hosted+'\n'+policy.slice(policy.indexOf('const lcBusyText'))+'\n'+windows.slice(windows.indexOf('type lcPinned')),{flag:'wx'});
+ fs.writeFileSync(path.join(out,'hosted_windows_test.go'),hosted+'\n'+policy.slice(policy.indexOf('const lcBusyText'))+'\n'+dialog.slice(dialog.indexOf('const (\n\tlcBodyStylePlain'))+'\n'+windows.slice(windows.indexOf('type lcPinned')),{flag:'wx'});
  let ps=fs.readFileSync(path.join(REPO,'tools/windows-installer/beta2-identity/invoke.ps1'),'utf8').replaceAll('\r\n','\n');
  ps=once(ps,'[Parameter(Mandatory=$true)][string]$TestedCommit','[Parameter(Mandatory=$true)][string]$LifecycleExe,\n  [Parameter(Mandatory=$true)][string]$TestedCommit');
  ps=ps.replaceAll('C:\\KSESSION-B45-BETA2-IDENTITY-WORK','C:\\KSESSION-LC01-HOSTED-WORK');

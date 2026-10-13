@@ -118,11 +118,13 @@ func requireLauncherLockOccupied(t *testing.T, instance string) {
 
 function appendSecondLauncherHelpers(upgrade, repo) {
   const policy = fs.readFileSync(path.join(repo, 'tools/research/lan2-lc01/policy.go'), 'utf8').replaceAll('\r\n', '\n');
+  const dialog = fs.readFileSync(path.join(repo, 'tools/research/lan2-lc01/dialog_adapter_policy.go'), 'utf8').replaceAll('\r\n', '\n');
   const windows = fs.readFileSync(path.join(__dirname, 'second-launcher-windows.go.in'), 'utf8').replaceAll('\r\n', '\n');
   assert.equal(policy.split('const lcBusyText').length, 2);
+  assert.equal(dialog.split('const (\n\tlcBodyStylePlain').length, 2);
   assert.equal(windows.split('type lcPinned').length, 2);
   upgrade = replaceOnce(upgrade, '\t"time"', '\t"time"\n\t"errors"\n\t"sync"\n\t"unicode/utf16"\n\t"unsafe"');
-  return upgrade + '\n' + policy.slice(policy.indexOf('const lcBusyText')) + '\n' + windows.slice(windows.indexOf('type lcPinned'));
+  return upgrade + '\n' + policy.slice(policy.indexOf('const lcBusyText')) + '\n' + dialog.slice(dialog.indexOf('const (\n\tlcBodyStylePlain')) + '\n' + windows.slice(windows.indexOf('type lcPinned'));
 }
 
 function main(argv) {
