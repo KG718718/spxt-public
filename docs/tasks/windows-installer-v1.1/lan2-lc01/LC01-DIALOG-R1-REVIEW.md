@@ -33,36 +33,23 @@
 
 ## 若未来获批，真实 Windows 最小观察设计
 
-在运行第二 Launcher 前固定已受验的进程句柄、PID、创建时间和映像。观察必须只记录下列白名单值，不记录标题、正文、路径、PID、HWND、句柄值、窗口树、网络身份或其哈希/长度：
+在运行第二 Launcher 前固定已受验的进程句柄、PID、创建时间和映像。公开观察载荷必须只包含固定 key 和 JSON boolean value，不包含字符串、`null`、数字、数组、对象，也不记录标题、正文、路径、PID、HWND、句柄值、窗口树、网络身份或其哈希/长度。
 
-- `schema=LC01-DIALOG-R1`
-- `stage=ENUM_TOPLEVEL|READ_DIALOG|ENUM_CHILDREN|RECHECK|POST_IDOK|WAIT_EXIT`
-- `classification=MATCH|MISMATCH|UNKNOWN|NOT_REACHED`
-- `reached`
-- `dialogPresent`
-- `dialogHandlePresent`
-- `threadQueryOK`
-- `ownerPIDMatch`
-- `creationMatch`
-- `imageMatch`
-- `liveMatch`
-- `classMatch`
-- `titleMatch`
-- `textMatch`
-- `buttonHandlePresent`
-- `buttonIDMatch`
-- `buttonClassMatch`
-- `buttonOwnerMatch`
-- `buttonParentMatch`
-- `visibleMatch`
-- `enabledMatch`
-- `textCountMatch`
-- `buttonCountMatch`
-- `dialogAlreadyConfirmed`
+固定公共字段如下：
 
-观察实现应内部读取但不输出：顶层窗口 class/可见性、所属 PID、创建时间、映像；每个子控件的 class、style/`SS_TYPEMASK`、control ID、直接父窗口、所属进程、`WM_GETTEXT` 返回长度、可见/启用；正文 Static 和图标 Static 的数量；立即重读前后是否完全相同。子控件必须按无序集合分类，不能依赖 `EnumChildWindows` 顺序。`dialogAlreadyConfirmed` 只记录 policy 分支状态，不参与控件是否匹配的判定。MATCH 必须要求所有必需观测为 `true`；MISMATCH 必须至少有一个已观测的 `false` 且没有缺失；有任何缺失、API 失败、超限或竞态只能是 UNKNOWN；未到达的阶段只能是 NOT_REACHED，全部观测字段为 `null`。不得把 `null` 当作 `false` 或推断为 PASS。
+- schema：`schemaLC01DialogR1`
+- 到达状态：`reached`
+- stage one-hot：`stageEnumToplevel`、`stageReadDialog`、`stageEnumChildren`、`stageRecheck`、`stagePostIDOK`、`stageWaitExit`
+- classification one-hot：`classificationMatch`、`classificationMismatch`、`classificationUnknown`、`classificationNotReached`
+- 每项条件各两个布尔：`<condition>Observed` 与 `<condition>Match`
+- 条件名固定为 `dialogPresent`、`dialogHandlePresent`、`threadQueryOK`、`ownerPIDMatch`、`creationMatch`、`imageMatch`、`liveMatch`、`classMatch`、`titleMatch`、`textMatch`、`buttonHandlePresent`、`buttonIDMatch`、`buttonClassMatch`、`buttonOwnerMatch`、`buttonParentMatch`、`visibleMatch`、`enabledMatch`、`textCountMatch`、`buttonCountMatch`
+- 分支信息同样使用两个布尔：`dialogAlreadyConfirmedObserved` 与 `dialogAlreadyConfirmedMatch`
 
-在精确身份和控件语义未全部证明前不得发送消息。即使 `POST_IDOK` 成功，也必须继续区分消息已投递、自然退出、退出码及 cleanup；只有自然退出可闭合该门禁。本任务没有批准实施或运行此观察器。
+内部研究模型可以用 `*bool` 表示三态，但不得直接输出。未知条件公开为 `Observed=false`、`Match=false`；后者不得解释为不匹配。MATCH 要求全部必需条件 `Observed=true` 且 `Match=true`；MISMATCH 要求全部必需条件已观察且至少一个 `Match=false`；有任何未观察、API 失败、超限或竞态只能是 UNKNOWN；未到达只能是 NOT_REACHED、`reached=false` 且全部 `Observed=false`。stage 和 classification 分别必须恰好一个 one-hot 为 true。`dialogAlreadyConfirmed` 只记录 policy 分支状态，不参与控件匹配判定。缺 key、额外 key、非 boolean、one-hot 矛盾、`Match=true/Observed=false` 或分类与证据矛盾都必须拒绝。
+
+观察实现应内部读取但不输出：顶层窗口 class/可见性、所属 PID、创建时间、映像；每个子控件的 class、style/`SS_TYPEMASK`、control ID、直接父窗口、所属进程、`WM_GETTEXT` 返回长度、可见/启用；正文 Static 和图标 Static 的数量；立即重读前后是否完全相同。子控件必须按无序集合分类，不能依赖 `EnumChildWindows` 顺序。
+
+在精确身份和控件语义未全部证明前不得发送消息。即使 `POST_IDOK` 成功，也必须继续区分消息已投递、自然退出、退出码及 cleanup；只有自然退出可闭合该门禁。本任务只定义并合成验证公共 schema，没有批准实施或运行实际 collector。
 
 ## 最小修改建议（未实施）
 

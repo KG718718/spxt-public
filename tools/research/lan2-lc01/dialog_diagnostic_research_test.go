@@ -263,6 +263,46 @@ func (row r1Diagnostic) r1Proofs() []*bool {
 		row.TextCountMatch, row.ButtonCountMatch}
 }
 
+func r1CheckDiagnostic(row r1Diagnostic) (string, bool) {
+	validStage := map[string]bool{"ENUM_TOPLEVEL": true, "READ_DIALOG": true, "ENUM_CHILDREN": true, "RECHECK": true, "POST_IDOK": true, "WAIT_EXIT": true}
+	validClass := map[string]bool{"MATCH": true, "MISMATCH": true, "UNKNOWN": true, "NOT_REACHED": true}
+	if row.Schema != "LC01-DIALOG-R1" || !validStage[row.Stage] || !validClass[row.Classification] || row.Reached == nil {
+		return "UNKNOWN", false
+	}
+	if !*row.Reached {
+		if row.Classification != "NOT_REACHED" || row.DialogAlreadyConfirmed != nil {
+			return "UNKNOWN", false
+		}
+		for _, proof := range row.r1Proofs() {
+			if proof != nil {
+				return "UNKNOWN", false
+			}
+		}
+		return "NOT_REACHED", true
+	}
+	if row.Classification == "NOT_REACHED" || row.DialogAlreadyConfirmed == nil {
+		return "UNKNOWN", false
+	}
+	allObserved, allTrue := true, true
+	for _, proof := range row.r1Proofs() {
+		if proof == nil {
+			allObserved = false
+			continue
+		}
+		allTrue = allTrue && *proof
+	}
+	if !allObserved {
+		return "UNKNOWN", row.Classification == "UNKNOWN"
+	}
+	if allTrue && row.Classification == "MATCH" {
+		return "MATCH", true
+	}
+	if !allTrue && row.Classification == "MISMATCH" {
+		return "MISMATCH", true
+	}
+	return "UNKNOWN", false
+}
+
 func r1ValidateDiagnostic(raw []byte) string {
 	var fields map[string]json.RawMessage
 	if json.Unmarshal(raw, &fields) != nil {
@@ -277,49 +317,152 @@ func r1ValidateDiagnostic(raw []byte) string {
 		}
 	}
 	var row r1Diagnostic
-	if json.Unmarshal(raw, &row) != nil || row.Schema != "LC01-DIALOG-R1" {
+	if json.Unmarshal(raw, &row) != nil {
 		return "UNKNOWN"
 	}
-	validStage := map[string]bool{"ENUM_TOPLEVEL": true, "READ_DIALOG": true, "ENUM_CHILDREN": true, "RECHECK": true, "POST_IDOK": true, "WAIT_EXIT": true}
-	validClass := map[string]bool{"MATCH": true, "MISMATCH": true, "UNKNOWN": true, "NOT_REACHED": true}
-	if !validStage[row.Stage] || !validClass[row.Classification] || row.Reached == nil {
-		return "UNKNOWN"
-	}
-	if !*row.Reached {
-		if row.Classification != "NOT_REACHED" || row.DialogAlreadyConfirmed != nil {
-			return "UNKNOWN"
-		}
-		for _, proof := range row.r1Proofs() {
-			if proof != nil {
-				return "UNKNOWN"
-			}
-		}
-		return "NOT_REACHED"
-	}
-	if row.Classification == "NOT_REACHED" || row.DialogAlreadyConfirmed == nil {
-		return "UNKNOWN"
-	}
-	allObserved, allTrue := true, true
-	for _, proof := range row.r1Proofs() {
-		if proof == nil {
-			allObserved = false
-			continue
-		}
-		allTrue = allTrue && *proof
-	}
-	if !allObserved {
-		if row.Classification == "UNKNOWN" {
-			return "UNKNOWN"
-		}
-		return "UNKNOWN"
-	}
-	if allTrue && row.Classification == "MATCH" {
-		return "MATCH"
-	}
-	if !allTrue && row.Classification == "MISMATCH" {
-		return "MISMATCH"
+	if classification, ok := r1CheckDiagnostic(row); ok {
+		return classification
 	}
 	return "UNKNOWN"
+}
+
+type r1NamedProof struct {
+	name  string
+	value *bool
+}
+
+func r1NamedProofs(row r1Diagnostic) []r1NamedProof {
+	return []r1NamedProof{
+		{"dialogPresent", row.DialogPresent}, {"dialogHandlePresent", row.DialogHandlePresent},
+		{"threadQueryOK", row.ThreadQueryOK}, {"ownerPIDMatch", row.OwnerPIDMatch},
+		{"creationMatch", row.CreationMatch}, {"imageMatch", row.ImageMatch},
+		{"liveMatch", row.LiveMatch}, {"classMatch", row.ClassMatch}, {"titleMatch", row.TitleMatch},
+		{"textMatch", row.TextMatch}, {"buttonHandlePresent", row.ButtonHandlePresent},
+		{"buttonIDMatch", row.ButtonIDMatch}, {"buttonClassMatch", row.ButtonClassMatch},
+		{"buttonOwnerMatch", row.ButtonOwnerMatch}, {"buttonParentMatch", row.ButtonParentMatch},
+		{"visibleMatch", row.VisibleMatch}, {"enabledMatch", row.EnabledMatch},
+		{"textCountMatch", row.TextCountMatch}, {"buttonCountMatch", row.ButtonCountMatch},
+	}
+}
+
+var r1PublicStages = map[string]string{
+	"ENUM_TOPLEVEL": "stageEnumToplevel", "READ_DIALOG": "stageReadDialog",
+	"ENUM_CHILDREN": "stageEnumChildren", "RECHECK": "stageRecheck",
+	"POST_IDOK": "stagePostIDOK", "WAIT_EXIT": "stageWaitExit",
+}
+
+var r1PublicClasses = map[string]string{
+	"MATCH": "classificationMatch", "MISMATCH": "classificationMismatch",
+	"UNKNOWN": "classificationUnknown", "NOT_REACHED": "classificationNotReached",
+}
+
+func r1PublicKeySet() map[string]bool {
+	keys := map[string]bool{"schemaLC01DialogR1": true, "reached": true,
+		"dialogAlreadyConfirmedObserved": true, "dialogAlreadyConfirmedMatch": true}
+	for _, key := range r1PublicStages {
+		keys[key] = true
+	}
+	for _, key := range r1PublicClasses {
+		keys[key] = true
+	}
+	for _, proof := range r1NamedProofs(r1Diagnostic{}) {
+		keys[proof.name+"Observed"] = true
+		keys[proof.name+"Match"] = true
+	}
+	return keys
+}
+
+func r1ExportDiagnostic(row r1Diagnostic) ([]byte, bool) {
+	if _, ok := r1CheckDiagnostic(row); !ok {
+		return nil, false
+	}
+	out := make(map[string]bool, len(r1PublicKeySet()))
+	for key := range r1PublicKeySet() {
+		out[key] = false
+	}
+	out["schemaLC01DialogR1"] = true
+	out["reached"] = *row.Reached
+	out[r1PublicStages[row.Stage]] = true
+	out[r1PublicClasses[row.Classification]] = true
+	for _, proof := range r1NamedProofs(row) {
+		if proof.value != nil {
+			out[proof.name+"Observed"] = true
+			out[proof.name+"Match"] = *proof.value
+		}
+	}
+	if row.DialogAlreadyConfirmed != nil {
+		out["dialogAlreadyConfirmedObserved"] = true
+		out["dialogAlreadyConfirmedMatch"] = *row.DialogAlreadyConfirmed
+	}
+	raw, err := json.Marshal(out)
+	return raw, err == nil
+}
+
+func r1VerifyPublic(raw []byte) bool {
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(raw, &fields) != nil || len(fields) != len(r1PublicKeySet()) {
+		return false
+	}
+	values := make(map[string]bool, len(fields))
+	for key, value := range fields {
+		var decoded bool
+		if !r1PublicKeySet()[key] || json.Unmarshal(value, &decoded) != nil {
+			return false
+		}
+		values[key] = decoded
+	}
+	if !values["schemaLC01DialogR1"] {
+		return false
+	}
+	stageCount, classCount := 0, 0
+	for _, key := range r1PublicStages {
+		if values[key] {
+			stageCount++
+		}
+	}
+	for _, key := range r1PublicClasses {
+		if values[key] {
+			classCount++
+		}
+	}
+	if stageCount != 1 || classCount != 1 {
+		return false
+	}
+	allObserved, allMatch := true, true
+	for _, proof := range r1NamedProofs(r1Diagnostic{}) {
+		observed, match := values[proof.name+"Observed"], values[proof.name+"Match"]
+		if match && !observed {
+			return false
+		}
+		allObserved = allObserved && observed
+		allMatch = allMatch && match
+	}
+	branchObserved, branchMatch := values["dialogAlreadyConfirmedObserved"], values["dialogAlreadyConfirmedMatch"]
+	if branchMatch && !branchObserved {
+		return false
+	}
+	if !values["reached"] {
+		return values["classificationNotReached"] && !branchObserved && !allObserved && !r1AnyObserved(values)
+	}
+	if !branchObserved || values["classificationNotReached"] {
+		return false
+	}
+	if !allObserved {
+		return values["classificationUnknown"]
+	}
+	if allMatch {
+		return values["classificationMatch"]
+	}
+	return values["classificationMismatch"]
+}
+
+func r1AnyObserved(values map[string]bool) bool {
+	for _, proof := range r1NamedProofs(r1Diagnostic{}) {
+		if values[proof.name+"Observed"] {
+			return true
+		}
+	}
+	return false
 }
 
 func TestR1DiagnosticSchemaFailsClosed(t *testing.T) {
@@ -392,5 +535,123 @@ func TestR1DiagnosticSchemaFailsClosed(t *testing.T) {
 	notReachedRaw, _ = json.Marshal(notReached)
 	if r1ValidateDiagnostic(notReachedRaw) != "UNKNOWN" {
 		t.Fatal("not-reached record carried inferred observation")
+	}
+}
+
+func r1CompleteDiagnostic() r1Diagnostic {
+	truth, falsity := true, false
+	return r1Diagnostic{Schema: "LC01-DIALOG-R1", Stage: "ENUM_CHILDREN", Classification: "MATCH", Reached: &truth,
+		DialogPresent: &truth, DialogHandlePresent: &truth, ThreadQueryOK: &truth, OwnerPIDMatch: &truth,
+		CreationMatch: &truth, ImageMatch: &truth, LiveMatch: &truth, ClassMatch: &truth, TitleMatch: &truth,
+		TextMatch: &truth, ButtonHandlePresent: &truth, ButtonIDMatch: &truth, ButtonClassMatch: &truth,
+		ButtonOwnerMatch: &truth, ButtonParentMatch: &truth, VisibleMatch: &truth, EnabledMatch: &truth,
+		TextCountMatch: &truth, ButtonCountMatch: &truth, DialogAlreadyConfirmed: &falsity}
+}
+
+func TestR1PublicDiagnosticIsFixedBooleanOnly(t *testing.T) {
+	row := r1CompleteDiagnostic()
+	raw, ok := r1ExportDiagnostic(row)
+	if !ok || !r1VerifyPublic(raw) {
+		t.Fatal("complete public match rejected")
+	}
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(raw, &fields) != nil || len(fields) != len(r1PublicKeySet()) {
+		t.Fatal("public keys changed")
+	}
+	for key, value := range fields {
+		var fixed bool
+		if !r1PublicKeySet()[key] || json.Unmarshal(value, &fixed) != nil {
+			t.Fatal("public payload contains a nonboolean value")
+		}
+	}
+	if !r1PublicBool(raw, "classificationMatch") || r1PublicBool(raw, "classificationUnknown") {
+		t.Fatal("match one-hot classification changed")
+	}
+
+	row.Classification = "MISMATCH"
+	falsity := false
+	row.TextCountMatch = &falsity
+	raw, ok = r1ExportDiagnostic(row)
+	if !ok || !r1VerifyPublic(raw) || !r1PublicBool(raw, "classificationMismatch") {
+		t.Fatal("observed mismatch rejected")
+	}
+
+	row = r1CompleteDiagnostic()
+	row.Classification = "UNKNOWN"
+	row.TextMatch = nil
+	raw, ok = r1ExportDiagnostic(row)
+	if !ok || !r1VerifyPublic(raw) || !r1PublicBool(raw, "classificationUnknown") ||
+		r1PublicBool(raw, "textMatchObserved") || r1PublicBool(raw, "textMatchMatch") || r1PublicBool(raw, "classificationMismatch") {
+		t.Fatal("unobserved condition masqueraded as mismatch")
+	}
+
+	row = r1Diagnostic{Schema: "LC01-DIALOG-R1", Stage: "POST_IDOK", Classification: "NOT_REACHED", Reached: &falsity}
+	raw, ok = r1ExportDiagnostic(row)
+	if !ok || !r1VerifyPublic(raw) || !r1PublicBool(raw, "classificationNotReached") || r1PublicBool(raw, "reached") {
+		t.Fatal("not-reached public record rejected")
+	}
+}
+
+func r1PublicBool(raw []byte, key string) bool {
+	var fields map[string]bool
+	if json.Unmarshal(raw, &fields) != nil {
+		return false
+	}
+	return fields[key]
+}
+
+func TestR1PublicDiagnosticRejectsInvalidReports(t *testing.T) {
+	row := r1CompleteDiagnostic()
+	raw, ok := r1ExportDiagnostic(row)
+	if !ok {
+		t.Fatal("public fixture export")
+	}
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(raw, &fields) != nil {
+		t.Fatal("public fixture decode")
+	}
+	mutations := []struct {
+		name string
+		fn   func(map[string]json.RawMessage)
+	}{
+		{"missing-key", func(m map[string]json.RawMessage) { delete(m, "textMatchObserved") }},
+		{"unknown-key", func(m map[string]json.RawMessage) { m["rawText"] = json.RawMessage("true") }},
+		{"wrong-type", func(m map[string]json.RawMessage) { m["reached"] = json.RawMessage(`"true"`) }},
+		{"match-without-observed", func(m map[string]json.RawMessage) { m["textMatchObserved"] = json.RawMessage("false") }},
+		{"two-classifications", func(m map[string]json.RawMessage) { m["classificationMismatch"] = json.RawMessage("true") }},
+		{"match-with-failed-proof", func(m map[string]json.RawMessage) { m["textMatchMatch"] = json.RawMessage("false") }},
+		{"two-stages", func(m map[string]json.RawMessage) { m["stageWaitExit"] = json.RawMessage("true") }},
+		{"not-reached-with-observation", func(m map[string]json.RawMessage) {
+			m["reached"] = json.RawMessage("false")
+			m["classificationMatch"] = json.RawMessage("false")
+			m["classificationNotReached"] = json.RawMessage("true")
+		}},
+		{"unknown-with-complete-proof", func(m map[string]json.RawMessage) {
+			m["classificationMatch"] = json.RawMessage("false")
+			m["classificationUnknown"] = json.RawMessage("true")
+		}},
+	}
+	for _, mutation := range mutations {
+		t.Run(mutation.name, func(t *testing.T) {
+			copyFields := make(map[string]json.RawMessage, len(fields))
+			for key, value := range fields {
+				copyFields[key] = value
+			}
+			mutation.fn(copyFields)
+			changed, _ := json.Marshal(copyFields)
+			if r1VerifyPublic(changed) {
+				t.Fatal("invalid public report accepted")
+			}
+		})
+	}
+
+	row.Classification = "MISMATCH"
+	if _, ok := r1ExportDiagnostic(row); ok {
+		t.Fatal("contradictory internal report exported")
+	}
+	truth := true
+	row = r1Diagnostic{Schema: "LC01-DIALOG-R1", Stage: "WAIT_EXIT", Classification: "NOT_REACHED", Reached: new(bool), TextMatch: &truth}
+	if _, ok := r1ExportDiagnostic(row); ok {
+		t.Fatal("not-reached internal report carried observation")
 	}
 }

@@ -25,12 +25,15 @@
 - `dialog_diagnostic_research_test.go`：显式 build tag 隔离的字段、控件顺序、重复识别、确认前重读和严格诊断 schema 反例。
 - `dialog-source-review.test.cjs`：F3 来源、受验 source/Master baseline 一致性和 adapter 静态语义核对。
 
-诊断 schema 只允许固定 stage、固定分类和逐条件 `true/false/null`，不允许原始标题、正文、路径、PID、HWND、句柄、长度、哈希或网络身份。MATCH/MISMATCH/UNKNOWN/NOT_REACHED 与观测完整性严格一致；`dialogAlreadyConfirmed` 仅记录分支状态，不参与控件匹配判定。
+诊断研究模型内部可用三态，但公开 schema 只允许固定 key 和 boolean value：每项条件分别输出 `Observed`/`Match`，stage 与 classification 使用固定 one-hot boolean。未知为 `Observed=false`、`Match=false`，不得解释为不匹配；不允许字符串、`null`、原始标题、正文、路径、PID、HWND、句柄、长度、哈希或网络身份。MATCH/MISMATCH/UNKNOWN/NOT_REACHED 与观测完整性严格一致；`dialogAlreadyConfirmed` 仅记录分支状态，不参与控件匹配判定。
+
+后续兼容补充只更新上述公开 schema 研究模型与文档，没有实现实际 collector。合成导出/校验覆盖固定纯布尔 key、Observed/Match 未知语义、stage/classification one-hot，以及缺/多 key、错误类型、矛盾分类、NOT_REACHED 携带观测等拒绝路径。
 
 ## 本地验证
 
 - 固定 Go 1.27.1、`GOTOOLCHAIN=local`、`GOPROXY=off`、`GOSUMDB=off`：默认 suite PASS。
 - 同环境 `-tags lc01dialogresearch`：研究 suite PASS。
+- 同环境 `-run TestR1Public -v`：2 个公开 schema 顶层测试及 9 个无效报告子反例全部 PASS。
 - `node --test tools/research/lan2-lc01/*.test.cjs`：39/39 PASS。
 - `git diff --cached --check` PASS；提交前确认现有 policy、policy tests、Windows adapter 无 diff。
 
