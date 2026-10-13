@@ -90,3 +90,11 @@ Full #3 止损与失败证据保持历史；用户新增批准原 LAN2-T3 长期
 ## 2026-09-28 — 唯一 Final Full #4 失败并止损
 
 Master 将本轮最小测试修正和治理 Review 非 force 推 `codex/lan2-manual-host-v1.1`，核对本地 HEAD、origin 跟踪及 GitHub 远端同为 `2e9294d9a61426dac428f7c8ff8a12d36a4bbbb8`；无重叠运行后通过已登记 workflow `362562346` 仅派发 `mode=lan2-full`，Run `36388264496`。GitHub conclusion failure，失败 Artifact `10955343405`。固定阶段 `OFFLINE_LIFECYCLE FAIL`，`ci-test-environment.json` 为 `PIPELINE_FAILED` 且 environmentRestored=true；`BETA4-UPGRADE-TEST-REPORT.json` FAIL，局部安装报告 `AUTOMATED_PASS_HUMAN_PENDING`。日志 U01 PASS 后在新运行期第二 Launcher 门禁报 `second Launcher did not exit`，`TestUpgradeLifecycle` FAIL；U05/U06 和后续持久数据比对未到达。不能据此判定第二 Launcher 实际取得锁或确定唯一原因。offline 报告总状态 FAIL，固定 externalDuring=false、restored=true、firewallChanged=false。核心 26/742、最终 Artifact privacy、独立 QA 均未到达，无 beta.4 最终 Artifact。Final Full #4 1/1 已用，QA 0/1 未用；按用户“Full #4 任意 FAIL 立即停止”规则冻结 LAN-2，不申请 Full #5、不派工程返工、不运行 QA。原任务 Thread/工作树和 Full #1—#4 证据保留；仅治理收尾并返回网页版，见 `LAN2-FULL4-STOP-20260928.md`。
+
+## 2026-10-13 LC01-ID-R2 DISPATCHED
+
+原LC01 Thread01a11f35-5133-7ab0-9101-d9d01a69ccea，原E:/CodexWorkspace/CodexWorktrees/lan2-lc01/public-source与codex/lan2-lc01-launcher-lifecycle@f879eac继续；目标测试文件与集成391506b同源，Sol/medium。新Master独立Review/Integration/非force push/一次专项，Execution仅localcommit/return；本轮专项0/1有条件，Full0次/QA0次，生产/历史证据/LAN-2冻结不变。详见LC01-ID-R2-AUTHORIZATION.md；目前仅DISPATCHED，无Hosted运行。
+
+## 2026-10-13 LC01-ID-R2 RETURNED / REVIEWED / INTEGRATED
+
+原LC01三笔local30543dc/b0f85a8/7093862整合53f74f1/c04ecfb/018b108。Master独立22/22 fail0skip0、固定Go1.27.1 offline仅编译、PS语法/diff-check PASS；严格失败分类/完整publisher合成反例闭合，生产及历史F3规则不变。Execution冻结，R2专项0/1待同步后唯一trigger；Full0次/QA0次，任何结果停交网页版。Review详见../lan2-lc01/LC01-ID-R2-MASTER-REVIEW.md。

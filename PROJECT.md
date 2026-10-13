@@ -1,5 +1,8 @@
 # K⁺-SESSION｜项目状态
 
+## 当前Review PASS｜2026-10-13 LC01-ID-R2 唯一专项待运行
+
+原LC01长期Thread三笔测试封装local提交已整合，受审代码018b108f6143a052a5b76548ffbdc622071a4333。Master独立22/22 fail0skip0、生成Go1.27.1 offline仅编译、PS语法及diff-check PASS；生产和历史F3身份规则零diff。严格保留outer/inner固定分类及来源绑定，合法生命周期FAIL保留安全细节，非法报告fail closed。当前专项0/1，须先非force同步并核对三方HEAD再唯一触发；本轮Full0次/QA0次/额外Hosted0次，任何专项结果均停交网页版，LAN-2冻结。见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-ID-R2-MASTER-REVIEW.md。历史FAIL/UNKNOWN与旧预算不改写。
 ## 当前止损｜2026-10-09 唯一 Launcher 专项 IDENTITY FAIL
 
 GitHub 登录恢复并完成非 force 同步后，唯一 Launcher 专项 Run `37909613607`@`b78012a623155c15a479e5bb79302fabb06ee7af` / Artifact `11605578093` 已 FAIL，run_attempt=1。严格固定报告为 `stage=IDENTITY`、identity=null、lifecycle=null、cleanupVerified=false；未闭合安装后身份与生命周期门禁，不能称第二 Launcher 再次超时或产品缺陷已证。历史 Full #4 根因仍 UNKNOWN。专项预算1/1耗尽，Full Candidate0/1与独立FinalQA0/1未用且冻结；无重跑、无本机安装/解包/VM/网络操作、无 beta.4 最终包。当前 `BLOCKED — LC01 SPECIALTY FAILED / IDENTITY NOT PROVEN`；仅保全失败证据与治理，停止工程/Hosted，等待网页版新决定。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LC01-HOSTED-STOP-20261009.md`。下方认证阻断及待运行记载保留为历史。
