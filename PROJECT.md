@@ -1,5 +1,10 @@
 # K⁺-SESSION｜项目状态
 
+## 当前止损｜2026-10-14 LAN2-U27-R2 / NONEMPTY REJECT / RESTORE CHECK FAILED
+
+唯一Run38429594054@a2094f38943b7380eb52c5eac828b16093cf96fb、attempt1/固定Artifact11830434469已FAIL。严格单JSON/source/privacy验证通过，TestSetup与正常U26前缀PASS；fresh前ProductKey/快捷方式/uninstaller absent、Binding expected、受控Launcher/Node exited、锁exclusive open/close、instance unchanged，但安装根nonempty/program present，clone UNKNOWN。实际fresh启动后PREINSTALL_REJECTED/INNO_EXIT_PREPARE_REJECTED/KSESSION_REJECT_NONEMPTY，copy/post未观察。直接拒绝原因已证，残留细目/来源及历史唯一根因未证；network restoration FAILED/isolation UNKNOWN，不能称恢复/cleanup PASS。U27-R2 Hosted1/1耗尽，Full0/QA0/LC010不使用，STOP不retry/不改生产。仅保全证据/治理交网页，LAN2冻结，无最终beta4包；原Thread/工作树/历史FAIL保留。详见LAN2-U27-R2-HOSTED-RESULT.md。
+
+
 ## 唯一U27专项运行中｜2026-10-14 LAN2-U27-R2
 
 Run38429594054@a2094f38943b7380eb52c5eac828b16093cf96fb、attempt1已IN_PROGRESS，U27-R2 Hosted1/1已使用，不retry；三方HEAD已核验a2094f3，仅专用U27workflow被触发。Review51e4a6b/代码83caf72，结果PENDING，不宣称U27或任何验收PASS。Full0/QA0/LC010冻结，任何专项结果STOP交网页。只有固定单JSON诊断可上传，无生产/内部SPXT/main/tag/Release操作。

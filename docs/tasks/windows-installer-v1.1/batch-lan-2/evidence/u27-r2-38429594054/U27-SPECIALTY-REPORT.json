@@ -1,0 +1,47 @@
+{
+  "classification": "EXECUTION_FAILURE",
+  "cleanupState": "CONTROLLED_ONLY",
+  "kind": "U27_SPECIALTY",
+  "lifecyclePrefixState": "PASS",
+  "networkState": {
+    "isolationState": "UNKNOWN",
+    "restorationState": "FAILED"
+  },
+  "prestate": {
+    "bindingState": "EXPECTED",
+    "controlledLauncherState": "EXITED",
+    "controlledNodeState": "EXITED",
+    "desktopShortcutState": "ABSENT",
+    "installRootState": "NONEMPTY_DIRECTORY",
+    "instanceState": "UNCHANGED",
+    "observationState": "COMPLETE",
+    "productRegistrationState": "ABSENT",
+    "programState": "PRESENT",
+    "rootLockState": "EXCLUSIVE_OPEN_CLOSED",
+    "startShortcutState": "ABSENT",
+    "uninstallCompletionState": "UNKNOWN",
+    "uninstallerState": "ABSENT"
+  },
+  "schema": 1,
+  "sourceCommit": "a2094f38943b7380eb52c5eac828b16093cf96fb",
+  "stage": "COMPLETE",
+  "status": "FAIL",
+  "testSetupState": "PASS",
+  "u27PreInstall": {
+    "classification": "PREINSTALL_REJECTED",
+    "copyState": "NOT_OBSERVED",
+    "exitStatus": "INNO_EXIT_PREPARE_REJECTED",
+    "logState": "OBSERVED",
+    "markerState": "OBSERVED",
+    "observedMarkers": [
+      "KSESSION_REJECT_NONEMPTY"
+    ],
+    "phase": "U27_PRE_INSTALL",
+    "postInstallVerificationState": "NOT_OBSERVED",
+    "preInstallState": "REJECTED",
+    "processState": "STARTED",
+    "schema": 1,
+    "sourceCommit": "a2094f38943b7380eb52c5eac828b16093cf96fb",
+    "status": "FAIL"
+  }
+}
