@@ -71,6 +71,7 @@ function dialogDiagnostic(stage='stageEnumChildren',classification='classificati
  return v;
 }
 function noDialogDiagnostic(){const v=dialogDiagnostic('stageEnumToplevel','classificationNotReached');v.reached=true;v.classificationNotReached=false;v.classificationUnknown=true;for(const fact of ['dialogPresent','dialogCountMatch','dialogAlreadyConfirmed']){v[fact+'Observed']=true;v[fact+'Match']=false;}return v;}
+function notLiveDiagnostic(){const v=dialogDiagnostic('stageEnumChildren','classificationNotReached');v.reached=true;v.classificationNotReached=false;v.classificationUnknown=true;for(const fact of ['liveMatch','dialogAlreadyConfirmed']){v[fact+'Observed']=true;v[fact+'Match']=false;}return v;}
 function legacyLifecycle(v){const copy=structuredClone(v);for(const key of ['DialogReason','DialogFirst','DialogRecheck'])delete copy.second[key];return copy;}
 function passing(pathValue='DISPATCH_SUCCESS'){
  const v=report.base('a'.repeat(40),'PASS','FINALIZE','VERIFIED_PASS');
@@ -85,6 +86,18 @@ function progress(commit,stage){return {schema:1,kind:'lc01-inner-progress',test
 function classifiedDir(name,{withProof=true,run,entered}={}){const dir=path.join(out,name);fs.mkdirSync(dir);if(withProof)fs.writeFileSync(path.join(dir,'LC01-POWERSHELL-PROOF.json'),JSON.stringify(proof('a'.repeat(40))));if(run)fs.writeFileSync(path.join(dir,'BETA2-IDENTITY-REPORT.json'),JSON.stringify(run));if(entered)fs.writeFileSync(path.join(dir,'LC01-INNER-PROGRESS.json'),JSON.stringify(entered));return dir;}
 test('only both observed natural success paths accepted; physical gates stay false',()=>{
  report.validate(passing());report.validate(passing('INSTANCE_BUSY_REJECTED'));report.validate(report.base('a'.repeat(40)));
+});
+test('rapid exit zero before first inspect is a precise dispatch success only',()=>{
+ const rapid=passing();rapid.lifecycle.second.DialogReason='SECOND_NOT_LIVE';rapid.lifecycle.second.DialogFirst=notLiveDiagnostic();report.validate(rapid);
+ for(const mutate of [
+  v=>v.lifecycle.second.ExitCode=1,
+  v=>v.lifecycle.second.ExitCode=259,
+  v=>v.lifecycle.second.NaturalExit=false,
+  v=>v.lifecycle.second.CleanupTerminated=true,
+  v=>{v.lifecycle.second.DialogReason='UNKNOWN_CONTROL_CLASS';v.lifecycle.second.DialogFirst=dialogDiagnostic('stageEnumChildren','classificationUnknown','controlSetMatch');},
+  v=>v.lifecycle.second.DialogFirst.dialogPresentObserved=true,
+  v=>v.lifecycle.second.Path='SESSION_GUARD_FAILED'
+ ]){const bad=structuredClone(rapid);mutate(bad);assert.throws(()=>report.validate(bad));}
 });
 test('sensitive arbitrary fields/text/paths/PIDs/env cannot be uploaded',()=>{
  for(const k of ['pid','path','windowText','env','stdout','secret']){const v=passing();v.lifecycle[k]='sensitive';assert.throws(()=>report.validate(v));}
@@ -168,6 +181,7 @@ test('publisher accepts complete trusted PASS and preserves only schema-valid li
  fs.writeFileSync(path.join(passDir,'identity-fixed.json'),JSON.stringify(passing().identity));fs.writeFileSync(path.join(passDir,'lifecycle-fixed.json'),JSON.stringify(passing().lifecycle));fs.copyFileSync(path.join(repo,'docs/tasks/windows-installer-v1.1/batch-4.5/evidence/accepted-f3-beta2-identity.json'),path.join(passDir,'beta2-identity-evidence.json'));
  const publishedPass=report.publish(passDir,commit,'IDENTITY','SUCCESS','STARTED');assert.equal(publishedPass.status,'PASS');assert.equal(publishedPass.inner.classification,'PASS');assert.equal(publishedPass.cleanupVerified,true);
  const busyDir=classifiedDir('publisher-busy-pass',{run:identityApi.createRunReport('PASS','FINALIZE',commit),entered:progress(commit,'FINALIZE')});fs.writeFileSync(path.join(busyDir,'identity-fixed.json'),JSON.stringify(passing().identity));fs.writeFileSync(path.join(busyDir,'lifecycle-fixed.json'),JSON.stringify(passing('INSTANCE_BUSY_REJECTED').lifecycle));fs.copyFileSync(path.join(repo,'docs/tasks/windows-installer-v1.1/batch-4.5/evidence/accepted-f3-beta2-identity.json'),path.join(busyDir,'beta2-identity-evidence.json'));const publishedBusy=report.publish(busyDir,commit,'IDENTITY','SUCCESS','STARTED');assert.equal(publishedBusy.status,'PASS');assert.equal(publishedBusy.lifecycle.second.Path,'INSTANCE_BUSY_REJECTED');assert.equal(publishedBusy.lifecycle.second.DialogReason,'DIALOG_MATCH');
+ const rapidDir=classifiedDir('publisher-rapid-dispatch-pass',{run:identityApi.createRunReport('PASS','FINALIZE',commit),entered:progress(commit,'FINALIZE')}),rapid=passing();rapid.lifecycle.second.DialogReason='SECOND_NOT_LIVE';rapid.lifecycle.second.DialogFirst=notLiveDiagnostic();fs.writeFileSync(path.join(rapidDir,'identity-fixed.json'),JSON.stringify(rapid.identity));fs.writeFileSync(path.join(rapidDir,'lifecycle-fixed.json'),JSON.stringify(rapid.lifecycle));fs.copyFileSync(path.join(repo,'docs/tasks/windows-installer-v1.1/batch-4.5/evidence/accepted-f3-beta2-identity.json'),path.join(rapidDir,'beta2-identity-evidence.json'));const publishedRapid=report.publish(rapidDir,commit,'IDENTITY','SUCCESS','STARTED');assert.equal(publishedRapid.status,'PASS');assert.equal(publishedRapid.lifecycle.second.DialogReason,'SECOND_NOT_LIVE');assert.equal(publishedRapid.lifecycle.second.DialogFirst.liveMatchObserved,true);assert.equal(publishedRapid.lifecycle.second.DialogFirst.liveMatchMatch,false);
  const blockedRun=identityApi.createRunReport('BLOCKED','COLLECT',commit),lifeFail=structuredClone(passing().lifecycle);lifeFail.status='FAIL';lifeFail.stage='SECOND';lifeFail.second={Status:'FAIL',Path:'TIMEOUT',BusyClosed:false,NaturalExit:false,CleanupTerminated:true,HandlesClosed:true,ExitCode:259};lifeFail.modalProof='UNPROVEN';
  lifeFail.second.DialogReason='BODY_COUNT_MISMATCH';lifeFail.second.DialogFirst=dialogDiagnostic('stageEnumChildren','classificationMismatch','bodyCountMatch');lifeFail.second.DialogRecheck=dialogDiagnostic('stageRecheck','classificationNotReached');
  const failDir=classifiedDir('publisher-safe-life-fail',{run:blockedRun,entered:progress(commit,'LC01_LIFECYCLE')});fs.writeFileSync(path.join(failDir,'identity-fixed.json'),JSON.stringify(passing().identity));fs.writeFileSync(path.join(failDir,'lifecycle-fixed.json'),JSON.stringify(lifeFail));const publishedFail=report.publish(failDir,commit,'IDENTITY','FAIL','STARTED');assert.equal(publishedFail.status,'FAIL');assert.equal(publishedFail.inner.classification,'LIFECYCLE_FAILED');assert.equal(publishedFail.lifecycle.stage,'SECOND');assert.equal(publishedFail.lifecycle.second.Path,'TIMEOUT');assert.equal(publishedFail.lifecycle.second.DialogReason,'BODY_COUNT_MISMATCH');assert.equal(publishedFail.lifecycle.second.DialogFirst.bodyCountMatchObserved,true);assert.equal(publishedFail.lifecycle.second.DialogFirst.bodyCountMatchMatch,false);assert.deepEqual(publishedFail.identity,passing().identity);

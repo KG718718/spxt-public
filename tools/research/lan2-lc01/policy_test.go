@@ -167,6 +167,48 @@ func TestDispatchSuccess(t *testing.T) {
 		t.Fatal("dispatch exit proof")
 	}
 }
+
+func lcRapidDispatchDiagnostic() lcDialogDiagnostic {
+	d := lcNewDialogDiagnostic("stageEnumChildren", "classificationUnknown", true)
+	lcSetDialogFact(d, "liveMatch", true, false)
+	lcSetDialogFact(d, "dialogAlreadyConfirmed", true, false)
+	return lcFinishDialogDiagnostic(d)
+}
+
+func TestDispatchExitZeroBeforeFirstInspectPreservesSafeDiagnostic(t *testing.T) {
+	first := lcRapidDispatchDiagnostic()
+	f := &lcFake{exitAt: 1, dialogReason: "SECOND_NOT_LIVE", firstDiagnostic: first, recheckDiagnostic: lcNotReachedDialogDiagnostic("stageRecheck")}
+	r := lcAssert(t, f, "PASS", "DISPATCH_SUCCESS")
+	if !r.NaturalExit || r.ExitCode != 0 || r.BusyClosed || r.CleanupTerminated || r.DialogReason != "SECOND_NOT_LIVE" || !r.DialogFirst["liveMatchObserved"] || r.DialogFirst["liveMatchMatch"] || !r.DialogRecheck["classificationNotReached"] {
+		t.Fatalf("rapid dispatch evidence was not preserved: %+v", r)
+	}
+}
+
+func TestRapidDispatchShapeCannotMaskFailure(t *testing.T) {
+	first := lcRapidDispatchDiagnostic()
+	base := func() *lcFake {
+		return &lcFake{dialogReason: "SECOND_NOT_LIVE", firstDiagnostic: first, recheckDiagnostic: lcNotReachedDialogDiagnostic("stageRecheck")}
+	}
+	for _, code := range []uint32{1, 259} {
+		f := base()
+		f.exitAt, f.code = 1, code
+		lcAssert(t, f, "FAIL", "UNEXPECTED_EXIT")
+	}
+	f := base()
+	lcAssert(t, f, "FAIL", "TIMEOUT")
+	f = base()
+	f.waitErr = errors.New("synthetic")
+	lcAssert(t, f, "FAIL", "WAIT_FAILED")
+	f = base()
+	f.exitAt, f.forceCleanup = 1, true
+	lcAssert(t, f, "FAIL", "CLEANUP_TERMINATED")
+	f = base()
+	f.exitAt, f.guardFailAt = 1, 3
+	lcAssert(t, f, "FAIL", "SESSION_GUARD_FAILED")
+	f = base()
+	f.inspectErr = errors.New("unknown window")
+	lcAssert(t, f, "FAIL", "WINDOW_IDENTITY_FAILED")
+}
 func TestPreciseBusyRejection(t *testing.T) {
 	f := &lcFake{dialogs: []lcDialog{lcFixture()}, exitAt: 2, code: 1}
 	r := lcAssert(t, f, "PASS", "INSTANCE_BUSY_REJECTED")
