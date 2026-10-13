@@ -1,5 +1,13 @@
-# LAN-2 单次验收触发记录
+# LAN2-ACCEPTANCE-SPLIT-R1 — 唯一 Full Candidate RESERVED 1/1
 
-此文件当前仅为未启用说明。唯一 Master 在对应预算门禁全部闭合后，才可更新并推送。只有对唯一开发分支 `codex/lan2-manual-host-v1.1` 的本文件变更，且推送提交信息恰好含一个 `[lan2-candidate]` 或 `[lan2-final-qa]` 标记，第一次运行才会进入新包装 workflow。两个标记不能同时出现。
-
-Master 须在每次推送前登记受测源码 SHA、预算与独立 Review 结论；推送后登记 Run、Artifact、结论。标记过滤不能独立证明“只运行一次”，次数由 Master 的预算台账和触发前核对约束。此文件的创建不授权触发；Launcher 专项未通过时 Candidate 仍冻结，Candidate 未完整通过时 Final QA 仍冻结。历史 Full #4 FAIL 不变。
+2026-10-13。用户正式批准自动/人工验收分层，停止LC01 GUI专项。
+Reviewed code: 2150b8250047c67ac3932d4e0815fe420e6d31df
+Synchronized local/origin/GitHub: 72ea03ff419feede7873c74c52a058e270895626
+Master Review: LAN2-ACCEPTANCE-SPLIT-R1-MASTER-REVIEW.md
+Local: 81/81 fail0skip0; actual Windows overlay compile PASS; production unchanged.
+Budget: Full Candidate 1/1 RESERVED - NO RETRY; independent Final QA 0/1 ONLY AFTER FULL PASS; LC01 0; additional diagnostic 0.
+Original F3: Run36246132535 / Artifact10907910968 / source c8886e6b6d413c2fd73d6716621d07a80b337e58 / pinned original Setup SHA.
+Expected final automation report: AUTOMATION_PASS_HUMAN_PENDING; actual second Launcher/GUI/double launch and physical Win10/LAN HUMAN_PENDING, never PASS.
+Full FAIL: STOP RETURN TO PLANNER. Full PASS: independent Final QA at most once. QA FAIL: STOP. QA PASS: physical Win10 human acceptance only.
+main/tag/Release/Batch5/OCR/internal SPXT: prohibited.
+Historical Full #4 and all LC01 failures remain unchanged; old specialty prerequisite is superseded only by this approved acceptance split.\r\n
