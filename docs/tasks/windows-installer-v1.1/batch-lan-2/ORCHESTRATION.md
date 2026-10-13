@@ -1,5 +1,10 @@
 # Batch LAN-2 Orchestration
 
+## 唯一U27专项运行中｜2026-10-14 LAN2-U27-R2
+
+Run38429594054@a2094f38943b7380eb52c5eac828b16093cf96fb、attempt1已IN_PROGRESS，U27-R2 Hosted1/1已使用，不retry；三方HEAD已核验a2094f3，仅专用U27workflow被触发。Review51e4a6b/代码83caf72，结果PENDING，不宣称U27或任何验收PASS。Full0/QA0/LC010冻结，任何专项结果STOP交网页。只有固定单JSON诊断可上传，无生产/内部SPXT/main/tag/Release操作。
+
+
 ## 唯一U27专项额度已保留｜2026-10-14 LAN2-U27-R2
 
 Master独立Review及本地门禁通过，三方同步51e4a6b、F3来源/未过期已复核，无活动Actions。现仅提交独立[lan2-u27-r2] trigger，U27-R2 Hosted1/1 RESERVED；Run/source待GitHub接收补记，不retry。Full0/QA0/LC010继续冻结。完整TestSetup+正常U01-U27同一offline前缀，固定只读prestate/13字段诊断；未知不PASS，无生产改动/最终beta4包。任何结果STOP交网页，原Thread/worktrees/历史FAIL保留。

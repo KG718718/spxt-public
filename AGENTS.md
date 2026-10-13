@@ -1,5 +1,10 @@
 # K⁺-SESSION 协作边界
 
+## 唯一U27专项运行中｜2026-10-14 LAN2-U27-R2
+
+Run38429594054@a2094f38943b7380eb52c5eac828b16093cf96fb、attempt1已IN_PROGRESS，U27-R2 Hosted1/1已使用，不retry；三方HEAD已核验a2094f3，仅专用U27workflow被触发。Review51e4a6b/代码83caf72，结果PENDING，不宣称U27或任何验收PASS。Full0/QA0/LC010冻结，任何专项结果STOP交网页。只有固定单JSON诊断可上传，无生产/内部SPXT/main/tag/Release操作。
+
+
 ## 当前Review通过｜2026-10-14 LAN2-U27-R2 / HOSTED PENDING
 
 原LC01完整TestSetup+正常U01-U27专项已整合83caf72，Master独立99/99、历史26/26 fail0skip0、实际Go纯prestate反例/overlay仅编译/PS语法/提交范围diff PASS。历史27de overlay独立文本核对通过；保留7构建与全fault/rollback链，两独立Go进程同一offline区间，U27后停止。生产/接受条件/F3信任/事务/rollback/旧workflow零改，clone未证仍UNKNOWN，新只读观测不等待/清理。只上传严格固定JSON，UNKNOWN非成功，失败真实13字段保留；非force同步+三方HEAD/F3核验后才唯一U27-R2 Hosted0/1，Full0/QA0/LC010。任意结果STOP交网页，LAN2继续冻结。详见LAN2-U27-R2-MASTER-REVIEW.md；通用YAMLparser未提供，采用明确源码/结构Review，不虚称机器parse。
