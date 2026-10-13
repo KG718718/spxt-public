@@ -1,5 +1,8 @@
 # K⁺-SESSION｜项目状态
 
+## 当前有限授权｜2026-10-13 LAN2-ACCEPTANCE-SPLIT-R1 / DISPATCHED
+
+用户停止LC01 GUI专项并批准Full自动/物理Win10人工验收分层。原LC01长期Thread/原工作树仅修Full测试生成器/严格验收报告/对应测试及必要报告接线；生产/历史F3身份/安全/事务/rollback不改，原GUI源码及历史FAIL保留。Full保留真实锁独占、第一Launcher/Node与原后台稳定/数据门禁，不能以静态或未启动第二Launcher冒充双启动PASS；精确弹窗/按钮/自然退出/实际双启动明确HUMAN_PENDING。先本地fail0skip0、生成Go overlay仅编译和Master独立Review，再Full Candidate最多1次0/1，PASS后独立QA最多1次0/1，任一FAIL STOP；无新增LC01/诊断Hosted。最终AUTOMATION_PASS_HUMAN_PENDING，不宣称企业LAN认证。详见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-ACCEPTANCE-SPLIT-R1-AUTHORIZATION.md。下方冻结/FAIL保留历史，仅本次批准范围有限续行。
 ## 当前止损｜2026-10-13 LC01-DIALOG-R2 唯一专项 FAIL
 
 唯一Run38395066549@45e0f6acb2d2f1c0fc16199df23e0bddeb2cb8c6、attempt1/Artifact11812155052已FAIL；schema3/source/F3核验PASS。受验F3身份PASS，生命周期SECOND/DIALOG_MISMATCH，固定UNKNOWN_STATIC_STYLE；ENUM_CHILDREN分类UNKNOWN，正文计数和按钮ID观察后不符，正文/style/ID未证明，recheck/确认未到达。未点击未知窗；第二自然退出false、强制收尾true、cleanupVerified=false，不冒充PASS。具体原始style/ID未记录，不能据此认定INSTANCE_BUSY或产品缺陷；历史Full #4及旧Run FAIL/UNKNOWN不变。R2专项1/1耗尽、本轮Full0/QA0/额外Hosted0，STOP，LAN-2冻结，无beta.4最终包。只治理保全/非force push；原Thread/工作树保留。见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-DIALOG-R2-HOSTED-RESULT.md。下方运行中/Review/暂停/恢复均保留历史。

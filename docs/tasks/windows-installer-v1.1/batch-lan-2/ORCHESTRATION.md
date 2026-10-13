@@ -122,3 +122,4 @@ Run38395066549@45e0f6acb2d2f1c0fc16199df23e0bddeb2cb8c6、attempt1，结果PENDI
 ## 2026-10-13 LC01-DIALOG-R2 RETURNED / HOSTED FAIL / STOP
 
 Run38395066549@45e0f6a/Artifact11812155052、attempt1，固定schema3已核验。F3身份PASS；SECOND/DIALOG_MISMATCH/UNKNOWN_STATIC_STYLE，子控件UNKNOWN，bodyCount/buttonID观察不符，正文未证明；recheck/IDOK未执行。NaturalExit=false、受控强制收尾true、cleanupVerified=false。R2 Hosted1/1耗尽，Full0/QA0/额外Hosted0，LAN-2冻结；原LC01 Thread及全部现场保留，Master仅治理非force同步后STOP回网页版。详见LC01-DIALOG-R2-HOSTED-RESULT.md，历史FAIL/UNKNOWN不改。
+\r\n## 2026-10-13 LAN2-ACCEPTANCE-SPLIT-R1 DISPATCHED\r\n\r\n原LC01 Thread01a11f35-5133-7ab0-9101-d9d01a69ccea/原lan2-lc01工作树/local branch@a24c39c继续，Master基线6c4677e。仅Full测试/严格分层报告/反例，停止GUI研究。Execution local-only return，Master Review/Integration/Actions；Full0/1、独立QA0/1、LC01及额外诊断0，任一FAIL STOP。真实第二Launcher与精确弹窗HUMAN_PENDING，锁/原后台/数据等自动门禁保留。授权见LAN2-ACCEPTANCE-SPLIT-R1-AUTHORIZATION.md。\r\n
