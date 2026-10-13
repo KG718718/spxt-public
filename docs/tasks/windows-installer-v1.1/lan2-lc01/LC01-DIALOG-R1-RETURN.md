@@ -33,7 +33,7 @@
 
 - 固定 Go 1.27.1、`GOTOOLCHAIN=local`、`GOPROXY=off`、`GOSUMDB=off`：默认 suite PASS。
 - 同环境 `-tags lc01dialogresearch`：研究 suite PASS。
-- 同环境 `-run TestR1Public -v`：2 个公开 schema 顶层测试及 9 个无效报告子反例全部 PASS。
+- 同环境 `-run TestR1Public -v`：2 个公开 schema 顶层测试及 10 个无效报告子反例全部 PASS；其中把合法 `false` 字段替换为 JSON `null` 必须拒绝。
 - `node --test tools/research/lan2-lc01/*.test.cjs`：39/39 PASS。
 - `git diff --cached --check` PASS；提交前确认现有 policy、policy tests、Windows adapter 无 diff。
 

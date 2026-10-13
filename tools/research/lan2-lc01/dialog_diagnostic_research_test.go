@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 	"time"
@@ -405,8 +406,8 @@ func r1VerifyPublic(raw []byte) bool {
 	}
 	values := make(map[string]bool, len(fields))
 	for key, value := range fields {
-		var decoded bool
-		if !r1PublicKeySet()[key] || json.Unmarshal(value, &decoded) != nil {
+		decoded, boolean := r1StrictPublicBool(value)
+		if !r1PublicKeySet()[key] || !boolean {
 			return false
 		}
 		values[key] = decoded
@@ -454,6 +455,17 @@ func r1VerifyPublic(raw []byte) bool {
 		return values["classificationMatch"]
 	}
 	return values["classificationMismatch"]
+}
+
+func r1StrictPublicBool(raw json.RawMessage) (bool, bool) {
+	switch string(bytes.TrimSpace(raw)) {
+	case "true":
+		return true, true
+	case "false":
+		return false, true
+	default:
+		return false, false
+	}
 }
 
 func r1AnyObserved(values map[string]bool) bool {
@@ -559,8 +571,7 @@ func TestR1PublicDiagnosticIsFixedBooleanOnly(t *testing.T) {
 		t.Fatal("public keys changed")
 	}
 	for key, value := range fields {
-		var fixed bool
-		if !r1PublicKeySet()[key] || json.Unmarshal(value, &fixed) != nil {
+		if _, boolean := r1StrictPublicBool(value); !r1PublicKeySet()[key] || !boolean {
 			t.Fatal("public payload contains a nonboolean value")
 		}
 	}
@@ -617,6 +628,7 @@ func TestR1PublicDiagnosticRejectsInvalidReports(t *testing.T) {
 		{"missing-key", func(m map[string]json.RawMessage) { delete(m, "textMatchObserved") }},
 		{"unknown-key", func(m map[string]json.RawMessage) { m["rawText"] = json.RawMessage("true") }},
 		{"wrong-type", func(m map[string]json.RawMessage) { m["reached"] = json.RawMessage(`"true"`) }},
+		{"null-false-field", func(m map[string]json.RawMessage) { m["classificationMismatch"] = json.RawMessage("null") }},
 		{"match-without-observed", func(m map[string]json.RawMessage) { m["textMatchObserved"] = json.RawMessage("false") }},
 		{"two-classifications", func(m map[string]json.RawMessage) { m["classificationMismatch"] = json.RawMessage("true") }},
 		{"match-with-failed-proof", func(m map[string]json.RawMessage) { m["textMatchMatch"] = json.RawMessage("false") }},
