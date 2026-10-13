@@ -22,3 +22,11 @@ Master Review（2026-10-09）：已实际接收主动回单，并核验主体e11
 ## 2026-10-13 LC01-DIALOG-R1 REVIEWED / RESEARCH COMPLETE / STOP
 
 原长期Thread01a11f35-5133-7ab0-9101-d9d01a69ccea/原lan2-lc01工作树/local branch沿用7093862；source local96cccff/010cfba整合7d93029/04ea4ec，纯布尔补充224c2c4/48b8b6f整合61c5888/15f8308。Master从集成源码独立复验Go策略/研究126项（R1研究61项）、Node3项fail0skip0，diff-check PASS。只新增隔离research测试及设计/治理，不改生产、policy/adapter、身份、事务/rollback或workflow。Run38362515475首次精确匹配失败；具体false字段UNKNOWN，不追认历史PASS。诊断方案逐条件Observed/Match纯布尔，尚未实机实施；新增Actions/Hosted0、Full0、QA0，原LC01与LAN-2继续冻结，保留原工作树和证据。回单及Review见LC01-DIALOG-R1-CHATGPT-HANDOFF.md、LC01-DIALOG-R1-MASTER-REVIEW.md；仅治理研究非force推开发分支后STOP。
+
+## 2026-10-13 LC01-DIALOG-R2 DISPATCHED
+
+原Thread01a11f35-5133-7ab0-9101-d9d01a69ccea/原lan2-lc01工作树/local branch@48b8b6f；Master基线0e07765，目标测试源码已核对同源。仅Windows测试adapter/安全诊断/合成测试，生产/历史身份/事务/rollback零改。Master预审完整style白名单+独立icon query，不用type mask，未知结构FAIL；代码实现及最终Review仍待完成。R2专项0/1有条件，本轮Full0/QA0，Execution仅localcommit/return无真实probe或Hosted，唯一Master派发后任何结果STOP。授权详见../lan2-lc01/LC01-DIALOG-R2-AUTHORIZATION.md。
+
+## 2026-10-13 LC01-DIALOG-R2 RETURNED / REVIEWED / INTEGRATED
+
+六筆local887ff66/553d082/77758f2/c2f81b6/090b432/a24c39c整合089ff3b/6272c45/39471f4/38e5f52/68277eb/2da7513。Master独立Node26/26、Go54顶层/206含子测试、vet、两套Windows仅编译、PS语法/diff-check PASS。生产/历史F3身份/workflow不改，schema1/2历史报告独立核验原义保留。原Thread冻结，R2专项0/1待同步后唯一派发；Full0/QA0，任何结果STOP。Review见../lan2-lc01/LC01-DIALOG-R2-MASTER-REVIEW.md。

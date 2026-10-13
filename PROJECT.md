@@ -1,5 +1,11 @@
 # K⁺-SESSION｜项目状态
 
+## 当前Review PASS｜2026-10-13 LC01-DIALOG-R2 唯一专项待运行
+
+原LC01长期Thread全部local实现/补充已整合，受审2da7513ba7c8a96dbb25e27120ca3f292d403dbf。Master独立Node26/26、Go54顶层/206含子测试fail0skip0、vet/两个实际Windows overlay仅编译/PS语法/diff-check PASS；历史schema1/2独立验证PASS且原FAIL不变。只改Windows测试adapter/固定纯布尔报告/对应测试/生成接线；完整style白名单+独立图标消息+精确身份/完整正文/唯一控件/recheck/自然退出/cleanup仍严格，未知/force不能PASS。生产/历史F3身份/事务/rollback/业务/workflow零diff。当前R2专项0/1，仅同步三方HEAD后唯一trigger；Full0/QA0冻结，任何结果STOP交网页版，LAN-2未解冻。见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-DIALOG-R2-MASTER-REVIEW.md。下方有限派单/R1/ID-R2均保留历史。
+## 当前有限授权｜2026-10-13 LC01-DIALOG-R2 / DISPATCHED
+
+用户批准原LC01长期Thread/原工作树最小Windows测试适配器修复与固定诊断接线；生产Launcher/Setup/Node、历史F3身份、事务/rollback/业务不改。先实际class/完整style/ID/parent/PID与独立图标语义证明，不用过时SS_TYPEMASK；唯一正文/图标/IDOK及全部身份条件闭合后才确认，未知/重复/读取失败一律FAIL。R1最终观察载荷为纯布尔Observed/Match与one-hot（早期布尔/null草案不作为最终方案），R2增图标/正文计数安全证明。先本地反例/两个实际Go overlay编译/生成器/语法/diff-check fail0skip0、Master独立Review与同步后，才允许唯一R2 Hosted0/1；Full0/QA0冻结，任何专项结果STOP交网页版。旧Run38362515475及Full #4 FAIL/UNKNOWN保留，LAN-2未解冻。授权与预审见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-DIALOG-R2-AUTHORIZATION.md，当前无新Hosted。
 ## 当前研究完成｜2026-10-13 LC01-DIALOG-R1 / STOP
 
 用户批准的源码审查、合成反例和诊断设计已由原LC01长期Thread完成并经Master独立Review。受审集成15f8308；Go纯策略/研究126项（R1研究61项）、Node来源核对3项fail0skip0，原policy/Windows adapter/生产/Setup/身份/rollback/workflow零diff。已确认F3标题正文常量一致，Run38362515475是首次lcExactBusy失败而非关闭后重复识别；Static非空缓冲区当正文计数是已证测试假设缺口，但实际false条件及真实Server2025触发方式仍UNKNOWN。仅设计逐条件固定布尔/null，不实施实机collector或放宽身份。本轮新增Actions/Hosted0、Full0、QA0；原Run与Full #4 FAIL不变，LAN-2仍冻结，没有Full准入。研究/治理保全后STOP，等待网页版另定范围预算。见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-DIALOG-R1-MASTER-REVIEW.md及LC01-DIALOG-R1-CHATGPT-HANDOFF.md；下方R2止损继续有效。
