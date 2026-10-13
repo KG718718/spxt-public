@@ -16,13 +16,14 @@
 
 - 原分支从 `3cc99ff0d481634073a0e6dc9412da34e2906668` 以普通 merge 同步 Master 基线 `1c6015aaeb3329dd6b8493694c0695f5ce2cbaa4`；merge commit 为 `13eeb7a591ae9f15e8828e53a5ae02800dc7049a`，未 reset、clean 或 rebase。
 - `bd4110d` 删除 merge 带回的 14 个历史 F3 研究文件，超出本轮范围且未经 Master 接纳。收到更正后，已由 restore-only 提交 `8506f37901fba24f2586ce8ea7154e5274b26d17` 将这 14 个路径恢复为 `bd4110d` 父提交 `13eeb7a` 的精确原 blob 和 `100644` mode；未读取、运行或继续研究其内容。历史现场继续保留。
-- 诊断实现提交 `78e25ff9a0566ea98985fecb5800f1a42afd59e1`；阶段证据收窄提交 `d5bb808bedffcab396b53d1cfb2f5323018d776c`。两笔提交均含 `[skip ci]`。
+- 诊断实现提交 `78e25ff9a0566ea98985fecb5800f1a42afd59e1`；阶段证据收窄提交 `d5bb808bedffcab396b53d1cfb2f5323018d776c`；矛盾成功证据与输入类型修正提交 `c8e83a5f72908b35faac48e85ce8a65fe9621556`。三笔提交均含 `[skip ci]`。
 - 只修改 Full 测试 overlay 生成器、纯合成测试、固定报告模块、Artifact verifier 和验收接线；未修改生产 Launcher、Setup、Node、版本/卸载规则、可信身份、安全条件、事务、rollback 或业务 schema，未修改 workflow。
 - `runSetupRaw` 对进程启动失败、日志缺失和日志读取失败返回固定状态，不再由 `mustRead` 提前中断诊断。通用 `runSetup` 对这些状态仍 fail closed。
 - U27 原成功条件保持为 Setup `exitCode == 0` 且 `want=true`；固定诊断 PASS 是额外门禁，不能替代原成功条件。
 - 新报告只允许固定 13 个字段：schema、phase、status、classification、sourceCommit、processState、logState、exitStatus、markerState、observedMarkers、preInstallState、copyState、postInstallVerificationState。报告禁止原始日志/错误消息、路径、PID、账号、业务正文及 hash/长度。
 - Inno exit 0—8 映射为固定枚举；其他非零值为 `INNO_EXIT_UNEXPECTED_NONZERO`。marker 仅接受生成 Go helper 已有完整白名单，CJS 与 Go 白名单由测试精确比对。
 - 缺 marker 固定为 `UNKNOWN/NOT_OBSERVED`。冲突 marker、升级遗留 marker、合法但 U27 非预期 marker均保持 FAIL/UNKNOWN。`KSESSION_DATA_REJECT_` 可出现在不同 Inno 阶段，因此单独出现或与 `KSESSION_PREINSTALL_READY` 同时出现都不证明已复制或已进入 post-install；只有独立 `KSESSION_UPGRADE_POSTINSTALL_FAILED` 才提供复制已开始和 post-install 失败的正证据。
+- `exit0 + READY + INSTALLED_VERIFIED` 同时出现 `POSTINSTALL_FAILED` 或 `DATA_REJECT` 时固定 FAIL/UNKNOWN，不能进入诊断 SUCCESS；其中安装后校验同时存在 PASS/FAILED 正证据时固定为 UNKNOWN。CJS 分类入口要求 `processStarted` 为 boolean、`exitCode` 为 integer，拒绝字符串等可强制转换类型。
 
 ## 基于源码与官方文档的推测
 
@@ -34,9 +35,9 @@
 
 ## 本地验证
 
-- 最终实现 SHA `d5bb808bedffcab396b53d1cfb2f5323018d776c` 绑定的兼容/事务/锁/验收/U27 报告：90/90 PASS，fail0、skip0；C01—C15 与 LCK01—LCK14 全 PASS。
-- U27 与 final acceptance 聚焦门禁：18/18 PASS，覆盖成功、固定安装前拒绝、进程启动失败、异常退出、日志缺失/读取失败、无 marker、非法 marker、矛盾阶段、来源/额外字段篡改和失败不得转 PASS。
-- 生成 Go helper 与 CJS 对 12 组输入语义等价 PASS。
+- 最终实现 SHA `c8e83a5f72908b35faac48e85ce8a65fe9621556` 绑定的兼容/事务/锁/验收/U27 报告：92/92 PASS，fail0、skip0；C01—C15 与 LCK01—LCK14 全 PASS。
+- U27 与 final acceptance 聚焦门禁：20/20 PASS，覆盖成功、固定安装前拒绝、进程启动失败、异常退出、日志缺失/读取失败、无 marker、非法 marker、矛盾阶段、矛盾成功证据、严格输入类型、来源/额外字段篡改和失败不得转 PASS。
+- 生成 Go helper 与 CJS 对 14 组输入语义等价 PASS，包含两组 `exit0` 矛盾成功证据反例。
 - 历史 LC01 与第二 Launcher 测试：26/26 PASS，fail0、skip0；测试使用显式本地 no-install PowerShell 执行器，仅验证测试契约，不证明 Runner 正式信任路径。
 - 固定 Go `go1.27.1 windows/amd64`、`CGO_ENABLED=0`、offline：全新生成 overlay 编译 PASS；生成 EXE 未运行。
 - 相关 CJS `node --check` 与 `git diff --check` PASS。
@@ -44,15 +45,15 @@
 
 ## SHA256
 
-- `prepare-hosted-harness.cjs`：`f9cc85eff2a19966d86f64d95527f7dfbfec1a027bd8c6d7ecec4a83b69ced79`
-- `u27-pre-install.test.cjs`：`4f4ba2d080981e7f09acd6daa8be46f58b60d463cf03a0e0da2e4d9f8fb56880`
+- `prepare-hosted-harness.cjs`：`b42ecd4b6216e85d35d7b8695e729bbc059772cfb910a89825cd7530988141e8`
+- `u27-pre-install.test.cjs`：`9750cf5e802e484a14794e91cebf80f04cb436332d67928035ef05abcd62aba5`
 - `compatibility-report.cjs`：`8a5fb44e81b0044e8c5531586208baed13603ad412c81fe043dddd941f991470`
 - `final-acceptance.test.cjs`：`c5028b5a6ac3b100b8730194a63d993862fefc1fd23406df6e4a1e3dcc6f056c`
-- `u27-pre-install-report.cjs`：`e585e32a38d90ad825f2a2d3a67e5d294501b3947e744a4fa807bb2c88f905ad`
+- `u27-pre-install-report.cjs`：`0e2ad406e7ae5738fce38f5745d51a72abb486348d8bb21b66d022f36c5a1b44`
 - `verify-artifact-beta4.cjs`：`9ad3ecda80ab1c2530eeebcecde6abb567417215cabaf8752ded1d6bc619ce1d`
 - `acceptance-report.cjs`：`1d2c0b7c8aabddced628b31d7d1d475a5985a63d50b24094934e4287df4b7fec`
-- 最终生成 `upgrade_windows_test.go`：`82f3cc93376009738f91b3dc0f1cc8c043a1cb56bae4d0b81f93a27bb9331b7f`
-- 最终兼容报告 `.test-work/u27-r1-compatibility-d5bb808.json`：`537b1cb687083de783c0c1cacbbe5fc8592382780529d7fea976d8d217b29af0`
+- 最终生成 `upgrade_windows_test.go`：`feaab43a06c1b7b6af3dc6ced08783f0d2bc00c5b2757de0802dd5f4deb545c3`
+- 最终兼容报告 `.test-work/u27-r1-compatibility-c8e83a5.json`：`83d9639a4c442d4386edfc69c6895d805eaf688b226b3b8b5a1a30b349ab1d74`
 
 ## 未验证与建议
 
