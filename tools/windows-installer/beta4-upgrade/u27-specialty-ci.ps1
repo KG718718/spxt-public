@@ -45,4 +45,3 @@ if($LASTEXITCODE -ne 0){throw 'U27 specialty final report failed validation'}
 $taskOutcome=Get-Content -Raw -LiteralPath $taskReport|ConvertFrom-Json
 if($taskOutcome.status -cne 'UNKNOWN' -or $taskOutcome.classification -cne 'SETUP_SUCCEEDED_CLONE_UNKNOWN'){throw 'U27_SPECIALTY_OUTCOME_NOT_SAFE_UNKNOWN'}
 throw 'U27_SPECIALTY_OUTCOME_UNKNOWN'
-
