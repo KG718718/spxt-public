@@ -1,5 +1,8 @@
 # K⁺-SESSION｜项目状态
 
+## 当前本地任务完成｜2026-10-13 LAN2-U27-R1 / REVIEW PASS / STOP
+
+原LC01完成固定U27_PRE_INSTALL测试诊断，Master独立92/92、历史26/26 fail0skip0、Go/CJS纯helper14组等价及Windows overlay仅编译PASS。受审集成78813a3；仅7个测试/报告/接线文件加治理，生产/卸载/版本/F3信任/安全/事务/rollback/schema/workflow零改。原Setup成功谓词保留；缺日志、拒绝、异常退出或矛盾/未知证据不转PASS，新报告不包含raw日志/路径/PID/业务/hash长度。原Thread超范围删除14旧F3文件已按原blob/mode恢复并独立核验，删除/restore未整合主线。历史Run38402818839已由用户日志收窄为U26后fresh Setup结果失败，inventory未执行；真实exit/拒绝marker未保存，根因/生产修复需求仍UNKNOWN。Actions/Hosted/Full/QA本轮全0，停止交网页版，仅建议另行批准一次同等U27状态专项，不执行。见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-U27-R1-MASTER-REVIEW.md。旧FAIL和冻结保留。
 ## 当前有限授权｜2026-10-13 LAN2-U27-R1 / LOCAL DIAGNOSTIC DISPATCHED
 
 用户/网页版既有日志已核实Run38402818839在U26后runSetup(targetBeta4,true)报setup candidate success=false want=true，U27未记录，persistent inventory重新比较尚未执行。原LC01长期Thread/原工作树仅核查fresh Setup前提并修测试固定U27_PRE_INSTALL退出/白名单marker/阶段诊断及本地反例；生产、版本、卸载/信任/数据安全零改。Master基线1c6015a，原local3cc99ff。Actions/Hosted0、Full0、QA0，不实际安装；本地fail0skip0和Go overlay仅编译、独立Review后保全提交与建议即STOP交网页版。前次Full及LC01 FAIL不改，具体拒绝原因仍UNKNOWN，不再泛称instance比较失败。详见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-U27-R1-AUTHORIZATION.md。

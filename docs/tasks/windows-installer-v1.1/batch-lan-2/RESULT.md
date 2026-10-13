@@ -1,4 +1,7 @@
-\r\n## 当前止损｜2026-10-13 LAN2-ACCEPTANCE-SPLIT-R1 Full Candidate FAIL
+\r\\r\n## 当前本地任务完成｜2026-10-13 LAN2-U27-R1 / REVIEW PASS / STOP
+
+原LC01完成固定U27_PRE_INSTALL测试诊断，Master独立92/92、历史26/26 fail0skip0、Go/CJS纯helper14组等价及Windows overlay仅编译PASS。受审集成78813a3；仅7个测试/报告/接线文件加治理，生产/卸载/版本/F3信任/安全/事务/rollback/schema/workflow零改。原Setup成功谓词保留；缺日志、拒绝、异常退出或矛盾/未知证据不转PASS，新报告不包含raw日志/路径/PID/业务/hash长度。原Thread超范围删除14旧F3文件已按原blob/mode恢复并独立核验，删除/restore未整合主线。历史Run38402818839已由用户日志收窄为U26后fresh Setup结果失败，inventory未执行；真实exit/拒绝marker未保存，根因/生产修复需求仍UNKNOWN。Actions/Hosted/Full/QA本轮全0，停止交网页版，仅建议另行批准一次同等U27状态专项，不执行。见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-U27-R1-MASTER-REVIEW.md。旧FAIL和冻结保留。
+n## 当前止损｜2026-10-13 LAN2-ACCEPTANCE-SPLIT-R1 Full Candidate FAIL
 
 唯一Run38402818839@27de942346b511c17a651d20e8e766173bc241f0、attempt1/失败Artifact11816921345，固定OFFLINE_LIFECYCLE FAIL。局部Setup29自动PASS+3人工PENDING；Upgrade总FAIL，U01/U02/U05-U26共24项PASS，U03/U04/U27-U30未记录，阻塞区间U26后/U27记录前，具体原因UNKNOWN。单实例摘要未最终化，默认false/0不代表已证进程/锁失败。网络restored=true、Firewall未改变；PRIVATE_SESSION/最终Firewall/26/742/privacy/QA未到达。Full1/1用完、QA0/1未用且冻结，无LC01/额外诊断；任一FAIL STOP，禁止retry/修复/自动申请预算。无成功beta.4安装包，不能交人工验收或称LAN ready。仅保全6份固定JSON、治理非force同步并交网页版；原Thread/worktrees与历史FAIL/UNKNOWN保留。见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-ACCEPTANCE-SPLIT-R1-FULL-RESULT.md。下方运行/Review/授权为历史。
 # Batch LAN-2 Result
