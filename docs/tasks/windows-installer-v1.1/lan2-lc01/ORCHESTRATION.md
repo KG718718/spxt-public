@@ -18,3 +18,7 @@ Master Review（2026-10-09）：已实际接收主动回单，并核验主体e11
 
 ## 2026-10-09 Hosted 专项本地回单
 新增专项实现仅 LOCAL RETURNED，见 HOSTED-LOCAL-RETURN.md；共同测试 deadline 30 秒。专项/FullCandidate/FinalQA 各 0/1，Runner 未运行。Execution 不创建 trigger、不 push，回单后冻结等待唯一 Master。
+
+## 2026-10-13 LC01-DIALOG-R1 REVIEWED / RESEARCH COMPLETE / STOP
+
+原长期Thread01a11f35-5133-7ab0-9101-d9d01a69ccea/原lan2-lc01工作树/local branch沿用7093862；source local96cccff/010cfba整合7d93029/04ea4ec，纯布尔补充224c2c4/48b8b6f整合61c5888/15f8308。Master从集成源码独立复验Go策略/研究126项（R1研究61项）、Node3项fail0skip0，diff-check PASS。只新增隔离research测试及设计/治理，不改生产、policy/adapter、身份、事务/rollback或workflow。Run38362515475首次精确匹配失败；具体false字段UNKNOWN，不追认历史PASS。诊断方案逐条件Observed/Match纯布尔，尚未实机实施；新增Actions/Hosted0、Full0、QA0，原LC01与LAN-2继续冻结，保留原工作树和证据。回单及Review见LC01-DIALOG-R1-CHATGPT-HANDOFF.md、LC01-DIALOG-R1-MASTER-REVIEW.md；仅治理研究非force推开发分支后STOP。

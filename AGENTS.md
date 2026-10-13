@@ -1,5 +1,8 @@
 # K⁺-SESSION 协作边界
 
+## 当前研究完成｜2026-10-13 LC01-DIALOG-R1 / STOP
+
+用户批准的源码审查、合成反例和诊断设计已由原LC01长期Thread完成并经Master独立Review。受审集成15f8308；Go纯策略/研究126项（R1研究61项）、Node来源核对3项fail0skip0，原policy/Windows adapter/生产/Setup/身份/rollback/workflow零diff。已确认F3标题正文常量一致，Run38362515475是首次lcExactBusy失败而非关闭后重复识别；Static非空缓冲区当正文计数是已证测试假设缺口，但实际false条件及真实Server2025触发方式仍UNKNOWN。仅设计逐条件固定布尔/null，不实施实机collector或放宽身份。本轮新增Actions/Hosted0、Full0、QA0；原Run与Full #4 FAIL不变，LAN-2仍冻结，没有Full准入。研究/治理保全后STOP，等待网页版另定范围预算。见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-DIALOG-R1-MASTER-REVIEW.md及LC01-DIALOG-R1-CHATGPT-HANDOFF.md；下方R2止损继续有效。
 ## 当前止损｜2026-10-13 LC01-ID-R2 唯一专项 FAIL
 
 唯一R2 Run38362515475@95a03c484d4a051f5fc4d10324faae98302ef4d4、Artifact11795027982、attempt1已FAIL。经白名单schema2/source核验，PowerShell Core7信任/API/UTF8和受验F3安装后身份PASS；外层IDENTITY/FAIL，内层LIFECYCLE_FAILED/LC01_LIFECYCLE，生命周期SECOND/DIALOG_MISMATCH。第二Launcher弹窗匹配及自然退出未证明，cleanupVerified=false，受控强制收尾没有计PASS；不能据此宣称产品缺陷或历史Full #4根因已确定。R2专项1/1耗尽，本轮Full0/QA0/额外Hosted0，立即停；LAN-2保持冻结，不追加、不修复、不进入Full。原LC01及其他Thread/工作树/历史FAIL与UNKNOWN保留。详见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-ID-R2-HOSTED-RESULT.md与LC01-ID-R2-CHATGPT-HANDOFF.md。当前BLOCKED — LC01-ID-R2 SPECIALTY FAILED / SECOND DIALOG MISMATCH。下方Review待运行为历史。
