@@ -1,5 +1,8 @@
 # K⁺-SESSION 协作边界
 
+## 当前Review PASS｜2026-10-13 LAN2-ACCEPTANCE-SPLIT-R1 / FULL PENDING
+
+原LC01正式RETURN的282e9be/7845866/3cc99ff已整合aed3627/88ca759/2150b82。Master独立81/81 fail0skip0、Windows Go overlay仅编译、CJS/PS语法/diff-check PASS，五个测试/验收文件加治理，生产/历史F3身份/安全/事务/rollback/workflow零改。Full移除实际第二Launcher/弹窗交互，保留7次真实first/Node/锁/事件观察及原持久数据/生命周期门禁；新报告AUTOMATION_PASS_HUMAN_PENDING，17人工项和实际LCK03明确HUMAN_PENDING，原静态LCK03合成记录不冒充实机。当前Full Candidate0/1待同步三方HEAD后唯一触发，QA0/1须Full PASS才使用；LC01/额外诊断0，任一FAIL STOP。见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-ACCEPTANCE-SPLIT-R1-MASTER-REVIEW.md；下方派单/旧停止均保留历史。
 ## 当前有限授权｜2026-10-13 LAN2-ACCEPTANCE-SPLIT-R1 / DISPATCHED
 
 用户停止LC01 GUI专项并批准Full自动/物理Win10人工验收分层。原LC01长期Thread/原工作树仅修Full测试生成器/严格验收报告/对应测试及必要报告接线；生产/历史F3身份/安全/事务/rollback不改，原GUI源码及历史FAIL保留。Full保留真实锁独占、第一Launcher/Node与原后台稳定/数据门禁，不能以静态或未启动第二Launcher冒充双启动PASS；精确弹窗/按钮/自然退出/实际双启动明确HUMAN_PENDING。先本地fail0skip0、生成Go overlay仅编译和Master独立Review，再Full Candidate最多1次0/1，PASS后独立QA最多1次0/1，任一FAIL STOP；无新增LC01/诊断Hosted。最终AUTOMATION_PASS_HUMAN_PENDING，不宣称企业LAN认证。详见docs/tasks/windows-installer-v1.1/batch-lan-2/LAN2-ACCEPTANCE-SPLIT-R1-AUTHORIZATION.md。下方冻结/FAIL保留历史，仅本次批准范围有限续行。
