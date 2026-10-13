@@ -1,5 +1,8 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-10-13 LC01-ID-R2 唯一专项 FAIL
+
+唯一R2 Run38362515475@95a03c484d4a051f5fc4d10324faae98302ef4d4、Artifact11795027982、attempt1已FAIL。经白名单schema2/source核验，PowerShell Core7信任/API/UTF8和受验F3安装后身份PASS；外层IDENTITY/FAIL，内层LIFECYCLE_FAILED/LC01_LIFECYCLE，生命周期SECOND/DIALOG_MISMATCH。第二Launcher弹窗匹配及自然退出未证明，cleanupVerified=false，受控强制收尾没有计PASS；不能据此宣称产品缺陷或历史Full #4根因已确定。R2专项1/1耗尽，本轮Full0/QA0/额外Hosted0，立即停；LAN-2保持冻结，不追加、不修复、不进入Full。原LC01及其他Thread/工作树/历史FAIL与UNKNOWN保留。详见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-ID-R2-HOSTED-RESULT.md与LC01-ID-R2-CHATGPT-HANDOFF.md。当前BLOCKED — LC01-ID-R2 SPECIALTY FAILED / SECOND DIALOG MISMATCH。下方Review待运行为历史。
 ## 当前Review PASS｜2026-10-13 LC01-ID-R2 唯一专项待运行
 
 原LC01长期Thread三笔测试封装local提交已整合，受审代码018b108f6143a052a5b76548ffbdc622071a4333。Master独立22/22 fail0skip0、生成Go1.27.1 offline仅编译、PS语法及diff-check PASS；生产和历史F3身份规则零diff。严格保留outer/inner固定分类及来源绑定，合法生命周期FAIL保留安全细节，非法报告fail closed。当前专项0/1，须先非force同步并核对三方HEAD再唯一触发；本轮Full0次/QA0次/额外Hosted0次，任何专项结果均停交网页版，LAN-2冻结。见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-ID-R2-MASTER-REVIEW.md。历史FAIL/UNKNOWN与旧预算不改写。

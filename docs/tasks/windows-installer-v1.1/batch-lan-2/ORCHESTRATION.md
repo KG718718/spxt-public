@@ -98,3 +98,7 @@ Master 将本轮最小测试修正和治理 Review 非 force 推 `codex/lan2-man
 ## 2026-10-13 LC01-ID-R2 RETURNED / REVIEWED / INTEGRATED
 
 原LC01三笔local30543dc/b0f85a8/7093862整合53f74f1/c04ecfb/018b108。Master独立22/22 fail0skip0、固定Go1.27.1 offline仅编译、PS语法/diff-check PASS；严格失败分类/完整publisher合成反例闭合，生产及历史F3规则不变。Execution冻结，R2专项0/1待同步后唯一trigger；Full0次/QA0次，任何结果停交网页版。Review详见../lan2-lc01/LC01-ID-R2-MASTER-REVIEW.md。
+
+## 2026-10-13 LC01-ID-R2 FAIL / FROZEN
+
+唯一Run38362515475@95a03c4、Artifact11795027982、attempt1固定证据核验PASS，但专项整体FAIL。受验F3身份与Core7/API/UTF8通过；outer IDENTITY/FAIL，inner LC01_LIFECYCLE/LIFECYCLE_FAILED，lifecycle SECOND/DIALOG_MISMATCH。第二Launcher自然退出和cleanup未闭合，cleanupVerified=false；强制收尾不计PASS，历史Full #4根因UNKNOWN不变。R2专项1/1已用，本轮Full0/QA0/额外diagnostic0。原Execution及全部LAN-2继续冻结，保留现场，仅治理非force push后STOP。回单../lan2-lc01/LC01-ID-R2-CHATGPT-HANDOFF.md，证据../lan2-lc01/evidence/HOSTED-38362515475.json。

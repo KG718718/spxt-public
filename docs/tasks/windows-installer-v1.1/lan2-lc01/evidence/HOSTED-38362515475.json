@@ -1,0 +1,78 @@
+{
+  "schema": 2,
+  "kind": "lc01-hosted",
+  "status": "FAIL",
+  "stage": "LC01_LIFECYCLE",
+  "reason": "LIFECYCLE_FAILED",
+  "testedCommit": "95a03c484d4a051f5fc4d10324faae98302ef4d4",
+  "f3": {
+    "runId": 36246132535,
+    "artifactId": 10907910968,
+    "sourceCommit": "c8886e6b6d413c2fd73d6716621d07a80b337e58",
+    "setupSha256": "877383fe14bf089eb0a4e130641a957062c07ab258d22d59895c46f9b3f671b6"
+  },
+  "interpreter": {
+    "schema": 1,
+    "kind": "lc01-powershell-proof",
+    "status": "PASS",
+    "testedCommit": "95a03c484d4a051f5fc4d10324faae98302ef4d4",
+    "source": {
+      "repository": "KG718718/spxt-public",
+      "runId": 36246132535,
+      "artifactId": 10907910968,
+      "headSha": "c8886e6b6d413c2fd73d6716621d07a80b337e58"
+    },
+    "edition": "Core",
+    "versionMajor": 7,
+    "api": "PASS",
+    "utf8": "PASS",
+    "signature": "PASS",
+    "reparse": false
+  },
+  "outer": {
+    "stage": "IDENTITY",
+    "runnerOutcome": "FAIL"
+  },
+  "inner": {
+    "classification": "LIFECYCLE_FAILED",
+    "stage": "LC01_LIFECYCLE",
+    "reason": "LIFECYCLE_FAILED"
+  },
+  "identity": {
+    "status": "PASS",
+    "inventoryFiles": 1042,
+    "nodeSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+    "programManifestSha256": "4681b44bb6a70926f0efba7e2f98701bc1cc12981618774cd5345aa1dc993d2c",
+    "programInventorySha256": "ecfbeac0c1ca127691ae5bc5b387a3e8d4d8a60236ca2b123b350bbb6c48874f",
+    "runtimeManifestSha256": "9cbae719e33456290c5c12d71b27e1fe4db0bc93f4e6b25f771ddf6bc6075671",
+    "launcherSha256": "0abe466cf580673e436deb9283dbd551ad1cb4b89f15b4c1cba5b60e66983b89",
+    "buildInfoSha256": "46110139aa75d7f6ad57dc8ba099e796876ed83dd7772c26b7948a7a4e52f11f"
+  },
+  "lifecycle": {
+    "status": "FAIL",
+    "stage": "SECOND",
+    "second": {
+      "Status": "FAIL",
+      "Path": "DIALOG_MISMATCH",
+      "BusyClosed": false,
+      "NaturalExit": false,
+      "CleanupTerminated": true,
+      "HandlesClosed": true,
+      "ExitCode": 0
+    },
+    "firstIdentity": true,
+    "nodeIdentity": true,
+    "exclusiveLock": true,
+    "noSecondBackend": false,
+    "firstNaturalExit": false,
+    "firstExitCode": 0,
+    "nodeExited": true,
+    "quiescence": false,
+    "handlesClosed": false,
+    "cleanupTerminated": true,
+    "modalProof": "UNPROVEN"
+  },
+  "cleanupVerified": false,
+  "physicalWin10Certified": false,
+  "dualDeviceLanCertified": false
+}
