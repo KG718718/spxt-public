@@ -75,7 +75,7 @@ test('final verification proves restoration but never converts UNKNOWN into PASS
     assert.equal(driver.status,'FAIL');assert.equal(driver.classification,classification);assert.doesNotThrow(()=>report.validateFinal(driver,source));
   }
   const ci=fs.readFileSync(path.join(repo,'tools/windows-installer/beta4-upgrade/u27-specialty-ci.ps1'),'utf8');
-  assert.match(ci,/status -cne 'UNKNOWN'[\s\S]*classification -cne 'SETUP_SUCCEEDED_CLONE_UNKNOWN'/);
+  assert.match(ci,/status -cne 'UNKNOWN'[\s\S]*classification -cne 'SETUP_SUCCEEDED_CLONE_UNKNOWN'[\s\S]*U27_SPECIALTY_OUTCOME_UNKNOWN/);
   assert.match(ci,/KSESSION_SETUP_ARTIFACT=\(Join-Path/);assert.match(ci,/KSESSION_SETUP_EVIDENCE=\(Join-Path/);
 });
 
