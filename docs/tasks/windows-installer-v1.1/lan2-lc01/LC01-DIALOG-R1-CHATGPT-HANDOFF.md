@@ -14,7 +14,7 @@
 
 4.【Hosted自动验证】条件具备时，同一桌面窗口API可自动验证可观察路径；当前Run已达对话框读取，不能说完全不支持。但稳定控件布局、正确确认和自然退出尚未闭合，无法保证非交互Runner可靠覆盖所有真实桌面交互。
 
-5.【人工边界】最终物理Win10需看见并核对实际弹窗，点击OK后确认第二Launcher退出、第一Launcher/Node仍运行、无第二后台，再正常退出。双设备LAN与真实Firewall授权仍待最终用户验收，不能用Hosted代替。
+5.【人工边界】最终物理Win10需区分无弹窗正常派发与忙碌拒绝；若出现INSTANCE_BUSY弹窗，核对内容并点击OK。两条路线都确认第二Launcher自然退出、第一Launcher/Node仍运行、无第二后台，再正常退出。正常派发无须弹窗；缺弹窗的非零退出不能当忙碌PASS。双设备LAN与真实Firewall授权仍待最终用户验收，不能用Hosted代替。
 
 实际完成：原长期LC01 Thread只新增隔离研究测试/设计，Master独立Go策略+研究126项（其中R1研究61项）、Node源码核对3项全部PASS，fail0skip0；diff-check PASS。原policy/adapter/生产/Setup/身份/rollback/workflow未改。Node/npm/Runtime体积等本轮非交付项=N/A。
 停止：新增Hosted0、Full0、QA0；只保全研究与治理，原线程/工作树冻结。需网页版决定下一轮实施范围与测试预算，不自动申请或触发，不进入main/tag/Release/Batch5/OCR。

@@ -27,3 +27,5 @@
 本轮新Actions/Hosted0、Full0、QA0；旧Run/Full #4 FAIL及根因UNKNOWN保持。原Execution停止，工作树/分支/失败证据保留；仅研究和治理非force推唯一开发分支，等待网页版决定下一轮范围/预算。没有beta.4最终包，没有Final Full准入。
 
 规格补充：local224c2c4/48b8b6f整合61c5888/15f8308。公开观察载荷全部为boolean，内部三态不直接输出；每项Observed/Match与阶段/分类one-hot明确区分未知和不匹配。严格拒绝JSON null（避免Go bool解码将null保留为false）、其他非bool、缺/多key及矛盾分类。Master在最终15f8308独立重新跑纯Go126项（R1研究61项）fail0skip0；来源Node三项代码未改，本轮3/3结果仍适用。这是研究schema验证，不是实际collector实施。
+
+文档核对更正：无弹窗自然exit0且guards通过已经是既有DISPATCH_SUCCESS，不需重新设计产品契约；只有忙碌拒绝路线需要精确弹窗确认后exit1。人工验收不得要求正常派发强行产生错误弹窗。此更正只忠实记录现有policy，不改代码或验收规则。

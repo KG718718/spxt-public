@@ -55,13 +55,13 @@
 
 先实施上述白名单诊断并取得一次获批的真实 Windows 观察，再决定是否改验收。若观察证实图标 Static 被误计，最小修正方向是按无序集合识别“恰好一个正文与 `lcBusyText` 完全相同的 Static”，并用已观察且稳定的 class/style/ID 规则单独识别预期图标；任何额外文字 Static、未知 style、重复正文或读取失败仍 fail closed。不能简单取消 `TextCount`、忽略额外 Static、使用子串、依赖枚举顺序或把 `DIALOG_MISMATCH` 当成成功。
 
-若真实观察显示没有对话框而第二 Launcher 能自然以明确退出码退出，应另行设计无对话框产品契约；不能在本任务内将超时、强制终止或缺少对话框改判为 INSTANCE_BUSY PASS。
+没有对话框、第二 Launcher 自然 exit0 且全部会话/锁/无第二后台门禁通过，是既有 DISPATCH_SUCCESS 路径，无须新产品契约。没有对话框却 exit1 或其他非零退出，不能当作 INSTANCE_BUSY_REJECTED；不能将超时、强制终止或缺少必要拒绝证明改判为 PASS。
 
 ## Hosted 与人工验证边界
 
 GitHub Windows runner 是否提供稳定的交互桌面、MessageBox 控件树是否受 Server 版本、主题、DPI 或系统实现影响，当前未证。F3 的标题和正文由程序显式提供，系统控件结构仍可能变化。ownerless MessageBox 能否在该会话稳定出现也需真实观测。一次 Hosted 结果不能替代物理 Win10 可见桌面验证。
 
-未来人工验证至少需要在物理 Win10 可见桌面保持第一 Launcher 和私有 Node 运行，手工启动第二 Launcher，核对模态窗内容与按钮行为，点击 OK 后确认第二 Launcher 自然退出、第一 Launcher 继续运行、没有第二后台、业务数据不变。双设备 LAN、真实防火墙授权和跨设备行为继续单独保持 HUMAN PENDING。
+未来人工验证至少需要在物理 Win10 可见桌面保持第一 Launcher 和私有 Node 运行，手工启动第二 Launcher，区分无弹窗正常派发与忙碌拒绝。若出现 INSTANCE_BUSY 模态窗，再核对内容与按钮行为，点击 OK；两条路线都需确认第二 Launcher 自然退出、第一 Launcher 继续运行、没有第二后台、业务数据不变。不得为了验收强行要求正常派发也显示错误弹窗。双设备 LAN、真实防火墙授权和跨设备行为继续单独保持 HUMAN PENDING。
 
 ## 引用
 
