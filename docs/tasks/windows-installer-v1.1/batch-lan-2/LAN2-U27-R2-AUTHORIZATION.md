@@ -12,7 +12,9 @@
 
 先对照历史完整 TestUpgradeLifecycle 至U26：F3安装、全部fault/rollback链、beta2→beta4真实升级、受控退出、登记/Binding、program/uninstaller/快捷方式、业务instance与附件/LAN配置、锁和句柄。现有sequence/diagnostic模式删减前缀，不能直接视为等价。
 
-优先审查保留历史完整前缀、仅在U27停止的独立入口；不执行TestSetup、U28—U30、外围Full/core742/QA。任何删减必须有状态不变量证明，无法证明就STOP。不得借专项擅自扩为Full。
+优先审查保留历史完整前缀、仅在U27停止的独立入口。Master最初建议省略TestSetup，经静态核查发现跨测试Binding/进程/卸载状态未证，不采用该删减方案。保留完整TestSetup作为必要前置、同一离线区间的两个独立Go进程和完整7构建/fault链，属于复现U27的专项前缀；不执行U28—U30、外围Full/core742/QA。任何删减必须有状态不变量证明，无法证明就STOP。不得借专项擅自扩为Full。
+
+完整前缀证明的是已知操作和观测不变量等价，不声称历史未记录的clone/残留状态已知。U26后新增只读观察必须如实UNKNOWN，不能加入等待/清理改变拒绝窗口。专项仍须本地生成文本/参数/顺序核对及Master最终Review，不因当前方案确认而提前获得Hosted准入。
 
 ## 工程与隐私
 
