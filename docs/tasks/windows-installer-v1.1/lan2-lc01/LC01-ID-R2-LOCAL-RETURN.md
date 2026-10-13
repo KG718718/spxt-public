@@ -10,11 +10,11 @@
 - 生成的身份 wrapper 在原单文件 allowlist 校验之后才写严格 sidecar；保留原 beta2 identity 规则。新增 LC01_IDENTITY_VALIDATION 与 LC01_LIFECYCLE 仅用于专项分类，写入旧历史 run report 时仍映射为原 COLLECT 语义。
 - LC01 报告升级为 schema 2；schema 1 仍按原义可读。schema 2 独立保留 outer stage/runnerOutcome 与 inner classification/stage/reason。新报告严格绑定 testedCommit、F3 Run 36246132535、Artifact 10907910968、source commit 及 Setup SHA，并区分 NOT_STARTED、REPORT_MISSING、INITIAL_PLACEHOLDER、VERIFIED_BLOCKED、REPORT_INVALID、IDENTITY_VALIDATION_FAILED、LIFECYCLE_FAILED、UNKNOWN、PASS。reason 按分类和阶段精确派生，不接受任意大写字符串；额外或敏感字段拒绝。
 - 没有解释器 proof 的 ENV/SOURCE/TOOLCHAIN 早期失败只记 `CHILD_NOT_STARTED`，不推断为信任拒绝；只有 parent 实际捕获并传入固定白名单原因时才区分信任、能力或 proof 拒绝。初始化报告固定为 `UNKNOWN / INITIAL_REPORT_UNFINALIZED`，不冒充事后分类。
-- PASS 必须同时具备可信解释器证明、FINALIZE 进度、最终身份报告、五锚与 inventory、自然生命周期 PASS、cleanup PASS、inner/outer 一致；陈旧进度、失败或不一致不能升级 PASS。生命周期失败时只保留已经严格验证的固定身份摘要，不保留非法字段。
+- PASS 必须同时具备可信解释器证明、FINALIZE 进度、最终身份报告、五锚与 inventory、自然生命周期 PASS、cleanup PASS、inner/outer 一致；陈旧进度、失败或不一致不能升级 PASS。合法的 lifecycle FAIL 经完整字段白名单验证后保留固定 stage 与 second.Path；同时保留已严格验证的身份摘要。非法或带额外字段的 lifecycle 报告不进入最终报告。
 
 ## 本地验收
 
-- Node：lc01-hosted.test.cjs 与 second-launcher.test.cjs 共 21/21 PASS，fail 0、skip 0。
+- Node：lc01-hosted.test.cjs 与 second-launcher.test.cjs 共 22/22 PASS，fail 0、skip 0；包含 publisher 完整可信合成 PASS、合法 lifecycle FAIL 保留及非法 lifecycle FAIL 丢弃三项端到端门禁。
 - 反例覆盖可信路径、reparse、签名、Core/版本/API/UTF-8/参数；未启动、缺报告、占位报告、原身份全部合法 BLOCKED 阶段、非法报告、commit/F3 不匹配、额外敏感字段、身份/生命周期失败及内外不一致。
 - lc01-hosted.ps1 和最终生成 invoke-lc01.ps1 的 PowerShell Parser 均 PASS；两个 CJS node --check PASS；git diff --check PASS。
 - 固定 Go 1.27.1，GOTOOLCHAIN=local、GOPROXY/GOSUMDB=off；fresh 专属目录 go test -c PASS。生成的 Windows 测试 EXE 未运行。
