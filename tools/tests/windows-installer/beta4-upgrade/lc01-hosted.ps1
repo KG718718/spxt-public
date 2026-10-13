@@ -37,7 +37,7 @@ $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../..'))
 $out=Join-Path $env:RUNNER_TEMP 'lc01-evidence'
 $build=Join-Path $env:RUNNER_TEMP 'lc01-build'
 $reportCli=Join-Path $PSScriptRoot 'lc01-hosted-report.cjs'
-$stage='ENV';$failed=$true;$childState='NOT_STARTED';$innerStarted=$false
+$stage='ENV';$failed=$true;$childState='NOT_STARTED';$innerStarted=$false;$parentReason='CHILD_NOT_STARTED'
 try {
  if($env:GITHUB_ACTIONS-ne 'true' -or $env:RUNNER_ENVIRONMENT-ne 'github-hosted' -or $env:GITHUB_REPOSITORY-ne 'KG718718/spxt-public' -or $env:GITHUB_REF-ne 'refs/heads/codex/lan2-manual-host-v1.1' -or $env:GITHUB_RUN_ATTEMPT-ne '1'){throw 'HOSTED_REQUIRED'}
  if($TestedCommit-cnotmatch '^[a-f0-9]{40}$' -or (git -C $repo rev-parse HEAD)-cne $TestedCommit -or (Test-Path -LiteralPath $build)){throw 'SOURCE_OR_FRESH_REJECTED'}
@@ -67,13 +67,13 @@ try {
  # Existing identity runner accepts exactly its initial report; lifecycle reports are created later.
  $identityOutput=Join-Path $build 'identity-output';[void][IO.Directory]::CreateDirectory($identityOutput)
  Move-Item -LiteralPath (Join-Path $out 'BETA2-IDENTITY-REPORT.json') -Destination $identityOutput
- $pwsh=Resolve-LC01PowerShell7
+ try{$pwsh=Resolve-LC01PowerShell7}catch{$parentReason='POWERSHELL_TRUST_REJECTED';throw}
  $probeOut=Join-Path $build 'pwsh-probe.stdout';$probeErr=Join-Path $build 'pwsh-probe.stderr'
  $probe="if(`$PSVersionTable.PSEdition -cne 'Core' -or `$PSVersionTable.PSVersion.Major -lt 7 -or ![IO.Path]::IsPathFullyQualified('C:\KSESSION-LC01-HOSTED-WORK')){exit 41};[Console]::OutputEncoding=[Text.UTF8Encoding]::new(`$false);[Console]::Write(('LC01_CORE_API_UTF8_K⁺|'+`$PSVersionTable.PSVersion.Major))"
  $probeExit=Invoke-LC01Process $pwsh @('-NoProfile','-NonInteractive','-Command',$probe) 30000 $probeOut $probeErr
- if($probeExit-ne 0){throw 'POWERSHELL_CAPABILITY_REJECTED'};$version=Confirm-LC01ProbeOutput $probeOut $probeErr
+ try{if($probeExit-ne 0){throw 'POWERSHELL_CAPABILITY_REJECTED'};$version=Confirm-LC01ProbeOutput $probeOut $probeErr}catch{$parentReason='POWERSHELL_CAPABILITY_REJECTED';throw}
  $proof=[ordered]@{schema=1;kind='lc01-powershell-proof';status='PASS';testedCommit=$TestedCommit;source=[ordered]@{repository='KG718718/spxt-public';runId=[Int64]36246132535;artifactId=[Int64]10907910968;headSha='c8886e6b6d413c2fd73d6716621d07a80b337e58'};edition='Core';versionMajor=[int]$version;api='PASS';utf8='PASS';signature='PASS';reparse=$false}
- $proofDraft=Join-Path $build 'powershell-proof.json';[IO.File]::WriteAllText($proofDraft,($proof|ConvertTo-Json -Depth 4 -Compress)+"`n",[Text.UTF8Encoding]::new($false));& $node $reportCli interpreter $proofDraft $TestedCommit (Join-Path $out 'LC01-POWERSHELL-PROOF.json');if($LASTEXITCODE-ne 0){throw 'POWERSHELL_PROOF_REJECTED'}
+ $proofDraft=Join-Path $build 'powershell-proof.json';[IO.File]::WriteAllText($proofDraft,($proof|ConvertTo-Json -Depth 4 -Compress)+"`n",[Text.UTF8Encoding]::new($false));& $node $reportCli interpreter $proofDraft $TestedCommit (Join-Path $out 'LC01-POWERSHELL-PROOF.json');if($LASTEXITCODE-ne 0){$parentReason='POWERSHELL_PROOF_REJECTED';throw 'POWERSHELL_PROOF_REJECTED'}
  $childExit=Invoke-LC01Process $pwsh @('-NoProfile','-NonInteractive','-File',(Join-Path $generated 'invoke-lc01.ps1'),'-RepositoryRoot',$repo,'-OutputDirectory',$identityOutput,'-TestedCommit',$TestedCommit,'-LifecycleExe',$exe) 600000 (Join-Path $build 'runner.stdout') (Join-Path $build 'runner.stderr') ([ref]$innerStarted)
  if($childExit-ne 0){throw 'RUNNER_FAILED'}
  $failed=$false
@@ -85,7 +85,7 @@ try {
    if(Test-Path -LiteralPath $file){Copy-Item -LiteralPath $file -Destination (Join-Path $out $name)}
   }
  }
- if($node){$outcome=if($failed){'FAIL'}else{'SUCCESS'};& $node $reportCli publish $out $TestedCommit $stage $outcome $childState;if($LASTEXITCODE-ne 0){$failed=$true}}
+ if($node){$outcome=if($failed){'FAIL'}else{'SUCCESS'};& $node $reportCli publish $out $TestedCommit $stage $outcome $childState $parentReason;if($LASTEXITCODE-ne 0){$failed=$true}}
  $env:GITHUB_TOKEN=$null;$env:GH_TOKEN=$null
 }
 if($failed){exit 1}

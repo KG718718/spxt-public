@@ -94,7 +94,7 @@ test('failure/unknown cannot be relabeled PASS without installed identity/lifecy
  assert.throws(()=>report.publish(dir,'a'.repeat(40),'IDENTITY','UNKNOWN','NOT_STARTED'));
 });
 test('trusted interpreter contract uses exact arguments and preserves K plus UTF-8 without installation',()=>{
- const bundled='C:/Users/PC/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/pwsh.exe';assert.ok(fs.existsSync(bundled));
+ const bundled=process.env.LC01_TEST_PWSH;assert.ok(bundled&&path.isAbsolute(bundled)&&fs.existsSync(bundled),'LC01_TEST_PWSH must name an existing absolute no-install PowerShell test executor');
  for(const token of ["GetFolderPath('ProgramFiles')",'Get-AuthenticodeSignature','ReparsePoint',"PSEdition -cne 'Core'",'PSVersion.Major -lt 7','IsPathFullyQualified',"LC01_CORE_API_UTF8_K⁺",'Confirm-LC01ProbeOutput'])assert.ok(outerPs.includes(token));
  const capability=spawnSync(bundled,['-NoProfile','-NonInteractive','-Command',"if($PSVersionTable.PSEdition -cne 'Core' -or $PSVersionTable.PSVersion.Major -lt 7 -or ![IO.Path]::IsPathFullyQualified('C:\\LC01')){exit 41};[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);[Console]::Write('BUNDLED_TEST_ONLY_K⁺')"],{encoding:'utf8'});assert.equal(capability.status,0,capability.stderr);assert.equal(capability.stdout,'BUNDLED_TEST_ONLY_K⁺');
  const stub=path.join(out,'child-stub.cjs'),stdout=path.join(out,'stub.stdout'),fixture=path.join(out,'trust-ok.json');
@@ -102,13 +102,16 @@ test('trusted interpreter contract uses exact arguments and preserves K plus UTF
  fs.writeFileSync(fixture,JSON.stringify({candidate:'C:/Program Files/PowerShell/7/pwsh.exe',expected:'C:/Program Files/PowerShell/7/pwsh.exe',hasReparse:false,signatureStatus:'Valid',signer:'CN=PowerShell, O=Microsoft Corporation, C=US'}));
  const actual=spawnSync(bundled,['-NoProfile','-NonInteractive','-File',path.join(__dirname,'lc01-hosted.ps1'),'-TestedCommit','a'.repeat(40),'-ContractStub','-StubNode',process.execPath,'-StubScript',stub,'-StubOutput',stdout,'-TrustFixture',fixture],{encoding:'utf8'});
  assert.equal(actual.status,0,actual.stderr);assert.equal(fs.readFileSync(stdout,'utf8'),'ARGUMENT_UTF8_K⁺');
- const bad=path.join(out,'trust-bad.json');fs.writeFileSync(bad,JSON.stringify({candidate:bundled,expected:'C:/Program Files/PowerShell/7/pwsh.exe',hasReparse:false,signatureStatus:'Valid',signer:'CN=PowerShell, O=Microsoft Corporation, C=US'}));
+ const bad=path.join(out,'trust-bad.json');fs.writeFileSync(bad,JSON.stringify({candidate:'C:/synthetic-cache/pwsh.exe',expected:'C:/Program Files/PowerShell/7/pwsh.exe',hasReparse:false,signatureStatus:'Valid',signer:'CN=PowerShell, O=Microsoft Corporation, C=US'}));
  const rejected=spawnSync(bundled,['-NoProfile','-NonInteractive','-File',path.join(__dirname,'lc01-hosted.ps1'),'-TestedCommit','a'.repeat(40),'-ContractStub','-StubNode',process.execPath,'-StubScript',stub,'-StubOutput',stdout+'.bad','-TrustFixture',bad],{encoding:'utf8'});assert.notEqual(rejected.status,0);
  const badTrust=path.join(out,'trust-reparse-signature-bad.json');fs.writeFileSync(badTrust,JSON.stringify({candidate:'C:/Program Files/PowerShell/7/pwsh.exe',expected:'C:/Program Files/PowerShell/7/pwsh.exe',hasReparse:true,signatureStatus:'NotSigned',signer:'CN=Unknown'}));
  const trustRejected=spawnSync(bundled,['-NoProfile','-NonInteractive','-File',path.join(__dirname,'lc01-hosted.ps1'),'-TestedCommit','a'.repeat(40),'-ContractStub','-StubNode',process.execPath,'-StubScript',stub,'-StubOutput',stdout+'.trustbad','-TrustFixture',badTrust],{encoding:'utf8'});assert.notEqual(trustRejected.status,0);
 });
 test('outer state and inner classifications preserve not-started, missing and initial placeholder',()=>{
- const commit='a'.repeat(40),notStarted=report.publish(classifiedDir('not-started',{withProof:false}),commit,'TOOLCHAIN','FAIL','NOT_STARTED');assert.equal(notStarted.inner.classification,'NOT_STARTED');assert.deepEqual(notStarted.outer,{stage:'TOOLCHAIN',runnerOutcome:'FAIL'});
+ const commit='a'.repeat(40),notStarted=report.publish(classifiedDir('not-started',{withProof:false}),commit,'TOOLCHAIN','FAIL','NOT_STARTED');assert.equal(notStarted.inner.classification,'NOT_STARTED');assert.equal(notStarted.reason,'CHILD_NOT_STARTED');assert.deepEqual(notStarted.outer,{stage:'TOOLCHAIN',runnerOutcome:'FAIL'});
+ const envStopped=report.publish(classifiedDir('env-not-started',{withProof:false}),commit,'ENV','FAIL','NOT_STARTED');assert.equal(envStopped.reason,'CHILD_NOT_STARTED');
+ const trustStopped=report.publish(classifiedDir('trust-not-started',{withProof:false}),commit,'IDENTITY','FAIL','NOT_STARTED','POWERSHELL_TRUST_REJECTED');assert.equal(trustStopped.reason,'POWERSHELL_TRUST_REJECTED');
+ assert.throws(()=>report.publish(classifiedDir('private-parent-reason',{withProof:false}),commit,'ENV','FAIL','NOT_STARTED','PRIVATE_REASON'));
  const missing=report.publish(classifiedDir('missing'),commit,'IDENTITY','FAIL','STARTED');assert.equal(missing.inner.classification,'REPORT_MISSING');assert.deepEqual(missing.outer,{stage:'IDENTITY',runnerOutcome:'FAIL'});
  const initial=identityApi.createRunReport('BLOCKED','HOSTED_PREFLIGHT',commit);assert.equal(report.publish(classifiedDir('placeholder',{run:initial}),commit,'IDENTITY','FAIL','STARTED').inner.classification,'INITIAL_PLACEHOLDER');
 });
@@ -135,4 +138,7 @@ test('lifecycle and identity failures remain distinct and outer mismatch cannot 
 });
 test('legacy schema one report remains readable with its original meaning',()=>{
  const current=passing(),legacy={schema:1,kind:'lc01-hosted',status:current.status,stage:current.stage,testedCommit:current.testedCommit,f3:current.f3,identity:current.identity,lifecycle:current.lifecycle,cleanupVerified:current.cleanupVerified,physicalWin10Certified:false,dualDeviceLanCertified:false};assert.equal(report.validate(legacy),legacy);
+});
+test('initializer is explicitly unfinalized rather than post-hoc child attribution',()=>{
+ const dir=path.join(out,'initializer');fs.mkdirSync(dir);const cli=spawnSync(process.execPath,[path.join(__dirname,'lc01-hosted-report.cjs'),'initialize',path.join(dir,'LC01-HOSTED-REPORT.json'),'a'.repeat(40)],{encoding:'utf8'});assert.equal(cli.status,0,cli.stderr);const initial=JSON.parse(fs.readFileSync(path.join(dir,'LC01-HOSTED-REPORT.json')));assert.equal(initial.inner.classification,'UNKNOWN');assert.equal(initial.reason,'INITIAL_REPORT_UNFINALIZED');assert.deepEqual(initial.outer,{stage:'ENV',runnerOutcome:'FAIL'});
 });
