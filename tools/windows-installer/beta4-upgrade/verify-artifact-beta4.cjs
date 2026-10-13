@@ -2,6 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {sha,inventory}=require('../../windows-runtime/common.cjs');
 const {verifySessionReport}=require('./session-report.cjs');
+const {lockIds,verifyAcceptanceEvidence,ensureAcceptanceReport,verifyAcceptanceReport,verifyArtifactFileSet,verifyHistoricalLCK03SyntheticGate}=require('./acceptance-report.cjs');
 const {FIREWALL:firewallUnitExpected,LAUNCHER:launcherUnitExpected,INTEGRATION_IDS:integrationExpected}=require('../../tests/lan-host/expected-go-tests.cjs');
 const [root,commit]=process.argv.slice(2);
 const names=['K-SESSION-Setup-1.1.0-beta.4.exe','K-SESSION-Setup-1.1.0-beta.4.exe.sha256','build-info.json',
@@ -10,7 +11,9 @@ const names=['K-SESSION-Setup-1.1.0-beta.4.exe','K-SESSION-Setup-1.1.0-beta.4.ex
  'BETA4-UPGRADE-TEST-REPORT.json','offline-network.json','production-sessions-beta4.json','public-regression.json'];
 names.push('firewall-hosted-gate.json');
 names.push('beta4-ci-stage.json');
-assert.deepEqual(fs.readdirSync(root).sort(),names.sort());
+const acceptanceName='beta4-acceptance.json';
+const initialFiles=fs.readdirSync(root),acceptanceExisted=initialFiles.includes(acceptanceName);
+verifyArtifactFileSet(initialFiles,acceptanceExisted?[...names,acceptanceName]:names);
 const read=name=>fs.readFileSync(path.join(root,name)),json=name=>JSON.parse(read(name).toString().replace(/^\uFEFF/,''));
 const info=json('build-info.json');
 assert.equal(info.sourceCommit,commit);assert.equal(info.mode,'lan-candidate');assert.equal(info.unsigned,true);
@@ -44,10 +47,13 @@ assert.equal(setup.sourceCommit,commit);assert.equal(setup.status,'AUTOMATED_PAS
 const upgrade=json('BETA4-UPGRADE-TEST-REPORT.json');
 assert.equal(upgrade.beta2SourceCommit,'c8886e6b6d413c2fd73d6716621d07a80b337e58');
 assert.equal(upgrade.beta4SourceCommit,commit);assert.equal(upgrade.status,'PASS');assert.equal(Object.keys(upgrade.checks).length,30);
+assert.deepEqual(upgrade.singleInstanceBaseline,{schema:1,status:'PASS',qualification:'AUTOMATED_SINGLE_INSTANCE_BASELINE_ONLY',
+ observationCount:7,launcherAlive:true,nodeAlive:true,rootLockExclusive:true,readyStable:true,nodeSpawnStable:true,
+ secondLauncherStarted:false,doubleLaunchProven:false});
 const offline=json('offline-network.json');
 assert.equal(offline.sourceCommit,commit);assert.equal(offline.status,'PASS');assert.equal(offline.externalBefore,true);
 assert.equal(offline.externalDuring,false);assert.equal(offline.restored,true);assert.equal(offline.firewallChanged,false);
-verifySessionReport(json('production-sessions-beta4.json'),commit);
+const privateSession=json('production-sessions-beta4.json');verifySessionReport(privateSession,commit);
 const firewall=json('firewall-hosted-gate.json');
 assert.equal(firewall.status,'PASS');assert.equal(firewall.productionHelperHostedVirtualRejected,true);
 assert.equal(firewall.productRuleCreated,false);assert.equal(firewall.netSecurityPersistentExact,true);
@@ -63,4 +69,33 @@ for(const file of inventory(root)){
  assert.doesNotMatch(text,/"(?:password|token|smtpPass|cookie|authorization)"\s*:/i,file.path);
  assert.doesNotMatch(text,/[A-Za-z]:\\Users\\|attachments?[/\\].+\.(?:pdf|jpe?g|png)/i,file.path);
 }
+const acceptanceFile=path.join(root,acceptanceName);
+assert.deepEqual(Object.keys(compatibility.locks).sort(),[...lockIds].sort());
+verifyHistoricalLCK03SyntheticGate(compatibility.locks.LCK03);
+const automatedLockIds=lockIds.filter(id=>id!=='LCK03');
+const automatedLocks=automatedLockIds.map(id=>[id,compatibility.locks[id]]);
+const pass=value=>value?'PASS':'FAIL';
+const acceptanceEvidence={schema:1,sourceCommit:stage.sourceCommit,setupChecks:Object.keys(setup.checks).length,
+ upgradeChecks:Object.keys(upgrade.checks).length,compatibilityChecks:Object.keys(compatibility.checks).length,
+ compatibilityLocksWithoutHistoricalLCK03:automatedLocks.length,
+ singleInstanceObservations:upgrade.singleInstanceBaseline.observationCount,regressionSuites:regression.suitePass,
+ regressionChecks:regression.testTotal,regressionFail:regression.fail,regressionSkipped:regression.skipped,
+ portable:portable.status,setupLifecycle:pass(setup.status==='AUTOMATED_PASS_HUMAN_PENDING'),
+ upgradeU01U30:upgrade.status,singleInstanceBaseline:upgrade.singleInstanceBaseline.status,
+ firstLauncherAlive:pass(upgrade.singleInstanceBaseline.launcherAlive),privateNodeAlive:pass(upgrade.singleInstanceBaseline.nodeAlive),
+ rootLockExclusive:pass(upgrade.singleInstanceBaseline.rootLockExclusive),readyStable:pass(upgrade.singleInstanceBaseline.readyStable),
+ nodeSpawnStable:pass(upgrade.singleInstanceBaseline.nodeSpawnStable),
+ u05u06StateInvariant:pass(upgrade.checks.U05.status==='PASS'&&upgrade.checks.U06.status==='PASS'),
+ persistentInventoryQuiescence:pass(automatedLocks.every(([,value])=>value.status==='PASS')),
+ compatibilityC01C15:compatibility.status,historicalLCK03SyntheticGate:compatibility.locks.LCK03.status,
+ offlineLifecycle:offline.status,privateSession:privateSession.status,
+ firewallHosted:firewall.status,publicRegression26Suites742Checks:pass(regression.suitePass===26&&regression.testTotal===742&&regression.fail===0&&regression.skipped===0),
+ artifactPrivacyAndIdentity:'PASS'};
+verifyAcceptanceEvidence(acceptanceEvidence,commit);
+ensureAcceptanceReport(acceptanceFile,commit,acceptanceEvidence);
+verifyArtifactFileSet(fs.readdirSync(root),[...names,acceptanceName]);
+verifyAcceptanceReport(json(acceptanceName),commit);
+const acceptanceText=read(acceptanceName).toString();
+assert.doesNotMatch(acceptanceText,/"(?:password|token|smtpPass|cookie|authorization)"\s*:/i);
+assert.doesNotMatch(acceptanceText,/[A-Za-z]:\\Users\\|attachments?[/\\].+\.(?:pdf|jpe?g|png)/i);
 console.log('BETA4 LAN SETUP ARTIFACT VERIFIED; REAL LAN HUMAN ACCEPTANCE PENDING');

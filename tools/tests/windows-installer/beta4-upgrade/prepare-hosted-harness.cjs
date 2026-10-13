@@ -95,6 +95,55 @@ function injectRejectedSetupQuiescence(upgrade, target, source, oldVersion, newV
   return upgrade;
 }
 
+function injectAutomatedSingleInstanceBaseline(upgrade) {
+  upgrade = replaceOnce(upgrade, '\tchecks := map[string]map[string]string{}', `\tchecks := map[string]map[string]string{}
+\tsingleInstanceBaseline := map[string]any{"schema": 1, "status": "FAIL", "qualification": "AUTOMATED_SINGLE_INSTANCE_BASELINE_ONLY", "observationCount": 0, "launcherAlive": false, "nodeAlive": false, "rootLockExclusive": false, "readyStable": false, "nodeSpawnStable": false, "secondLauncherStarted": false, "doubleLaunchProven": false}`);
+  upgrade = replaceOnce(upgrade, '"status": "RUNNING", "checks": checks,',
+    '"status": "RUNNING", "checks": checks, "singleInstanceBaseline": singleInstanceBaseline,');
+  const firstPort = '\tport := int(ready["port"].(float64))';
+  const observer = `\tsingleInstanceObservations := 0
+\texpectedReady, expectedSpawn := eventCount(instance, "READY"), eventCount(instance, "NODE_SPAWN")
+\tobserveSingleInstanceBaseline := func() {
+\t\tif !alivePID(pid) { t.Fatal("controlled private Node not alive") }
+\t\tif !alivePID(uint32(app.Process.Pid)) { t.Fatal("controlled first Launcher not alive") }
+\t\trequireLauncherLockOccupied(t, instance)
+\t\tif eventCount(instance, "READY") != expectedReady { t.Fatal("READY event count changed during controlled single-instance run") }
+\t\tif eventCount(instance, "NODE_SPAWN") != expectedSpawn { t.Fatal("NODE_SPAWN event count changed during controlled single-instance run") }
+\t\tsingleInstanceObservations++
+\t}
+\tobserveSingleInstanceBaseline()`;
+  upgrade = replaceOnce(upgrade, firstPort, firstPort + '\n' + observer);
+  upgrade = replaceCount(upgrade, '\tport = int(ready["port"].(float64))',
+    '\tport = int(ready["port"].(float64))\n\texpectedReady, expectedSpawn = eventCount(instance, "READY"), eventCount(instance, "NODE_SPAWN")\n\tobserveSingleInstanceBaseline()', 2);
+  const corePattern = /^(\tcoreProbe\([^\n]+\))$/gm;
+  const coreMatches = upgrade.match(corePattern) || [];
+  assert.equal(coreMatches.length, 3, 'expected three controlled lifecycle core probes');
+  upgrade = upgrade.replace(corePattern, '$1\n\tobserveSingleInstanceBaseline()');
+  upgrade = replaceOnce(upgrade, '\trecord("U02", "real running beta.2 rejected without terminating Launcher or private Node")',
+    '\tobserveSingleInstanceBaseline()\n\trecord("U02", "real running beta.2 rejected without terminating Launcher or private Node")');
+  upgrade = replaceOnce(upgrade, '\tif !diagnostic && (len(ids) != 30 || ids[0] != "U01" || ids[29] != "U30") {',
+    `\tif !diagnostic {
+\t\tif singleInstanceObservations != 7 { t.Fatal("single-instance baseline observation count mismatch") }
+\t\tsingleInstanceBaseline["status"] = "PASS"
+\t\tsingleInstanceBaseline["observationCount"] = singleInstanceObservations
+\t\tsingleInstanceBaseline["launcherAlive"] = true
+\t\tsingleInstanceBaseline["nodeAlive"] = true
+\t\tsingleInstanceBaseline["rootLockExclusive"] = true
+\t\tsingleInstanceBaseline["readyStable"] = true
+\t\tsingleInstanceBaseline["nodeSpawnStable"] = true
+\t}
+\tif !diagnostic && (len(ids) != 30 || ids[0] != "U01" || ids[29] != "U30") {`);
+  return upgrade + `
+func requireLauncherLockOccupied(t *testing.T, instance string) {
+\tt.Helper()
+\th, err := syscall.CreateFile(syscall.StringToUTF16Ptr(filepath.Join(instance, ".launcher.lock")), syscall.GENERIC_READ, 0, nil, syscall.OPEN_EXISTING, syscall.FILE_ATTRIBUTE_NORMAL, 0)
+\tif err == syscall.Errno(32) || err == syscall.Errno(33) { return }
+\tif err == nil { if e := syscall.CloseHandle(h); e != nil { t.Fatal("lock probe close failed") } }
+\tt.Fatal("running Launcher exclusive lock not proven")
+}
+`;
+}
+
 function injectSecondLauncherLockRejection(upgrade) {
   const marker = '\tport := int(ready["port"].(float64))';
   const proof = `	readyBeforeSecond := eventCount(instance, "READY")
@@ -201,8 +250,7 @@ function main(argv) {
   upgrade = injectLockRelease(upgrade);
   upgrade = injectPersistentInstanceInventory(upgrade);
   upgrade = injectRejectedSetupQuiescence(upgrade, 'targetBeta4', 'sourceBeta2', 'beta.2', 'beta.4');
-  upgrade = injectSecondLauncherLockRejection(upgrade);
-  upgrade = appendSecondLauncherHelpers(upgrade, repo);
+  upgrade = injectAutomatedSingleInstanceBaseline(upgrade);
   assert.match(upgrade, /KSESSION_BETA2_SETUP/);
   assert.match(upgrade, /K-SESSION-Setup-1\.1\.0-beta\.4\.exe/);
   assert.match(upgrade, /state\["upgradeFrom"\] != "1\.1\.0-beta\.2"/);
@@ -220,4 +268,4 @@ function main(argv) {
 }
 
 if (require.main === module) main(process.argv.slice(2));
-module.exports = {injectFirewallIdentity, injectLockRelease, injectPersistentInstanceInventory, injectRejectedSetupQuiescence, injectSecondLauncherLockRejection, appendSecondLauncherHelpers, transformIntegration, transformPortable};
+module.exports = {injectFirewallIdentity, injectLockRelease, injectPersistentInstanceInventory, injectRejectedSetupQuiescence, injectAutomatedSingleInstanceBaseline, injectSecondLauncherLockRejection, appendSecondLauncherHelpers, transformIntegration, transformPortable};
