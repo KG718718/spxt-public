@@ -1,5 +1,9 @@
 # Batch LAN-2 Result
 
+## 当前止损｜2026-10-13 LC01-DIALOG-R2 唯一专项 FAIL
+
+唯一Run38395066549@45e0f6acb2d2f1c0fc16199df23e0bddeb2cb8c6、attempt1/Artifact11812155052已FAIL；schema3/source/F3核验PASS。受验F3身份PASS，生命周期SECOND/DIALOG_MISMATCH，固定UNKNOWN_STATIC_STYLE；ENUM_CHILDREN分类UNKNOWN，正文计数和按钮ID观察后不符，正文/style/ID未证明，recheck/确认未到达。未点击未知窗；第二自然退出false、强制收尾true、cleanupVerified=false，不冒充PASS。具体原始style/ID未记录，不能据此认定INSTANCE_BUSY或产品缺陷；历史Full #4及旧Run FAIL/UNKNOWN不变。R2专项1/1耗尽、本轮Full0/QA0/额外Hosted0，STOP，LAN-2冻结，无beta.4最终包。只治理保全/非force push；原Thread/工作树保留。见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-DIALOG-R2-HOSTED-RESULT.md。下方运行中/Review/暂停/恢复均保留历史。
+
 ## 当前止损｜2026-10-09 唯一 Launcher 专项 IDENTITY FAIL
 
 GitHub 登录恢复并完成非 force 同步后，唯一 Launcher 专项 Run `37909613607`@`b78012a623155c15a479e5bb79302fabb06ee7af` / Artifact `11605578093` 已 FAIL，run_attempt=1。严格固定报告为 `stage=IDENTITY`、identity=null、lifecycle=null、cleanupVerified=false；未闭合安装后身份与生命周期门禁，不能称第二 Launcher 再次超时或产品缺陷已证。历史 Full #4 根因仍 UNKNOWN。专项预算1/1耗尽，Full Candidate0/1与独立FinalQA0/1未用且冻结；无重跑、无本机安装/解包/VM/网络操作、无 beta.4 最终包。当前 `BLOCKED — LC01 SPECIALTY FAILED / IDENTITY NOT PROVEN`；仅保全失败证据与治理，停止工程/Hosted，等待网页版新决定。详见 `docs/tasks/windows-installer-v1.1/batch-lan-2/LC01-HOSTED-STOP-20261009.md`。下方认证阻断及待运行记载保留为历史。

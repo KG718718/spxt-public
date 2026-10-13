@@ -38,3 +38,11 @@ Master Review（2026-10-09）：已实际接收主动回单，并核验主体e11
 ## 2026-10-13 USER RESUMED
 
 用户明确继续。Master三方HEAD核验acb7326一致、无活动Actions、F3未过期；恢复已Review源码2da7513后的唯一专项准备，不重复测试。Execution维持冻结，无新实现任务。R2专项0/1，Full0/QA0，任何结果STOP。
+
+## 2026-10-13 LC01-DIALOG-R2 HOSTED 1/1 IN PROGRESS
+
+Run38395066549@45e0f6acb2d2f1c0fc16199df23e0bddeb2cb8c6、attempt1，结果PENDING。原LC01 Thread冻结；Master唯一触发预算1/1，不retry，Full0/QA0，任何结果STOP回网页版。历史FAIL/UNKNOWN不变。
+
+## 2026-10-13 LC01-DIALOG-R2 RETURNED / HOSTED FAIL / STOP
+
+Run38395066549@45e0f6a/Artifact11812155052、attempt1，固定schema3已核验。F3身份PASS；SECOND/DIALOG_MISMATCH/UNKNOWN_STATIC_STYLE，子控件UNKNOWN，bodyCount/buttonID观察不符，正文未证明；recheck/IDOK未执行。NaturalExit=false、受控强制收尾true、cleanupVerified=false。R2 Hosted1/1耗尽，Full0/QA0/额外Hosted0，LAN-2冻结；原LC01 Thread及全部现场保留，Master仅治理非force同步后STOP回网页版。详见LC01-DIALOG-R2-HOSTED-RESULT.md，历史FAIL/UNKNOWN不改。

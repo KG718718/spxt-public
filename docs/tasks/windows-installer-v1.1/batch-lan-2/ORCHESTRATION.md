@@ -114,3 +114,11 @@ Master 将本轮最小测试修正和治理 Review 非 force 推 `codex/lan2-man
 ## 2026-10-13 LC01-DIALOG-R2 RETURNED / REVIEWED / INTEGRATED
 
 六筆local887ff66/553d082/77758f2/c2f81b6/090b432/a24c39c整合089ff3b/6272c45/39471f4/38e5f52/68277eb/2da7513。Master独立Node26/26、Go54顶层/206含子测试、vet、两套Windows仅编译、PS语法/diff-check PASS。生产/历史F3身份/workflow不改，schema1/2历史报告独立核验原义保留。原Thread冻结，R2专项0/1待同步后唯一派发；Full0/QA0，任何结果STOP。Review见../lan2-lc01/LC01-DIALOG-R2-MASTER-REVIEW.md。
+
+## 2026-10-13 LC01-DIALOG-R2 HOSTED 1/1 IN PROGRESS
+
+Run38395066549@45e0f6acb2d2f1c0fc16199df23e0bddeb2cb8c6、attempt1，结果PENDING。原LC01 Thread冻结；Master唯一触发预算1/1，不retry，Full0/QA0，任何结果STOP回网页版。历史FAIL/UNKNOWN不变。
+
+## 2026-10-13 LC01-DIALOG-R2 RETURNED / HOSTED FAIL / STOP
+
+Run38395066549@45e0f6a/Artifact11812155052、attempt1，固定schema3已核验。F3身份PASS；SECOND/DIALOG_MISMATCH/UNKNOWN_STATIC_STYLE，子控件UNKNOWN，bodyCount/buttonID观察不符，正文未证明；recheck/IDOK未执行。NaturalExit=false、受控强制收尾true、cleanupVerified=false。R2 Hosted1/1耗尽，Full0/QA0/额外Hosted0，LAN-2冻结；原LC01 Thread及全部现场保留，Master仅治理非force同步后STOP回网页版。详见LC01-DIALOG-R2-HOSTED-RESULT.md，历史FAIL/UNKNOWN不改。

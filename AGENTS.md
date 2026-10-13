@@ -1,5 +1,11 @@
 # K⁺-SESSION 协作边界
 
+## 当前止损｜2026-10-13 LC01-DIALOG-R2 唯一专项 FAIL
+
+唯一Run38395066549@45e0f6acb2d2f1c0fc16199df23e0bddeb2cb8c6、attempt1/Artifact11812155052已FAIL；schema3/source/F3核验PASS。受验F3身份PASS，生命周期SECOND/DIALOG_MISMATCH，固定UNKNOWN_STATIC_STYLE；ENUM_CHILDREN分类UNKNOWN，正文计数和按钮ID观察后不符，正文/style/ID未证明，recheck/确认未到达。未点击未知窗；第二自然退出false、强制收尾true、cleanupVerified=false，不冒充PASS。具体原始style/ID未记录，不能据此认定INSTANCE_BUSY或产品缺陷；历史Full #4及旧Run FAIL/UNKNOWN不变。R2专项1/1耗尽、本轮Full0/QA0/额外Hosted0，STOP，LAN-2冻结，无beta.4最终包。只治理保全/非force push；原Thread/工作树保留。见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-DIALOG-R2-HOSTED-RESULT.md。下方运行中/Review/暂停/恢复均保留历史。
+## 当前唯一专项运行中｜2026-10-13 LC01-DIALOG-R2 / IN PROGRESS
+
+Run38395066549@45e0f6acb2d2f1c0fc16199df23e0bddeb2cb8c6、attempt1已经启动，R2专项1/1已保留并使用，不允许retry。受审代码2da7513、同步f6d0809，三方开发HEAD已核验一致；仅触发既有单Launcher专项workflow。结果PENDING，不宣称身份/窗口/生命周期/cleanup通过。本轮Full0、QA0、额外Hosted0，LAN-2仍冻结；任何结果STOP并返回网页版。下方待运行/暂停/恢复为历史。
 ## 用户恢复｜2026-10-13 LC01-DIALOG-R2 / RESUMED
 
 用户明确“继续吧”，解除本次暂停。Master核验local/origin/GitHub均acb73266e4935434e7a2541db6a2ddc21353e3a7、无活动Actions，原F3 Artifact10907910968未过期，原Execution idle且现场保留。沿用已完成2da7513源码Review，不重复已通过门禁。仅恢复三方同步后一次LC01-DIALOG-R2专项0/1；Full0、QA0、LAN-2冻结不变。任何专项结果均STOP回网页版，不retry。下方PAUSED作为历史保留。
