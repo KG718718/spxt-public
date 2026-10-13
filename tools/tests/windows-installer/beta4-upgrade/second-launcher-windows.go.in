@@ -45,6 +45,7 @@ type lcWindows struct {
 	dialogReason        string
 	firstDiagnostic     lcDialogDiagnostic
 	recheckDiagnostic   lcDialogDiagnostic
+	recheckPending      lcDialogDiagnostic
 	firstFrozen         bool
 	recheckFrozen       bool
 }
@@ -254,16 +255,18 @@ func lcCloneDiagnostic(d lcDialogDiagnostic) lcDialogDiagnostic {
 }
 func (w *lcWindows) captureDialog(stage string, diagnostic lcDialogDiagnostic, reason string, freeze bool) {
 	if stage == "stageRecheck" {
-		if !w.recheckFrozen {
+		replace, failureFrozen := lcDialogCaptureDecision(w.recheckDiagnostic != nil, w.recheckFrozen, w.confirmed != 0, reason)
+		if replace {
 			w.recheckDiagnostic, w.dialogReason = lcCloneDiagnostic(diagnostic), reason
-			w.recheckFrozen = freeze
 		}
+		w.recheckFrozen = failureFrozen || freeze && lcDialogReasonIsInspectionFailure(reason)
 		return
 	}
-	if !w.firstFrozen {
+	replace, failureFrozen := lcDialogCaptureDecision(w.firstDiagnostic != nil, w.firstFrozen, w.confirmed != 0, reason)
+	if replace {
 		w.firstDiagnostic, w.dialogReason = lcCloneDiagnostic(diagnostic), reason
-		w.firstFrozen = freeze
 	}
+	w.firstFrozen = failureFrozen || freeze && lcDialogReasonIsInspectionFailure(reason)
 }
 func (w *lcWindows) DialogDiagnostics() (string, lcDialogDiagnostic, lcDialogDiagnostic) {
 	if w.dialogReason == "" {
@@ -455,6 +458,10 @@ func (w *lcWindows) scanDialogs(stage string, skipConfirmed bool) (lcDialog, boo
 		return found[0], true, lcError("MULTIPLE_SECOND_DIALOGS")
 	}
 	reason := reasons[0]
+	if stage == "stageRecheck" && reason == "DIALOG_MATCH" {
+		w.recheckPending = lcCloneDiagnostic(diagnostic)
+		return found[0], true, nil
+	}
 	if reason == "DIALOG_MATCH" && !diagnostic["classificationMatch"] {
 		reason = "DIALOG_FIELDS_MISMATCH"
 	} else if reason == "DIALOG_MATCH" && stage != "stageRecheck" {
@@ -488,26 +495,38 @@ func (w *lcWindows) Confirm(original lcDialog) error {
 	}
 	// Re-read owner, class, complete title/text and control identity immediately
 	// before the only message. Never send WM_CLOSE or click an unknown dialog.
+	w.recheckPending = nil
 	now, present, err := w.scanDialogs("stageRecheck", false)
 	same := err == nil && present && lcSameDialog(now, original)
-	if w.recheckDiagnostic != nil {
-		diagnostic := lcCloneDiagnostic(w.recheckDiagnostic)
-		lcSetDialogFact(diagnostic, "structureMatch", true, same)
-		w.recheckDiagnostic = lcFinishDialogDiagnostic(diagnostic)
+	if err != nil || !present {
+		return lcError("CONFIRM_IDENTITY_CHANGED")
 	}
-	if err != nil || !present || !same || !lcExactBusy(now) || !w.second.live() || !w.second.identity() || w.Now() >= lcSecondBudget {
-		if err == nil {
-			w.dialogReason = "RECHECK_STRUCTURE_CHANGED"
-		}
+	diagnostic := lcCompleteDialogRecheck(w.recheckPending, same)
+	if !same || !lcExactBusy(now) {
+		w.captureDialog("stageRecheck", diagnostic, "RECHECK_STRUCTURE_CHANGED", true)
+		return lcError("CONFIRM_IDENTITY_CHANGED")
+	}
+	if !w.second.live() {
+		lcSetDialogFact(diagnostic, "liveMatch", true, false)
+		w.captureDialog("stageRecheck", lcFinishDialogDiagnostic(diagnostic), "SECOND_NOT_LIVE", true)
+		return lcError("CONFIRM_IDENTITY_CHANGED")
+	}
+	if !w.second.identity() {
+		lcSetDialogFact(diagnostic, "imageMatch", true, false)
+		w.captureDialog("stageRecheck", lcFinishDialogDiagnostic(diagnostic), "SECOND_IDENTITY_UNPROVEN", true)
+		return lcError("CONFIRM_IDENTITY_CHANGED")
+	}
+	if w.Now() >= lcSecondBudget {
+		w.captureDialog("stageRecheck", diagnostic, "CONFIRM_BUDGET_EXPIRED", true)
 		return lcError("CONFIRM_IDENTITY_CHANGED")
 	}
 	r, _, _ := user32.NewProc("PostMessageW").Call(now.Window, 0x0111, 1, now.Button)
 	if r == 0 {
-		w.dialogReason = "POST_IDOK_API_UNPROVEN"
+		w.captureDialog("stageRecheck", diagnostic, "POST_IDOK_API_UNPROVEN", true)
 		return lcError("CONFIRM_POST_FAILED")
 	}
 	w.confirmed = now.Window
-	w.dialogReason = "DIALOG_MATCH"
+	w.captureDialog("stageRecheck", diagnostic, "DIALOG_MATCH", false)
 	return nil
 }
 func (w *lcWindows) Wait(d time.Duration) (bool, uint32, error) {

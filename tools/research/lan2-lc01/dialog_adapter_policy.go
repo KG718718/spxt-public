@@ -177,6 +177,41 @@ func lcChildEnumerationComplete(callbackFailed bool, children int, _ uintptr) bo
 	return !callbackFailed && children > 0
 }
 
+func lcDialogReasonIsInspectionFailure(reason string) bool {
+	switch reason {
+	case "DIALOG_NOT_PRESENT", "DIALOG_FIRST_MATCH", "DIALOG_MATCH":
+		return false
+	default:
+		return true
+	}
+}
+
+func lcDialogCaptureDecision(hasCurrent, failureFrozen, confirmed bool, reason string) (replace, freeze bool) {
+	if failureFrozen {
+		return false, true
+	}
+	if confirmed && hasCurrent && (reason == "DIALOG_NOT_PRESENT" || reason == "SECOND_NOT_LIVE") {
+		return false, false
+	}
+	if lcDialogReasonIsInspectionFailure(reason) {
+		return true, true
+	}
+	return true, false
+}
+
+func lcCompleteDialogRecheck(d lcDialogDiagnostic, same bool) lcDialogDiagnostic {
+	out := lcDialogDiagnostic{}
+	for key, value := range d {
+		out[key] = value
+	}
+	if len(out) == 0 {
+		out = lcNewDialogDiagnostic("stageRecheck", "classificationUnknown", true)
+		lcSetDialogFact(out, "dialogAlreadyConfirmed", true, false)
+	}
+	lcSetDialogFact(out, "structureMatch", true, same)
+	return lcFinishDialogDiagnostic(out)
+}
+
 func lcTopLevelCandidate(expectedPID, pid uint32, pidOK, visible, classOK bool, class string) (bool, bool, string) {
 	if !pidOK || pid != expectedPID || !visible {
 		return false, false, "IGNORED_UNSELECTED_WINDOW"

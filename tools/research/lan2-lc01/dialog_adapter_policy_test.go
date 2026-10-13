@@ -21,6 +21,73 @@ func lcR2Controls() []lcControlSnapshot {
 	}
 }
 
+func TestDialogCaptureKeepsProofAcrossExpectedPostConfirmAbsence(t *testing.T) {
+	for _, reason := range []string{"DIALOG_NOT_PRESENT", "SECOND_NOT_LIVE"} {
+		replace, freeze := lcDialogCaptureDecision(true, false, true, reason)
+		if replace || freeze {
+			t.Fatalf("expected post-confirm state %s replaced successful proof", reason)
+		}
+	}
+}
+
+func TestDialogCapturePromotesFirstUnexpectedFailureAndFreezesIt(t *testing.T) {
+	replace, freeze := lcDialogCaptureDecision(true, false, true, "CONTROL_STYLE_API_UNPROVEN")
+	if !replace || !freeze {
+		t.Fatal("first unexpected post-confirm failure was not selected and frozen")
+	}
+	replace, freeze = lcDialogCaptureDecision(true, true, true, "UNKNOWN_CONTROL_CLASS")
+	if replace || !freeze {
+		t.Fatal("later failure overwrote the first frozen failure")
+	}
+}
+
+func TestDialogCaptureDoesNotFreezeSuccessfulFirstRead(t *testing.T) {
+	replace, freeze := lcDialogCaptureDecision(false, false, false, "DIALOG_FIRST_MATCH")
+	if !replace || freeze {
+		t.Fatal("successful first read must remain replaceable by a later real failure")
+	}
+}
+
+func TestSuccessfulRecheckBecomesCompleteMatchBeforePost(t *testing.T) {
+	d, _, reason := lcClassifyDialogControls(lcFixture(), lcR2Controls(), lcR2BaseDiagnostic())
+	if reason != "DIALOG_MATCH" || !lcExactBusy(d) {
+		t.Fatal("fixture did not reach a complete first match")
+	}
+	pending := lcNewDialogDiagnostic("stageRecheck", "classificationUnknown", true)
+	for _, fact := range lcDialogFacts {
+		if fact != "structureMatch" {
+			lcSetDialogFact(pending, fact, true, true)
+		}
+	}
+	if finished := lcFinishDialogDiagnostic(pending); !finished["classificationUnknown"] {
+		t.Fatal("pending recheck unexpectedly classified as complete")
+	}
+	completed := lcCompleteDialogRecheck(pending, true)
+	if !completed["classificationMatch"] || !completed["structureMatchObserved"] || !completed["structureMatchMatch"] {
+		t.Fatal("successful recheck did not atomically become DIALOG_MATCH evidence")
+	}
+}
+
+func TestPostConfirmFailureSurvivesExpectedExitAndCleanup(t *testing.T) {
+	has, frozen, confirmed, reason := false, false, false, ""
+	apply := func(next string) {
+		replace, nextFrozen := lcDialogCaptureDecision(has, frozen, confirmed, next)
+		if replace {
+			has, reason = true, next
+		}
+		frozen = nextFrozen
+	}
+	apply("DIALOG_FIRST_MATCH")
+	confirmed = true
+	apply("DIALOG_MATCH")
+	apply("CONTROL_STYLE_API_UNPROVEN")
+	apply("DIALOG_NOT_PRESENT")
+	apply("SECOND_NOT_LIVE")
+	if reason != "CONTROL_STYLE_API_UNPROVEN" || !frozen {
+		t.Fatalf("later expected exit/cleanup overwrote first real failure: %s", reason)
+	}
+}
+
 func TestR2ExactControlSetAllowsOnlyFrozenStylesAndSemanticIcon(t *testing.T) {
 	bodyStyles := []uint32{lcBodyStylePlain, lcBodyStyleGroup, lcBodyStyleNoPrefix, lcBodyStyleGroupNoPref}
 	buttonStyles := []uint32{lcButtonStylePush, lcButtonStyleDefault, lcButtonStyleGroupPush, lcButtonStyleGroupDef}

@@ -20,7 +20,11 @@ test('LC02 guards retain original session, lock, both event counts and second pr
 });
 test('LC03 dialog messages require complete exact proof and immediate reinspection',()=>{
   assert.match(generated,/same := [^\n]*lcSameDialog\(now, original\)/);
-  assert.match(generated,/!present \|\| !same \|\| !lcExactBusy\(now\)/);
+  assert.match(generated,/if err != nil \|\| !present/);
+  assert.match(generated,/if !same \|\| !lcExactBusy\(now\)/);
+	assert.match(generated,/w\.recheckPending = lcCloneDiagnostic\(diagnostic\)/);
+	assert.match(generated,/w\.captureDialog\("stageRecheck", diagnostic, "DIALOG_MATCH", false\)/);
+	assert.match(generated,/lcDialogCaptureDecision\(w\.firstDiagnostic != nil, w\.firstFrozen, w\.confirmed != 0, reason\)/);
   assert.match(generated,/thread != 0 && pid != 0/);
   assert.match(generated,/n != 0 && n < uintptr\(len\(b\)-1\)/);
   assert.match(generated,/d\.Text == lcBusyText/);

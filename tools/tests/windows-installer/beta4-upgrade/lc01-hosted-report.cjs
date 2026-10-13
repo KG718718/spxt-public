@@ -41,18 +41,22 @@ function dialogDiagnostic(v){
 function dialogFact(v,name,observed,match){assert.equal(v[name+'Observed'],observed);assert.equal(v[name+'Match'],match);}
 function validateDialogReason(second){
  const first=second.DialogFirst,recheck=second.DialogRecheck,reason=second.DialogReason;
+	const failedDiagnostic=()=>recheck.reached&&!recheck.classificationMatch?recheck:first;
  const mismatchFacts={BODY_COUNT_MISMATCH:'bodyCountMatch',BODY_ID_MISMATCH:'bodyIDMatch',BODY_TEXT_MISMATCH:'textMatch',ICON_COUNT_MISMATCH:'iconCountMatch',ICON_ID_MISMATCH:'iconIDMatch',ICON_SEMANTIC_MISMATCH:'iconSemanticMatch',BUTTON_COUNT_MISMATCH:'buttonCountMatch',BUTTON_ID_MISMATCH:'buttonIDMatch',BUTTON_STYLE_MISMATCH:'buttonStyleMatch',CONTROL_OWNER_MISMATCH:'ownerPIDMatch',CONTROL_PARENT_MISMATCH:'controlParentMatch',CONTROL_VISIBLE_MISMATCH:'visibleMatch',CONTROL_ENABLED_MISMATCH:'enabledMatch',UNKNOWN_CONTROL_CLASS:'controlSetMatch',UNKNOWN_STATIC_STYLE:'controlSetMatch',UNKNOWN_BUTTON_STYLE:'controlSetMatch'};
  const unknownFacts={CONTROL_WINDOW_API_UNPROVEN:'controlWindowMatch',CONTROL_CLASS_API_UNPROVEN:'controlSetMatch',CONTROL_STYLE_API_UNPROVEN:'controlSetMatch',CONTROL_OWNER_API_UNPROVEN:'ownerPIDMatch',CONTROL_PARENT_API_UNPROVEN:'controlParentMatch',BODY_ID_API_UNPROVEN:'bodyIDMatch',BODY_TEXT_API_UNPROVEN:'textMatch',ICON_ID_API_UNPROVEN:'iconIDMatch',ICON_QUERY_API_UNPROVEN:'iconSemanticMatch',BUTTON_ID_API_UNPROVEN:'buttonIDMatch'};
  if(reason==='DIALOG_MATCH'){assert.equal(first.classificationMatch,true);assert.equal(recheck.classificationMatch,true);return;}
  if(reason==='DIALOG_FIRST_MATCH'){assert.equal(first.classificationMatch,true);assert.equal(recheck.classificationNotReached,true);return;}
- if(['CONFIRM_ALREADY_USED','CONFIRM_BUDGET_EXPIRED','CONFIRM_GUARD_FAILED'].includes(reason)){assert.equal(first.classificationMatch,true);assert.equal(recheck.classificationNotReached,true);return;}
+ if(['CONFIRM_ALREADY_USED','CONFIRM_GUARD_FAILED'].includes(reason)){assert.equal(first.classificationMatch,true);assert.equal(recheck.classificationNotReached,true);return;}
+	if(reason==='CONFIRM_BUDGET_EXPIRED'){assert.equal(first.classificationMatch,true);assert.ok(recheck.classificationNotReached||recheck.classificationMatch);return;}
  if(reason==='DIALOG_NOT_REACHED'){assert.equal(first.classificationNotReached,true);assert.equal(recheck.classificationNotReached,true);return;}
- if(reason==='DIALOG_NOT_PRESENT'){dialogFact(first,'dialogPresent',true,false);return;}
- if(reason==='MULTIPLE_SECOND_DIALOGS'){dialogFact(first,'dialogCountMatch',true,false);return;}
+	if(reason==='DIALOG_NOT_PRESENT'){dialogFact(failedDiagnostic(),'dialogPresent',true,false);return;}
+	if(reason==='MULTIPLE_SECOND_DIALOGS'){dialogFact(failedDiagnostic(),'dialogCountMatch',true,false);return;}
+	if(reason==='SECOND_NOT_LIVE'){dialogFact(failedDiagnostic(),'liveMatch',true,false);return;}
+	if(reason==='SECOND_IDENTITY_UNPROVEN'){dialogFact(failedDiagnostic(),'imageMatch',true,false);return;}
  if(reason==='RECHECK_STRUCTURE_CHANGED'){dialogFact(recheck,'structureMatch',true,false);return;}
  if(reason==='POST_IDOK_API_UNPROVEN'){assert.equal(recheck.classificationMatch,true);return;}
- if(mismatchFacts[reason]){dialogFact(first,mismatchFacts[reason],true,false);return;}
- if(unknownFacts[reason]){dialogFact(first,unknownFacts[reason],false,false);return;}
+	if(mismatchFacts[reason]){dialogFact(failedDiagnostic(),mismatchFacts[reason],true,false);return;}
+	if(unknownFacts[reason]){dialogFact(failedDiagnostic(),unknownFacts[reason],false,false);return;}
  assert.ok(first.classificationUnknown||first.classificationMismatch||recheck.classificationUnknown||recheck.classificationMismatch);
 }
 function lifecycleV3(v){
