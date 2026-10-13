@@ -1,5 +1,11 @@
 # K⁺-SESSION 协作边界
 
+## 用户恢复｜2026-10-13 LC01-DIALOG-R2 / RESUMED
+
+用户明确“继续吧”，解除本次暂停。Master核验local/origin/GitHub均acb73266e4935434e7a2541db6a2ddc21353e3a7、无活动Actions，原F3 Artifact10907910968未过期，原Execution idle且现场保留。沿用已完成2da7513源码Review，不重复已通过门禁。仅恢复三方同步后一次LC01-DIALOG-R2专项0/1；Full0、QA0、LAN-2冻结不变。任何专项结果均STOP回网页版，不retry。下方PAUSED作为历史保留。
+## 用户暂停｜2026-10-13 LC01-DIALOG-R2 / PAUSED
+
+用户明确要求暂停离开，禁止自动继续。修复与Master Review已保存并同步到acb7326；专项尚未触发，LC01-DIALOG-R2 Hosted0/1、Full0、QA0，当前无活动Actions。原LC01 Thread/工作树/local branch及全部历史证据保留，已通知停止。仅保存此本地暂停断点，不创建trigger、不继续测试、不清理。恢复须用户明确继续；之后先核验Git与预算，再从“三方HEAD一致→唯一专项”断点恢复，不重做已通过门禁。下方Review待运行是暂停前状态。
 ## 当前Review PASS｜2026-10-13 LC01-DIALOG-R2 唯一专项待运行
 
 原LC01长期Thread全部local实现/补充已整合，受审2da7513ba7c8a96dbb25e27120ca3f292d403dbf。Master独立Node26/26、Go54顶层/206含子测试fail0skip0、vet/两个实际Windows overlay仅编译/PS语法/diff-check PASS；历史schema1/2独立验证PASS且原FAIL不变。只改Windows测试adapter/固定纯布尔报告/对应测试/生成接线；完整style白名单+独立图标消息+精确身份/完整正文/唯一控件/recheck/自然退出/cleanup仍严格，未知/force不能PASS。生产/历史F3身份/事务/rollback/业务/workflow零diff。当前R2专项0/1，仅同步三方HEAD后唯一trigger；Full0/QA0冻结，任何结果STOP交网页版，LAN-2未解冻。见docs/tasks/windows-installer-v1.1/lan2-lc01/LC01-DIALOG-R2-MASTER-REVIEW.md。下方有限派单/R1/ID-R2均保留历史。
