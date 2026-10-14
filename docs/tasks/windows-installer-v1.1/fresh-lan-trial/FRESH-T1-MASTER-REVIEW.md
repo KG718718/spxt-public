@@ -27,3 +27,7 @@ Candidate0/3、QA0/1；旧Full/LC01/U27/Diagnostic0。不允许仅T1局部PASS�
 ## 后续测试组织一致性
 
 T2实际复验发现旧beta4静态扫描会计入tagged Go文件、把新增测试误算为旧13项。原T1将四份新测试精确迁至tools/tests/fresh-lan-trial/*.go.in，来源79d9355、整合4f846bf，Git四项100%rename/0新增删除行，生产与原测试期望零改。T2用独立Go overlay实际加载全部新检查；迁移不能冒充重跑。原beta4目标计数回归已由T2恢复20/20，Master待最终集成复验。T1额外beta3旧正则FAIL如实保留；Master核对原beta3测试blob0503fa2及原Launcher build.ps1 blobff9343c在初始3f4f630与当前T1整合代码完全相同，说明该正则失败是既有旧路线不匹配，不等于新trial通过或新生产失败；未改旧断言。
+
+## 本地核心回归预检的治理缺陷
+
+主控在 Fresh 集成树 42f2d44 执行原 `run-public-tests.js`，本地发现 `public-product-docs.test.js` 因历史 LC01 SPEC 中具体部署主机标签违反公开文档规则而 FAIL。其余 Hosted-only 用例在本机明确 SKIP，因此本次不是核心 26/742 PASS。该标签在起始基线已存在；仅将禁止访问的对象概括为“真实部署主机”，禁令含义与历史失败结果不变，未更改测试、期望或白名单。原文档测试独立复跑 8/8 PASS，diff-check PASS。历史提交及失败日志保留；完整 fail0skip0 核心验收仍须获批 Candidate 的 F08。
