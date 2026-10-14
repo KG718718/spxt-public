@@ -17,7 +17,7 @@ Candidate2/3；FinalQA0/1；旧Full/U27/LC01/Diagnostic0。每次登记source/ru
 | 槽位 | 受测 source / 控制提交 | Run / attempt | 当前结论 | cleanup |
 |---|---|---|---|---|
 | C1 | 76f574cad1ba68f488a406ffa87ef9ebcb0568be / 71ce988199b13a8ab47d4191cae66a2a0e09a087 | 38566205060 / 1 | FAIL — BUILD / LAUNCHER / COMMAND_FAILED；Artifact11896545773，安装未到达 | 10/10 true，Master 白名单验证 PASS |
-| C2 | ca8302c32976645a83174d055dc22d1f620e5ea3 / 6483c9108ad3e7c764eba0a262836f0ea428b026 | 38572354045 / 1 | IN_PROGRESS；SOURCE核验通过，尚无完整验收结论 | PENDING |
+| C2 | ca8302c32976645a83174d055dc22d1f620e5ea3 / 6483c9108ad3e7c764eba0a262836f0ea428b026 | 38572354045 / 1 | FAIL — BUILD / LAUNCHER_UNIT / COMMAND_FAILED；Artifact11897209874，安装未到达 | 10/10 true，Master 白名单验证 PASS |
 
 原所有Execution/QA和worktrees冻结保留；禁止普通sub-agent、后代Thread、push、main/tag/Release、内部SPXT及清理未知文件。
 
@@ -38,3 +38,7 @@ T1/T2 已独立 Review 并集成。三方 HEAD 核验后，仅创建 C1 单文�
 ## Git 同步例外
 
 普通 Git HTTPS 一度 reset/无法连接；现有已认证 GitHub API 仍可用。Master逐个核验相同blob/tree/commit SHA后，仅对fresh开发ref做 force=false 快进，并据复读远端更新对应origin跟踪；本地/跟踪/GitHub SHA一致。没有改main/tag/Release，也没有重写提交或绕过Review。C2控制提交同SHA发布触发独立push工作流，未新增Diagnostic或run_attempt。
+
+## C2 后原线程返工
+
+原FRESH-T2再次REWORK，精确只处理LAUNCHER_UNIT四步调用及恢复环境；C2实际子阶段已保留，仍不得猜首个测试/报告根因。源卡及预算见C2-RESULT.md。最后C3留待实际本地闭合、修复与Master独立Review，当前不触发，不借QA/旧预算；未知资源/安全问题仍立即止损。
