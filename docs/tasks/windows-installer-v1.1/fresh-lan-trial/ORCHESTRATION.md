@@ -12,12 +12,13 @@
 
 ## Hosted账本
 
-Candidate2/3；FinalQA0/1；旧Full/U27/LC01/Diagnostic0。每次登记source/run/attempt/固定阶段/cleanup；45分钟上限。QA仅首完整Candidate PASS后下载同一个EXE。
+Candidate3/3；FinalQA0/1；旧Full/U27/LC01/Diagnostic0。每次登记source/run/attempt/固定阶段/cleanup；45分钟上限。QA仅首完整Candidate PASS后下载同一个EXE。
 
 | 槽位 | 受测 source / 控制提交 | Run / attempt | 当前结论 | cleanup |
 |---|---|---|---|---|
 | C1 | 76f574cad1ba68f488a406ffa87ef9ebcb0568be / 71ce988199b13a8ab47d4191cae66a2a0e09a087 | 38566205060 / 1 | FAIL — BUILD / LAUNCHER / COMMAND_FAILED；Artifact11896545773，安装未到达 | 10/10 true，Master 白名单验证 PASS |
 | C2 | ca8302c32976645a83174d055dc22d1f620e5ea3 / 6483c9108ad3e7c764eba0a262836f0ea428b026 | 38572354045 / 1 | FAIL — BUILD / LAUNCHER_UNIT / COMMAND_FAILED；Artifact11897209874，安装未到达 | 10/10 true，Master 白名单验证 PASS |
+| C3 | de6c2312a9a827f57808d63dc9ac9614f2c0aa33 / 73cf120bb87b691a0aca1d9750bcc416e86a7bea | 38578047457 / 1 | IN_PROGRESS；最后完整Candidate，未有PASS结论 | PENDING |
 
 原所有Execution/QA和worktrees冻结保留；禁止普通sub-agent、后代Thread、push、main/tag/Release、内部SPXT及清理未知文件。
 
