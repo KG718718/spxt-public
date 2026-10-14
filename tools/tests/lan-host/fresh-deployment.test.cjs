@@ -28,8 +28,9 @@ function discover(rows = [record()], change = {}) {
 const selected = () => discover().selected;
 function saved(enabled = false) { const s=selected(); return {schema:2, enabled, interfaceName:s.interfaceName,port:8083,
   binding:{adapterId:s.adapterId,address:s.address,prefixLength:s.prefixLength,subnet:s.subnet}}; }
-async function fresh(fn) { const before=process.env.KSESSION_FRESH_TRIAL; process.env.KSESSION_FRESH_TRIAL='1';
-  try { return await fn(); } finally { if(before===undefined)delete process.env.KSESSION_FRESH_TRIAL;else process.env.KSESSION_FRESH_TRIAL=before; } }
+async function fresh(fn) { const before=process.env.KSESSION_FRESH_TRIAL,approval=process.env.KSESSION_FRESH_LAN_APPROVED_CONFIG; process.env.KSESSION_FRESH_TRIAL='1';
+  try { return await fn(); } finally { if(before===undefined)delete process.env.KSESSION_FRESH_TRIAL;else process.env.KSESSION_FRESH_TRIAL=before;
+    if(approval===undefined)delete process.env.KSESSION_FRESH_LAN_APPROVED_CONFIG;else process.env.KSESSION_FRESH_LAN_APPROVED_CONFIG=approval; } }
 
 test('Fresh unique physical Private candidate is preselected; multiple and zero never guess',()=>{
   assert.equal(discover().status,'SELECTED'); assert.equal(selected().interfaceName,'公司以太网');
@@ -159,6 +160,13 @@ test('Fresh server refuses changed or untrusted recovery and closes an old LAN b
   const controller=createLanHostController({handler(){},needsInitialization:()=>false,probe:async()=>true,
     reservePersistedPort:async o=>{events.push('reserve:'+o.addresses.join(','));return {servers:o.addresses.map(a=>new Fake(a)),release:async()=>{}};}});
   const c=saved(true),s=selected(),d={status:'SELECTED',selected:s,candidates:[s]};
+  for(const approval of [undefined,'invalid',JSON.stringify({...c,port:8084}),JSON.stringify({...c,enabled:false}),JSON.stringify({...c,binding:{...c.binding,adapterId:'22222222-2222-4222-8222-222222222222'}})]) {
+    if(approval===undefined)delete process.env.KSESSION_FRESH_LAN_APPROVED_CONFIG;else process.env.KSESSION_FRESH_LAN_APPROVED_CONFIG=approval;
+    const denied=createLanHostController({handler(){},needsInitialization:()=>false,probe:async()=>true,
+      reservePersistedPort:async o=>{assert.deepEqual(o.addresses,['127.0.0.1']);return {servers:[new Fake('127.0.0.1')],release:async()=>{}};}});
+    await denied.start(c,d);assert.equal(denied.state().lanListening,false);await denied.close();
+  }
+  process.env.KSESSION_FRESH_LAN_APPROVED_CONFIG=JSON.stringify(c);
   await controller.start(c,d);assert.equal(controller.state().lanListening,true);
   await controller.reconcile({...d,selected:{...s,address:'192.168.40.11'}},c);
   assert.equal(controller.state().lanListening,false);assert.equal(controller.state().selected,null);assert.ok(events.includes('close:'+s.address));

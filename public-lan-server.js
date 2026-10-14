@@ -3,7 +3,7 @@
 const httpDefault = require('node:http');
 const path = require('node:path');
 const {Worker} = require('node:worker_threads');
-const {matchesTrustedBinding} = require('./public-lan-config');
+const {matchesTrustedBinding, matchesTrustedConfig, parseStrictJson, validateLanConfig} = require('./public-lan-config');
 const {
   normalizeIPv4, isAddressInSubnet, reservePersistedPort, freshTrialEnabled
 } = require('./public-lan-network');
@@ -234,6 +234,14 @@ function createLanHostController(options = {}) {
   }
   function selectedForConfig(discovery, config) {
     if (!config?.enabled || !discovery || discovery.status !== 'SELECTED' || !discovery.selected) return null;
+    if (freshTrialEnabled()) {
+      // Continuity of the Launcher's completed prebind gate, not a substitute
+      // for physical/Private discovery. Missing or changed snapshot cannot bind.
+      try {
+        const approved = validateLanConfig(parseStrictJson(process.env.KSESSION_FRESH_LAN_APPROVED_CONFIG));
+        if (!matchesTrustedConfig(approved, config)) return null;
+      } catch { return null; }
+    }
     return discovery.selected.interfaceName === config.interfaceName && matchesTrustedBinding(config, discovery.selected) ? discovery.selected : null;
   }
   async function check(kind, address, port) {
