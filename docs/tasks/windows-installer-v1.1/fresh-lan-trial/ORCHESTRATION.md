@@ -12,7 +12,11 @@
 
 ## Hosted账本
 
-Candidate0/3；FinalQA0/1；旧Full/U27/LC01/Diagnostic0。每次登记source/run/attempt/固定阶段/cleanup；45分钟上限。无触发记录。QA仅首完整Candidate PASS后下载同一个EXE。
+Candidate1/3；FinalQA0/1；旧Full/U27/LC01/Diagnostic0。每次登记source/run/attempt/固定阶段/cleanup；45分钟上限。QA仅首完整Candidate PASS后下载同一个EXE。
+
+| 槽位 | 受测 source / 控制提交 | Run / attempt | 当前结论 | cleanup |
+|---|---|---|---|---|
+| C1 | 76f574cad1ba68f488a406ffa87ef9ebcb0568be / 71ce988199b13a8ab47d4191cae66a2a0e09a087 | 38566205060 / 1 | IN_PROGRESS；SOURCE 已通过，BUILD/实际验收未得最终结论 | PENDING |
 
 原所有Execution/QA和worktrees冻结保留；禁止普通sub-agent、后代Thread、push、main/tag/Release、内部SPXT及清理未知文件。
 
