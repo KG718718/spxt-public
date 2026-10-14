@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前最终止损｜2026-10-14 Fresh Trial Candidate 3/3 FAIL
+
+**BLOCKED — FRESH TRIAL CANDIDATE BUDGET EXHAUSTED。** C1 Run38566205060 / LAUNCHER、C2 Run38572354045 / LAUNCHER_UNIT、C3 Run38578047457 / HELPER 均在BUILD失败，attempt均1；C3受测source de6c2312a9a827f57808d63dc9ac9614f2c0aa33、控制73cf120bb87b691a0aca1d9750bcc416e86a7bea、安全Artifact11901796902，固定COMMAND_FAILED，具体helper首因UNKNOWN。三次十项owned cleanup均true并经白名单/来源验证；真实安装、F01—F09、核心26/742均未到达，无可交付EXE。Candidate3/3已耗尽，独立QA0/1 UNUSED且不创建/不运行；停止工程及所有Hosted，只治理收尾，不C4/Full/Diagnostic/main/tag/Release/内部SPXT。T2确认冻结；T1会话已归档且原7b54工作树路径不在，任务分支79d9355及已集成提交存在，原因/未提交现场可恢复性未证，不冒称完整现场仍在，不擅自重建或清理。历史F3 beta.2单机PASS、旧LAN-2及LC01/U27 FAIL/DEFERRED均不变。详见fresh-lan-trial/RESULT.md、BATCH-FROZEN.md和CHATGPT-HANDOFF.md。下方批准/待运行文字仅历史，不能跨越本止损点。
+
 ## 当前正式授权｜2026-10-14 Fresh LAN Trial自主工程
 
 用户已直接批准AUTONOMOUS ENGINEERING & BOUNDED HOSTED VALIDATION；唯一新集成分支codex/lan-fresh-trial-v1.1，从三方核验3f4f630建立。目标独立fresh-only beta.4、自动合格物理Private LAN发现/唯一预选（首次必须明确授权）、自动后台与登录/开机自启目标；保留全部生产安全，不能以原LAN-2手动枚举或手动重启冒充。长期Execution独立worktree实施，独立QA；禁止普通sub-agent/后代。普通工程自主循环，每轮本地反例及Master独立Review；Candidate最多3次、QA最多1次，同一EXE，不无修改retry。旧Full/U27/LC01/Diagnostic0，原FAIL永久保留且后续DEFERRED。安全/架构/权限冲突或无法证明自动安全门禁等必须STOP交网页；详见fresh-lan-trial/AUTONOMOUS-AUTHORIZATION.md。尚无新候选/测试PASS，不访问内部SPXT/main/tag/Release，不清理历史。下方方案待批准及旧预算仅历史。

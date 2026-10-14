@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前最终止损｜2026-10-14 Fresh LAN Trial
+
+**BLOCKED — FRESH TRIAL CANDIDATE BUDGET EXHAUSTED。** 三次Candidate均BUILD FAIL；最后Run38578047457@控制73cf120、受测source de6c2312，安全Artifact11901796902，HELPER/COMMAND_FAILED，具体首因UNKNOWN。三次cleanup10/10 true不代表安装通过；安装/F01—F09/核心26/742未到达，无用户试用EXE。Candidate3/3已耗尽，QA0/1 UNUSED，不再工程/Hosted，仅治理冻结。受验F3 beta.2单机PASS仍是正式基线，LAN未发布/未认证。T2原工作树冻结保留；T1已归档且原路径不在，已提交分支及集成代码保留，未提交现场未证；主控未执行清理，不自行恢复。旧FAIL不重写；不访问内部SPXT/main/tag/Release。详见fresh-lan-trial/RESULT.md及CHATGPT-HANDOFF.md，以下均阶段性历史。
+
 ## 当前正式授权｜2026-10-14 Fresh LAN Trial自主工程
 
 独立codex/lan-fresh-trial-v1.1以三方已核验3f4f630为基线。用户批准fresh-only beta.4、自动合格物理Private LAN发现与唯一预选、首次明确可信授权、自动后台、登录/开机自启目标；Candidate最多3次、独立QA最多1次，同一候选EXE，普通工程本地闭合后自主循环。实际物理网卡/UAC/双设备/自启与第二Launcher仍HUMAN_PENDING。旧升级/卸载重装/LC01/U27 FAIL保留、工作DEFERRED，受验beta.2单机PASS不变。尚无新trial候选、无测试结论；详见fresh-lan-trial/AUTONOMOUS-AUTHORIZATION.md。不访问内部版、不main/tag/Release、不清理现场。

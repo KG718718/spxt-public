@@ -18,9 +18,9 @@ Candidate3/3；FinalQA0/1；旧Full/U27/LC01/Diagnostic0。每次登记source/ru
 |---|---|---|---|---|
 | C1 | 76f574cad1ba68f488a406ffa87ef9ebcb0568be / 71ce988199b13a8ab47d4191cae66a2a0e09a087 | 38566205060 / 1 | FAIL — BUILD / LAUNCHER / COMMAND_FAILED；Artifact11896545773，安装未到达 | 10/10 true，Master 白名单验证 PASS |
 | C2 | ca8302c32976645a83174d055dc22d1f620e5ea3 / 6483c9108ad3e7c764eba0a262836f0ea428b026 | 38572354045 / 1 | FAIL — BUILD / LAUNCHER_UNIT / COMMAND_FAILED；Artifact11897209874，安装未到达 | 10/10 true，Master 白名单验证 PASS |
-| C3 | de6c2312a9a827f57808d63dc9ac9614f2c0aa33 / 73cf120bb87b691a0aca1d9750bcc416e86a7bea | 38578047457 / 1 | IN_PROGRESS；最后完整Candidate，未有PASS结论 | PENDING |
+| C3 | de6c2312a9a827f57808d63dc9ac9614f2c0aa33 / 73cf120bb87b691a0aca1d9750bcc416e86a7bea | 38578047457 / 1 | FAIL — BUILD / HELPER / COMMAND_FAILED；Artifact11901796902，安装未到达 | 10/10 true，Master 白名单验证 PASS |
 
-原所有Execution/QA和worktrees冻结保留；禁止普通sub-agent、后代Thread、push、main/tag/Release、内部SPXT及清理未知文件。
+最终状态：BLOCKED — FRESH TRIAL CANDIDATE BUDGET EXHAUSTED。Candidate3/3，FinalQA0/1 UNUSED；无C4/新Diagnostic/Full/QA，无成功候选或客户EXE。上表任务阶段记录保留历史，最终执行均冻结。T2已确认停止，bea7原工作树/分支/提交/.test-work保留。T1冻结通知被工具以会话已归档拒绝；只读核验7b54/public-source已不存在、7b54仅剩工作树名称文件，codex/fresh-t1-deployment仍为79d93556805ca9e313951cda62c653582401c76a，集成代码保留。归档/移除原因与未提交现场可恢复性UNKNOWN，主控本轮未执行归档或清理，不擅自重建。QA未创建，不能声称QA已经返回或PASS。禁止普通sub-agent、后代Thread、Execution push、main/tag/Release、内部SPXT及清理未知文件；Master只可非force同步治理记录。
 
 ## Master本地Review进度
 
