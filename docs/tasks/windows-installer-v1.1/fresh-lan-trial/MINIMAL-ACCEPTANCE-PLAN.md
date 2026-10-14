@@ -6,7 +6,7 @@
 
 公开仓库KG718718/spxt-public；已核验LAN-2本地/远端基线9d1d8da21a1127b430b992b9681a46307134f5ec。唯一Master01a0db0e-c950-79e0-8e11-07155e0742f2，旧Master永久只读。旧LAN-2与全部worktree/失败证据保留。
 
-建议独立First-stage Fresh LAN Trial，从上述基线在批准后建立codex/lan-fresh-trial-v1.1。只面向全新Win10 x64 Host；交付一个包含现有Runtime、Launcher、Firewall helper的独立试用Setup及简短使用说明。无需另装Node/npm/Git；客户端以浏览器使用。沿用appVersion1.0.0、dataContractVersion1、业务schema、Runtime identity schema、AppId/registration key及LAN安全模型。
+建议独立First-stage Fresh LAN Trial，在批准后从包含本方案与批准记录的已确认最新公开HEAD建立codex/lan-fresh-trial-v1.1，生产代码基线仍为上述9d1d8da。只面向全新Win10 x64 Host；交付一个包含现有Runtime、Launcher、Firewall helper的独立试用Setup及简短使用说明。无需另装Node/npm/Git；客户端以浏览器使用。沿用appVersion1.0.0、dataContractVersion1、业务schema、Runtime identity schema、AppId/registration key及LAN安全模型。
 
 提议文件名K-SESSION-Fresh-Trial-1.1.0-beta.4.exe，试用限定写入说明与新验收报告；不复用旧失败包或覆盖旧Artifact，不创建tag/Release。installerVersion继续1.1.0-beta.4，未发行候选以source/run/EXE SHA256区分；由网页版确认该标识。
 
