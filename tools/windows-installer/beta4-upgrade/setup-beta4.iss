@@ -736,6 +736,9 @@ end;
 
 function WriteFreshInstallState: Boolean;
 var S, P: String;
+#ifdef FreshTrial
+    TempState: String;
+#endif
 begin
   P := ExpandConstant('{app}\uninstall\install-state.json');
   S := '{"schema":1,"installerVersion":"1.1.0-beta.4","appVersion":"1.0.0","dataContractVersion":1,' +
@@ -743,7 +746,15 @@ begin
     '"programManifestHash":"{#ProgramManifestSha256}","instanceBindingSchema":1,"installRoot":"' +
     JsonEscape(ExpandConstant('{app}')) + '","instancePath":"' + JsonEscape(BetaInstance) +
     '","upgradeFrom":"fresh","upgradeTo":"1.1.0-beta.4"}';
+#ifdef FreshTrial
+  Result := False;
+  if not FreshFileAbsent(P) then exit;
+  TempState := ExpandConstant('{tmp}\ksession-fresh-state.json');
+  if not SaveStringToFile(TempState, Utf8Encode(S), False) then exit;
+  Result := FileCopy(TempState, P, True);
+#else
   Result := SaveStringToFile(P, Utf8Encode(S), False);
+#endif
 end;
 
 function DeleteRegistryKeyExact(Root: Integer; KeyName: String): Boolean;
@@ -857,11 +868,14 @@ begin
   ReleaseLocks;
   P := ExpandConstant('{app}');
 #ifdef FreshTrial
-  if not FreshStartupAbsent then begin
+  if not FreshStartupAbsent or
+     not FreshFileAbsent(ExpandConstant('{commonstartup}\K-SESSION Fresh Trial.lnk')) then begin
     Log('KSESSION_FRESH_REJECT_STARTUP'); Result := '登录启动项同名或路径不安全，已拒绝。'; exit;
   end;
   if not FreshFileAbsent(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) or
-     not FreshFileAbsent(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) then begin
+     not FreshFileAbsent(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) or
+     not FreshFileAbsent(ExpandConstant('{commondesktop}\K⁺-SESSION.lnk')) or
+     not FreshFileAbsent(ExpandConstant('{commonprograms}\K⁺-SESSION.lnk')) then begin
     Log('KSESSION_FRESH_REJECT_SHORTCUT'); Result := '已有同名快捷方式或路径不可检查，已拒绝。'; exit;
   end;
   if UpgradeMode or FreshRegistrationOrBinding then begin

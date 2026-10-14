@@ -56,6 +56,16 @@ if(!$taskHelperRejected -or @(Find-ExactRule $taskProductRule 'PersistentStore')
 
 $taskRule='KSESSION-HOSTED-API-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT
 $taskCreated=$null
+function Assert-Exact-Test-Rule($Rule){
+  if([string]$Rule.Name -cne $taskRule -or [string]$Rule.Group -cne 'KSESSION-HOSTED-TEST' -or [string]$Rule.Description -cne 'Disposable hosted NetSecurity API evidence' -or
+     [string]$Rule.Profile -ne 'Private' -or [string]$Rule.Direction -ne 'Inbound' -or [string]$Rule.Action -ne 'Allow' -or [string]$Rule.EdgeTraversalPolicy -ne 'Block'){throw 'Rule ownership fields changed'}
+  $taskP=@($Rule|Get-NetFirewallPortFilter -ErrorAction Stop);$taskA=@($Rule|Get-NetFirewallApplicationFilter -ErrorAction Stop)
+  $taskR=@($Rule|Get-NetFirewallAddressFilter -ErrorAction Stop);$taskI=@($Rule|Get-NetFirewallInterfaceFilter -ErrorAction Stop)
+  if($taskP.Count -ne 1 -or [string]$taskP[0].Protocol -ne 'TCP' -or [string]$taskP[0].LocalPort -ne '8083' -or
+     $taskA.Count -ne 1 -or [IO.Path]::GetFullPath([string]$taskA[0].Program) -ine [IO.Path]::GetFullPath($Program) -or
+     $taskR.Count -ne 1 -or [string]$taskR[0].RemoteAddress -ne $taskSubnet -or
+     $taskI.Count -ne 1 -or [string]$taskI[0].InterfaceAlias -cne [string]$taskAdapter.Name){throw 'Rule ownership filters changed'}
+}
 if(@(Find-ExactRule $taskRule 'PersistentStore').Count -ne 0 -or @(Find-ExactRule $taskRule 'ActiveStore').Count -ne 0){throw 'Unknown prior test rule; refuse mutation'}
 try{
   $taskCreated=New-NetFirewallRule -Name $taskRule -DisplayName $taskRule -Group 'KSESSION-HOSTED-TEST' `
@@ -63,6 +73,8 @@ try{
     -Profile Private -EdgeTraversalPolicy Block -Protocol TCP -LocalPort 8083 -RemoteAddress $taskSubnet `
     -Program $Program -InterfaceAlias $taskAdapter.Name -PolicyStore PersistentStore -ErrorAction Stop
   $taskRuleObject=@(Get-NetFirewallRule -Name $taskRule -PolicyStore PersistentStore -ErrorAction Stop)
+  if($taskRuleObject.Count -ne 1){throw 'Persistent rule cardinality unknown'}
+  Assert-Exact-Test-Rule $taskRuleObject[0]
   if($taskRuleObject.Count -ne 1 -or [string]$taskRuleObject[0].Enabled -ne 'False' -or [string]$taskRuleObject[0].Profile -ne 'Private' -or
       [string]$taskRuleObject[0].Direction -ne 'Inbound' -or [string]$taskRuleObject[0].Action -ne 'Allow' -or [string]$taskRuleObject[0].EdgeTraversalPolicy -ne 'Block'){
     throw 'Persistent rule identity mismatch'
@@ -80,11 +92,13 @@ try{
   $taskRuleObject|Set-NetFirewallRule -Enabled True -ErrorAction Stop|Out-Null
   $taskActive=@(Get-NetFirewallRule -Name $taskRule -PolicyStore ActiveStore -ErrorAction Stop)
   if($taskActive.Count -ne 1 -or [string]$taskActive[0].Enabled -ne 'True'){throw 'ActiveStore did not contain enabled exact test rule'}
+  Assert-Exact-Test-Rule $taskActive[0]
   $taskRuleObject|Set-NetFirewallRule -Enabled False -ErrorAction Stop|Out-Null
 }finally{
   if($null -eq $taskCreated){throw 'Rule ownership unproven; refuse cleanup'}
   $taskCleanup=@(Find-ExactRule $taskRule 'PersistentStore')
   foreach($taskOwned in $taskCleanup){
+    Assert-Exact-Test-Rule $taskOwned
     if([string]$taskOwned.Group -cne 'KSESSION-HOSTED-TEST' -or [string]$taskOwned.Description -cne 'Disposable hosted NetSecurity API evidence' -or
        [string]$taskOwned.Profile -ne 'Private' -or [string]$taskOwned.Direction -ne 'Inbound' -or [string]$taskOwned.Action -ne 'Allow' -or [string]$taskOwned.EdgeTraversalPolicy -ne 'Block'){throw 'Rule changed; cannot delete unknown rule'}
     $taskOwned|Set-NetFirewallRule -Enabled False -ErrorAction Stop|Out-Null
@@ -93,7 +107,7 @@ try{
 }
 if(@(Find-ExactRule $taskRule 'PersistentStore').Count -ne 0 -or
    @(Find-ExactRule $taskRule 'ActiveStore').Count -ne 0){throw 'Hosted test rule cleanup failed'}
-$taskReport=[ordered]@{schema=1;status='PASS';productionHelperHostedVirtualRejected=$true;productRuleCreated=$false;
+$taskReport=[ordered]@{schema=1;sourceCommit=$env:KSESSION_FRESH_TESTED_SOURCE;status='PASS';productionHelperHostedVirtualRejected=$true;productRuleCreated=$false;
   netSecurityPersistentExact=$true;netSecurityActiveStoreExact=$true;testRuleDisabledBeforeMutation=$true;testRuleCleanup=$true;
   profile='Private';direction='Inbound';protocol='TCP';port=8083;remoteScope='EXACT_RUNNER_PRIVATE_SUBNET';program='INSTALLED_RUNTIME_NODE';
   interface='EXACT_RUNNER_INTERFACE';edgeTraversal='Block';publicProfile=$false;remoteAny=$false;programAny=$false;

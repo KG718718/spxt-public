@@ -1,0 +1,21 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const {validate}=require('../../tests/fresh-lan-trial/report.cjs');
+const {safe}=require('../../tests/fresh-lan-trial/safe-failure.cjs');
+const {finish}=require('../../tests/fresh-lan-trial/finalize.cjs');
+const {inspect,verify}=require('./verify-artifact.cjs');
+function main(){
+ const [mode,work,publish,driveRestored,outerFailure='false']=process.argv.slice(2);assert.ok(['CHECK','FINAL'].includes(mode));assert.ok(['true','false'].includes(outerFailure));
+ const context=JSON.parse(fs.readFileSync(path.join(work,'context.json'))),expected={sourceCommit:context.sourceCommit,controlCommit:context.controlCommit,run:context.run,mode:context.mode,...(context.mode==='QA'?{candidate:context.candidate}:{})};
+ const r=validate(JSON.parse(fs.readFileSync(path.join(work,'fresh-report.json'))),expected);
+ if(mode==='CHECK'){if(r.checks.length===9)inspect(path.join(work,'artifact'),context.sourceCommit,context.mode==='QA'?context.candidate.setupSha256:undefined);else safe(r,expected);return;}
+ const completionFile=path.join(publish,'completion-private.json');
+ const completion=fs.existsSync(completionFile)?JSON.parse(fs.readFileSync(completionFile)):{schema:1,sourceCommit:r.sourceCommit,controlCommit:r.controlCommit,run:r.run,mode:r.mode,checksComplete:false,actualFailure:true};
+ const cleanup={...r.cleanup,ownedDriveRestored:driveRestored==='true'};
+ const final=finish(r,completion,cleanup,expected,outerFailure==='true');
+ fs.writeFileSync(path.join(publish,'fresh-report.json'),JSON.stringify(final)+'\n');
+ if(final.status==='FRESH_TRIAL_AUTOMATION_PASS_HUMAN_PENDING'){
+  fs.writeFileSync(path.join(publish,'artifact/fresh-report.json'),JSON.stringify(final)+'\n');verify(path.join(publish,'artifact'),expected);
+ }else{safe(final,expected);fs.mkdirSync(path.join(publish,'failure'),{recursive:true});fs.writeFileSync(path.join(publish,'failure/fresh-report.json'),JSON.stringify(final)+'\n');process.exitCode=1;}
+}
+try{main();}catch{process.stderr.write('FRESH_TRIAL_FINAL_REPORT_INVALID\n');process.exitCode=1;}

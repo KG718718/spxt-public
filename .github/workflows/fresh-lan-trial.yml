@@ -20,11 +20,20 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
+          $taskControl=Join-Path $env:RUNNER_TEMP ('fresh-control-'+$env:GITHUB_RUN_ID+'-'+[guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Path $taskControl|Out-Null
+          ('FRESH_CONTROL_ROOT='+$taskControl)|Out-File -LiteralPath $env:GITHUB_ENV -Append -Encoding utf8
+          $taskState=[ordered]@{schema=1;runId=$env:GITHUB_RUN_ID;drive='E:';created=$false;target=$null}
+          [IO.File]::WriteAllText((Join-Path $taskControl 'isolation-private.json'),($taskState|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
           if(!(Test-Path E:/)){
             $taskOwnedDrive=Join-Path $env:RUNNER_TEMP ('fresh-drive-'+$env:GITHUB_RUN_ID)
             if(Test-Path -LiteralPath $taskOwnedDrive){throw 'Fresh isolation unavailable'}
             New-Item -ItemType Directory -Path $taskOwnedDrive|Out-Null
-            subst E: $taskOwnedDrive
+            $taskPriorMappings=@(& (Join-Path $env:SystemRoot 'System32/subst.exe'))
+            if($LASTEXITCODE -ne 0 -or @($taskPriorMappings|Where-Object{$_ -match '^E:\\: => '}).Count -ne 0){throw 'Existing unknown E mapping'}
+            $taskState.created=$true;$taskState.target=$taskOwnedDrive
+            [IO.File]::WriteAllText((Join-Path $taskControl 'isolation-private.json'),($taskState|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+            & (Join-Path $env:SystemRoot 'System32/subst.exe') E: $taskOwnedDrive
             if($LASTEXITCODE -ne 0){throw 'Fresh isolation unavailable'}
           }
           if(Test-Path E:/fresh-trial){throw 'Fresh isolation unavailable'}
@@ -47,38 +56,67 @@ jobs:
           node tools/windows-installer/fresh-trial/bootstrap.cjs $env:GITHUB_WORKSPACE E:/fresh-trial *> E:/fresh-trial/bootstrap-private.log
           if($LASTEXITCODE -ne 0){Write-Output 'FRESH_TRIAL_SOURCE_REJECTED';exit 1}
       - name: Independent fresh build or same immutable candidate QA
+        id: execution
+        timeout-minutes: 35
         shell: pwsh
         run: |
           try {
             & ./tools/windows-installer/fresh-trial/ci.ps1 -Work E:/fresh-trial *> E:/fresh-trial/ci-private.log
             if($LASTEXITCODE -ne 0){throw 'Fresh trial gate failed'}
           } catch {Write-Output 'FRESH_TRIAL_GATE_FAILED';exit 1}
+      - name: Always owned finalization and physical publication
+        if: always()
+        id: final
+        shell: pwsh
+        env:
+          FRESH_SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          FRESH_EXECUTION_OUTCOME: ${{ steps.execution.outcome }}
+        run: |
+          if(Test-Path ./tools/windows-installer/fresh-trial/finalize.ps1){
+            try {& ./tools/windows-installer/fresh-trial/finalize.ps1 -ControlRoot $env:FRESH_CONTROL_ROOT -SourceOutcome $env:FRESH_SOURCE_OUTCOME -ExecutionOutcome $env:FRESH_EXECUTION_OUTCOME; if($LASTEXITCODE -ne 0){exit 1}}
+            catch {
+              $taskPublish=Join-Path $env:FRESH_CONTROL_ROOT ('publish-failure-'+[guid]::NewGuid().ToString('N'))
+              New-Item -ItemType Directory -Path (Join-Path $taskPublish 'failure')|Out-Null
+              [IO.File]::WriteAllText((Join-Path $taskPublish 'failure/early.json'),(@{schema=1;kind='FRESH_TRIAL_EARLY_FAILURE';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';reason='ISOLATION_UNPROVEN';status='FAIL';cleanup='UNKNOWN'}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+              ('publish='+$taskPublish)|Out-File -LiteralPath $env:GITHUB_OUTPUT -Append -Encoding utf8
+              Write-Output 'FRESH_TRIAL_FINALIZATION_UNPROVEN';exit 1
+            }
+          }else{
+            $taskState=Get-Content -Raw -LiteralPath (Join-Path $env:FRESH_CONTROL_ROOT 'isolation-private.json')|ConvertFrom-Json
+            $taskRestored=$false
+            if(!$taskState.created){$taskRestored=$true}else{
+              $taskExpected=Join-Path $env:RUNNER_TEMP ('fresh-drive-'+$env:GITHUB_RUN_ID)
+              $taskRows=@(& (Join-Path $env:SystemRoot 'System32/subst.exe'))
+              $taskOwn=@($taskRows|Where-Object{$_ -match '^E:\\: => '})
+              if($taskState.target -ieq $taskExpected -and $taskOwn.Count -eq 1 -and ($taskOwn[0] -replace '^E:\\: => ','').TrimEnd('\') -ieq $taskExpected.TrimEnd('\')){
+                & (Join-Path $env:SystemRoot 'System32/subst.exe') E: /D|Out-Null
+                $taskAfter=@(& (Join-Path $env:SystemRoot 'System32/subst.exe'));$taskRestored=$LASTEXITCODE -eq 0 -and @($taskAfter|Where-Object{$_ -match '^E:\\: => '}).Count -eq 0
+              }
+            }
+            $taskPublish=Join-Path $env:FRESH_CONTROL_ROOT 'publish';New-Item -ItemType Directory -Path (Join-Path $taskPublish 'failure')|Out-Null
+            $taskCleanup=if($taskRestored){'RESTORED'}else{'UNKNOWN'}
+            [IO.File]::WriteAllText((Join-Path $taskPublish 'failure/early.json'),(@{schema=1;kind='FRESH_TRIAL_EARLY_FAILURE';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';reason='SOURCE_REJECTED';status='FAIL';cleanup=$taskCleanup}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+            ('publish='+$taskPublish)|Out-File -LiteralPath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            exit 1
+          }
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: success() && steps.source.outputs.mode == 'CANDIDATE'
         with:
           name: K-SESSION-fresh-trial-candidate-${{ steps.source.outputs.source }}
-          path: E:/fresh-trial/artifact/
+          path: ${{ steps.final.outputs.publish }}/artifact/
           if-no-files-found: error
           retention-days: 30
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: success() && steps.source.outputs.mode == 'QA'
         with:
           name: K-SESSION-fresh-trial-qa-${{ steps.source.outputs.source }}
-          path: E:/fresh-trial/fresh-report.json
+          path: ${{ steps.final.outputs.publish }}/fresh-report.json
           if-no-files-found: error
           retention-days: 30
-      - name: Select safe failure report only
-        if: failure()
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path E:/fresh-trial/failure -Force|Out-Null
-          if(Test-Path E:/fresh-trial/fresh-report.json){
-            Copy-Item -LiteralPath E:/fresh-trial/fresh-report.json -Destination E:/fresh-trial/failure/fresh-report.json
-          }else{Copy-Item -LiteralPath E:/fresh-trial/early.json -Destination E:/fresh-trial/failure/early.json}
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        if: failure()
+        if: failure() && steps.final.outputs.publish != ''
         with:
           name: fresh-trial-safe-failure-${{ github.run_id }}
-          path: E:/fresh-trial/failure/
+          path: ${{ steps.final.outputs.publish }}/failure/
           if-no-files-found: error
           retention-days: 30

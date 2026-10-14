@@ -1,6 +1,7 @@
 package main
 
 import (
+ "encoding/binary"
  "encoding/json"
  "fmt"
  "os"
@@ -12,6 +13,7 @@ import (
  "syscall"
  "testing"
  "time"
+ "unicode/utf16"
 )
 
 // TestFreshInstalledCore is selected alone. No old upgrade/uninstall tests run.
@@ -39,6 +41,10 @@ func TestFreshInstalledCore(t *testing.T) {
   done:=make(chan error,1);go func(){done<-app.Wait()}()
   select{case e:=<-done:if e!=nil{return false};case <-time.After(20*time.Second):return false}
   if alivePID(nodePID){return false}
+  // Image-wide enumeration, not just the last READY PID, proves no installed peer remains.
+  nodeJSON,_:=json.Marshal(filepath.Join(root,"program","runtime","node.exe"));launcherJSON,_:=json.Marshal(launcher)
+  verifyScript:=fmt.Sprintf(`$ErrorActionPreference='Stop';$ProgressPreference='SilentlyContinue';$n=ConvertFrom-Json '%s';$l=ConvertFrom-Json '%s';$rows=@(Get-CimInstance Win32_Process -Filter "Name='node.exe' OR Name='K-SESSION.exe'" -ErrorAction Stop);if(@($rows|Where-Object{[string]::IsNullOrWhiteSpace($_.ExecutablePath) -or $_.ExecutablePath -ieq $n -or $_.ExecutablePath -ieq $l}).Count -ne 0){exit 1}`,strings.ReplaceAll(string(nodeJSON),"'","''"),strings.ReplaceAll(string(launcherJSON),"'","''"))
+  verifyCmd:=exec.Command(filepath.Join(os.Getenv("SystemRoot"),"System32","WindowsPowerShell","v1.0","powershell.exe"),"-NoLogo","-NoProfile","-NonInteractive","-Command",verifyScript);verifyCmd.SysProcAttr=&syscall.SysProcAttr{HideWindow:true};if verifyCmd.Run()!=nil{return false}
   h,e:=syscall.CreateFile(ptr(filepath.Join(instance,".launcher.lock")),syscall.GENERIC_READ|syscall.GENERIC_WRITE,0,nil,syscall.OPEN_EXISTING,syscall.FILE_ATTRIBUTE_NORMAL,0)
   if e!=nil{return false};if syscall.CloseHandle(h)!=nil{return false}
   app=nil;nodePID=0;return true
@@ -57,7 +63,7 @@ func TestFreshInstalledCore(t *testing.T) {
  binding:=`Software\KSESSION\Beta\InstallerBinding`
  for _,hive:=range []syscall.Handle{syscall.HKEY_CURRENT_USER,syscall.HKEY_LOCAL_MACHINE}{for _,view:=range []uint32{0x100,0x200}{for _,key:=range []string{product,binding}{var h syscall.Handle;e:=syscall.RegOpenKeyEx(hive,ptr(key),0,syscall.KEY_READ|view,&h);if e==nil{syscall.RegCloseKey(h);t.Fatal("PREEXISTING_REGISTRATION")};if e!=syscall.ERROR_FILE_NOT_FOUND&&e!=syscall.ERROR_PATH_NOT_FOUND{t.Fatal("REGISTRATION_UNKNOWN")}}}}
  ps:=filepath.Join(os.Getenv("SystemRoot"),"System32","WindowsPowerShell","v1.0","powershell.exe")
- folders,e:=run(ps,"-NoLogo","-NoProfile","-NonInteractive","-Command",`$ErrorActionPreference='Stop';@{desktop=[Environment]::GetFolderPath('Desktop');programs=[Environment]::GetFolderPath('Programs');startup=[Environment]::GetFolderPath('Startup')}|ConvertTo-Json -Compress`)
+ folders,e:=run(ps,"-NoLogo","-NoProfile","-NonInteractive","-Command",`$ErrorActionPreference='Stop';$ProgressPreference='SilentlyContinue';[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);@{desktop=[Environment]::GetFolderPath('Desktop');programs=[Environment]::GetFolderPath('Programs');startup=[Environment]::GetFolderPath('Startup')}|ConvertTo-Json -Compress`)
  if e!=nil{t.Fatal("KNOWN_FOLDERS_UNKNOWN")};var dirs map[string]string;if json.Unmarshal(folders,&dirs)!=nil{t.Fatal("KNOWN_FOLDERS_INVALID")}
  desktop,startup:=filepath.Join(dirs["desktop"],"K⁺-SESSION.lnk"),filepath.Join(dirs["startup"],"K-SESSION Fresh Trial.lnk")
  for _,p:=range []string{desktop,filepath.Join(dirs["programs"],"K⁺-SESSION.lnk"),startup}{if !filepath.IsAbs(p)||present(p){t.Fatal("PREEXISTING_SHORTCUT")}}
@@ -72,7 +78,7 @@ func TestFreshInstalledCore(t *testing.T) {
   bytes,e:=os.ReadFile(log);logState:="OBSERVED";if os.IsNotExist(e){logState="MISSING"}else if e!=nil{logState="UNREADABLE"}
   allowed:=map[string]bool{};for _,m:=range []string{"KSESSION_FRESH_REJECT_REGISTRATION","KSESSION_FRESH_REJECT_LEGACY_INSTANCE","KSESSION_FRESH_REJECT_INSTANCE","KSESSION_FRESH_REJECT_TARGET","KSESSION_FRESH_REJECT_STARTUP","KSESSION_FRESH_REJECT_SHORTCUT","KSESSION_REJECT_RUNNING","KSESSION_REJECT_INSTANCE_LOCK","KSESSION_REJECT_PATH","KSESSION_PREINSTALL_READY","KSESSION_FRESH_STARTUP_VERIFIED","KSESSION_INSTALLED_PAYLOAD_VERIFIED","KSESSION_FRESH_STARTUP_CLEANUP_UNKNOWN","KSESSION_FRESH_STARTUP_CLEANUP_UNPROVEN"}{allowed[m]=true}
   markers:=[]string{};seen:=map[string]bool{};markerState:="VALID";ready,post,reject,badCleanup:=false,false,false,false
-  for _,m:=range regexp.MustCompile(`KSESSION_[A-Za-z0-9_]+`).FindAllString(string(bytes),-1){
+  for _,m:=range regexp.MustCompile(`KSESSION_[A-Za-z0-9_]+`).FindAllString(decodeInstallerLog(bytes),-1){
    if allowed[m]{if !seen[m]{seen[m]=true;markers=append(markers,m)};continue}
    if regexp.MustCompile(`^KSESSION_WIZARD_PAGE_[0-9]+$`).MatchString(m)||m=="KSESSION_DESKTOP_LINK"||m=="KSESSION_START_LINK"{continue};markerState="UNKNOWN"
   }
@@ -182,4 +188,12 @@ func TestFreshInstalledCore(t *testing.T) {
  // NetSecurity API rule is a separately owned synthetic test, never production trust.
  if _,e=run(filepath.Join(os.Getenv("SystemRoot"),"System32","WindowsPowerShell","v1.0","powershell.exe"),"-NoLogo","-NoProfile","-NonInteractive","-File",filepath.Join(repo,"tools","tests","fresh-lan-trial","firewall-hosted.ps1"),"-Helper",filepath.Join(root,"program","K-SESSION-Firewall.exe"),"-Instance",instance,"-Program",filepath.Join(root,"program","runtime","node.exe"),"-Output",filepath.Join(base,"firewall.json"));e!=nil{t.Fatal("FIREWALL_GATE_FAILED")}
  stage="COMPLETE"
+}
+
+func TestFreshInstallerLogEncodingEquivalence(t *testing.T) {
+ text:="fixture 中文 KSESSION_FRESH_REJECT_TARGET\r\nKSESSION_PREINSTALL_READY\r\n"
+ words:=utf16.Encode([]rune(text));encoded:=[]byte{0xff,0xfe};for _,word:=range words{b:=make([]byte,2);binary.LittleEndian.PutUint16(b,word);encoded=append(encoded,b...)}
+ a:=regexp.MustCompile(`KSESSION_[A-Za-z0-9_]+`).FindAllString(decodeInstallerLog([]byte(text)),-1)
+ b:=regexp.MustCompile(`KSESSION_[A-Za-z0-9_]+`).FindAllString(decodeInstallerLog(encoded),-1)
+ if strings.Join(a,",")!=strings.Join(b,",")||len(a)!=2{t.Fatal("FIXED_MARKER_ENCODING_MISMATCH")}
 }

@@ -82,7 +82,7 @@ writeNew(path.join(gen,'identity.iss'),'#define RequiredBytes '+(['fault-space',
 const q=s=>s.replaceAll('"','""'),pas=s=>s.replaceAll("'","''");
 writeNew(path.join(gen,'files.iss'),'\ufeff'+files.map(f=>{
  const parts=f.path.split('/'),file=parts.pop(),dir=parts.join('\\'),rel=f.path.replaceAll('/','\\');
- const source='Source: "'+q(path.join(root,f.path))+'"; DestName: "'+q(file)+'"; Flags: ignoreversion';
+ const source='Source: "'+q(path.join(root,f.path))+'"; DestName: "'+q(file)+'"; Flags: ignoreversion'+(freshTrial?' onlyifdoesntexist':'');
  return source+'; DestDir: "{app}\\program'+(dir?'\\'+q(dir):'')+'"; Check: IsFreshInstall; BeforeInstall: EnsureAbsent(\''+pas(rel)+'\')\n'+
    source+'; DestDir: "{tmp}\\ksession-upgrade-v2\\program'+(dir?'\\'+q(dir):'')+'"; Check: IsUpgradeInstall; BeforeInstall: BeforeUpgradeCopy(\''+pas(rel)+'\')';
 }).join('\n')+'\n');

@@ -1,13 +1,39 @@
-# FRESH-T2 — 执行现场
+# FRESH-T2 — 正式 RETURN
 
-日期：2026-10-14。状态：IN_PROGRESS；不是正式 RETURN，不具备 Hosted 准入。
+日期：2026-10-14。状态：RETURNED / MASTER REVIEW PENDING；不是 Hosted PASS，也不是最终交付包。
 
-公开工作树 bea7，任务分支 codex/fresh-t2-installer-ci，基线 0eee621；origin 为 KG718718/spxt-public。无 push、Hosted、真实本机安装、生产 EXE 执行、Registry/Firewall/网络配置修改。未创建 trigger 文件或 trigger 提交。未访问内部 SPXT，旧工作树/FAIL 未修改。
+公开工作树 `E:/CodexWorkspace/CodexWorktrees/bea7/public-source`，分支 `codex/fresh-t2-installer-ci`，基线 `0eee621`，origin `KG718718/spxt-public`。只执行源码、合成反例、离线 Go 测试/编译及语法验证；Hosted/Candidate/QA 使用均为 0。无 push、trigger 文件/提交、真实本机安装、客户产品 EXE 执行或 Registry/Firewall/网络配置修改。未访问内部 SPXT，旧 FAIL/工作树保留。
 
-已实施草稿：FreshTrial 编译模式与 fresh-only 只读拒绝；标准 ISS 去除新增 FreshTrial 条件后与原基线相同（仅 CRLF 规范化）；原 38 项 Runtime 闭包保留，清单前精确一次 marker 派生与 Launcher/helper 两个 linker fresh 标记；原 13/28 与新增 tagged 2/2 分别运行。独立安装态 Go overlay、实际安装 payload 两浏览器 contexts 驱动、受控隔离 socket、独立规则门禁、严格报告/Setup 调用诊断/Artifact verifier、单一路径 push 预算与 QA immutable EXE 契约。
+## 提交边界
 
-本地目前 Node 92/92 fail0skip0。早期安装态 Windows Go overlay 已仅编译 PASS；后续修改须重新编译。CJS/PS parse/diff-check 已局部通过；完整最终验证待续。没有本机已受验 ISCC，真实 ISCC 编译 NOT_RUN，只能静态检查，留给已批准 Candidate BUILD，不能宣称编译通过。
+T2 自有前序提交：`008e87c`、`a84953b`；最后代码提交见本文件所属提交，报告治理后续单列。T1 已批准依赖本地映射：`93b2ee7` ← e91b41e，`3b54854` ← 2f43a52，`6733e72` ← cfaf95c，`86cc0b8` ← 4e5e20a，`1f0ec54` ← 1b451b1，`e92a79a` ← 79d9355。Master 不应重复整合 T1；T2 改动应以自有提交或按路径审查整合。
 
-仍在完成：完整 Hosted 执行/汇总入口；已证明 owned 安装登记/快捷方式/工具链收尾；SUBST always 所有权核验与撤销、physical Artifact 转存；early/failure JSON 严格验证。任何未知所有权/残留必须 FAIL，并按 STOP5 交 Master，不允许自动挪预算。T1 已审依赖将仅按 Master 指定五笔 cherry-pick；本 WIP 与 T1 依赖提交须单列，Master 不重复整合 T1。
+## 完成内容
 
-真实 GUI/UAC、物理 Private adapter、Firewall 必要授权、双物理设备、实际 Windows 登录与第二 Launcher GUI 均 HUMAN_PENDING。Installed Loopback 使用 --logon 抑制未知默认浏览器；实际 OS 登录未测试。端口/binding 持久化用明确 enabled=false 的合成绑定状态，不能冒充物理 LAN 授权或开启。隔离 socket 来自 installed request gate + synthetic discovery state，不能冒充生产物理信任。旧升级/卸载重装/LC01/U27 result FAIL、workStatus DEFERRED 保留。
+- FreshTrial 独立 build entry、fresh-only ISS、只读拒绝登记/Binding/已有 instance/非空或未知目标，以及 user/common 桌面、开始菜单、Startup 同名冲突。common namespace 不写、不删，只做源码合同验证，未冒充实测。
+- 原 38 项 Runtime 闭包保留；现有模块 marker 在清单 hash 前精确一次派生，Launcher/helper fresh linker 身份三方一致；标准 ISS 预处理与基线完全相同（CRLF 规范化）。旧 F3/升级/故障模式不进入 fresh build。
+- 原 13/28 与新增 tagged 2/2 分开；fresh test fixtures 用 byte-preserved `.go.in` overlay，不降低旧静态数量。
+- 安装态 Hosted Go overlay 验证实际 Setup、installed payload、Launcher/Node/锁/事件、持久配置及数据、同员工项目和归档附件重启 readback；实际 installed browser 两独立 contexts，不启动仓库 server、不预填配置、不伪造物理信任。默认 `--logon` 抑制未知 ShellExecute。
+- F01–F09 严格固定报告、Setup 七次调用的退出/白名单 marker/阶段诊断、编译错误白名单、源/控制提交与 EXE SHA 绑定。最终 PASS 必须 buildDiagnostic=COMPLETE/PASS，全部实际门禁和所有 owned cleanup 成功；未知、真实内层失败、外层失败不能复活为 PASS。
+- firewall reject + controlled narrow rule，同一实际校验器贯穿 Persistent/Active/cleanup 全过滤器；变化/未知规则不删除。UTF16 命令与 UTF8 JSON 固定协议保留中文路径并拒绝 stderr。
+- push-only 单路径触发、一次 attempt、C1/C2/C3/QA1 once-only slot；从当前 run 的 workflow_id 查询预算历史，不依赖默认分支已存在 workflow。QA 下载固定候选 Artifact，同源同 EXE，不 rebuild。
+- 两阶段 always 收尾：私有 completion 区分实际失败与待外层收尾；先严格验证再物理路径转存 Artifact/report，仅撤销确证自己创建且仍相同的 SUBST。final 使用物理副本、真实 source/execution outcome；失败仅上传严格固定安全 JSON。
+- 固定已验签 compiler `/PORTABLE=1` 私有目录，完整 owned hash inventory 删除；用户/双 registry view/关联/快捷方式环境前后相等，未知保留并失败。无本地 compiler 执行。
+
+## 本地证据
+
+- Fresh Node：112/112，fail0skip0（其中所有权文件、实际 PS rule validator 的 mock filters、UTF8 中文协议、失败不能转 PASS 等均为本地合成或 stub）。
+- 原 beta.4 compatibility：20/20，fail0skip0；标准 ISS 等价包含在 Fresh suite。
+- Go1.27.1：安装态完整 overlay `test -c`、`vet` PASS；纯安装日志 UTF16/UTF8 等价及两项 fresh Launcher tests PASS。实际 installed test 未运行。
+- Firewall 原 13 + fresh 2：各组 PASS，fail0skip0。Launcher 原 build 固定 selector 28/28 与 fresh 精确 selector 2/2 PASS，均 fail0skip0。
+- CJS 全部 syntax、fresh PS 全部 AST parse、diff-check PASS。Master 已补严格 YAML uniqueKeys/graph/branch/push-only/45min 机器解析；随后 workflow 未改。
+- 保留验证过程：一次本地测试编排目录名违反纯 fixture 规则，修正执行目录名后通过；一次错误的 Launcher 整包选择包含需 Hosted payload 的旧 integration，因环境前提缺失 FAIL/SKIP，未执行安装；最终只采用原 build 固定 28 selector，未改测试或降低条件。新增源码反例曾语法/切片范围失败，修正反例后全组112通过，不掩盖这些尝试。
+- 原 beta.3 static builder regex mismatch 属基线既存（Master 确认同 blob）；product-docs LC01 标签的治理修复由 Master 集成，不在 T2 改旧 SPEC。未宣称本地26/742完整PASS。
+
+## 尚未证明
+
+本地无受验 ISCC，真实 ISS 编译 NOT_RUN；Candidate BUILD 才验证实际编译/API/打包。全部实际 F01–F09、26/742、Artifact privacy、独立 QA 待 Master Review 及中央批准预算执行，本 RETURN 不构成 Hosted 准入批准。安装程序宏与 WinAPI Pascal ABI 的实际 compiler 行为尚未证明。
+
+真实 GUI/UAC、首次明确 LAN 授权、合格物理 Private adapter、必要防火墙授权、物理第二设备、实际 Windows 登录及第二 Launcher GUI 全为 HUMAN_PENDING。持久端口合成 binding 明确 enabled=false；isolated socket 为 installed request gate + synthetic discovery，不能冒充生产物理 LAN 认证。原升级/卸载重装/LC01/U27 FAIL 且 DEFERRED 保留。Runner native uninstall 只用于 owned 测试收尾，不升级为旧卸载重装验收 PASS。
+
+任何未知进程/锁/登记/规则/快捷方式/工具或 drive/env 收尾均 fail closed，只有已验证自身对象允许收尾；Master 遇安全/架构/权限冲突应依 AUTONOMOUS-AUTHORIZATION STOP，不追加预算。
