@@ -1,5 +1,7 @@
-param([Parameter(Mandatory=$true)][string]$RuntimeRoot,[Parameter(Mandatory=$true)][string]$OutputDir,[Parameter(Mandatory=$true)][string]$SourceCommit,[string]$FirewallHelperSha256='',[string]$GoExe='go',[switch]$FreshTrial)
+param([Parameter(Mandatory=$true)][string]$RuntimeRoot,[Parameter(Mandatory=$true)][string]$OutputDir,[Parameter(Mandatory=$true)][string]$SourceCommit,[string]$FirewallHelperSha256='',[string]$GoExe='go',[switch]$FreshTrial,[string]$BuildDiagnostic='')
 $ErrorActionPreference='Stop'
+function Fresh-Build-Stage([string]$Stage){if($FreshTrial -and $BuildDiagnostic){[IO.File]::WriteAllText($BuildDiagnostic,(@{stage=$Stage;classification='COMMAND_FAILED';script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}}
+Fresh-Build-Stage 'LAUNCHER_IDENTITY'
 $taskRoot=(Resolve-Path -LiteralPath $RuntimeRoot).Path
 $taskOutput=[IO.Path]::GetFullPath($OutputDir)
 if(Test-Path -LiteralPath $taskOutput){throw 'Output must be new; never overwrite artifacts'}
@@ -20,13 +22,22 @@ $taskScratch=Join-Path (Split-Path $taskRoot) 'launcher-build-cache'
 $env:GOCACHE=Join-Path $taskScratch 'go-cache'
 $env:GOTMPDIR=Join-Path $taskScratch 'go-temp'
 New-Item -ItemType Directory -Force -Path $env:GOCACHE,$env:GOTMPDIR | Out-Null
+if($FreshTrial){
+  . (Join-Path $PSScriptRoot '../windows-firewall/test-environment.ps1')
+  # The fresh build may live on an owned SUBST volume; safety fixtures must use
+  # the physical directory, so canonical identity checks stay unchanged.
+  $taskScratch=Resolve-KSessionFirewallPhysicalPath $taskScratch
+  $env:GOCACHE=Join-Path $taskScratch 'go-cache';$env:GOTMPDIR=Join-Path $taskScratch 'go-temp'
+}
 $env:TEMP=$env:GOTMPDIR;$env:TMP=$env:GOTMPDIR
 $env:GOPROXY='off';$env:GOSUMDB='off';$env:GOENV='off';$env:GOFLAGS='';$env:GOEXPERIMENT=''
 Push-Location $PSScriptRoot
 try {
+ Fresh-Build-Stage 'LAUNCHER_STANDARD_TESTS'
  & $GoExe test -count=1 -run '^Test(RelativePathSafety|EnvironmentAllowlist|InstanceOutsidePackage|RuntimeMissing|JobOwnsOnlyChild|InstallDataSafety|LANReadyRequiresEveryGate|FixedServerStatusesMapToProductStates|CandidateAndJSONAreStrict|EnvironmentLANModeIsExplicitAndAllowlisted|ExactListenerOwnershipRejectsWildcardThirdNICPortAndPIDImpersonationRows|CopyURLSourceIsOnlyCurrentPrivateEndpoint|PersistedPortNeverSilentlyFallsThroughRange|FirewallHelperFixedHashBeforeElevation|FirewallHelperAbsentHashKeepsHistoricalLocalMode|FirewallEnvironmentFailureIsFailClosed|FirewallInterfaceNameArgumentIsQuoted|EnableRejectionRestoresDisabledPreferenceAndLocalChild|LANSettingsTransitionDoesNotBlockUIThread|TransitionStartFailureRestoresOldConfigAndService|FirstTransitionStartFailureKeepsDeterminedPort|TransitionRejectsUnexpectedFallbackPort|FailedRefreshRevokesStaleCopyURL|FreshDiscoveryMismatchRevokesCopyURL|FreshDiscoveryMatchPublishesURLWhenFirewallBlocked|StopDispatchRetriesBusyOwnedWindow|StopDispatchKeepsStrictOverallTimeout|StrictLocalStatusAndActualPIDSocketOwnership)$' ./...
  if($LASTEXITCODE -ne 0){throw 'Go tests failed'}
  if($FreshTrial){
+   Fresh-Build-Stage 'LAUNCHER_FRESH_TESTS'
    . (Join-Path $PSScriptRoot '../windows-firewall/test-environment.ps1')
    $taskFreshTests=@('TestFreshLogonPlanIsCurrentUserInstalledOnly','TestFreshEnvironmentAndNetworkBindingFailClosed')
    $taskFreshRaw=Join-Path $taskScratch 'fresh-launcher-tests.jsonl'
@@ -39,10 +50,12 @@ try {
  }
  $taskFlags="-H windowsgui -s -w -buildid= -X main.buildCommit=$SourceCommit -X main.runtimeHash=$taskHash -X main.firewallHelperHash=$FirewallHelperSha256"
  if($FreshTrial){$taskFlags+=' -X main.freshTrial=1'}
+ Fresh-Build-Stage 'LAUNCHER_COMPILE'
  & $GoExe build -trimpath -buildvcs=false -ldflags $taskFlags -o (Join-Path $taskOutput 'K-SESSION.exe') .
  if($LASTEXITCODE -ne 0){throw 'Go build failed'}
 } finally {Pop-Location}
 $taskExe=Join-Path $taskOutput 'K-SESSION.exe'
+Fresh-Build-Stage 'LAUNCHER_IDENTITY'
 $taskExeHash=(Get-FileHash -LiteralPath $taskExe -Algorithm SHA256).Hash.ToLower()
 $taskInfo=[ordered]@{product='K⁺-SESSION';qualification='UNSIGNED DEVELOPMENT ARTIFACT';version='launcher development build / Batch LAN-2';sourceCommit=$SourceCommit;toolchain=$taskGoVersion;GOOS='windows';GOARCH='amd64';CGO_ENABLED='0';runtimeManifestSha256=$taskHash;firewallHelperSha256=$FirewallHelperSha256;runtimeSourceCommit=(Get-Content -Raw -LiteralPath $taskManifest|ConvertFrom-Json).sourceCommit;bytes=(Get-Item -LiteralPath $taskExe).Length;sha256=$taskExeHash}
 if($FreshTrial){$taskInfo['deriveProfile']='fresh-trial';$taskInfo['freshTrialMarker']='1'}

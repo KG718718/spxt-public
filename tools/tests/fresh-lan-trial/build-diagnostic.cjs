@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),path=require('node:path');
-const STAGES=['NOT_STARTED','RUNTIME','HELPER','LAUNCHER','TOOLCHAIN','ISCC','ASSEMBLY','BROWSER_TOOL','COMPLETE'];
+const STAGES=['NOT_STARTED','RUNTIME','HELPER','LAUNCHER','LAUNCHER_IDENTITY','LAUNCHER_STANDARD_TESTS','LAUNCHER_FRESH_TESTS','LAUNCHER_COMPILE','LAUNCHER_UNIT','PAYLOAD_ASSEMBLY','LAN_NODE','PAYLOAD_REPORT','TOOLCHAIN','ISCC','ASSEMBLY','BROWSER_TOOL','COMPLETE'];
 const CLASSES=['NOT_STARTED','PASS','COMMAND_FAILED','TOOLCHAIN_IDENTITY_REJECTED','SCRIPT_SYNTAX','UNKNOWN_IDENTIFIER','TYPE_MISMATCH','PREPROCESSOR_REJECTED','OUTPUT_IDENTITY_REJECTED','UNKNOWN'];
 function validate(d){assert.deepEqual(Object.keys(d).sort(),['stage','classification','script','line'].sort());assert.ok(STAGES.includes(d.stage));assert.ok(CLASSES.includes(d.classification));assert.ok(d.script===null||['SETUP_SCRIPT','GENERATED_SCRIPT'].includes(d.script));assert.ok(d.line===null||(Number.isSafeInteger(d.line)&&d.line>=1&&d.line<=10000));assert.equal(d.script===null,d.line===null);if(d.script)assert.equal(d.stage,'ISCC');return d;}
 function compiler(output,status,{setupScript,generated}){

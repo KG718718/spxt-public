@@ -77,9 +77,10 @@ Build-Stage 'LAUNCHER'
 $taskLauncherBuildVariables=@('GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOCACHE','GOTMPDIR','TEMP','TMP','GOPROXY','GOSUMDB','GOENV','GOFLAGS','GOEXPERIMENT')
 Invoke-KSessionWithRestoredEnvironment $taskLauncherBuildVariables {
   & (Join-Path $taskRepo 'tools/windows-launcher/build.ps1') -RuntimeRoot $taskRoot -OutputDir $taskLauncher `
-    -SourceCommit $Commit -FirewallHelperSha256 $taskHelperHash -GoExe $taskGo -FreshTrial:$FreshTrial
+    -SourceCommit $Commit -FirewallHelperSha256 $taskHelperHash -GoExe $taskGo -FreshTrial:$FreshTrial -BuildDiagnostic $BuildDiagnostic
   if($LASTEXITCODE -ne 0){throw 'LAN Launcher build failed'}
 }
+Build-Stage 'LAUNCHER_UNIT'
 $taskLauncherUnitTests=@(& $taskNode $taskGoTestPolicy 'LAUNCHER'|ConvertFrom-Json)
 if($LASTEXITCODE -ne 0){throw 'Fixed Launcher test policy failed'}
 $taskLauncherRaw=Join-Path $taskWork 'launcher-tests.jsonl';$taskLauncherReport=Join-Path $taskWork 'launcher-unit-report.json'
@@ -89,7 +90,9 @@ try{
   if($LASTEXITCODE -ne 0){throw 'Explicit Launcher unit tests failed'}
 }finally{Pop-Location}
 Run-Checked $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),$taskLauncherRaw,$taskLauncherReport,'LAUNCHER')+$taskLauncherUnitTests)
+Build-Stage 'PAYLOAD_ASSEMBLY'
 Run-Checked $taskNode @($taskPackageScript,'finish',$taskRoot,$taskLauncher,$taskHelper,$taskGit,$taskRepo,$Commit)
+Build-Stage 'LAN_NODE'
 $taskLanTests=@(
   'tools/tests/lan-host/config.test.cjs','tools/tests/lan-host/network.test.cjs','tools/tests/lan-host/lan2-network.test.cjs',
   'tools/tests/lan-host/server.test.cjs','tools/tests/lan-host/server-startup.test.cjs',
@@ -99,6 +102,8 @@ $taskLauncherTests=@(Get-ChildItem -LiteralPath (Join-Path $taskRepo 'tools/test
 if($taskLauncherTests.Count -eq 0){throw 'LAN Launcher contract tests missing'}
 $taskRuntimeModules=Join-Path $taskRoot 'app/node_modules'
 if(!(Test-Path -LiteralPath (Join-Path $taskRuntimeModules 'multer') -PathType Container)){throw 'Built Runtime dependency tree is incomplete'}
+$taskRuntimeModules=Resolve-KSessionFirewallPhysicalPath $taskRuntimeModules
+if((Get-KSessionFirewallTestPathClass $taskRuntimeModules) -ne 'CANONICAL'){throw 'Built Runtime dependency root is not canonical'}
 $taskNodeTestReportPath=Join-Path $taskWork 'lan-node-test-environment.json'
 $taskNodeTestReport=[ordered]@{schema=1;kind='k-session-lan-node-test-environment';qualification='TEST_ONLY';status='RUNNING';stage='ENVIRONMENT';reason='RUNNING';inputTempClass=(Get-KSessionFirewallTestPathClass $env:TEMP);selectedRootClass='PENDING';tests=0;pass=0;fail=0;skipped=0;environmentRestored=$false}
 function Write-Node-Test-Report(){[IO.File]::WriteAllText($taskNodeTestReportPath,($taskNodeTestReport|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
@@ -109,7 +114,7 @@ try{
   $taskNodeEnvironment=Enter-KSessionLanNodeTestEnvironment (Resolve-KSessionFirewallPhysicalPath $env:TEMP) ('node-full-'+$PID+'-'+[guid]::NewGuid().ToString('N')+'-env')
   $taskNodeTestReport.selectedRootClass=$taskNodeEnvironment.SelectedRootClass;$taskNodeTestReport.stage='TESTS';Write-Node-Test-Report
   $env:NODE_PATH=$taskRuntimeModules
-  Run-Checked $taskNode @('-e',"const p=require.resolve('multer');if(!p.startsWith(process.env.NODE_PATH))process.exit(23)")
+  Run-Checked $taskNode @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/runtime-dependency.cjs'),$taskRuntimeModules)
   $taskNodeRaw=Join-Path $taskNodeEnvironment.Root 'node-tests.tap'
   $taskNodeArguments=@('--test','--test-concurrency=1','--test-reporter=tap')+$taskLanTests+$taskLauncherTests
   & $taskNode @taskNodeArguments *> $taskNodeRaw
@@ -129,6 +134,7 @@ try{
   Write-Node-Test-Report
 }
 if($taskNodeTestsFailed){Write-Output ('LAN_NODE_TESTS_FAILED stage='+$taskNodeTestReport.stage+' reason='+$taskNodeTestReport.reason);throw 'LAN Node contract tests failed'}
+Build-Stage 'PAYLOAD_REPORT'
 $taskArtifact=Join-Path $taskWork 'artifact';New-Item -ItemType Directory -Path $taskArtifact|Out-Null
 $taskIdentityRaw=& $taskNode $taskPackageScript verify $taskRoot
 if($LASTEXITCODE -ne 0){throw 'Fresh payload identity failed'}
