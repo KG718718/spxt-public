@@ -9,7 +9,7 @@ if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted
 $taskReportPath=Join-Path $taskWork 'fresh-report.json'
 $taskReport=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
 . (Join-Path $taskRepo 'tools/tests/lan-host/node-test-environment.ps1')
-$taskVariables=@('TEMP','TMP','GOCACHE','GOTMPDIR','GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','NODE_PATH','NODE_OPTIONS','PLAYWRIGHT_BROWSERS_PATH','KSESSION_FRESH_TESTED_SOURCE','KSESSION_FRESH_BUILD_NODE')
+$taskVariables=@('TEMP','TMP','GOCACHE','GOTMPDIR','GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','NODE_PATH','NODE_OPTIONS','PLAYWRIGHT_BROWSERS_PATH','KSESSION_FRESH_TESTED_SOURCE','KSESSION_FRESH_BUILD_NODE','KSESSION_FRESH_PHYSICAL_WORK')
 $taskPrevious=Save-KSessionProcessEnvironment $taskVariables
 $taskFinalStarted=$false
 $taskToolchainStarted=$false;$taskToolchainOwned=$false;$taskToolchainRestored=$true
@@ -36,10 +36,39 @@ function User-Uninstall-Snapshot {
   }
   return $taskMap
 }
+function Registry-Tree($Key,[int]$Depth=0){
+  if($Depth -gt 16){throw 'Registry snapshot bound exceeded'}
+  $taskTree=[ordered]@{values=[ordered]@{};children=[ordered]@{}}
+  foreach($taskName in @($Key.GetValueNames()|Sort-Object)){$taskTree.values[$taskName]=[ordered]@{kind=[string]$Key.GetValueKind($taskName);value=$Key.GetValue($taskName,$null,[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)}}
+  foreach($taskName in @($Key.GetSubKeyNames()|Sort-Object)){$taskChild=$Key.OpenSubKey($taskName);if($null -eq $taskChild){throw 'Registry subtree unknown'};try{$taskTree.children[$taskName]=Registry-Tree $taskChild ($Depth+1)}finally{$taskChild.Dispose()}}
+  return $taskTree
+}
+function Inno-Environment-Snapshot {
+  $taskState=[ordered]@{}
+  foreach($taskView in @([Microsoft.Win32.RegistryView]::Registry64,[Microsoft.Win32.RegistryView]::Registry32)){
+    $taskHive=[Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser,$taskView)
+    try{foreach($taskPath in @('Software\Classes\.iss','Software\Classes\InnoSetupScriptFile','Software\Classes\Applications\Compil32.exe','Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.iss','Software\Microsoft\Windows\CurrentVersion\Uninstall')){
+      $taskKey=$taskHive.OpenSubKey($taskPath)
+      if($null -eq $taskKey){$taskState[([string]$taskView+':'+$taskPath)]=$null}else{try{$taskState[([string]$taskView+':'+$taskPath)]=Registry-Tree $taskKey}finally{$taskKey.Dispose()}}
+    }}finally{$taskHive.Dispose()}
+  }
+  foreach($taskFolder in @('Desktop','Programs')){
+    $taskBase=[Environment]::GetFolderPath($taskFolder,'DoNotVerify')
+    foreach($taskPath in @((Join-Path $taskBase 'Inno Setup Compiler.lnk'),(Join-Path $taskBase 'Inno Setup 6'))){
+      try{
+        $taskAttributes=[IO.File]::GetAttributes($taskPath)
+        if(($taskAttributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'Shortcut snapshot path unknown'}
+        if(($taskAttributes -band [IO.FileAttributes]::Directory) -ne 0){$taskState[$taskPath]=@(Get-ChildItem -LiteralPath $taskPath -Recurse -File -ErrorAction Stop|Sort-Object FullName|ForEach-Object{[ordered]@{path=$_.FullName;hash=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}})}else{$taskState[$taskPath]=(Get-FileHash -LiteralPath $taskPath -Algorithm SHA256).Hash}
+      }catch [IO.FileNotFoundException]{$taskState[$taskPath]=$null}catch [IO.DirectoryNotFoundException]{$taskState[$taskPath]=$null}
+    }
+  }
+  return $taskState
+}
 function Checked([string]$Exe,[string[]]$Arguments){& $Exe @Arguments;if($LASTEXITCODE -ne 0){throw 'Fresh checked command failed'}}
 function Pinned([string]$Uri,[string]$Hash,[string]$Zip,[string]$Output){Invoke-WebRequest -Uri $Uri -OutFile $Zip -TimeoutSec 240;if((Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash.ToLowerInvariant() -cne $Hash){throw 'Pinned tool identity rejected'};Expand-Archive -LiteralPath $Zip -DestinationPath $Output}
 try {
   $env:NODE_OPTIONS='';$env:GOWORK='off';$env:KSESSION_FRESH_TESTED_SOURCE=$taskContext.sourceCommit
+  $env:KSESSION_FRESH_PHYSICAL_WORK=Resolve-KSessionFirewallPhysicalPath $taskWork
   if($taskContext.mode -eq 'CANDIDATE'){
     Stage 'BUILD_PORTABLE_FAILED'
     $taskPortable=Join-Path $taskWork 'portable'
@@ -49,19 +78,13 @@ try {
     $taskGo=Join-Path $taskPortable 'go-tool/go/bin/go.exe'
     Stage 'BUILD_TOOLCHAIN_FAILED'
     $taskUserBefore=User-Uninstall-Snapshot
-    foreach($taskValue in $taskUserBefore.Values){if([string]$taskValue.DisplayName -match '^Inno Setup'){throw 'Existing user compiler registration; refuse install'}}
+    $taskInnoBefore=Inno-Environment-Snapshot
     $taskToolchainStarted=$true;$taskToolchainRestored=$false
-    & (Join-Path $taskRepo 'tools/windows-installer/toolchain.ps1') -Work (Join-Path $taskWork 'inno')
+    & (Join-Path $PSScriptRoot 'toolchain.ps1') -Work (Join-Path $taskWork 'inno')
     if($LASTEXITCODE -ne 0){throw 'Fresh compiler toolchain failed'}
     $taskUserAfter=User-Uninstall-Snapshot
-    foreach($taskKey in $taskUserBefore.Keys){if(!$taskUserAfter.Contains($taskKey) -or ($taskUserAfter[$taskKey]|ConvertTo-Json -Depth 8 -Compress) -cne ($taskUserBefore[$taskKey]|ConvertTo-Json -Depth 8 -Compress)){throw 'User registration changed; ownership unknown'}}
-    $taskNewKeys=@($taskUserAfter.Keys|Where-Object{!$taskUserBefore.Contains($_)})
-    if($taskNewKeys.Count -ne 1){throw 'Compiler registration ownership unknown'}
-    $taskCompilerRegistration=$taskUserAfter[$taskNewKeys[0]]
-    if([string]$taskCompilerRegistration.DisplayName -notmatch '^Inno Setup' -or [string]$taskCompilerRegistration.InstallLocation -ine (Join-Path $taskWork 'inno/compiler') -or $taskCompilerRegistration.Contains('_nested')){throw 'Compiler registration ownership unknown'}
-    $taskCompilerUninstall=Join-Path $taskWork 'inno/compiler/unins000.exe'
-    if(!(Test-Path -LiteralPath $taskCompilerUninstall -PathType Leaf)){throw 'Compiler uninstaller unknown'}
-    $taskCompilerUninstallHash=(Get-FileHash -LiteralPath $taskCompilerUninstall -Algorithm SHA256).Hash
+    if(($taskUserAfter|ConvertTo-Json -Depth 8 -Compress) -cne ($taskUserBefore|ConvertTo-Json -Depth 8 -Compress) -or ((Inno-Environment-Snapshot)|ConvertTo-Json -Depth 60 -Compress) -cne ($taskInnoBefore|ConvertTo-Json -Depth 60 -Compress)){throw 'Portable compiler changed existing environment'}
+    Checked $taskNode @((Join-Path $PSScriptRoot 'owned-tool-files.cjs'),'snapshot',$taskWork)
     $taskToolchainOwned=$true
     Stage 'BUILD_COMPILER_FAILED'
     Checked $taskNode @((Join-Path $PSScriptRoot 'build.cjs'),$taskPortable,(Join-Path $taskWork 'inno/compiler'),(Join-Path $taskWork 'setup'),$taskContext.sourceCommit)
@@ -92,9 +115,10 @@ try {
   try{Checked $taskNode @($taskNpm,'ci','--ignore-scripts','--omit=optional','--bin-links=false','--no-audit','--no-fund','--cache',(Join-Path $taskWork 'browser-cache'))}finally{Pop-Location}
   $env:PLAYWRIGHT_BROWSERS_PATH=Join-Path $taskWork 'browser-binaries';$env:NODE_PATH=Join-Path $taskBrowser 'node_modules'
   Checked $taskNode @((Join-Path $taskBrowser 'node_modules/playwright-core/cli.js'),'install','chromium')
+  [IO.File]::WriteAllText($taskBuildDiagnostic,(@{stage='COMPLETE';classification='PASS';script=$null;line=$null}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
   $env:GOTOOLCHAIN='local';$env:GOPROXY='off';$env:GOSUMDB='off';$env:GOENV='off';$env:GOWORK='off';$env:CGO_ENABLED='0';$env:GOOS='windows';$env:GOARCH='amd64';$env:GOFLAGS='';$env:GOEXPERIMENT=''
   $env:GOCACHE=Join-Path $taskWork 'test-go-cache';$env:GOTMPDIR=Join-Path $taskWork 'test-go-temp';New-Item -ItemType Directory -Force -Path $env:GOCACHE,$env:GOTMPDIR|Out-Null
-  $env:TEMP=$env:GOTMPDIR;$env:TMP=$env:GOTMPDIR
+  $env:TEMP=Resolve-KSessionFirewallPhysicalPath $env:GOTMPDIR;$env:TMP=$env:TEMP
   $taskFinalStarted=$true
   Checked $taskNode @((Join-Path $PSScriptRoot 'hosted-run.cjs'),$taskRepo,$taskWork,$taskNode,$taskGo)
 }catch{
@@ -104,10 +128,8 @@ try {
   if($taskToolchainStarted){
     try{
       if(!$taskToolchainOwned){throw 'Compiler cleanup unproven'}
-      $taskCurrentUser=User-Uninstall-Snapshot
-      if(($taskCurrentUser|ConvertTo-Json -Depth 8 -Compress) -cne ($taskUserAfter|ConvertTo-Json -Depth 8 -Compress) -or (Get-FileHash -LiteralPath $taskCompilerUninstall -Algorithm SHA256).Hash -cne $taskCompilerUninstallHash -or (((Get-Item -LiteralPath $taskCompilerUninstall).Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)){throw 'Compiler ownership changed'}
-      $taskToolCleanup=Start-Process -FilePath $taskCompilerUninstall -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -WindowStyle Hidden -PassThru -Wait
-      if($taskToolCleanup.ExitCode -ne 0 -or ((User-Uninstall-Snapshot)|ConvertTo-Json -Depth 8 -Compress) -cne ($taskUserBefore|ConvertTo-Json -Depth 8 -Compress) -or (Test-Path -LiteralPath $taskCompilerUninstall)){throw 'Compiler cleanup failed'}
+      if(((Inno-Environment-Snapshot)|ConvertTo-Json -Depth 60 -Compress) -cne ($taskInnoBefore|ConvertTo-Json -Depth 60 -Compress)){throw 'Compiler environment changed; cannot claim restoration'}
+      Checked $taskNode @((Join-Path $PSScriptRoot 'owned-tool-files.cjs'),'remove',$taskWork)
       $taskToolchainRestored=$true
     }catch{$taskToolchainRestored=$false;$script:taskFailed=$true}
   }
