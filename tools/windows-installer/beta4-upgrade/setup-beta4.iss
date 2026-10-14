@@ -7,6 +7,11 @@
 #ifndef Output
   #error Output required
 #endif
+#ifdef FreshTrial
+  #if defined(FaultCancel) || defined(FaultCopy) || defined(FaultPostCopy) || defined(SequenceDiagnostic)
+    #error FreshTrial cannot include fault or sequence fixtures
+  #endif
+#endif
 #include AddBackslash(Generated) + "identity.iss"
 #if VER != EncodeVer(6, 7, 3)
   #error Exact Inno Setup 6.7.3 required
@@ -43,7 +48,11 @@ WizardStyle=modern
 Compression=lzma2
 SolidCompression=yes
 OutputDir={#Output}
+#ifdef FreshTrial
+OutputBaseFilename=K-SESSION-Fresh-Trial-1.1.0-beta.4
+#else
 OutputBaseFilename=K-SESSION-Setup-1.1.0-beta.4
+#endif
 InfoBeforeFile={#Generated}\install-info.txt
 
 [Files]
@@ -56,6 +65,7 @@ Source: "{#Generated}\LICENSE-Inno-Setup.txt"; DestDir: "{app}\uninstall"; Flags
 Source: "{#Generated}\instance-binding.ini"; DestDir: "{app}\uninstall"; Flags: ignoreversion; AfterInstall: WriteInstanceBinding; Check: IsFreshInstall
 Source: "{#Payload}\K-SESSION.exe"; DestName: "ksession-location-check.exe"; Flags: dontcopy
 Source: "{#Payload}\runtime\node.exe"; DestName: "ksession-beta4-node.exe"; Flags: dontcopy
+#ifndef FreshTrial
 Source: "{#Generated}\approved-identity-bundle.json"; Flags: dontcopy
 Source: "{#Generated}\upgrade-detection.cjs"; Flags: dontcopy
 Source: "{#Generated}\upgrade-preflight.cjs"; Flags: dontcopy
@@ -73,6 +83,7 @@ Source: "{#Generated}\tax-config.js"; Flags: dontcopy
 Source: "{#Generated}\invoice-access-policy.js"; Flags: dontcopy
 Source: "{#Generated}\service-fee-config.js"; Flags: dontcopy
 Source: "{#Generated}\bonus-config.js"; Flags: dontcopy
+#endif
 
 [Icons]
 Name: "{userdesktop}\K⁺-SESSION"; Filename: "{app}\program\K-SESSION.exe"; Parameters: "--instance ""{code:SelectedInstance}"""; WorkingDir: "{app}\program"
@@ -82,12 +93,25 @@ Name: "{userprograms}\K⁺-SESSION"; Filename: "{app}\program\K-SESSION.exe"; Pa
 Filename: "{app}\program\K-SESSION.exe"; Parameters: "--instance ""{code:SelectedInstance}"""; Description: "启动 K⁺-SESSION"; Flags: nowait postinstall skipifsilent; Check: CanLaunchInstalled
 
 [Code]
+#ifdef FreshTrial
+type
+  TFreshFindData = record
+    Attributes, CreationLow, CreationHigh, AccessLow, AccessHigh,
+    WriteLow, WriteHigh, SizeHigh, SizeLow, Reserved0, Reserved1: LongWord;
+    Name: array[0..259] of Char;
+    AlternateName: array[0..13] of Char;
+  end;
+#endif
 const
   ProductKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1';
   BindingKey = 'Software\KSESSION\Beta\InstallerBinding';
   RunningMessage = 'K⁺-SESSION 正在运行或实例被占用。请保存当前操作，使用 K⁺-SESSION 窗口“停止服务”，再继续安装/卸载。不会强制关闭程序。';
   ExistingMessage = '已检测到 K⁺-SESSION Beta，请先停止并卸载当前版本后再安装。业务数据会保留。';
 var
+#ifdef FreshTrial
+  FreshStartupHash: String;
+  FreshStartupCreated, FreshInstallCompleted: Boolean;
+#endif
   InstanceLock, LauncherLock, NodeLock: LongWord;
   DataPage: TInputDirWizardPage;
   UpgradePage: TOutputMsgWizardPage;
@@ -112,6 +136,20 @@ function GetFileAttributesW(Name: String): LongWord;
 external 'GetFileAttributesW@kernel32.dll stdcall';
 function GetLastErrorCode: LongWord;
 external 'GetLastError@kernel32.dll stdcall';
+#ifdef FreshTrial
+function MoveFileW(Existing, NewName: String): Boolean;
+external 'MoveFileW@kernel32.dll stdcall';
+function FreshFindFirst(Name: String; var Data: TFreshFindData): LongWord;
+external 'FindFirstFileW@kernel32.dll stdcall';
+function FreshFindNext(H: LongWord; var Data: TFreshFindData): Boolean;
+external 'FindNextFileW@kernel32.dll stdcall';
+function FreshFindClose(H: LongWord): Boolean;
+external 'FindClose@kernel32.dll stdcall';
+function FreshRegOpen(Root: LongWord; Key: String; Options, Access: LongWord; var H: LongWord): Longint;
+external 'RegOpenKeyExW@advapi32.dll stdcall';
+function FreshRegClose(H: LongWord): Longint;
+external 'RegCloseKey@advapi32.dll stdcall';
+#endif
 
 procedure ReleaseLocks;
 begin
@@ -186,10 +224,77 @@ begin Result := not UpgradeMode; end;
 function IsUpgradeInstall: Boolean;
 begin Result := UpgradeMode; end;
 
+#ifdef FreshTrial
+{ Read-only, fail closed even when a directory cannot be enumerated. }
+function FreshSafeDirectoryChain(P: String): Boolean;
+var A, E: LongWord;
+begin
+  Result := False;
+  if (Length(P) < 7) or (Copy(P, 2, 2) <> ':\') or (CompareText(ExpandFileName(P), P) <> 0) then exit;
+  while Length(P) > 3 do begin
+    A := GetFileAttributesW(P);
+    if A = $FFFFFFFF then begin
+      E := DLLGetLastError;
+      if (E <> 2) and (E <> 3) then exit;
+    end else if ((A and $10) = 0) or ((A and $400) <> 0) then exit;
+    P := ExtractFileDir(P);
+  end;
+  Result := True;
+end;
+
+function FreshEmptyLocation(P: String): Boolean;
+var A, E, H: LongWord; F: TFreshFindData; N: String; I: Integer;
+begin
+  Result := False;
+  if not FreshSafeDirectoryChain(P) then exit;
+  A := GetFileAttributesW(P);
+  if A = $FFFFFFFF then begin
+    E := DLLGetLastError;
+    Result := (E = 2) or (E = 3);
+    exit;
+  end;
+  if ((A and $10) = 0) or ((A and $400) <> 0) then exit;
+  H := FreshFindFirst(AddBackslash(P) + '*', F);
+  if H = $FFFFFFFF then exit;
+  try
+    repeat
+      N := ''; I := 0;
+      while (I <= 259) and (F.Name[I] <> #0) do begin N := N + F.Name[I]; I := I + 1; end;
+      if (N <> '.') and (N <> '..') then exit;
+    until not FreshFindNext(H, F);
+    E := DLLGetLastError;
+    Result := E = 18; { ERROR_NO_MORE_FILES only }
+  finally
+    if not FreshFindClose(H) then Result := False;
+  end;
+end;
+
+function FreshRegistryAbsent(Root, View: LongWord; Key: String): Boolean;
+var H: LongWord; E: Longint;
+begin
+  E := FreshRegOpen(Root, Key, 0, $20019 or View, H);
+  Result := (E = 2) or (E = 3);
+  if E = 0 then begin FreshRegClose(H); Result := False; end;
+end;
+
+function FreshRegistrationOrBinding: Boolean;
+begin
+  Result := not (FreshRegistryAbsent($80000001, $100, ProductKey) and FreshRegistryAbsent($80000001, $200, ProductKey) and
+    FreshRegistryAbsent($80000002, $100, ProductKey) and FreshRegistryAbsent($80000002, $200, ProductKey) and
+    FreshRegistryAbsent($80000001, $100, BindingKey) and FreshRegistryAbsent($80000001, $200, BindingKey) and
+    FreshRegistryAbsent($80000002, $100, BindingKey) and FreshRegistryAbsent($80000002, $200, BindingKey));
+end;
+#endif
 function CheckDataLocation(Prepare: Boolean): String;
 var Code: Integer; Mode: String;
 begin
   Result := '';
+#ifdef FreshTrial
+  if not Prepare and not FreshEmptyLocation(BetaInstance) then begin
+    Log('KSESSION_FRESH_REJECT_INSTANCE');
+    Result := '全新试用拒绝已有实例、非空或不可检查的数据目录。不会修改原数据。'; exit;
+  end;
+#endif
   if (PriorInstance <> '') and (CompareText(BetaInstance, PriorInstance) = 0) and not DirExists(PriorInstance) then begin
     Log('KSESSION_DATA_PRIOR_MISSING'); Result := '上次数据目录不可用。请先恢复磁盘或重新选择；不会静默创建空目录。'; exit;
   end;
@@ -286,6 +391,67 @@ begin
   end;
 end;
 
+#ifdef FreshTrial
+function FreshStartupPath: String;
+begin Result := ExpandConstant('{userstartup}\K-SESSION Fresh Trial.lnk'); end;
+
+function FreshFileAbsent(P: String): Boolean;
+var A, E: LongWord;
+begin
+  Result := False;
+  if not FreshSafeDirectoryChain(ExtractFileDir(P)) then exit;
+  A := GetFileAttributesW(P);
+  if A <> $FFFFFFFF then exit;
+  E := DLLGetLastError;
+  Result := (E = 2) or (E = 3);
+end;
+
+function FreshStartupAbsent: Boolean;
+var A, E: LongWord;
+begin
+  Result := False;
+  if not FreshSafeDirectoryChain(ExpandConstant('{userstartup}')) then exit;
+  A := GetFileAttributesW(FreshStartupPath);
+  if A <> $FFFFFFFF then exit;
+  E := DLLGetLastError;
+  Result := (E = 2) or (E = 3);
+end;
+
+function FreshStartupMatches(ExpectedHash: String): Boolean;
+var Shell, Link: Variant; P: String; A: LongWord;
+begin
+  Result := False;
+  try
+    P := FreshStartupPath;
+    if not FreshSafeDirectoryChain(ExtractFileDir(P)) then exit;
+    A := GetFileAttributesW(P);
+    if (A = $FFFFFFFF) or ((A and $400) <> 0) or ((A and $10) <> 0) then exit;
+    if (ExpectedHash = '') or (GetSHA256OfFile(P) <> ExpectedHash) then exit;
+    Shell := CreateOleObject('WScript.Shell'); Link := Shell.CreateShortcut(P);
+    Result := (CompareText(Link.TargetPath, ExpandConstant('{app}\program\K-SESSION.exe')) = 0) and
+      (Link.Arguments = '--logon --instance "' + BetaInstance + '"') and
+      (CompareText(Link.WorkingDirectory, ExpandConstant('{app}\program')) = 0);
+  except Result := False; end;
+end;
+
+procedure CreateFreshStartup;
+var Tmp, Made: String;
+begin
+  if not FreshStartupAbsent then RaiseException('登录启动项冲突或目录不安全，拒绝覆盖。');
+  Tmp := ExpandConstant('{tmp}\ksession-fresh-startup.lnk');
+  Made := CreateShellLink(Tmp, 'K-SESSION Fresh Trial', ExpandConstant('{app}\program\K-SESSION.exe'),
+    '--logon --instance "' + BetaInstance + '"', ExpandConstant('{app}\program'), '', 0, SW_SHOWNORMAL);
+  if CompareText(Made, Tmp) <> 0 then RaiseException('登录启动项格式无效。');
+  FreshStartupHash := GetSHA256OfFile(Tmp);
+  if (FreshStartupHash = '') or not FreshStartupAbsent or not MoveFileW(Tmp, FreshStartupPath) then
+    RaiseException('无法安全创建登录启动项；不会覆盖已有项。');
+  FreshStartupCreated := True;
+  if not FreshStartupMatches(FreshStartupHash) then RaiseException('登录启动项身份验证失败。');
+  if not SetIniString('Startup', 'Sha256', FreshStartupHash, ExpandConstant('{app}\uninstall\fresh-startup.ini')) then
+    RaiseException('无法保存登录启动项身份。');
+  Log('KSESSION_FRESH_STARTUP_VERIFIED');
+end;
+#endif
 function RunningProduct: Boolean;
 var Locator, Service, Items, Item: Variant; I: Integer; P, R: String;
 begin
@@ -660,7 +826,17 @@ end;
 function InitializeSetup: Boolean;
 begin
   Result := False;
+#ifdef FreshTrial
+  UpgradeMode := False;
+  if FreshRegistrationOrBinding then begin
+    Log('KSESSION_FRESH_REJECT_REGISTRATION'); exit;
+  end;
+  if not FreshEmptyLocation(LegacyInstance) then begin
+    Log('KSESSION_FRESH_REJECT_LEGACY_INSTANCE'); exit;
+  end;
+#endif
   if RunningProduct then begin Log('KSESSION_REJECT_RUNNING'); SuppressibleMsgBox(RunningMessage, mbError, MB_OK, IDOK); exit; end;
+#ifndef FreshTrial
   UpgradeMode := HasRegistration;
   if UpgradeMode and not ReadUpgradeIdentity then begin
     Log('KSESSION_UPGRADE_REGISTRATION_REJECTED');
@@ -670,6 +846,7 @@ begin
     Log('KSESSION_REJECT_REGISTERED');
     SuppressibleMsgBox(ExistingMessage, mbError, MB_OK, IDOK); exit;
   end;
+#endif
   Result := True;
 end;
 
@@ -679,6 +856,24 @@ begin
   Result := '';
   ReleaseLocks;
   P := ExpandConstant('{app}');
+#ifdef FreshTrial
+  if not FreshStartupAbsent then begin
+    Log('KSESSION_FRESH_REJECT_STARTUP'); Result := '登录启动项同名或路径不安全，已拒绝。'; exit;
+  end;
+  if not FreshFileAbsent(ExpandConstant('{userdesktop}\K⁺-SESSION.lnk')) or
+     not FreshFileAbsent(ExpandConstant('{userprograms}\K⁺-SESSION.lnk')) then begin
+    Log('KSESSION_FRESH_REJECT_SHORTCUT'); Result := '已有同名快捷方式或路径不可检查，已拒绝。'; exit;
+  end;
+  if UpgradeMode or FreshRegistrationOrBinding then begin
+    Log('KSESSION_FRESH_REJECT_REGISTRATION'); Result := ExistingMessage; exit;
+  end;
+  if not FreshEmptyLocation(LegacyInstance) or not FreshEmptyLocation(BetaInstance) then begin
+    Log('KSESSION_FRESH_REJECT_INSTANCE'); Result := '已有业务实例或数据目录不可检查，已拒绝全新试用。'; exit;
+  end;
+  if not FreshEmptyLocation(P) then begin
+    Log('KSESSION_FRESH_REJECT_TARGET'); Result := '安装目标非空、不安全或不可检查，已拒绝。'; exit;
+  end;
+#endif
   if not UpgradeMode then begin
     Result := CheckDataLocation(False); if Result <> '' then exit;
     if not ConfirmDataChoice then begin Log('KSESSION_DATA_SWITCH_UNCONFIRMED'); Result := '未确认使用另一数据位置（不会自动迁移）。'; exit; end;
@@ -776,6 +971,10 @@ begin
         TransactionFinalized := True;
         Log('KSESSION_UPGRADE_TRANSACTION_COMMITTED');
       end;
+#ifdef FreshTrial
+      CreateFreshStartup;
+      FreshInstallCompleted := True;
+#endif
       ReleaseLocks; { allow first start only after completed checks }
       Log('KSESSION_INSTALLED_PAYLOAD_VERIFIED');
       Log('KSESSION_DESKTOP_LINK=' + ExpandConstant('{userdesktop}\K⁺-SESSION.lnk'));
@@ -811,6 +1010,11 @@ end;
 function InitializeUninstall: Boolean;
 begin
   Result := False;
+#ifdef FreshTrial
+  if not FreshStartupAbsent and not FreshStartupMatches(GetIniString('Startup', 'Sha256', '', ExpandConstant('{app}\uninstall\fresh-startup.ini'))) then begin
+    Log('KSESSION_FRESH_UNINSTALL_STARTUP_UNKNOWN'); exit;
+  end;
+#endif
   if SelectedInstance('') = '' then begin SuppressibleMsgBox('数据绑定缺失，请先修复安装记录；不会猜测其他数据位置。', mbError, MB_OK, IDOK); exit; end;
   if not UninstallSilent then
     if MsgBox('K⁺-SESSION业务数据与附件不会被删除。请先保存并停止服务。继续卸载程序？', mbConfirmation, MB_YESNO) <> IDYES then exit;
@@ -829,6 +1033,15 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var P: String; Attr, ErrorCode: LongWord;
 begin
   if CurUninstallStep <> usUninstall then exit;
+#ifdef FreshTrial
+  if not FreshStartupAbsent then begin
+    if not FreshStartupMatches(GetIniString('Startup', 'Sha256', '', ExpandConstant('{app}\uninstall\fresh-startup.ini'))) then
+      RaiseException('登录启动项身份未知，拒绝删除。');
+    if not DeleteFile(FreshStartupPath) then RaiseException('无法删除已验证登录启动项。');
+  end;
+  if not DeleteFile(ExpandConstant('{app}\uninstall\fresh-startup.ini')) then
+    RaiseException('无法移除登录启动项身份记录。');
+#endif
   P := ExpandConstant('{app}\uninstall\install-state.json');
   if not SafeDirectoryChain(ExtractFileDir(P)) then begin
     Log('KSESSION_UNINSTALL_STATE_REJECTED');
@@ -854,6 +1067,13 @@ end;
 
 procedure DeinitializeSetup;
 begin
+#ifdef FreshTrial
+  if FreshStartupCreated and not FreshInstallCompleted then begin
+    if FreshStartupMatches(FreshStartupHash) then begin
+      if not DeleteFile(FreshStartupPath) then Log('KSESSION_FRESH_STARTUP_CLEANUP_UNPROVEN');
+    end else Log('KSESSION_FRESH_STARTUP_CLEANUP_UNKNOWN');
+  end;
+#endif
   if UpgradeMode and TransactionPrepared and not TransactionFinalized then begin
     if RunNode('upgrade-transaction-cli.cjs', 'rollback "' + UpgradePlan + '"') then begin
       if RestoreUpgradeRegistration and

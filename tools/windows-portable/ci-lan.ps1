@@ -2,9 +2,14 @@ param(
   [Parameter(Mandatory=$true)][string]$Work,
   [Parameter(Mandatory=$true)][string]$Commit,
   [string]$NodeDir,
-  [string]$GoRoot
+  [string]$GoRoot,
+  [switch]$FreshTrial
 )
 $ErrorActionPreference='Stop'
+if($FreshTrial){
+  & (Join-Path $PSScriptRoot '../windows-installer/fresh-trial/build-payload.ps1') -Work $Work -Commit $Commit -NodeDir $NodeDir -GoRoot $GoRoot
+  return
+}
 $taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $taskWork=[IO.Path]::GetFullPath($Work)
 if($taskWork -notmatch '^E:\\' -or (Test-Path -LiteralPath $taskWork)){throw 'Fresh isolated E output required'}
@@ -35,7 +40,8 @@ if(!$NodeDir){
 $taskGo=Join-Path $GoRoot 'bin/go.exe'
 $taskNode=Join-Path $NodeDir 'node.exe'
 $taskBuild=Join-Path $taskWork 'runtime-build';New-Item -ItemType Directory -Path $taskBuild|Out-Null
-Run-Checked $taskNode @((Join-Path $taskRepo 'tools/windows-runtime/build.cjs'),$Commit,$taskBuild,$NodeDir,$taskGit)
+$taskDeriveProfile=if($FreshTrial){'fresh-trial'}else{'standard'}
+Run-Checked $taskNode @((Join-Path $taskRepo 'tools/windows-runtime/build.cjs'),$Commit,$taskBuild,$NodeDir,$taskGit,$taskDeriveProfile)
 $taskRoot=Join-Path $taskWork '暂存程序 中文 with spaces'
 Copy-Item -LiteralPath (Join-Path $taskBuild 'KSESSION-RUNTIME') -Destination $taskRoot -Recurse
 $taskPackageScript=Join-Path $PSScriptRoot 'package-lan.cjs'
@@ -47,7 +53,7 @@ $taskHelper=Join-Path $taskWork 'firewall-helper-output'
 $taskFirewallBuildReport=Join-Path $taskWork 'firewall-build-diagnostic.json'
 $taskFirewallBuildLog=Join-Path $taskWork 'firewall-build-entry.log'
 & pwsh -NoLogo -NoProfile -File (Join-Path $taskRepo 'tools/windows-firewall/build.ps1') -OutputDir $taskHelper -SourceCommit $Commit `
-  -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.4' -GoExe $taskGo -DiagnosticReport $taskFirewallBuildReport *> $taskFirewallBuildLog
+  -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.4' -GoExe $taskGo -DiagnosticReport $taskFirewallBuildReport -FreshTrial:$FreshTrial *> $taskFirewallBuildLog
 if($LASTEXITCODE -ne 0){throw 'Firewall helper build failed'}
 $taskGoTestPolicy=Join-Path $taskRepo 'tools/tests/lan-host/expected-go-tests.cjs'
 $taskFirewallTests=@(& $taskNode $taskGoTestPolicy 'FIREWALL'|ConvertFrom-Json)
@@ -68,7 +74,7 @@ $taskLauncher=Join-Path $taskWork 'launcher-output'
 $taskLauncherBuildVariables=@('GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOCACHE','GOTMPDIR','TEMP','TMP','GOPROXY','GOSUMDB','GOENV','GOFLAGS','GOEXPERIMENT')
 Invoke-KSessionWithRestoredEnvironment $taskLauncherBuildVariables {
   & (Join-Path $taskRepo 'tools/windows-launcher/build.ps1') -RuntimeRoot $taskRoot -OutputDir $taskLauncher `
-    -SourceCommit $Commit -FirewallHelperSha256 $taskHelperHash -GoExe $taskGo
+    -SourceCommit $Commit -FirewallHelperSha256 $taskHelperHash -GoExe $taskGo -FreshTrial:$FreshTrial
   if($LASTEXITCODE -ne 0){throw 'LAN Launcher build failed'}
 }
 $taskLauncherUnitTests=@(& $taskNode $taskGoTestPolicy 'LAUNCHER'|ConvertFrom-Json)

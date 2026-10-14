@@ -1,0 +1,81 @@
+name: Fresh LAN Trial
+run-name: ${{ github.event.head_commit.message }}
+on:
+  push:
+    branches: [codex/lan-fresh-trial-v1.1]
+    paths: [docs/tasks/windows-installer-v1.1/fresh-lan-trial/hosted-trigger.json]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: fresh-lan-trial-exclusive
+  cancel-in-progress: false
+jobs:
+  fresh:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-fresh-trial-v1.1' && github.run_attempt == 1
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - name: Initialize safe failure evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if(!(Test-Path E:/)){
+            $taskOwnedDrive=Join-Path $env:RUNNER_TEMP ('fresh-drive-'+$env:GITHUB_RUN_ID)
+            if(Test-Path -LiteralPath $taskOwnedDrive){throw 'Fresh isolation unavailable'}
+            New-Item -ItemType Directory -Path $taskOwnedDrive|Out-Null
+            subst E: $taskOwnedDrive
+            if($LASTEXITCODE -ne 0){throw 'Fresh isolation unavailable'}
+          }
+          if(Test-Path E:/fresh-trial){throw 'Fresh isolation unavailable'}
+          New-Item -ItemType Directory -Path E:/fresh-trial|Out-Null
+          [IO.File]::WriteAllText('E:/fresh-trial/early.json',(@{schema=1;kind='FRESH_TRIAL_EARLY_FAILURE';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';reason='SOURCE_REJECTED';status='FAIL';cleanup='NOT_STARTED'}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+          git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reserve slot and bind exact reviewed source
+        id: source
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node tools/windows-installer/fresh-trial/bootstrap.cjs $env:GITHUB_WORKSPACE E:/fresh-trial *> E:/fresh-trial/bootstrap-private.log
+          if($LASTEXITCODE -ne 0){Write-Output 'FRESH_TRIAL_SOURCE_REJECTED';exit 1}
+      - name: Independent fresh build or same immutable candidate QA
+        shell: pwsh
+        run: |
+          try {
+            & ./tools/windows-installer/fresh-trial/ci.ps1 -Work E:/fresh-trial *> E:/fresh-trial/ci-private.log
+            if($LASTEXITCODE -ne 0){throw 'Fresh trial gate failed'}
+          } catch {Write-Output 'FRESH_TRIAL_GATE_FAILED';exit 1}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: success() && steps.source.outputs.mode == 'CANDIDATE'
+        with:
+          name: K-SESSION-fresh-trial-candidate-${{ steps.source.outputs.source }}
+          path: E:/fresh-trial/artifact/
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: success() && steps.source.outputs.mode == 'QA'
+        with:
+          name: K-SESSION-fresh-trial-qa-${{ steps.source.outputs.source }}
+          path: E:/fresh-trial/fresh-report.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Select safe failure report only
+        if: failure()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path E:/fresh-trial/failure -Force|Out-Null
+          if(Test-Path E:/fresh-trial/fresh-report.json){
+            Copy-Item -LiteralPath E:/fresh-trial/fresh-report.json -Destination E:/fresh-trial/failure/fresh-report.json
+          }else{Copy-Item -LiteralPath E:/fresh-trial/early.json -Destination E:/fresh-trial/failure/early.json}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure()
+        with:
+          name: fresh-trial-safe-failure-${{ github.run_id }}
+          path: E:/fresh-trial/failure/
+          if-no-files-found: error
+          retention-days: 30

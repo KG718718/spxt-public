@@ -2,7 +2,8 @@
 // Builds staging only from reviewed public Git blobs. ZIP requires separate test gates.
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),os=require('node:os');
 const {sha,safePath,inside,writeNew,writeJSON,inventory,productionEntries,cleanEnvironment,inspectPE,assertArchiveAllowed}=require('./common.cjs');
-const [commit,outArg,toolArg,git]=process.argv.slice(2);
+const [commit,outArg,toolArg,git,profile='standard']=process.argv.slice(2);
+if(!['standard','fresh-trial'].includes(profile))throw Error('Unsupported derive profile');
 const repo=path.resolve(__dirname,'../..'),out=path.resolve(outArg),tool=path.resolve(toolArg);
 if(process.platform!=='win32'||process.arch!=='x64')throw Error('Windows x64 required');
 if(!/^[a-f0-9]{40}$/.test(commit)||inside(repo,out)||out===repo||!/^E:\\/i.test(out))throw Error('Unsafe source/output');
@@ -30,7 +31,17 @@ try {
   for(const e of entries){const opts=e.optionalDependencies||{};if(Object.keys(opts).length&&(e.path!=='node_modules/pdfjs-dist'||JSON.stringify(opts)!==JSON.stringify({'@napi-rs/canvas':'^0.1.65'})))throw Error('Unreviewed optional declaration');
     for(const dep of Object.keys(e.dependencies||{})){let at=e.path,found=false;while(at){const candidate=at+'/node_modules/'+dep;if(entries.some(x=>x.path===candidate)){found=true;break;}at=at.includes('/node_modules/')?at.slice(0,at.lastIndexOf('/node_modules/')):'';}if(!found&&!entries.some(x=>x.path==='node_modules/'+dep))throw Error('Required dependency omitted: '+dep);}}
   if(spec.applicationFiles.length!==38)throw Error('Application allowlist changed');
-  for(const name of spec.applicationFiles)writeNew(path.join(app,safePath(name)),blob(name));
+  let derivedMode=null;
+  for(const name of spec.applicationFiles){
+    let bytes=blob(name);
+    if(profile==='fresh-trial'&&name==='public-lan-network.js'){
+      const original=bytes.toString('utf8'),marker='const FRESH_TRIAL_BUILD = false';
+      if(original.split(marker).length!==2)throw Error('Reviewed deployment marker missing or duplicated');
+      bytes=Buffer.from(original.replace(marker,'const FRESH_TRIAL_BUILD = true'));
+      derivedMode={profile,sourcePath:name,sourceSha256:sha(blob(name)),derivedSha256:sha(bytes),transform:'FRESH_TRIAL_BUILD_FALSE_TO_TRUE_V1'};
+    }
+    writeNew(path.join(app,safePath(name)),bytes);
+  }
   const pkg=JSON.parse(fs.readFileSync(path.join(app,'package.json')));
   if(JSON.stringify(pkg.dependencies)!==JSON.stringify(lock.packages[''].dependencies))throw Error('Root dependencies/lock mismatch');
   report.packageLockHash=sha(fs.readFileSync(path.join(app,'package-lock.json')));
@@ -104,6 +115,7 @@ try {
   assertArchiveAllowed(report.license);
   const payload=inventory(stage);
   const manifest={format:'k-session-runtime',manifestSchema:1,product:'K-SESSION',version:pkg.version,platform:'win32-x64',sourceRepository:'https://github.com/KG718718/spxt-public',sourceCommit:commit,sourceTree:report.sourceTree,nodeVersion:dist.nodeVersion,nodeHash:dist.nodeExeSha256,nodeArchiveHash:dist.nodeArchiveSha256,packageLockHash:report.packageLockHash,build:{toolCommit:commit,npmVersion:report.npmVersion,os:report.os,flags:['ci','--omit=dev','--omit=optional','--ignore-scripts','--bin-links=false'],toolFiles:inventory(__dirname)},dependencies,files:payload,licenses:licenseItems,nativeLicenseReview:report.license,instanceSchema:1,businessDataIncluded:false,launcherIncluded:false,ocrEngineIncluded:false,runtimeIncluded:true,entrypoint:'app/server.js',instanceContract:'Explicit external KSESSION_* paths required; prototype is not a launcher or installer.'};
+  if(derivedMode)manifest.deriveProfile=derivedMode;
   writeJSON(path.join(stage,'manifest/runtime-manifest.json'),manifest);
   const summed=inventory(stage);writeNew(path.join(stage,'hashes/SHA256SUMS.txt'),summed.map(f=>f.sha256+'  '+f.path).join('\n')+'\n');
   report.fileCount=summed.length+1;report.uncompressedBytes=inventory(stage).reduce((sum,f)=>sum+f.bytes,0);
