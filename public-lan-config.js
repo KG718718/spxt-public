@@ -3,7 +3,7 @@
 const fsDefault = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const {PORT_MIN, PORT_MAX, interfaceName} = require('./public-lan-network');
+const {PORT_MIN, PORT_MAX, interfaceName, adapterId, subnetFor, freshTrialEnabled} = require('./public-lan-network');
 
 const CONFIG_FILENAME = 'lan-deployment.json';
 const KEYS = Object.freeze(['schema', 'enabled', 'interfaceName', 'port']);
@@ -18,7 +18,9 @@ function fail(code, message) { throw new LanConfigError(code, message); }
 function record(value) { return value !== null && typeof value === 'object' && !Array.isArray(value); }
 
 function parseStrictJson(source, options = {}) {
-  if (typeof source !== 'string' || Buffer.byteLength(source, 'utf8') > MAX_CONFIG_BYTES) throw Error('invalid json');
+  const maximum = options.maxBytes ?? MAX_CONFIG_BYTES;
+  if (!Number.isInteger(maximum) || maximum < 1 || maximum > 1024 * 1024
+      || typeof source !== 'string' || Buffer.byteLength(source, 'utf8') > maximum) throw Error('invalid json');
   let offset = 0;
   const whitespace = () => { while (/[\u0009\u000a\u000d\u0020]/.test(source[offset] || '')) offset += 1; };
   function string() {
@@ -89,13 +91,39 @@ function parseStrictJson(source, options = {}) {
 }
 
 function validateLanConfig(value) {
-  if (!record(value) || Object.keys(value).length !== KEYS.length || KEYS.some(key => !Object.hasOwn(value, key))
+  const bound = record(value) && Object.hasOwn(value, 'binding');
+  if (bound && !freshTrialEnabled()) fail('LAN_CONFIG_INVALID', '标准构建不接受扩展网络绑定字段。');
+  if (!record(value) || Object.keys(value).length !== KEYS.length + (bound ? 1 : 0) || KEYS.some(key => !Object.hasOwn(value, key))
       || value.schema !== 2 || typeof value.enabled !== 'boolean'
       || !Number.isInteger(value.port) || value.port < PORT_MIN || value.port > PORT_MAX
       || interfaceName(value.interfaceName) !== value.interfaceName) {
     fail('LAN_CONFIG_INVALID', 'LAN 配置损坏或结构非法；原文件不会被覆盖。');
   }
-  return Object.freeze({schema: 2, enabled: value.enabled, interfaceName: value.interfaceName, port: value.port});
+  let binding;
+  if (bound) {
+    binding = value.binding;
+    const subnet = record(binding) && subnetFor(binding.address, binding.prefixLength);
+    if (!record(binding) || Object.keys(binding).sort().join(',') !== 'adapterId,address,prefixLength,subnet'
+        || typeof binding.adapterId !== 'string' || adapterId(binding.adapterId) !== binding.adapterId || !subnet || binding.address !== subnet.address
+        || binding.prefixLength > 30 || binding.address === subnet.network || binding.address === subnet.broadcast
+        || binding.subnet !== subnet.cidr) fail('LAN_CONFIG_INVALID', '受信网络绑定损坏，LAN 已保持关闭。');
+    binding = Object.freeze({...binding});
+  }
+  if (freshTrialEnabled() && !bound) fail('LAN_CONFIG_INVALID', 'Fresh Trial 必须有明确授权的网络绑定。');
+  return Object.freeze({schema: 2, enabled: value.enabled, interfaceName: value.interfaceName, port: value.port, ...(bound ? {binding} : {})});
+}
+
+function matchesTrustedBinding(config, selected) {
+  const b = config?.binding;
+  if (!b) return !freshTrialEnabled();
+  return selected && config.interfaceName === selected.interfaceName && b.adapterId === selected.adapterId
+    && b.address === selected.address && b.prefixLength === selected.prefixLength && b.subnet === selected.subnet;
+}
+
+function matchesTrustedConfig(expected, actual) {
+  return Boolean(expected && actual && expected.schema === actual.schema && expected.enabled === actual.enabled
+    && expected.port === actual.port && expected.interfaceName === actual.interfaceName
+    && expected.binding && actual.binding && matchesTrustedBinding(expected, {interfaceName: actual.interfaceName, ...actual.binding}));
 }
 
 function safeInstance(instanceDirectory, fs) {
@@ -188,4 +216,4 @@ function createLanConfigStore(options = {}) {
   return Object.freeze({file, load: () => state, save});
 }
 
-module.exports = {CONFIG_FILENAME, LanConfigError, parseStrictJson, validateLanConfig, createLanConfigStore};
+module.exports = {CONFIG_FILENAME, LanConfigError, parseStrictJson, validateLanConfig, matchesTrustedBinding, matchesTrustedConfig, createLanConfigStore};

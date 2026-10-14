@@ -26,8 +26,12 @@ func run(args []string) (int, []byte) {
 	if err != nil {
 		return describeError(err)
 	}
-	if err = verifyBoundConfig(instance, install, req); err != nil {
+	cfg, err := loadBoundConfig(instance, install, req)
+	if err != nil {
 		return describeError(err)
+	}
+	if buildFreshTrial == "1" {
+		req.Binding = cfg.Binding
 	}
 	exit, output, err := runFirewall(req, install)
 	if err != nil {

@@ -5,6 +5,12 @@ const os = require('node:os');
 const fsDefault = require('node:fs');
 const path = require('node:path');
 const {spawnSync} = require('node:child_process');
+// T2 replaces this one literal only in the fresh-only app payload before hashing
+// its existing 38-entry manifest. No new customer module is required.
+const FRESH_TRIAL_BUILD = false;
+function freshTrialEnabled() {
+  return FRESH_TRIAL_BUILD || process.env.KSESSION_FRESH_TRIAL === '1';
+}
 
 const PORT_MIN = 8080;
 const PORT_MAX = 8099;
@@ -65,6 +71,30 @@ $result=@(); Get-NetAdapter -IncludeHidden -ErrorAction Stop | ForEach-Object {
     $result += [pscustomobject]@{Name=[string]$a.Name;Description=[string]$a.InterfaceDescription;InterfaceGuid=[string]$a.InterfaceGuid;InterfaceIndex=[int]$a.ifIndex;Status=[string]$a.Status;HardwareInterface=[bool]$a.HardwareInterface;Virtual=[bool]$a.Virtual;MediaType=[string]$a.MediaType;PhysicalMediaType=[string]$a.NdisPhysicalMedium;Address=[string]$_.IPAddress;PrefixLength=[int]$_.PrefixLength;AddressState=[string]$_.AddressState;NetworkCategory=if($profiles.ContainsKey([int]$a.ifIndex)){$profiles[[int]$a.ifIndex]}else{$null};HasDefaultRoute=$routes.ContainsKey([int]$a.ifIndex);OnLinkPrefixes=if($onLink.ContainsKey([int]$a.ifIndex)){@($onLink[[int]$a.ifIndex])}else{@()};RouteMetric=if($routes.ContainsKey([int]$a.ifIndex)){$routes[[int]$a.ifIndex]}else{$null}}
   }
 }; ConvertTo-Json -InputObject @($result) -Compress -Depth 3`;
+
+// Fresh builds reuse the firewall helper's system-module boundary. No user
+// modules, partial reads, stderr overrides or elevated discovery are permitted.
+const FRESH_DISCOVERY_SCRIPT = String.raw`$ErrorActionPreference='Stop'
+$ProgressPreference='SilentlyContinue'
+[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)
+$moduleRoot=$env:SystemRoot+'\System32\WindowsPowerShell\v1.0\Modules'
+Import-Module ($moduleRoot+'\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1') -Force -ErrorAction Stop
+Import-Module ($moduleRoot+'\NetAdapter\NetAdapter.psd1') -Force -ErrorAction Stop
+Import-Module ($moduleRoot+'\NetConnection\NetConnection.psd1') -Force -ErrorAction Stop
+Import-Module ($moduleRoot+'\NetTCPIP\NetTCPIP.psd1') -Force -ErrorAction Stop
+$result=@()
+$adapters=@(Get-NetAdapter -IncludeHidden -ErrorAction Stop)
+$profiles=@(Get-NetConnectionProfile -ErrorAction Stop)
+$addresses=@(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction Stop)
+$routes=@(Get-NetRoute -AddressFamily IPv4 -ErrorAction Stop)
+foreach($a in $adapters){
+  $profile=@($profiles | Where-Object {$_.InterfaceIndex -eq $a.ifIndex})
+  foreach($ip in @($addresses | Where-Object {$_.InterfaceIndex -eq $a.ifIndex})){
+    $onLink=@($routes | Where-Object {$_.InterfaceIndex -eq $a.ifIndex -and $_.NextHop -eq '0.0.0.0' -and $_.State -eq 'Alive'} | ForEach-Object {[string]$_.DestinationPrefix})
+    $result += [pscustomobject]@{Name=[string]$a.Name;Description=[string]$a.InterfaceDescription;InterfaceGuid=[string]$a.InterfaceGuid;InterfaceIndex=[int]$a.ifIndex;Status=[string]$a.Status;HardwareInterface=$a.HardwareInterface;Virtual=$a.Virtual;Hidden=$a.Hidden;InterfaceType=[int]$a.InterfaceType;MediaType=[string]$a.MediaType;PhysicalMediaType=[string]$a.NdisPhysicalMedium;Address=[string]$ip.IPAddress;PrefixLength=[int]$ip.PrefixLength;AddressState=[string]$ip.AddressState;SkipAsSource=$ip.SkipAsSource;NetworkCategory=if($profile.Count -eq 1){[string]$profile[0].NetworkCategory}else{'Unknown'};OnLinkPrefixes=@($onLink)}
+  }
+}
+ConvertTo-Json -InputObject @($result) -Compress -Depth 3`;
 
 class LanNetworkError extends Error {
   constructor(code, message) { super(message); this.name = 'LanNetworkError'; this.code = code; }
@@ -230,19 +260,56 @@ function resolveSystemPowerShell(options = {}) {
 function runWindowsDiscovery(options = {}) {
   if ((options.platform || process.platform) !== 'win32') fail('NETWORK_PLATFORM_UNSUPPORTED', 'LAN Host 网络发现仅支持 Windows。');
   const runtime = resolveSystemPowerShell(options);
-  const encoded = Buffer.from(WINDOWS_DISCOVERY_SCRIPT, 'utf16le').toString('base64');
+  const fresh = options.freshTrial === true || freshTrialEnabled();
+  const encoded = Buffer.from(fresh ? FRESH_DISCOVERY_SCRIPT : WINDOWS_DISCOVERY_SCRIPT, 'utf16le').toString('base64');
   const run = options.spawnSync || spawnSync;
   const result = run(runtime.executable, ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-EncodedCommand', encoded], {
     encoding: 'utf8', windowsHide: true, timeout: 15000, maxBuffer: 1024 * 1024,
     cwd: path.win32.join(runtime.systemRoot, 'System32'), env: runtime.environment
   });
-  if (!result || result.error || result.status !== 0 || result.signal || String(result.stderr || '').trim()) {
+  if (!result || result.error || result.status !== 0 || result.signal || (fresh ? String(result.stderr || '').length : String(result.stderr || '').trim())) {
     fail('NETWORK_DISCOVERY_FAILED', 'Windows 网络状态无法确认，LAN 已保持关闭。');
+  }
+  if (fresh) {
+    try {
+      if (typeof result.stdout !== 'string' || result.stdout.includes('\ufffd')) throw Error('invalid encoding');
+      const value = require('./public-lan-config').parseStrictJson(String(result.stdout || '').replace(/^\ufeff/, ''), {maxBytes: 1024 * 1024});
+      if (!Array.isArray(value)) throw Error('array required');
+      return value;
+    } catch { fail('NETWORK_DISCOVERY_FAILED', 'Windows 网络信息无法安全解析。'); }
   }
   return parsePowerShellRecords(result.stdout);
 }
 
 function discoverWindowsLan(options = {}) {
+  // Test injection may only force the stricter Fresh branch; false/undefined
+  // never disables the immutable payload marker. No CLI exposes this option.
+  if (options.freshTrial === true || freshTrialEnabled()) {
+    const records = runWindowsDiscovery(options);
+    const keys = 'Address,AddressState,Description,HardwareInterface,Hidden,InterfaceGuid,InterfaceIndex,InterfaceType,MediaType,Name,NetworkCategory,OnLinkPrefixes,PhysicalMediaType,PrefixLength,SkipAsSource,Status,Virtual';
+    if (!Array.isArray(records) || records.some(row => !row || typeof row !== 'object' || Array.isArray(row)
+      || Object.keys(row).sort().join(',') !== keys)) fail('NETWORK_DISCOVERY_INVALID', '网络发现结果结构非法。');
+    const identities = new Set();
+    for (const row of records) {
+      const identity = adapterId(row.InterfaceGuid) + '|' + row.Address;
+      if (identities.has(identity)) fail('NETWORK_DISCOVERY_INVALID', '网络发现结果身份重复。');
+      identities.add(identity);
+    }
+    const result = selectLanAdapter(records.filter(row => row.HardwareInterface === true && row.Virtual === false
+      && row.Hidden === false && [6, 71].includes(row.InterfaceType) && row.SkipAsSource === false
+      && Number.isInteger(row.InterfaceIndex) && row.InterfaceIndex > 0 && interfaceName(row.Name)
+      && Number.isInteger(row.PrefixLength) && row.PrefixLength <= 30 && row.Address === normalizeIPv4(row.Address)
+      && subnetFor(row.Address, row.PrefixLength)?.network !== row.Address
+      && subnetFor(row.Address, row.PrefixLength)?.broadcast !== row.Address
+      && Array.isArray(row.OnLinkPrefixes) && row.OnLinkPrefixes.includes(subnetFor(row.Address, row.PrefixLength)?.cidr)));
+    const candidates = result.candidates.map(candidate => Object.freeze({...candidate, interfaceName: candidate.name}));
+    const preference = options.interfaceName ?? null;
+    if (preference !== null && !interfaceName(preference)) fail('LAN_CONFIG_INVALID', '保存的网络接口名称非法。');
+    const matches = preference === null ? candidates : candidates.filter(candidate => candidate.interfaceName === preference);
+    const selected = matches.length === 1 ? matches[0] : null;
+    return Object.freeze({status: preference !== null ? (selected ? 'SELECTED' : 'NETWORK_CHANGED')
+      : candidates.length === 1 ? 'SELECTED' : candidates.length ? 'MULTIPLE_LAN_ADAPTERS' : 'NO_PRIVATE_LAN', selected, candidates});
+  }
   if ((options.platform || process.platform) !== 'win32' && !options.interfaces) fail('NETWORK_PLATFORM_UNSUPPORTED', 'LAN Host 网络发现仅支持 Windows。');
   return selectNodeLan(options.interfaces || (options.networkInterfaces || os.networkInterfaces)(), options.interfaceName ?? null);
 }
@@ -312,12 +379,13 @@ async function reservePersistedPort(options = {}) {
 
 function publicDiscoveryView(result) {
   const view = candidate => ({interfaceName: candidate.interfaceName, name: candidate.name, address: candidate.address,
-    prefixLength: candidate.prefixLength, subnet: candidate.subnet});
+    prefixLength: candidate.prefixLength, subnet: candidate.subnet, ...(freshTrialEnabled() ? {adapterId: candidate.adapterId} : {})});
   return {schema: 2, status: result.status, selected: result.selected ? view(result.selected) : null, candidates: result.candidates.map(view), hostName: os.hostname()};
 }
 
 module.exports = {
-  PORT_MIN, PORT_MAX, WINDOWS_DISCOVERY_SCRIPT, LanNetworkError,
+  freshTrialEnabled,
+  PORT_MIN, PORT_MAX, WINDOWS_DISCOVERY_SCRIPT, FRESH_DISCOVERY_SCRIPT, LanNetworkError,
   normalizeIPv4, ipv4Number, privateBlock, prefixMask, subnetFor, isAddressInSubnet,
   interfaceName, prefixFromNetmask, nodeLanCandidates, selectNodeLan,
   adapterId, classifyAdapter, selectLanAdapter, parsePowerShellRecords, resolveSystemPowerShell,

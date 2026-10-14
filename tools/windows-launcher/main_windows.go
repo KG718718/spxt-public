@@ -447,11 +447,17 @@ func (c *controller) makeWindow() error {
 	return nil
 }
 func (c *controller) start() error {
+	if freshTrial == "1" && !c.lanEnabled() {
+		return fail("FRESH_RUNTIME_INVALID", "Fresh Trial 安全组件身份不完整，未启动后台。")
+	}
 	node := filepath.Join(c.root, "runtime", "node.exe")
 	app := filepath.Join(c.root, "app")
 	first, last := launcherPortRange(nil)
 	if c.lanEnabled() {
 		config, err := c.readLANConfig()
+		if freshTrial == "1" && err != nil {
+			return fail("LAN_CONFIG_INVALID", "受信网络配置无法读取，未启动后台或改换端口；原文件保持不变。")
+		}
 		// A damaged/unreadable LAN config remains untouched. T2 starts Local on the
 		// bounded host port and reports LAN_START_FAILED through its read-only status.
 		if err == nil {
@@ -518,6 +524,7 @@ func run() error {
 	root := filepath.Dir(exe)
 	request := ""
 	stop := false
+	logon := false
 	for i := 1; i < len(os.Args); i++ {
 		switch os.Args[i] {
 		case "--instance":
@@ -528,9 +535,17 @@ func run() error {
 			request = os.Args[i]
 		case "--stop":
 			stop = true
+		case "--logon":
+			if logon || freshTrial != "1" {
+				return fail("ARGUMENT", "不支持的登录启动参数。")
+			}
+			logon = true
 		default:
 			return fail("ARGUMENT", "不支持的启动参数。")
 		}
+	}
+	if logon && (request == "" || !safeLogonPath(request)) {
+		return fail("LOGON_IDENTITY_REJECTED", "登录启动必须指定安装时绑定的本地实例。")
 	}
 	request, e = installedInstance(root, request)
 	if e != nil {
@@ -540,6 +555,14 @@ func run() error {
 	if e != nil {
 		return e
 	}
+	if logon {
+		remembered, err := preference("InstallRoot")
+		binding := filepath.Join(filepath.Dir(root), "uninstall", "instance-binding.ini")
+		_, planErr := logonCommand(exe, instance, err == nil && strings.EqualFold(remembered, filepath.Dir(root)), noReparse(exe) && noReparse(instance) && noReparse(binding))
+		if planErr != nil || stop {
+			return fail("LOGON_IDENTITY_REJECTED", "登录启动身份不匹配，未启动后台。")
+		}
+	}
 	class := "KSESSION_" + digest([]byte(strings.ToLower(instance)))
 	lock, e := syscall.CreateFile(ptr(filepath.Join(instance, ".launcher.lock")), syscall.GENERIC_READ|syscall.GENERIC_WRITE, 0, nil, syscall.OPEN_ALWAYS, syscall.FILE_ATTRIBUTE_NORMAL, 0)
 	if e != nil {
@@ -548,7 +571,7 @@ func run() error {
 		}
 		return fail("INSTANCE_BUSY", "实例正被另一启动器或会话占用，或目录无法写入。未启动第二个后台。")
 	}
-	c := &controller{root: root, exe: exe, instance: instance, class: class, lock: lock}
+	c := &controller{root: root, exe: exe, instance: instance, class: class, lock: lock, suppressUI: logon}
 	active = c
 	defer c.cleanup()
 	if stop {
@@ -607,6 +630,15 @@ func main() {
 		os.Exit(checkInstallInstance(os.Args[2], os.Args[3], os.Args[1] == "--prepare-install-instance"))
 	}
 	if e := run(); e != nil {
+		// Unattended logon errors exit after run's owned-child cleanup. Never
+		// strand the logon session in an unbounded modal dialog.
+		if freshTrial == "1" {
+			for _, arg := range os.Args[1:] {
+				if arg == "--logon" {
+					os.Exit(1)
+				}
+			}
+		}
 		if f, ok := e.(*fault); ok {
 			message(f.Message + "\r\n错误编号：" + f.Code)
 		} else {
