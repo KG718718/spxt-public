@@ -12,11 +12,12 @@
 
 ## Hosted账本
 
-Candidate1/3；FinalQA0/1；旧Full/U27/LC01/Diagnostic0。每次登记source/run/attempt/固定阶段/cleanup；45分钟上限。QA仅首完整Candidate PASS后下载同一个EXE。
+Candidate2/3；FinalQA0/1；旧Full/U27/LC01/Diagnostic0。每次登记source/run/attempt/固定阶段/cleanup；45分钟上限。QA仅首完整Candidate PASS后下载同一个EXE。
 
 | 槽位 | 受测 source / 控制提交 | Run / attempt | 当前结论 | cleanup |
 |---|---|---|---|---|
 | C1 | 76f574cad1ba68f488a406ffa87ef9ebcb0568be / 71ce988199b13a8ab47d4191cae66a2a0e09a087 | 38566205060 / 1 | FAIL — BUILD / LAUNCHER / COMMAND_FAILED；Artifact11896545773，安装未到达 | 10/10 true，Master 白名单验证 PASS |
+| C2 | ca8302c32976645a83174d055dc22d1f620e5ea3 / 6483c9108ad3e7c764eba0a262836f0ea428b026 | 38572354045 / 1 | IN_PROGRESS；SOURCE核验通过，尚无完整验收结论 | PENDING |
 
 原所有Execution/QA和worktrees冻结保留；禁止普通sub-agent、后代Thread、push、main/tag/Release、内部SPXT及清理未知文件。
 
@@ -32,4 +33,8 @@ T1/T2 已独立 Review 并集成。三方 HEAD 核验后，仅创建 C1 单文�
 
 ## C1 后普通工程返工
 
-历史 C1 FAIL 保留；安全报告证明全部 owned cleanup，故自动回原 FRESH-T2 原 bea7 任务树做本地最小定位/修复，不另开线程/工作树。原 LAUNCHER 跨多个命令、未上传子命令日志，C1根因不能唯一断言。现已实际复现合法alias被词法dependency guard误拒，改为Fresh物理目录及严格每段/边界校验，并修复八个固定实际构建子阶段报告；不是C1唯一原因已证。Master实际固定Node24.21/EXE SHA核验、Fresh118+兼容20=138/138 fail0skip0与PS/CJS/diff-check通过，7文件整合后与受审68880d6源码完全相同。Master 原 LAN44 本地44/44不是Hosted等价证明，详见 C1-RESULT.md和C1-REWORK-MASTER-REVIEW.md。C2 尚未触发，FinalQA仍0/1，未有可交付 EXE；不因剩余次数直接 retry。
+历史 C1 FAIL 保留；安全报告证明全部 owned cleanup，故自动回原 FRESH-T2 原 bea7 任务树做本地最小定位/修复，不另开线程/工作树。原 LAUNCHER 跨多个命令、未上传子命令日志，C1根因不能唯一断言。现已实际复现合法alias被词法dependency guard误拒，改为Fresh物理目录及严格每段/边界校验，并修复八个固定实际构建子阶段报告；不是C1唯一原因已证。Master实际固定Node24.21/EXE SHA核验、Fresh118+兼容20=138/138 fail0skip0与PS/CJS/diff-check通过，7文件整合后与受审68880d6源码完全相同。Master 原 LAN44 本地44/44不是Hosted等价证明，详见 C1-RESULT.md和C1-REWORK-MASTER-REVIEW.md。C2 已按表中央触发，FinalQA仍0/1，未有可交付 EXE；不因剩余次数直接 retry。
+
+## Git 同步例外
+
+普通 Git HTTPS 一度 reset/无法连接；现有已认证 GitHub API 仍可用。Master逐个核验相同blob/tree/commit SHA后，仅对fresh开发ref做 force=false 快进，并据复读远端更新对应origin跟踪；本地/跟踪/GitHub SHA一致。没有改main/tag/Release，也没有重写提交或绕过Review。C2控制提交同SHA发布触发独立push工作流，未新增Diagnostic或run_attempt。
