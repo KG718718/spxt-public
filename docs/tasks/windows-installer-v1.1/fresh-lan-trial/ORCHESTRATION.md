@@ -16,7 +16,7 @@ Candidate1/3；FinalQA0/1；旧Full/U27/LC01/Diagnostic0。每次登记source/ru
 
 | 槽位 | 受测 source / 控制提交 | Run / attempt | 当前结论 | cleanup |
 |---|---|---|---|---|
-| C1 | 76f574cad1ba68f488a406ffa87ef9ebcb0568be / 71ce988199b13a8ab47d4191cae66a2a0e09a087 | 38566205060 / 1 | IN_PROGRESS；SOURCE 已通过，BUILD/实际验收未得最终结论 | PENDING |
+| C1 | 76f574cad1ba68f488a406ffa87ef9ebcb0568be / 71ce988199b13a8ab47d4191cae66a2a0e09a087 | 38566205060 / 1 | FAIL — BUILD / LAUNCHER / COMMAND_FAILED；Artifact11896545773，安装未到达 | 10/10 true，Master 白名单验证 PASS |
 
 原所有Execution/QA和worktrees冻结保留；禁止普通sub-agent、后代Thread、push、main/tag/Release、内部SPXT及清理未知文件。
 
@@ -29,3 +29,7 @@ T1 的授权前 bind 缺陷已由原 Thread 最小返工闭合，Master 实际�
 ## 首次 Candidate 准入
 
 T1/T2 已独立 Review 并集成。三方 HEAD 核验后，仅创建 C1 单文件 trigger 控制提交；受测 source 绑定其已 Review 父提交，控制提交单列。旧 Full/LC01/U27 均不得触发。真实 ISS 编译、实际安装/API/ABI、安装后浏览器与全部 F01—F09 首次由 Candidate 验证；FAIL 先读固定报告/cleanup，触及强制停止则止损，否则仅在实际修复与复测/Review 后使用 C2/C3。首完整 PASS 即独立 QA 同 EXE，QA 前不创建虚假 PASS 或用户交付包。
+
+## C1 后普通工程返工
+
+历史 C1 FAIL 保留；安全报告证明全部 owned cleanup，故自动回原 FRESH-T2 原 bea7 任务树做本地最小定位/修复，任务状态 REWORK，不另开线程/工作树。当前 LAUNCHER 子阶段仍跨多个命令，根因不能唯一断言。Master 原 LAN44 本地44/44 PASS不是 Hosted等价证明，详见 C1-RESULT.md。C2 尚未触发，FinalQA仍0/1，未有可交付 EXE；不因剩余次数直接 retry。
