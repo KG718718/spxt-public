@@ -5,7 +5,7 @@
 | Task | 负责 | Thread/worktree/branch | 状态 | 依赖 |
 |---|---|---|---|---|
 | FRESH-T1 | 自动物理Private发现与登录自启的既有机制核对/实施/本地反例 | 01a13945-ee6b-75b0-94bd-d2dc1e367e17 / E:\\CodexWorkspace\\CodexWorktrees\\7b54\\public-source / codex/fresh-t1-deployment | RETURNED→REWORK→RETURNED→REVIEWED→INTEGRATED 7ffc019/4f846bf；基线d293f0a | T2构建/Startup/CI接线待验；详细FRESH-T1-MASTER-REVIEW.md |
-| FRESH-T2 | fresh-only Setup、实际安装浏览器验收/报告/独立workflow | 01a13948-7433-7571-8330-a09bfd12a0dc / E:\\CodexWorkspace\\CodexWorktrees\\bea7\\public-source / codex/fresh-t2-installer-ci | C1返工RETURNED→REVIEWED→INTEGRATED 5daa62c；受审68880d6c945b533df95af96c3bc59085c0b40bf3；首轮b9028c1/278858d/0a184d5保留 | C1-REWORK-MASTER-REVIEW.md；C2准入 |
+| FRESH-T2 | fresh-only Setup、实际安装浏览器验收/报告/独立workflow | 01a13948-7433-7571-8330-a09bfd12a0dc / E:\\CodexWorkspace\\CodexWorktrees\\bea7\\public-source / codex/fresh-t2-installer-ci | C2返工RETURNED→REVIEWED→INTEGRATED d76e22b7；受审184308ec9ab3b96e138e8348b56cb67864da0f38；C1及首轮映射保留 | C2-REWORK-MASTER-REVIEW.md；最后C3准入 |
 | FRESH-QA | 独立审查及同EXE最终QA | 待登记 | PENDING | Candidate完整PASS |
 
 先核对T1能否在原安全/权限/技术栈中闭合，不允许以新目标重开无限PS/Native诊断。首次网络预选不等于信任/开放。主控Review后才整合；返回失败由read_thread→RESULT→worktree/local commit兜底，登记DELIVERY_RECOVERED，不伪称主动送达。
@@ -41,4 +41,4 @@ T1/T2 已独立 Review 并集成。三方 HEAD 核验后，仅创建 C1 单文�
 
 ## C2 后原线程返工
 
-原FRESH-T2再次REWORK，精确只处理LAUNCHER_UNIT四步调用及恢复环境；C2实际子阶段已保留，仍不得猜首个测试/报告根因。源卡及预算见C2-RESULT.md。最后C3留待实际本地闭合、修复与Master独立Review，当前不触发，不借QA/旧预算；未知资源/安全问题仍立即止损。
+原FRESH-T2再次返工，精确只处理LAUNCHER_UNIT四步调用及恢复环境，正式RETURN已独立Review并整合。原source污染环境继承与安全子结果丢失已用实际mock反例证明；新owned物理环境/明确Go0离线参数、finally恢复及固定white diagnostics闭合，旧28/strictreport零改。Master固定Node24.21独立Fresh123+旧compat20=143/143 fail0skip0，PS/CJS/diff-check PASS，整合源码与受审184308完全一致；实际原Go28与完整builder重放来源证据保留。C2真实首因仍UNKNOWN，不将这些缺口追认为C2唯一原因。源卡及预算见C2-RESULT.md及C2-REWORK-MASTER-REVIEW.md。最后C3已具完整Candidate准入，须三方HEAD核验后中央触发；不是新增Diagnostic，不借QA/旧预算，任何C3 FAIL即预算STOP。
