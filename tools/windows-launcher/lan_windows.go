@@ -497,6 +497,20 @@ type lanRefreshResult struct {
 }
 
 var elevateFirewallBoundary = func(c *controller, config *lanConfig) bool { return c.elevateFirewall(config) }
+var freshNetworkBoundary = func(c *controller, config *lanConfig) bool {
+	discovery, err := c.discoverPreferred(config.InterfaceName)
+	return err == nil && discovery != nil && discovery.Status == "SELECTED" && matchesLANBinding(config, discovery.Selected)
+}
+var freshFirewallStatusBoundary = func(c *controller, config *lanConfig) bool { return c.firewallAllowed(config) }
+var freshStartConfigBoundary = func(c *controller) (*lanConfig, error) { return c.readLANConfig() }
+
+func (c *controller) authorizeFreshBeforeBind(config *lanConfig, allowElevation bool) error {
+	return freshPrebindAuthorization(config, allowElevation,
+		func() bool { return freshNetworkBoundary(c, config) },
+		func() bool { return freshFirewallStatusBoundary(c, config) },
+		func() bool { return elevateFirewallBoundary(c, config) })
+}
+
 var lanTransitionConfigureBoundary = func(c *controller, command, adapter string) (*lanConfig, error) {
 	switch command {
 	case "configure":
@@ -519,6 +533,13 @@ func startExactLANConfig(c *controller, expected *lanConfig) error {
 		return fmt.Errorf("LAN_CONFIG_ABSENT")
 	}
 	if err := lanTransitionStartBoundary(c); err != nil {
+		if freshTrial == "1" {
+			if c.child != nil {
+				c.child.stop()
+			}
+			c.child = nil
+			c.ready = false
+		}
 		return err
 	}
 	if c.lanConfig == nil || !sameLANConfig(c.lanConfig, expected) || c.child == nil || c.child.port != expected.Port || !c.ready {
@@ -794,9 +815,14 @@ func (c *controller) startLANTransition(command, adapter string) {
 		work.lanConfig = next
 		var startErr error
 		if next != nil {
-			startErr = startExactLANConfig(work, next)
+			if freshTrial == "1" {
+				startErr = work.authorizeFreshBeforeBind(next, command == "enable" && err == nil && !restoredBeforeStart)
+			}
+			if startErr == nil {
+				startErr = startExactLANConfig(work, next)
+			}
 		}
-		if command == "enable" && startErr == nil && next != nil && !work.firewallAllowed(next) && !elevateFirewallBoundary(work, next) {
+		if freshTrial != "1" && command == "enable" && startErr == nil && next != nil && !work.firewallAllowed(next) && !elevateFirewallBoundary(work, next) {
 			startErr = fmt.Errorf("FIREWALL_BLOCKED")
 		}
 		if next != nil && startErr != nil {

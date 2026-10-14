@@ -108,6 +108,34 @@ func sameLANConfig(left, right *lanConfig) bool {
 	return *left.Binding == *right.Binding
 }
 
+// Fresh callers must complete this gate before starting any enabled backend.
+// Startup/recovery pass allowElevation=false; only an explicit enable transition
+// may request UAC. A successful elevation is never itself a status proof.
+func freshPrebindAuthorization(config *lanConfig, allowElevation bool, network, status, elevate func() bool) error {
+	if config == nil {
+		return fmt.Errorf("LAN_CONFIG_ABSENT")
+	}
+	if !config.Enabled {
+		return nil
+	}
+	if network == nil || !network() {
+		return fmt.Errorf("NETWORK_CHANGED")
+	}
+	if status != nil && status() {
+		return nil
+	}
+	if !allowElevation || elevate == nil || !elevate() {
+		return fmt.Errorf("FIREWALL_BLOCKED")
+	}
+	if !network() {
+		return fmt.Errorf("NETWORK_CHANGED")
+	}
+	if status == nil || !status() {
+		return fmt.Errorf("FIREWALL_BLOCKED")
+	}
+	return nil
+}
+
 func matchesLANBinding(config *lanConfig, candidate *lanCandidate) bool {
 	if config == nil || candidate == nil {
 		return false
@@ -407,4 +435,19 @@ func launcherPortRange(config *lanConfig) (int, int) {
 }
 func keepControlForStartFailure(config *lanConfig, err error) bool {
 	return config != nil && err != nil && err.Error() == "PORT_OCCUPIED"
+}
+
+func freshApprovedEnvironment(environment []string, config *lanConfig) ([]string, error) {
+	if freshTrial != "1" || config == nil || !config.Enabled {
+		return environment, nil
+	}
+	b := config.Binding
+	if b == nil || !matchesLANBinding(config, &lanCandidate{AdapterID: b.AdapterID, InterfaceName: config.InterfaceName, Name: config.InterfaceName, Address: b.Address, PrefixLength: b.PrefixLength, Subnet: b.Subnet}) {
+		return nil, fmt.Errorf("LAN_CONFIG_INVALID")
+	}
+	data, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+	return append(environment, "KSESSION_FRESH_LAN_APPROVED_CONFIG="+string(data)), nil
 }

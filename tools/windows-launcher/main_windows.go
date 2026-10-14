@@ -123,7 +123,7 @@ func (ch *ownedChild) stop() {
 		ch.process = 0
 	}
 }
-func spawnNode(node, app, instance string, port int, lanMode bool) (*ownedChild, error) {
+func spawnNode(node, app, instance string, port int, lanMode bool, approved ...*lanConfig) (*ownedChild, error) {
 	j, e := call(kernel32, "CreateJobObjectW", 0, 0)
 	if j == 0 {
 		return nil, e
@@ -140,7 +140,15 @@ func spawnNode(node, app, instance string, port int, lanMode bool) (*ownedChild,
 		syscall.CloseHandle(syscall.Handle(j))
 		return nil, rootError
 	}
-	env := utf16.Encode([]rune(strings.Join(childEnvironmentFor(instance, app, port, systemRoot, lanMode), "\x00") + "\x00\x00"))
+	environment := childEnvironmentFor(instance, app, port, systemRoot, lanMode)
+	if len(approved) == 1 {
+		environment, e = freshApprovedEnvironment(environment, approved[0])
+		if e != nil {
+			syscall.CloseHandle(syscall.Handle(j))
+			return nil, e
+		}
+	}
+	env := utf16.Encode([]rune(strings.Join(environment, "\x00") + "\x00\x00"))
 	command := syscall.EscapeArg(node) + " --no-addons " + syscall.EscapeArg(filepath.Join(app, "server.js"))
 	si := syscall.StartupInfo{Cb: uint32(unsafe.Sizeof(syscall.StartupInfo{})), Flags: 1, ShowWindow: 0}
 	var pi syscall.ProcessInformation
@@ -454,7 +462,13 @@ func (c *controller) start() error {
 	app := filepath.Join(c.root, "app")
 	first, last := launcherPortRange(nil)
 	if c.lanEnabled() {
-		config, err := c.readLANConfig()
+		var config *lanConfig
+		var err error
+		if freshTrial == "1" {
+			config, err = freshStartConfigBoundary(c)
+		} else {
+			config, err = c.readLANConfig()
+		}
 		if freshTrial == "1" && err != nil {
 			return fail("LAN_CONFIG_INVALID", "受信网络配置无法读取，未启动后台或改换端口；原文件保持不变。")
 		}
@@ -467,6 +481,11 @@ func (c *controller) start() error {
 		}
 		if err == nil && config != nil {
 			first, last = launcherPortRange(config)
+			if freshTrial == "1" {
+				if gateErr := c.authorizeFreshBeforeBind(config, false); gateErr != nil {
+					return fail(gateErr.Error(), "受信网络或有效防火墙授权未确认，未开放 LAN；启动不会自动请求 UAC。")
+				}
+			}
 		}
 	}
 	for port := first; port <= last; port++ {
@@ -478,7 +497,7 @@ func (c *controller) start() error {
 			continue
 		}
 		l.Close()
-		ch, e := spawnNode(node, app, c.instance, port, c.lanEnabled())
+		ch, e := spawnNode(node, app, c.instance, port, c.lanEnabled(), c.lanConfig)
 		if e != nil {
 			return fail("SERVER_START_FAILED", "后台无法启动，请检查安全软件提示和 launcher.log。")
 		}
