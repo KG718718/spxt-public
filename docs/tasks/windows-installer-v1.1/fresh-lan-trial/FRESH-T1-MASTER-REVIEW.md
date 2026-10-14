@@ -23,3 +23,7 @@ Fresh Node marker在既有network源码固化，false/缺省env不能降级；�
 T2在manifest前唯一替换marker、保留原38；Launcher -X main.freshTrial=1与helper -X main.buildFreshTrial=1、全部旧身份anchor一致。仅Fresh当前用户Startup固定shortcut/目标/参数/工作目录、collision拒绝及owned回滚由T2实现，最低权限不变。Windows登录实际运行、真实普通用户系统模块、GUI/UAC/物理Private/Firewall/双设备/第二Launcher均HUMAN_PENDING；旧P02唯一根因未证，全部历史FAIL原样。
 
 Candidate0/3、QA0/1；旧Full/LC01/U27/Diagnostic0。不允许仅T1局部PASS触发Hosted；须T2完整本地/独立Review及来源同步。未访问内部SPXT、main/tag/Release、真实业务或真实网络，没有新增架构/服务/管理员安装。
+
+## 后续测试组织一致性
+
+T2实际复验发现旧beta4静态扫描会计入tagged Go文件、把新增测试误算为旧13项。原T1将四份新测试精确迁至tools/tests/fresh-lan-trial/*.go.in，来源79d9355、整合4f846bf，Git四项100%rename/0新增删除行，生产与原测试期望零改。T2用独立Go overlay实际加载全部新检查；迁移不能冒充重跑。原beta4目标计数回归已由T2恢复20/20，Master待最终集成复验。T1额外beta3旧正则FAIL如实保留；Master核对原beta3测试blob0503fa2及原Launcher build.ps1 blobff9343c在初始3f4f630与当前T1整合代码完全相同，说明该正则失败是既有旧路线不匹配，不等于新trial通过或新生产失败；未改旧断言。
