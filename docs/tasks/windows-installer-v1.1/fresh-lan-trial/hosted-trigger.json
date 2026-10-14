@@ -1,10 +1,10 @@
 {
   "schema": 1,
   "mode": "CANDIDATE",
-  "slot": "C1",
-  "reviewedSource": "76f574cad1ba68f488a406ffa87ef9ebcb0568be",
-  "testedSource": "76f574cad1ba68f488a406ffa87ef9ebcb0568be",
-  "approvalMarker": "FRESH_TRIAL_MASTER_REVIEWED_C1_76f574cad1ba68f488a406ffa87ef9ebcb0568be",
+  "slot": "C2",
+  "reviewedSource": "ca8302c32976645a83174d055dc22d1f620e5ea3",
+  "testedSource": "ca8302c32976645a83174d055dc22d1f620e5ea3",
+  "approvalMarker": "FRESH_TRIAL_MASTER_REVIEWED_C2_ca8302c32976645a83174d055dc22d1f620e5ea3",
   "candidateRunId": "",
   "candidateArtifactId": "",
   "candidateSetupSha256": ""
