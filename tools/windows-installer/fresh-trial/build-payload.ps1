@@ -81,15 +81,40 @@ Invoke-KSessionWithRestoredEnvironment $taskLauncherBuildVariables {
   if($LASTEXITCODE -ne 0){throw 'LAN Launcher build failed'}
 }
 Build-Stage 'LAUNCHER_UNIT'
+$taskLauncherUnitVariables=@('GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','TEMP','TMP','GOTMPDIR','GOCACHE')
+$taskLauncherUnitSnapshot=Save-KSessionProcessEnvironment $taskLauncherUnitVariables
+$taskLauncherUnitEnvironment=$null
+try{
+Build-Stage 'LAUNCHER_UNIT_ENVIRONMENT'
+$taskLauncherUnitEnvironment=Enter-KSessionLanCandidateTestEnvironment (Resolve-KSessionFirewallPhysicalPath $taskWork) ('candidate-launcher-unit-'+$PID+'-'+[guid]::NewGuid().ToString('N')+'-env')
+$env:GOOS='windows';$env:GOARCH='amd64';$env:CGO_ENABLED='0';$env:GOTOOLCHAIN='local';$env:GOPROXY='off';$env:GOSUMDB='off';$env:GOENV='off';$env:GOWORK='off';$env:GOFLAGS='';$env:GOEXPERIMENT=''
+Build-Stage 'LAUNCHER_UNIT_POLICY'
 $taskLauncherUnitTests=@(& $taskNode $taskGoTestPolicy 'LAUNCHER'|ConvertFrom-Json)
 if($LASTEXITCODE -ne 0){throw 'Fixed Launcher test policy failed'}
 $taskLauncherRaw=Join-Path $taskWork 'launcher-tests.jsonl';$taskLauncherReport=Join-Path $taskWork 'launcher-unit-report.json'
+Build-Stage 'LAUNCHER_UNIT_GO_JSON'
 Push-Location (Join-Path $taskRepo 'tools/windows-launcher')
 try{
   & $taskGo test -json -count=1 -run ('^(' + ($taskLauncherUnitTests -join '|') + ')$') . | Set-Content -Encoding utf8 -LiteralPath $taskLauncherRaw
-  if($LASTEXITCODE -ne 0){throw 'Explicit Launcher unit tests failed'}
+  $taskLauncherUnitExit=$LASTEXITCODE
 }finally{Pop-Location}
+if($BuildDiagnostic){
+  & $taskNode (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/unit-diagnostic.cjs') $taskLauncherRaw $BuildDiagnostic $taskLauncherUnitExit
+  if($LASTEXITCODE -ne 0){throw 'Explicit Launcher unit evidence failed'}
+}
+if($taskLauncherUnitExit -ne 0){throw 'Explicit Launcher unit tests failed'}
+Build-Stage 'LAUNCHER_UNIT_REPORT'
 Run-Checked $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),$taskLauncherRaw,$taskLauncherReport,'LAUNCHER')+$taskLauncherUnitTests)
+}finally{
+  try{if($null-ne$taskLauncherUnitEnvironment){Exit-KSessionLanCandidateTestEnvironment $taskLauncherUnitEnvironment}}finally{
+  Restore-KSessionProcessEnvironment $taskLauncherUnitSnapshot
+  if(!(Test-KSessionProcessEnvironmentRestored $taskLauncherUnitSnapshot)){
+    Build-Stage 'LAUNCHER_UNIT_ENVIRONMENT'
+    if($BuildDiagnostic){[IO.File]::WriteAllText($BuildDiagnostic,(@{stage='LAUNCHER_UNIT_ENVIRONMENT';classification='ENV_RESTORE_FAILED';script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
+    throw 'Launcher unit environment restoration failed'
+  }
+  }
+}
 Build-Stage 'PAYLOAD_ASSEMBLY'
 Run-Checked $taskNode @($taskPackageScript,'finish',$taskRoot,$taskLauncher,$taskHelper,$taskGit,$taskRepo,$Commit)
 Build-Stage 'LAN_NODE'
