@@ -20,6 +20,7 @@ function Stop-With([int]$exit,[string]$code){[Console]::Error.WriteLine($code);e
 try {
   $action=$env:KSESSION_FW_ACTION;$interfaceName=$env:KSESSION_FW_INTERFACE_NAME;$portText=$env:KSESSION_FW_PORT
   $program=$env:KSESSION_FW_PROGRAM
+  $freshTrial=($env:KSESSION_FW_FRESH_TRIAL -ceq '1')
   $managedRuleMutationStarted=$false
   $managedRule=$null
   if($action -notin @('status','enable')){Stop-With 20 'INVALID_INVOCATION'}
@@ -33,6 +34,7 @@ try {
   $adapters=@(Get-NetAdapter -IncludeHidden -ErrorAction Stop | Where-Object {[string]$_.Name -ceq $interfaceName})
   if($adapters.Count -ne 1){Stop-With 23 'ADAPTER_NOT_FOUND'}
   $adapter=$adapters[0]
+  if($freshTrial -and ($adapter.HardwareInterface -isnot [bool] -or $adapter.HardwareInterface -ne $true -or $adapter.Virtual -isnot [bool] -or $adapter.Virtual -ne $false -or $adapter.Hidden -isnot [bool] -or $adapter.Hidden -ne $false)){Stop-With 23 'ADAPTER_UNSAFE'}
   if($adapter.Status -ne 'Up' -or $adapter.HardwareInterface -ne $true -or $adapter.Virtual -eq $true -or $adapter.Hidden -eq $true -or $adapter.InterfaceType -notin @(6,71)){Stop-With 23 'ADAPTER_UNSAFE'}
   if(([string]$adapter.Name+' '+[string]$adapter.InterfaceDescription) -match '(?i)(vpn|virtual|hyper-v|wsl|docker|tunnel|loopback|vethernet|(^|[^a-z])(tap|tun)([^a-z]|$))'){Stop-With 23 'ADAPTER_UNSAFE'}
   $profiles=@(Get-NetConnectionProfile -InterfaceIndex $adapter.InterfaceIndex -ErrorAction Stop)
@@ -53,6 +55,12 @@ try {
   $subnet=('{0}.{1}.{2}.{3}/{4}' -f (($network -shr 24) -band 255),(($network -shr 16) -band 255),(($network -shr 8) -band 255),($network -band 255),$prefix)
   $routes=@(Get-NetRoute -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction Stop | Where-Object {$_.DestinationPrefix -eq $subnet})
   if($routes.Count -lt 1){Stop-With 23 'SUBNET_ROUTE_MISSING'}
+  if($freshTrial){
+    [guid]$actualGuid=[guid]::Empty
+    if(-not [guid]::TryParse([string]$adapter.InterfaceGuid,[ref]$actualGuid) -or $actualGuid -eq [guid]::Empty -or $actualGuid.ToString().ToLowerInvariant() -cne $env:KSESSION_FW_ADAPTER_ID -or [string]$address.IPAddress -cne $env:KSESSION_FW_ADDRESS -or [string]$prefix -cne $env:KSESSION_FW_PREFIX -or $subnet -cne $env:KSESSION_FW_SUBNET){Stop-With 23 'NETWORK_BINDING_CHANGED'}
+    $routes=@($routes | Where-Object {$_.NextHop -eq '0.0.0.0' -and $_.State -eq 'Alive'})
+    if($routes.Count -lt 1){Stop-With 23 'SUBNET_ROUTE_MISSING'}
+  }
   $ruleName='KSESSION-LAN-Host-v1';$displayName='K⁺-SESSION LAN Host (Private)';$group='K⁺-SESSION';$description='KSESSION_MANAGED_LAN_RULE_V1'
   function Test-RuleOwned($candidate){
     return ($null -ne $candidate -and $candidate.DisplayName -eq $displayName -and $candidate.Group -eq $group -and $candidate.Description -eq $description)
@@ -164,6 +172,9 @@ func stringsEqualFold(a, b string) bool {
 }
 
 func runFirewall(req request, install trustedInstall) (int, []byte, error) {
+	if buildFreshTrial == "1" && !validNetworkBinding(req.Binding) {
+		return exitConfig, nil, reject(exitConfig, "LAN_CONFIG_MISMATCH")
+	}
 	powershell, err := systemPowerShell()
 	if err != nil {
 		return exitBlocked, nil, err
@@ -180,6 +191,9 @@ func runFirewall(req request, install trustedInstall) (int, []byte, error) {
 		"PSModulePath=" + filepath.Join(systemDir, "WindowsPowerShell", "v1.0", "Modules"),
 		"KSESSION_FW_ACTION=" + req.Action, "KSESSION_FW_INTERFACE_NAME=" + req.InterfaceName,
 		"KSESSION_FW_PORT=" + strconv.Itoa(req.Port), "KSESSION_FW_PROGRAM=" + install.NodePath,
+	}
+	if buildFreshTrial == "1" {
+		cmd.Env = append(cmd.Env, "KSESSION_FW_FRESH_TRIAL=1", "KSESSION_FW_ADAPTER_ID="+req.Binding.AdapterID, "KSESSION_FW_ADDRESS="+req.Binding.Address, "KSESSION_FW_PREFIX="+strconv.Itoa(req.Binding.PrefixLength), "KSESSION_FW_SUBNET="+req.Binding.Subnet)
 	}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr

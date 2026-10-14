@@ -4,8 +4,8 @@ const {runtimeState}=require('./public-runtime-state');
 const {createBootstrapHandler}=require('./public-bootstrap-http');
 const {createConfigStore}=require('./public-config-store');
 const {createConfigHandler}=require('./public-config-http');
-const {createLanConfigStore,CONFIG_FILENAME}=require('./public-lan-config');
-const {discoverWindowsLan}=require('./public-lan-network');
+const {createLanConfigStore,CONFIG_FILENAME,matchesTrustedConfig}=require('./public-lan-config');
+const {discoverWindowsLan,freshTrialEnabled}=require('./public-lan-network');
 const {STATUS:createLanStatus,createRequestGate,discoverLanInWorker,createLanHostController}=require('./public-lan-server');
 const {taxRateForCalculation}=require('./tax-config');
 const invoicePolicy=require('./invoice-access-policy');
@@ -67,7 +67,7 @@ const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.KSESSION_HOST || '127.0.0.1';
 const LAN_MODE_VALUE = process.env.KSESSION_LAN_MODE;
 if (LAN_MODE_VALUE !== undefined && !['0','1'].includes(LAN_MODE_VALUE)) throw Error('Invalid LAN mode.');
-const LAN_MODE = LAN_MODE_VALUE === '1';
+const LAN_MODE = freshTrialEnabled() || LAN_MODE_VALUE === '1';
 if (!Number.isInteger(PORT) || PORT<0 || PORT>65535 || HOST !== '127.0.0.1') throw Error('Invalid server host or port.');
 const DATA_FILE = process.env.KSESSION_DATA_FILE ? path.resolve(process.env.KSESSION_DATA_FILE) : path.join(__dirname, 'data.json');
 const CONFIG_FILE = process.env.KSESSION_CONFIG_FILE ? path.resolve(process.env.KSESSION_CONFIG_FILE) : path.join(__dirname, 'config.json');
@@ -9654,7 +9654,10 @@ async function startServer(){
                 const monitor=()=>{
                     lanReconcile=(async()=>{
                         let next;
-                        try{next=lanConfig.enabled?await discoverLanInWorker({interfaceName:lanConfig.interfaceName}):{status:'LAN_DISABLED',selected:null,candidates:[]};}
+                        try{
+                            if(freshTrialEnabled()&&!matchesTrustedConfig(lanConfig,createLanConfigStore({instanceDirectory:INSTANCE_DIRECTORY}).load()))throw Error('LAN_CONFIG_CHANGED');
+                            next=lanConfig.enabled?await discoverLanInWorker({interfaceName:lanConfig.interfaceName}):{status:'LAN_DISABLED',selected:null,candidates:[]};
+                        }
                         catch{next={status:'LAN_START_FAILED',selected:null,candidates:[]};}
                         await lanController.reconcile(next,lanConfig);
                     })().catch(()=>lanController?.healthFailed()).finally(()=>{

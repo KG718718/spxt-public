@@ -27,11 +27,33 @@ const (
 var virtualInterfaceHint = regexp.MustCompile(`(?i)(\b(vpn|tunnel|tap|tun|wireguard|docker|wsl|virtual|vmware|virtualbox|loopback|bluetooth|teredo|isatap|6to4)\b|hyper[- ]?v|vethernet)`)
 
 type lanCandidate struct {
+	AdapterID     string `json:"adapterId,omitempty"`
 	InterfaceName string `json:"interfaceName"`
 	Name          string `json:"name"`
 	Address       string `json:"address"`
 	PrefixLength  int    `json:"prefixLength"`
 	Subnet        string `json:"subnet"`
+}
+
+func candidateKeys() []string {
+	keys := []string{"interfaceName", "name", "address", "prefixLength", "subnet"}
+	if freshTrial == "1" {
+		keys = append(keys, "adapterId")
+	}
+	return keys
+}
+func serverCandidateKeys() []string {
+	keys := []string{"interfaceName", "address", "prefixLength", "subnet"}
+	if freshTrial == "1" {
+		keys = append(keys, "adapterId")
+	}
+	return keys
+}
+
+var adapterGUID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+
+func validAdapterGUID(value string) bool {
+	return adapterGUID.MatchString(value) && value != "00000000-0000-0000-0000-000000000000"
 }
 
 type lanDiscovery struct {
@@ -43,10 +65,58 @@ type lanDiscovery struct {
 }
 
 type lanConfig struct {
-	Schema        int    `json:"schema"`
-	Enabled       bool   `json:"enabled"`
-	InterfaceName string `json:"interfaceName"`
-	Port          int    `json:"port"`
+	Schema        int         `json:"schema"`
+	Enabled       bool        `json:"enabled"`
+	InterfaceName string      `json:"interfaceName"`
+	Port          int         `json:"port"`
+	Binding       *lanBinding `json:"binding,omitempty"`
+}
+
+type lanBinding struct {
+	AdapterID    string `json:"adapterId"`
+	Address      string `json:"address"`
+	PrefixLength int    `json:"prefixLength"`
+	Subnet       string `json:"subnet"`
+}
+
+func configKeys() []string {
+	keys := []string{"schema", "enabled", "interfaceName", "port"}
+	if freshTrial == "1" {
+		keys = append(keys, "binding")
+	}
+	return keys
+}
+
+func exactNestedBindingKeys(data []byte) error {
+	var value map[string]json.RawMessage
+	if err := decodeStrictJSON(data, &value); err != nil {
+		return err
+	}
+	return exactNestedKeys(value["config"], "binding", "adapterId", "address", "prefixLength", "subnet")
+}
+
+func sameLANConfig(left, right *lanConfig) bool {
+	if left == nil || right == nil {
+		return left == right
+	}
+	if left.Schema != right.Schema || left.Enabled != right.Enabled || left.InterfaceName != right.InterfaceName || left.Port != right.Port {
+		return false
+	}
+	if left.Binding == nil || right.Binding == nil {
+		return left.Binding == right.Binding
+	}
+	return *left.Binding == *right.Binding
+}
+
+func matchesLANBinding(config *lanConfig, candidate *lanCandidate) bool {
+	if config == nil || candidate == nil {
+		return false
+	}
+	if config.Binding == nil {
+		return freshTrial != "1"
+	}
+	b := config.Binding
+	return validAdapterGUID(b.AdapterID) && b.AdapterID == candidate.AdapterID && validCandidate(candidate) && config.InterfaceName == candidate.InterfaceName && b.Address == candidate.Address && b.PrefixLength == candidate.PrefixLength && b.Subnet == candidate.Subnet
 }
 
 type lanConfigReply struct {
@@ -94,6 +164,9 @@ func validCandidate(value *lanCandidate) bool {
 	if value == nil || !validInterfaceName(value.InterfaceName) || value.Name != value.InterfaceName || !privateIPv4(value.Address) || value.PrefixLength < 8 || value.PrefixLength > 30 {
 		return false
 	}
+	if freshTrial == "1" && !validAdapterGUID(value.AdapterID) {
+		return false
+	}
 	ip, network, err := net.ParseCIDR(value.Subnet)
 	if err != nil || ip.String() != network.IP.String() || !network.Contains(net.ParseIP(value.Address)) {
 		return false
@@ -109,6 +182,9 @@ func validCandidate(value *lanCandidate) bool {
 	last := append(net.IP(nil), first...)
 	for i := range last {
 		last[i] |= ^network.Mask[i]
+	}
+	if freshTrial == "1" && (net.ParseIP(value.Address).Equal(first) || net.ParseIP(value.Address).Equal(last)) {
+		return false
 	}
 	return privateIPv4(last.String())
 }
@@ -266,6 +342,13 @@ func finalLANStatus(input readiness) string {
 		s.Selected.InterfaceName != input.Config.InterfaceName || s.Port == nil || *s.Port != input.Config.Port ||
 		!input.Ownership || !s.ServerReady || !s.LocalListening || !s.LANListening || !s.LocalHealth || !s.LANHealth || !s.RemoteBootstrapClosed {
 		return lanHealthFailed
+	}
+	if freshTrial == "1" {
+		candidate := *s.Selected
+		candidate.Name = candidate.InterfaceName
+		if !matchesLANBinding(input.Config, &candidate) {
+			return networkChanged
+		}
 	}
 	if !input.FirewallAllowed {
 		return firewallBlocked

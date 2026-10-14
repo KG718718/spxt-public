@@ -18,6 +18,9 @@ var buildCommit = "unbuilt"
 var runtimeHash = "unbuilt"
 var firewallHelperHash = ""
 
+// Set only by the separate fresh-only build. Standard builds remain unchanged.
+var freshTrial = ""
+
 const product = "K⁺-SESSION"
 const buildVersion = "launcher development build / Batch 4.5"
 
@@ -247,6 +250,9 @@ func childEnvironmentFor(instance, app string, port int, sys string, lanMode boo
 		"KSESSION_MAIL_ENABLED": "0", "KSESSION_MAIL_FORMAL_ENABLED": "0", "KSESSION_MAIL_DRY_RUN": "1", "KSESSION_SKIP_STARTUP_JOBS": "1"}
 	if lanMode {
 		env["KSESSION_LAN_MODE"] = "1"
+		if freshTrial == "1" {
+			env["KSESSION_FRESH_TRIAL"] = "1"
+		}
 	}
 	keys := make([]string, 0, len(env))
 	for k := range env {

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -40,6 +41,7 @@ var (
 	buildRuntimeManifestSHA256 = "unbuilt"
 	buildNodeSHA256            = "unbuilt"
 	buildInstallerVersion      = "unbuilt"
+	buildFreshTrial            = ""
 	hexHashPattern             = regexp.MustCompile(`^[0-9a-f]{64}$`)
 	virtualInterfaceHint       = regexp.MustCompile(`(?i)(\b(vpn|tunnel|tap|tun|wireguard|docker|wsl|virtual|vmware|virtualbox|loopback|bluetooth|teredo|isatap|6to4)\b|hyper[- ]?v|vethernet)`)
 )
@@ -48,13 +50,60 @@ type request struct {
 	Action        string
 	Port          int
 	InterfaceName string
+	Binding       *networkBinding
 }
 
 type deploymentConfig struct {
-	Schema        int    `json:"schema"`
-	Enabled       bool   `json:"enabled"`
-	InterfaceName string `json:"interfaceName"`
-	Port          int    `json:"port"`
+	Schema        int             `json:"schema"`
+	Enabled       bool            `json:"enabled"`
+	InterfaceName string          `json:"interfaceName"`
+	Port          int             `json:"port"`
+	Binding       *networkBinding `json:"binding,omitempty"`
+}
+
+type networkBinding struct {
+	AdapterID    string `json:"adapterId"`
+	Address      string `json:"address"`
+	PrefixLength int    `json:"prefixLength"`
+	Subnet       string `json:"subnet"`
+}
+
+func validNetworkBinding(b *networkBinding) bool {
+	if b == nil || !regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`).MatchString(b.AdapterID) || b.AdapterID == "00000000-0000-0000-0000-000000000000" {
+		return false
+	}
+	ip := net.ParseIP(b.Address)
+	if ip == nil || ip.To4() == nil || strings.Contains(b.Address, ":") || ip.String() != b.Address {
+		return false
+	}
+	v := ip.To4()
+	minimum := 0
+	if v[0] == 10 {
+		minimum = 8
+	} else if v[0] == 172 && v[1] >= 16 && v[1] <= 31 {
+		minimum = 12
+	} else if v[0] == 192 && v[1] == 168 {
+		minimum = 16
+	} else {
+		return false
+	}
+	if b.PrefixLength < minimum || b.PrefixLength > 30 {
+		return false
+	}
+	_, subnet, err := net.ParseCIDR(b.Subnet)
+	if err != nil || subnet.String() != b.Subnet || !subnet.Contains(ip) {
+		return false
+	}
+	ones, bits := subnet.Mask.Size()
+	if bits != 32 || ones != b.PrefixLength {
+		return false
+	}
+	first := subnet.IP.To4()
+	last := append(net.IP(nil), first...)
+	for i := range last {
+		last[i] |= ^subnet.Mask[i]
+	}
+	return !ip.Equal(first) && !ip.Equal(last)
 }
 
 type runtimeManifest struct {
@@ -315,8 +364,26 @@ func strictConfig(data []byte) (deploymentConfig, error) {
 		return c, err
 	}
 	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(data, &fields); err != nil || len(fields) != 4 {
+	count := 4
+	if buildFreshTrial == "1" {
+		count = 5
+	}
+	if err := json.Unmarshal(data, &fields); err != nil || len(fields) != count {
 		return c, errors.New("invalid config fields")
+	}
+	if buildFreshTrial == "1" {
+		if len(data) > 4096 || (string(bytes.TrimSpace(fields["enabled"])) != "true" && string(bytes.TrimSpace(fields["enabled"])) != "false") {
+			return c, errors.New("invalid fresh config")
+		}
+		var bindingFields map[string]json.RawMessage
+		if json.Unmarshal(fields["binding"], &bindingFields) != nil || len(bindingFields) != 4 {
+			return c, errors.New("invalid binding fields")
+		}
+		for _, key := range []string{"adapterId", "address", "prefixLength", "subnet"} {
+			if _, ok := bindingFields[key]; !ok {
+				return c, errors.New("invalid binding fields")
+			}
+		}
 	}
 	for _, name := range []string{"schema", "enabled", "interfaceName", "port"} {
 		if _, ok := fields[name]; !ok {
@@ -330,6 +397,9 @@ func strictConfig(data []byte) (deploymentConfig, error) {
 	}
 	if c.Schema != 2 || c.Port < 8080 || c.Port > 8099 || !validInterfaceName(c.InterfaceName) {
 		return deploymentConfig{}, errors.New("invalid config")
+	}
+	if buildFreshTrial == "1" && !validNetworkBinding(c.Binding) {
+		return deploymentConfig{}, errors.New("invalid network binding")
 	}
 	return c, nil
 }
@@ -394,23 +464,29 @@ func validateProductionAnchors(anchors installAnchors) error {
 }
 
 func verifyBoundConfig(instance string, install trustedInstall, req request) error {
+	_, err := loadBoundConfig(instance, install, req)
+	return err
+}
+
+func loadBoundConfig(instance string, install trustedInstall, req request) (deploymentConfig, error) {
+	var empty deploymentConfig
 	cleanInstance, err := cleanLocal(instance)
 	if err != nil || noReparse(cleanInstance) != nil || strings.EqualFold(cleanInstance, install.InstallRoot) || within(install.InstallRoot, cleanInstance) || within(cleanInstance, install.InstallRoot) {
-		return reject(exitConfig, "INSTANCE_BINDING_INVALID")
+		return empty, reject(exitConfig, "INSTANCE_BINDING_INVALID")
 	}
 	configPath := filepath.Join(cleanInstance, configName)
 	if noReparse(configPath) != nil {
-		return reject(exitConfig, "LAN_CONFIG_INVALID")
+		return empty, reject(exitConfig, "LAN_CONFIG_INVALID")
 	}
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return reject(exitConfig, "LAN_CONFIG_INVALID")
+		return empty, reject(exitConfig, "LAN_CONFIG_INVALID")
 	}
 	cfg, err := strictConfig(data)
 	if err != nil || !cfg.Enabled || cfg.Port != req.Port || cfg.InterfaceName != req.InterfaceName {
-		return reject(exitConfig, "LAN_CONFIG_MISMATCH")
+		return empty, reject(exitConfig, "LAN_CONFIG_MISMATCH")
 	}
-	return nil
+	return cfg, nil
 }
 
 func response(status, code string) []byte {

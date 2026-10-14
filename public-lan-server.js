@@ -3,8 +3,9 @@
 const httpDefault = require('node:http');
 const path = require('node:path');
 const {Worker} = require('node:worker_threads');
+const {matchesTrustedBinding} = require('./public-lan-config');
 const {
-  normalizeIPv4, isAddressInSubnet, reservePersistedPort
+  normalizeIPv4, isAddressInSubnet, reservePersistedPort, freshTrialEnabled
 } = require('./public-lan-network');
 
 const STATUS = Object.freeze({
@@ -67,7 +68,8 @@ function publicState(state, needsInitialization) {
       interfaceName: selected.interfaceName,
       address: selected.address,
       prefixLength: selected.prefixLength,
-      subnet: selected.subnet
+      subnet: selected.subnet,
+      ...(freshTrialEnabled() ? {adapterId: selected.adapterId} : {})
     } : null
   };
 }
@@ -181,7 +183,8 @@ function discoverLanInWorker(options = {}) {
       }
     `, {
       eval: true,
-      env: process.env.SystemRoot ? {SystemRoot: process.env.SystemRoot} : {},
+      env: {...(process.env.SystemRoot ? {SystemRoot: process.env.SystemRoot} : {}),
+        ...(freshTrialEnabled() ? {KSESSION_FRESH_TRIAL: '1'} : {})},
       workerData: {modulePath, interfaceName: options.interfaceName}
     });
     let settled = false;
@@ -231,7 +234,7 @@ function createLanHostController(options = {}) {
   }
   function selectedForConfig(discovery, config) {
     if (!config?.enabled || !discovery || discovery.status !== 'SELECTED' || !discovery.selected) return null;
-    return discovery.selected.interfaceName === config.interfaceName ? discovery.selected : null;
+    return discovery.selected.interfaceName === config.interfaceName && matchesTrustedBinding(config, discovery.selected) ? discovery.selected : null;
   }
   async function check(kind, address, port) {
     try { return await probe({address, port, kind, initializationRequired: options.needsInitialization()}); }
