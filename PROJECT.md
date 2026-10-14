@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前正式授权｜2026-10-14 Fresh LAN Trial自主工程
+
+独立codex/lan-fresh-trial-v1.1以三方已核验3f4f630为基线。用户批准fresh-only beta.4、自动合格物理Private LAN发现与唯一预选、首次明确可信授权、自动后台、登录/开机自启目标；Candidate最多3次、独立QA最多1次，同一候选EXE，普通工程本地闭合后自主循环。实际物理网卡/UAC/双设备/自启与第二Launcher仍HUMAN_PENDING。旧升级/卸载重装/LC01/U27 FAIL保留、工作DEFERRED，受验beta.2单机PASS不变。尚无新trial候选、无测试结论；详见fresh-lan-trial/AUTONOMOUS-AUTHORIZATION.md。不访问内部版、不main/tag/Release、不清理现场。
+
 ## 当前产品方向｜2026-10-14 第一阶段Fresh LAN Trial方案待批准
 
 用户正式调整为优先全新环境局域网试用；LAN-2完整升级/卸载重装及LC01历史结果仍FAIL，后续工作DEFERRED，不改旧PASS条件/证据，不恢复旧预算。Master只读核验9d1d8da公共仓库与源码，已提交fresh-lan-trial/MINIMAL-ACCEPTANCE-PLAN.md：拟独立fresh-only构建严格拒绝旧登记/Binding/已有instance/非空目标，保留全部生产安全，新增实际安装payload浏览器/持久化与安全门禁，核心26/742不降低。Hosted建议Candidate1+独立QA1，总2次，当前未批准；真实网卡/UAC/物理Win10双设备/第二LauncherGUI为一次最终人工验收。尚未实现、建分支/Thread/worktree、测试或Actions；本轮仅方案治理，等待网页版确认后再执行。原worktrees/源码/历史FAIL保留；无内部SPXT/main/tag/Release操作。
