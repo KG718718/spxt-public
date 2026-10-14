@@ -4,6 +4,8 @@ package main
 
 import (
 	"fmt"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -27,6 +29,27 @@ func TestFreshEnvironmentAndNetworkBindingFailClosed(t *testing.T) {
 	approvedEnv, approvalErr := freshApprovedEnvironment([]string{"KSESSION_FRESH_TRIAL=1"}, config)
 	if approvalErr != nil || !strings.Contains(strings.Join(approvedEnv, "\n"), "KSESSION_FRESH_LAN_APPROVED_CONFIG=") {
 		t.Fatal("approved snapshot absent", approvalErr)
+	}
+	input := make([]string, 2, 8)
+	input[0] = "ZETA=last"
+	input[1] = "ALPHA=first"
+	backing := input[:cap(input)]
+	for i := len(input); i < len(backing); i++ {
+		backing[i] = "sentinel"
+	}
+	original := append([]string(nil), backing...)
+	ordered, orderErr := freshApprovedEnvironment(input, config)
+	if orderErr != nil || !sort.StringsAreSorted(ordered) || !reflect.DeepEqual(backing, original) {
+		t.Fatal("snapshot environment sorting mutated caller", orderErr)
+	}
+	ordered[0] = "changed result"
+	if !reflect.DeepEqual(backing, original) {
+		t.Fatal("result shares caller backing array")
+	}
+	for _, duplicate := range [][]string{{"PATH=one", "path=two"}, {"KSESSION_FRESH_LAN_APPROVED_CONFIG=forged"}, {"ksession_fresh_lan_approved_config=forged"}} {
+		if _, err := freshApprovedEnvironment(duplicate, config); err == nil {
+			t.Fatal("duplicate environment key accepted", duplicate)
+		}
 	}
 	disabled := *config
 	disabled.Enabled = false

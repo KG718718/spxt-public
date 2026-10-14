@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode/utf16"
 )
@@ -438,16 +439,34 @@ func keepControlForStartFailure(config *lanConfig, err error) bool {
 }
 
 func freshApprovedEnvironment(environment []string, config *lanConfig) ([]string, error) {
-	if freshTrial != "1" || config == nil || !config.Enabled {
+	if freshTrial != "1" {
 		return environment, nil
 	}
-	b := config.Binding
-	if b == nil || !matchesLANBinding(config, &lanCandidate{AdapterID: b.AdapterID, InterfaceName: config.InterfaceName, Name: config.InterfaceName, Address: b.Address, PrefixLength: b.PrefixLength, Subnet: b.Subnet}) {
-		return nil, fmt.Errorf("LAN_CONFIG_INVALID")
+	result := append([]string(nil), environment...)
+	if config != nil && config.Enabled {
+		b := config.Binding
+		if b == nil || !matchesLANBinding(config, &lanCandidate{AdapterID: b.AdapterID, InterfaceName: config.InterfaceName, Name: config.InterfaceName, Address: b.Address, PrefixLength: b.PrefixLength, Subnet: b.Subnet}) {
+			return nil, fmt.Errorf("LAN_CONFIG_INVALID")
+		}
+		data, err := json.Marshal(config)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, "KSESSION_FRESH_LAN_APPROVED_CONFIG="+string(data))
 	}
-	data, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
+	seen := map[string]bool{}
+	for _, entry := range result {
+		key, _, ok := strings.Cut(entry, "=")
+		key = strings.ToUpper(key)
+		if !ok || key == "" || strings.ContainsRune(entry, '\x00') || seen[key] {
+			return nil, fmt.Errorf("FRESH_ENV_INVALID")
+		}
+		seen[key] = true
 	}
-	return append(environment, "KSESSION_FRESH_LAN_APPROVED_CONFIG="+string(data)), nil
+	sort.Slice(result, func(i, j int) bool {
+		left, _, _ := strings.Cut(result[i], "=")
+		right, _, _ := strings.Cut(result[j], "=")
+		return strings.ToUpper(left) < strings.ToUpper(right)
+	})
+	return result, nil
 }

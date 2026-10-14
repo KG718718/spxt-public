@@ -10,6 +10,10 @@ Master 独立复验首轮测试后，明确将 `e91b41e` 的生产实现判为 *
 
 增量实现提交：`cfaf95cc9fc5930745bb36e35ad21838f17da0bc`。仍待 Master 独立复审，未 push、未安装、未 Hosted。
 
+Master 随后独立复验该增量 Node83、Go8 顶层及 11 顺序子场景 PASS；最后环境块一致性收尾已完成：Fresh 环境始终复制后按 key 排序，拒绝 Windows 不区分大小写的重复 key（包括预置同名快照），不修改或共享调用者切片底层数组。原 tagged 顶层名内补了顺序、预留容量 sentinel、返回切片隔离、大小写重复 key 和预置快照拒绝断言；tagged Fresh 4 顶层/含子场景15 PASS，tagged vet/fresh linker仅编译与diff-check PASS。标准路径不变。
+
+**快照边界明确**：`KSESSION_FRESH_LAN_APPROVED_CONFIG` 是可读、可构造的普通 JSON，仅用于配置连续性比较；它不是授权凭据、不是 Windows 信任证明，也不是真实 Windows 登录或开机自启证据。实际授权仍由 Launcher 的真实网络/helper/UAC 门禁执行，实际登录自启仍 HUMAN_PENDING。
+
 - **Fresh 显式 enable**：先只读验证真实网络绑定，再只读 helper status；仅明确 enable 且现有规则未有效时允许原 UAC。UAC 返回成功仍须再次验证真实网络和有效 helper status，然后才调用 startExact。任何拒绝/未知/授权后网络改变都不进入 enabled start，沿原事务恢复原 disabled 受信配置及 Local。
 - **保存配置启动与 --logon**：`c.start()` 在任何端口 bind/Node spawn 前执行相同门禁，但始终 `allowElevation=false`。规则缺失/无效或网络未知直接拒绝启动，不自动 UAC、不先开放再显示 blocked，也不改配置或静默换端口。启动拒绝可保持无后端；不冒称所有拒绝都能继续 Local。
 - **预检至 Node 的配置连续性**：只有已通过上述门禁的 enabled 配置才由 Launcher 的显式私有环境加入 `KSESSION_FRESH_LAN_APPROVED_CONFIG` 完整快照。Fresh Node 在双监听前必须把该快照与当前严格配置逐字段比较；缺失、非法或配置/GUID/端口/enable 不一致仅允许 Local。快照只保证已有 Launcher 门禁与本次配置相同，不替代真实物理/Private 发现或 helper 身份/status，也不是新增客户 CLI/权限。继承环境不会被传入此私有环境；没有新客户模块/manifest 项。
