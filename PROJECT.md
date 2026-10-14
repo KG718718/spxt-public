@@ -1,5 +1,10 @@
 # K⁺-SESSION｜项目状态
 
+## 当前产品方向｜2026-10-14 第一阶段Fresh LAN Trial方案待批准
+
+用户正式调整为优先全新环境局域网试用；LAN-2完整升级/卸载重装及LC01历史结果仍FAIL，后续工作DEFERRED，不改旧PASS条件/证据，不恢复旧预算。Master只读核验9d1d8da公共仓库与源码，已提交fresh-lan-trial/MINIMAL-ACCEPTANCE-PLAN.md：拟独立fresh-only构建严格拒绝旧登记/Binding/已有instance/非空目标，保留全部生产安全，新增实际安装payload浏览器/持久化与安全门禁，核心26/742不降低。Hosted建议Candidate1+独立QA1，总2次，当前未批准；真实网卡/UAC/物理Win10双设备/第二LauncherGUI为一次最终人工验收。尚未实现、建分支/Thread/worktree、测试或Actions；本轮仅方案治理，等待网页版确认后再执行。原worktrees/源码/历史FAIL保留；无内部SPXT/main/tag/Release操作。
+
+
 ## 当前止损｜2026-10-14 LAN2-U27-R2 / NONEMPTY REJECT / RESTORE CHECK FAILED
 
 唯一Run38429594054@a2094f38943b7380eb52c5eac828b16093cf96fb、attempt1/固定Artifact11830434469已FAIL。严格单JSON/source/privacy验证通过，TestSetup与正常U26前缀PASS；fresh前ProductKey/快捷方式/uninstaller absent、Binding expected、受控Launcher/Node exited、锁exclusive open/close、instance unchanged，但安装根nonempty/program present，clone UNKNOWN。实际fresh启动后PREINSTALL_REJECTED/INNO_EXIT_PREPARE_REJECTED/KSESSION_REJECT_NONEMPTY，copy/post未观察。直接拒绝原因已证，残留细目/来源及历史唯一根因未证；network restoration FAILED/isolation UNKNOWN，不能称恢复/cleanup PASS。U27-R2 Hosted1/1耗尽，Full0/QA0/LC010不使用，STOP不retry/不改生产。仅保全证据/治理交网页，LAN2冻结，无最终beta4包；原Thread/工作树/历史FAIL保留。详见LAN2-U27-R2-HOSTED-RESULT.md。
