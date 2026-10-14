@@ -16,6 +16,13 @@ function verify(root) {
  assert.equal(info.launcherSha256,sha(read(root,'K-SESSION.exe')));
  assert.equal(info.firewallHelperSha256,sha(read(root,'K-SESSION-Firewall.exe')));
  assert.equal(m.nodeHash,sha(read(root,'runtime/node.exe')));
+ if(m.deriveProfile){
+  const d=m.deriveProfile;assert.equal(d.profile,'fresh-trial');assert.equal(d.sourcePath,'public-lan-network.js');assert.equal(d.transform,'FRESH_TRIAL_BUILD_FALSE_TO_TRUE_V1');
+  const bytes=read(root,'app/'+d.sourcePath),text=bytes.toString('utf8'),marker='const FRESH_TRIAL_BUILD = true';
+  assert.equal(text.split(marker).length,2);assert.equal(sha(bytes),d.derivedSha256);
+  assert.equal(sha(Buffer.from(text.replace(marker,'const FRESH_TRIAL_BUILD = false'))),d.sourceSha256);
+  assert.equal(info.deriveProfile,'fresh-trial');assert.equal(info.freshTrialMarker,'1');
+ }
  inspectPE(read(root,'K-SESSION.exe'));inspectPE(read(root,'K-SESSION-Firewall.exe'));inspectPE(read(root,'runtime/node.exe'));
  const expected=new Map(m.files.map(f=>[safePath(f.path),f]));
  for(const p of ['manifest/runtime-manifest.json','hashes/SHA256SUMS.txt','K-SESSION.exe','K-SESSION-Firewall.exe','build-info.json']){assert.ok(!expected.has(p));expected.set(p,{path:p,bytes:read(root,p).length,sha256:sha(read(root,p))});}
@@ -60,6 +67,7 @@ function finish(root,launcherDir,helperDir,git,repo,commit) {
  buildTimestamp:cp.execFileSync(git,['-C',repo,'show','-s','--format=%cI',commit],{windowsHide:true}).toString().trim(),timestampPolicy:'source commit time; Runtime OS metadata may differ between builds',
  artifactFormat:'portable-zip',platform:'win32-x64',launcherSha256:li.sha256,firewallHelperSha256:hi.sha256,sha256:li.sha256,bytes:li.bytes,
  instanceContract:'Beta only: LOCALAPPDATA/K-SESSION/Beta/instance; launcher-logs isolated from business logs; Batch4 decides final path'};
+ if(m.deriveProfile){assert.equal(li.deriveProfile,'fresh-trial');assert.equal(li.freshTrialMarker,'1');assert.equal(hi.deriveProfile,'fresh-trial');assert.equal(hi.freshTrialMarker,'1');info.deriveProfile='fresh-trial';info.freshTrialMarker='1';info.firewallFreshTrialMarker='1';}
  writeJSON(path.join(root,'build-info.json'),info);return verify(root);
 }
 function archive(root,out,reportFile) {
