@@ -4,6 +4,29 @@
 
 状态：**RETURNED — LOCAL GATES PASS / MASTER REVIEW REQUIRED / T2 INSTALL WIRING PENDING**。不是 Hosted、物理 LAN、Windows 登录或最终 Trial PASS。
 
+## 当前复审返工：必要授权必须先于 LAN bind
+
+Master 独立复验首轮测试后，明确将 `e91b41e` 的生产实现判为 **REWORK**：原 transition 先 startExact 绑定 LAN，随后才 status/UAC。这是已证安全顺序缺口，首轮本地 PASS 不构成其生产准入；该 Review 结论保留。
+
+增量实现提交：`cfaf95cc9fc5930745bb36e35ad21838f17da0bc`。仍待 Master 独立复审，未 push、未安装、未 Hosted。
+
+- **Fresh 显式 enable**：先只读验证真实网络绑定，再只读 helper status；仅明确 enable 且现有规则未有效时允许原 UAC。UAC 返回成功仍须再次验证真实网络和有效 helper status，然后才调用 startExact。任何拒绝/未知/授权后网络改变都不进入 enabled start，沿原事务恢复原 disabled 受信配置及 Local。
+- **保存配置启动与 --logon**：`c.start()` 在任何端口 bind/Node spawn 前执行相同门禁，但始终 `allowElevation=false`。规则缺失/无效或网络未知直接拒绝启动，不自动 UAC、不先开放再显示 blocked，也不改配置或静默换端口。启动拒绝可保持无后端；不冒称所有拒绝都能继续 Local。
+- **预检至 Node 的配置连续性**：只有已通过上述门禁的 enabled 配置才由 Launcher 的显式私有环境加入 `KSESSION_FRESH_LAN_APPROVED_CONFIG` 完整快照。Fresh Node 在双监听前必须把该快照与当前严格配置逐字段比较；缺失、非法或配置/GUID/端口/enable 不一致仅允许 Local。快照只保证已有 Launcher 门禁与本次配置相同，不替代真实物理/Private 发现或 helper 身份/status，也不是新增客户 CLI/权限。继承环境不会被传入此私有环境；没有新客户模块/manifest 项。
+- **失败残留**：Fresh startExact 的部分启动失败会先停止并清除受控 child/ready，再进入原配置回滚。已授权后的启动失败恢复原受信 disabled/Local；回滚失败则无受控 child/ready 残留。标准路径和原 INSTANCE_BUSY/Firewall 范围/权限不变。
+- **测试名字保持**：新增 11 个顺序子场景放入原 `TestFreshEnvironmentAndNetworkBindingFailClosed`，该顶层测试移至新 `fresh_order_windows_test.go`（windows && fresh_trial_tests）；仍只有原先两个新增 tagged 顶层名。T2 不需改变 expected 顶层数量或构建 flags。
+
+| 返工最终门禁 | 结果 |
+| --- | --- |
+| 原六文件 Node 组合（新快照拒绝反例合入现有测试名） | 83/83 fail0skip0 |
+| Launcher tagged Fresh 四个顶层（含两个历史 Fresh 名） | 4 顶层、含 11 新子场景共 15 PASS |
+| 上述四项加既有标准 enable/rollback/fallback 四项 | 8 顶层、含子场景 19 PASS |
+| Launcher 纯文件集合 | 12 顶层、含子测试 24 PASS；第二个新顶层已移 Windows 文件，数量变化不是删除检查 |
+| Launcher tagged fresh linker `go test -c`、tagged vet、JS syntax、diff-check | PASS，仅编译 EXE 未执行 |
+| Firewall 首轮 15/57 | 本增量未修改 helper，沿用已完成且 Master 独立复验的结果，无不必要重跑 |
+
+新顺序反例覆盖：授权拒绝、网络未知、UAC 后有效规则仍未证明、UAC 后网络改变、授权完成后才 bind、原有效授权不再 UAC、授权后 start 失败恢复 Local、start 与 rollback 双失败无残留、saved start status 拒绝、logon status 未知、saved start 网络未知。Node 原 server 专项另包含缺失/非法/变端口/disabled/变 GUID 的快照拒绝，计数维持 83。所有网络/helper/启动边界为合成替身，未调用实际 UAC/真实网卡/Firewall 或启动真实 Node 服务。
+
 ## 身份与 local commit
 
 - 工具创建的独立工作树：`E:/CodexWorkspace/CodexWorktrees/7b54/public-source`；origin 为公开 `https://github.com/KG718718/spxt-public.git`。
@@ -24,12 +47,12 @@
 
 - `public-lan-network.js`、`public-lan-config.js`、`public-lan-server.js`、`server.js`（仅 LAN 模式固化和配置监测接线）。
 - `tools/lan-host/config-cli.cjs`、`launcher-cli.cjs`、`network-cli.cjs`。
-- `tools/windows-launcher/core.go`、`lan_core.go`、`lan_windows.go`、`main_windows.go`、新增 `logon_core.go`、`fresh_core_test.go`。
+- `tools/windows-launcher/core.go`、`lan_core.go`、`lan_windows.go`、`main_windows.go`、新增 `logon_core.go`、`fresh_core_test.go`；复审新增 `fresh_order_windows_test.go`。
 - `tools/windows-firewall/policy.go`、`main_windows.go`、`firewall_windows.go`、新增 `fresh_policy_test.go`、`fresh_behavior_windows_test.go`。
 - 新增 `tools/tests/lan-host/fresh-deployment.test.cjs`。
 - 未修改 Setup/build/driver/manifest 生成器、业务 schema/账号/交易、历史身份/upgrade/rollback、旧 workflow/旧资料/旧测试期望。
 
-## 本地验证
+## 首轮本地验证（历史；当前复审结果见上）
 
 最终门禁均 fail0/skip0；没有把初轮缺口当成 PASS。首轮 Fresh 反例发现 null adapterId 未拒绝，已改为必须规范字符串；Master 指出的标准 schema、GUID贯通、New-Object 顺序和 helper 五字段问题均已修复后复测。
 
