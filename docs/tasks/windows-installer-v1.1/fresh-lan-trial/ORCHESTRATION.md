@@ -4,7 +4,7 @@
 
 | Task | 负责 | Thread/worktree/branch | 状态 | 依赖 |
 |---|---|---|---|---|
-| FRESH-T1 | 自动物理Private发现与登录自启的既有机制核对/实施/本地反例 | 01a13945-ee6b-75b0-94bd-d2dc1e367e17 / E:\\CodexWorkspace\\CodexWorktrees\\7b54\\public-source / codex/fresh-t1-deployment | RETURNED e91b41e/2f43a52后Master独立Review→REWORK；基线d293f0a | Fresh必须授权完成后再bind；登录恢复仅只读有效规则检查 |
+| FRESH-T1 | 自动物理Private发现与登录自启的既有机制核对/实施/本地反例 | 01a13945-ee6b-75b0-94bd-d2dc1e367e17 / E:\\CodexWorkspace\\CodexWorktrees\\7b54\\public-source / codex/fresh-t1-deployment | RETURNED→REWORK→RETURNED→REVIEWED→INTEGRATED 7ffc019；基线d293f0a | T2构建/Startup/CI接线待验；详细FRESH-T1-MASTER-REVIEW.md |
 | FRESH-T2 | fresh-only Setup、实际安装浏览器验收/报告/独立workflow | 01a13948-7433-7571-8330-a09bfd12a0dc / E:\\CodexWorkspace\\CodexWorktrees\\bea7\\public-source / codex/fresh-t2-installer-ci | RUNNING；基线0eee621 | 独立构建先行；最终接线依赖T1 Review |
 | FRESH-QA | 独立审查及同EXE最终QA | 待登记 | PENDING | Candidate完整PASS |
 
