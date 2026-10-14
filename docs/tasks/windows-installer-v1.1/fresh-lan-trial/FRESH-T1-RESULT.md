@@ -4,6 +4,21 @@
 
 状态：**RETURNED — LOCAL GATES PASS / MASTER REVIEW REQUIRED / T2 INSTALL WIRING PENDING**。不是 Hosted、物理 LAN、Windows 登录或最终 Trial PASS。
 
+## 当前文件组织修正：Fresh 测试原字节迁移
+
+Master 已确认旧 compatibility 静态门禁按源码 glob 所有 `*_test.go`，不处理 build tag，导致新 helper 两项仍进入旧固定13比较。按本次明确范围，仅把本轮四份新测试精确迁移至 `tools/tests/fresh-lan-trial/` 并改后缀 `.go.in`；生产零改，旧名单/断言/失败条件零改。Git 四项均 100% rename、numstat 0/0；迁移前后 SHA256 逐一相同：
+
+| 原相对路径 | 新文件名（均在 tools/tests/fresh-lan-trial/） | 原始字节 SHA256（前后相同） |
+| --- | --- | --- |
+| tools/windows-launcher/fresh_core_test.go | fresh_core_test.go.in | 14d29d991270a6be7417ba9fe03dae39beffd6f0b6812659ff8c422b0e5d3cb1 |
+| tools/windows-launcher/fresh_order_windows_test.go | fresh_order_windows_test.go.in | 722b0780a11f982f7393662b78332b07be0152be08a7db72a6350d224c42d6b0 |
+| tools/windows-firewall/fresh_policy_test.go | fresh_policy_test.go.in | 1343779211237a016ba2d9db4ffbc4a11139641e9f8f4be4b6376d54466cb3d2 |
+| tools/windows-firewall/fresh_behavior_windows_test.go | fresh_behavior_windows_test.go.in | 2200558b27e5bb02d9845fb06098513b6fa78615385a013d8c05bc47b18da188 |
+
+当前验证：原 beta4 compatibility 的 `fixed Go policies cover the exact Launcher build group and every firewall top-level test` 目标门禁 **1/1 PASS、fail0skip0**，未修改测试源码。额外核查 beta3 同名目标为 **1/1 FAIL**，在 `compatibility.test.cjs:264 assert.ok(group)` 的旧 Launcher build 正则匹配处失败，尚未到达名单比较；该失败如实保留，不改旧断言，不宣称 beta3 全 PASS。
+
+四份测试此前执行/编译证据及历史提交保留；新 Fresh pipeline 必须由 T2 用 Go overlay + `fresh_trial_tests` 映射为各原包内 `*_test.go` 并实际执行 Launcher新2/Helper新2。本次 T1 不修改 overlay 生成器/build 接线，不把移出默认 glob 冒充新测试已经经 overlay 重跑。上文所述 snapshot 仍仅连续性快照、可读可构造，非授权或真实登录证明；所有 HUMAN_PENDING 边界不变。
+
 ## 当前复审返工：必要授权必须先于 LAN bind
 
 Master 独立复验首轮测试后，明确将 `e91b41e` 的生产实现判为 **REWORK**：原 transition 先 startExact 绑定 LAN，随后才 status/UAC。这是已证安全顺序缺口，首轮本地 PASS 不构成其生产准入；该 Review 结论保留。
