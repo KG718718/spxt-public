@@ -4,7 +4,7 @@
 
 | Task | 负责 | Thread/worktree/branch | 状态 | 依赖 |
 |---|---|---|---|---|
-| FRESH-T1 | 自动物理Private发现与登录自启的既有机制核对/实施/本地反例 | 待登记 | PREPARING | 批准规格 |
+| FRESH-T1 | 自动物理Private发现与登录自启的既有机制核对/实施/本地反例 | 01a13945-ee6b-75b0-94bd-d2dc1e367e17 / E:\\CodexWorkspace\\CodexWorktrees\\7b54\\public-source / codex/fresh-t1-deployment | DISPATCHED；基线d293f0a | 批准规格 |
 | FRESH-T2 | fresh-only Setup、实际安装浏览器验收/报告/独立workflow | 待登记 | PENDING | T1安全可实施结论 |
 | FRESH-QA | 独立审查及同EXE最终QA | 待登记 | PENDING | Candidate完整PASS |
 
