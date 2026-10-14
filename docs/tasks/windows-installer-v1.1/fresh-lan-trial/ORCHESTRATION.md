@@ -5,7 +5,7 @@
 | Task | 负责 | Thread/worktree/branch | 状态 | 依赖 |
 |---|---|---|---|---|
 | FRESH-T1 | 自动物理Private发现与登录自启的既有机制核对/实施/本地反例 | 01a13945-ee6b-75b0-94bd-d2dc1e367e17 / E:\\CodexWorkspace\\CodexWorktrees\\7b54\\public-source / codex/fresh-t1-deployment | RETURNED→REWORK→RETURNED→REVIEWED→INTEGRATED 7ffc019/4f846bf；基线d293f0a | T2构建/Startup/CI接线待验；详细FRESH-T1-MASTER-REVIEW.md |
-| FRESH-T2 | fresh-only Setup、实际安装浏览器验收/报告/独立workflow | 01a13948-7433-7571-8330-a09bfd12a0dc / E:\\CodexWorkspace\\CodexWorktrees\\bea7\\public-source / codex/fresh-t2-installer-ci | RETURNED→REVIEWED→INTEGRATED b9028c1/278858d/0a184d5；基线0eee621，受审a767d1013de2296aa4e0c76f716749202ada3e0c | FRESH-T2-MASTER-REVIEW.md；待首次Candidate |
+| FRESH-T2 | fresh-only Setup、实际安装浏览器验收/报告/独立workflow | 01a13948-7433-7571-8330-a09bfd12a0dc / E:\\CodexWorkspace\\CodexWorktrees\\bea7\\public-source / codex/fresh-t2-installer-ci | C1返工RETURNED→REVIEWED→INTEGRATED 5daa62c；受审68880d6c945b533df95af96c3bc59085c0b40bf3；首轮b9028c1/278858d/0a184d5保留 | C1-REWORK-MASTER-REVIEW.md；C2准入 |
 | FRESH-QA | 独立审查及同EXE最终QA | 待登记 | PENDING | Candidate完整PASS |
 
 先核对T1能否在原安全/权限/技术栈中闭合，不允许以新目标重开无限PS/Native诊断。首次网络预选不等于信任/开放。主控Review后才整合；返回失败由read_thread→RESULT→worktree/local commit兜底，登记DELIVERY_RECOVERED，不伪称主动送达。
@@ -32,4 +32,4 @@ T1/T2 已独立 Review 并集成。三方 HEAD 核验后，仅创建 C1 单文�
 
 ## C1 后普通工程返工
 
-历史 C1 FAIL 保留；安全报告证明全部 owned cleanup，故自动回原 FRESH-T2 原 bea7 任务树做本地最小定位/修复，任务状态 REWORK，不另开线程/工作树。当前 LAUNCHER 子阶段仍跨多个命令，根因不能唯一断言。Master 原 LAN44 本地44/44 PASS不是 Hosted等价证明，详见 C1-RESULT.md。C2 尚未触发，FinalQA仍0/1，未有可交付 EXE；不因剩余次数直接 retry。
+历史 C1 FAIL 保留；安全报告证明全部 owned cleanup，故自动回原 FRESH-T2 原 bea7 任务树做本地最小定位/修复，不另开线程/工作树。原 LAUNCHER 跨多个命令、未上传子命令日志，C1根因不能唯一断言。现已实际复现合法alias被词法dependency guard误拒，改为Fresh物理目录及严格每段/边界校验，并修复八个固定实际构建子阶段报告；不是C1唯一原因已证。Master实际固定Node24.21/EXE SHA核验、Fresh118+兼容20=138/138 fail0skip0与PS/CJS/diff-check通过，7文件整合后与受审68880d6源码完全相同。Master 原 LAN44 本地44/44不是Hosted等价证明，详见 C1-RESULT.md和C1-REWORK-MASTER-REVIEW.md。C2 尚未触发，FinalQA仍0/1，未有可交付 EXE；不因剩余次数直接 retry。
