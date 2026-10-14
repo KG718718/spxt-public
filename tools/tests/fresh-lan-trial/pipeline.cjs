@@ -1,9 +1,10 @@
 'use strict';
 const assert=require('node:assert/strict');
 const {IDS,WITNESSES,METHODS,initial,validate}=require('./report.cjs');
-async function run({sourceCommit,controlCommit,runIdentity,mode,candidate,setupSha256,stages,cleanup,write,diagnostics=()=>[]}){
+async function run({sourceCommit,controlCommit,runIdentity,mode,candidate,setupSha256,buildDiagnostic,stages,cleanup,write,diagnostics=()=>[]}){
  const expected={sourceCommit,controlCommit,run:runIdentity,mode,...(mode==='QA'?{candidate}:{})},r=initial(sourceCommit,mode,candidate,controlCommit,runIdentity);
  if(setupSha256!==undefined)r.setupSha256=setupSha256;
+ if(buildDiagnostic!==undefined){require('./build-diagnostic.cjs').validate(buildDiagnostic);r.buildDiagnostic=buildDiagnostic;}
  let success=false;
  try{
   for(const id of IDS){

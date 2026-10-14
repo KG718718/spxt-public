@@ -95,13 +95,18 @@ const fixtureDefine={
  'fault-cancel':'/DFaultCancel=1','fault-copy':'/DFaultCopy=1','fault-post-copy':'/DFaultPostCopy=1'
 }[mode];
 const args=['/Qp','/DPayload='+root,'/DGenerated='+gen,'/DOutput='+artifact,...(freshTrial?['/DFreshTrial=1']:[]),...(fixtureDefine?[fixtureDefine]:[]),path.join(__dirname,'setup-beta4.iss')];
+const diagnosticFile=freshTrial?path.join(path.dirname(out),'build-diagnostic.json'):null;
+if(freshTrial)fs.writeFileSync(diagnosticFile,JSON.stringify({stage:'ISCC',classification:'UNKNOWN',script:null,line:null})+'\n');
 const result=cp.spawnSync(path.join(compiler,'ISCC.exe'),args,{encoding:'utf8',windowsHide:true,timeout:240000,maxBuffer:4e6});
 writeNew(path.join(out,'compiler.stdout.log'),result.stdout||'');writeNew(path.join(out,'compiler.stderr.log'),result.stderr||'');
+if(freshTrial)fs.writeFileSync(diagnosticFile,JSON.stringify(require('../../tests/fresh-lan-trial/build-diagnostic.cjs').compiler((result.stdout||'')+'\n'+(result.stderr||''),result.status,{setupScript:path.join(__dirname,'setup-beta4.iss'),generated:gen}))+'\n');
 if(result.status!==0){if(!freshTrial)console.error(result.stdout,result.stderr);throw Error('ISCC failed');}
+if(freshTrial)fs.writeFileSync(diagnosticFile,JSON.stringify({stage:'ASSEMBLY',classification:'OUTPUT_IDENTITY_REJECTED',script:null,line:null})+'\n');
 assert.deepEqual(inventory(root),files,'compiler modified payload');
 const name=freshTrial?'K-SESSION-Fresh-Trial-1.1.0-beta.4.exe':'K-SESSION-Setup-1.1.0-beta.4.exe',exe=fs.readFileSync(path.join(artifact,name));
 const final={...info,setupBytes:exe.length,setupSha256:sha(exe),payloadInventorySha256:manifest.payloadInventorySha256,licenseSha256:sha(license),generatedScriptHashes:inventory(gen).filter(f=>f.path.endsWith('.iss'))};
 writeJSON(path.join(artifact,'build-info.json'),final);writeJSON(path.join(artifact,'installer-manifest.json'),manifest);
 writeNew(path.join(artifact,name+'.sha256'),final.setupSha256+'  '+name+'\n');writeNew(path.join(artifact,'LICENSE-Inno-Setup.txt'),license);
 writeJSON(path.join(artifact,'license-summary.json'),{inno:{version:pin.version,license:'Inno Setup License',sha256:sha(license)},runtime:JSON.parse(fs.readFileSync(path.join(root,'manifest/runtime-manifest.json'))).licenses});
+if(freshTrial)fs.writeFileSync(diagnosticFile,JSON.stringify({stage:'COMPLETE',classification:'PASS',script:null,line:null})+'\n');
 console.log(JSON.stringify(final));

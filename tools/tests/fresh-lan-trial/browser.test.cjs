@@ -1,6 +1,12 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const {clientReadback,syntheticPDF}=require('./installed-browser.cjs');
+const {clientReadback,syntheticPDF,projectReadback,attachmentPathSafe}=require('./installed-browser.cjs');
+test('project readback requires the employee project and archived linked attachment',()=>{
+ const s={projectId:'APP0001',projectName:'Synthetic Project',user:'synthetic-user',clientId:'CLIENT0001'},record={id:s.projectId,projectName:s.projectName,applicant:s.user,clientId:s.clientId,contractAmount:1000,attachments:[{path:'/attachments/archive/2026/01-项目申请记录/APP0001/attachments/a.pdf'}]},good={status:200,data:{applications:[record]}};
+ assert.equal(projectReadback(good,s),record.attachments[0].path);
+ for(const mutate of [r=>r.data=[],r=>r.data.applications=[],r=>r.data.applications[0].applicant='other-user',r=>r.data.applications[0].attachments[0].path='/attachments/temporary.pdf',r=>r.data.applications[0].attachments[0].archiveMissing=true]){const bad=structuredClone(good);mutate(bad);assert.throws(()=>projectReadback(bad,s));}
+ for(const value of ['https://private/secret','/attachments/../secret','/attachments/archive/%2e%2e/private','/attachments//x','/attachments/x?token=secret'])assert.equal(attachmentPathSafe(value),false);
+});
 test('browser clients readback uses production records object, rejects obsolete array and missing business',()=>{assert.equal(clientReadback({status:200,data:{records:[{fullName:'synthetic'}]}},'synthetic'),true);for(const r of [{status:200,data:[{fullName:'synthetic'}]},{status:200,data:{records:[]}},{status:403,data:{records:[{fullName:'synthetic'}]}},{status:200,data:{records:null}}])assert.throws(()=>clientReadback(r,'synthetic'));});
 test('browser fixture is a complete synthetic PDF, with valid xref offsets',()=>{const b=syntheticPDF(),text=b.toString();assert.ok(text.startsWith('%PDF-1.4'));const start=Number(text.match(/startxref\n([0-9]+)/)[1]);assert.equal(b.toString('ascii',start,start+4),'xref');for(const [n,line] of text.slice(start).split('\n').slice(3,8).entries()){const offset=Number(line.slice(0,10));assert.equal(b.toString('ascii',offset,offset+7),`${n+1} 0 obj`);}});
 test('installed browser does not spawn repository server or inject network discovery',()=>{const source=fs.readFileSync(path.join(__dirname,'installed-browser.cjs'),'utf8');assert.doesNotMatch(source,/spawn\(|KSESSION_TEST_DISCOVERY|--require|require\([^\n]*discovery-preload/);assert.match(source,/inventory\(program\),manifest.payload/);assert.match(source,/browser.newContext/);assert.match(source,/#loginSubmitButton/);assert.match(source,/priorPath:restarted\?secrets.attachmentPath/);});

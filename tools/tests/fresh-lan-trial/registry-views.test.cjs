@@ -1,0 +1,3 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),{aliases}=require('./registry-views.cjs');
+test('shared HKCU view aliases represent one exact key, never arbitrary extra identities',()=>{const row={key:'Inno Setup 6_is1',view:'Registry64',values:{DisplayName:'Inno Setup',InstallLocation:'OWNED'}};assert.deepEqual(aliases([row,{...row,view:'Registry32'}],row.key),row.values);assert.deepEqual(aliases([row],row.key),row.values);for(const rows of [[],[row,{...row,key:'unknown'}],[row,{...row,view:'Registry32',values:{InstallLocation:'UNKNOWN'}}],[row,row]])assert.throws(()=>aliases(rows,row.key));});
