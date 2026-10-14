@@ -5,6 +5,6 @@ function prepare(out){
  const target=path.resolve(__dirname,'../../windows-launcher/fresh_installed_windows_test.go');
  const overlay=path.join(out,'fresh_installed_windows_test.go');
  fs.copyFileSync(path.join(__dirname,'installed-hosted_windows_test.go.in'),overlay);
- const file=path.join(out,'overlay.json');fs.writeFileSync(file,JSON.stringify({Replace:{[target]:overlay}})+'\n',{flag:'wx'});return file;
+ const file=path.join(out,'overlay.json');fs.writeFileSync(file,JSON.stringify({Replace:{...require('./prepare-policy-overlay.cjs').replacements('LAUNCHER'),[target]:overlay}})+'\n',{flag:'wx'});return file;
 }
 module.exports={prepare};if(require.main===module)process.stdout.write(prepare(process.argv[2])+'\n');

@@ -6,7 +6,7 @@ const WITNESSES=Object.freeze({
  F02:['programInventory','runtimeManifest','launcherHash','helperHash','emptyBusiness','noTestPayload'],
  F03:['actualInstalledLauncher','ownedInstalledNode','uniqueNode','exclusiveLock','loopbackBootstrap','remoteBootstrapRejected'],
  F04:['productionDiscoveryTests','uniquePreselect','multipleRequiresChoice','explicitFirstConsent','unsafeRejected','portSubnetConfig','virtualRejected','firewallAuthorizationBeforeBind','restoredFirewallBeforeBind','isolatedDualListenerSocket'],
- F05:['installedServiceIdentity','headlessBrowser','twoContexts','twoLogins','authorizationIsolation','saveReadback','attachmentUploadDownload'],
+ F05:['installedServiceIdentity','headlessBrowser','twoContexts','twoLogins','authorizationIsolation','saveReadback','attachmentUploadDownload','adminConfigurationUI','projectSaveReadback'],
  F06:['normalStop','ownedProcessesExited','lockReleased','restartPersistence','configPersistence','loginStartupWiring'],
  F07:['helperIdentity','virtualRejected','privateNarrowRuleTests','ownedRuleRemoved'],
  F08:['exact26Suites','exact742Checks','zeroFailure','zeroSkip'],
@@ -16,7 +16,8 @@ const HUMAN=Object.freeze(['REAL_GUI_UAC','PHYSICAL_PRIVATE_ADAPTER','FIREWALL_A
 const METHODS=Object.freeze({F01:'ACTUAL_SETUP',F02:'INSTALLED_BYTES',F03:'ACTUAL_INSTALLED_LAUNCHER_AND_ISOLATED_REMOTE_HANDLER',F04:'ISOLATED_PRODUCTION_POLICY_TESTS_AND_SOCKET',F05:'INSTALLED_PAYLOAD_BROWSER_LOOPBACK',F06:'ACTUAL_RESTART_AND_STARTUP_WIRING',F07:'CONTROLLED_RULE_AND_POLICY_TESTS',F08:'FROZEN_REGRESSION',F09:'ARTIFACT_BYTES'});
 function exact(o,keys){assert.ok(o&&typeof o==='object'&&!Array.isArray(o));assert.deepEqual(Object.keys(o).sort(),[...keys].sort());}
 function validate(r,expected){
- exact(r,['schema','kind','sourceCommit','controlCommit','run','mode','status','stage','reason','setupSha256','candidate','checks','cleanup','humanPending','historical','setupDiagnostics']);
+ exact(r,['schema','kind','sourceCommit','controlCommit','run','mode','status','stage','reason','setupSha256','candidate','checks','cleanup','humanPending','historical','setupDiagnostics','buildDiagnostic']);
+ require('./build-diagnostic.cjs').validate(r.buildDiagnostic);
  assert.match(r.controlCommit,/^[a-f0-9]{40}$/);if(expected.controlCommit)assert.equal(r.controlCommit,expected.controlCommit);
  exact(r.run,['id','attempt']);assert.match(r.run.id,/^[1-9][0-9]{0,19}$/);assert.equal(r.run.attempt,1);if(expected.run)assert.deepEqual(r.run,expected.run);
  assert.ok(Array.isArray(r.setupDiagnostics)&&r.setupDiagnostics.length<=7);for(const d of r.setupDiagnostics)require('./setup-diagnostic.cjs').validate(d);
@@ -46,6 +47,6 @@ function validate(r,expected){
  return r;
 }
 function initial(sourceCommit,mode,candidate={runId:null,artifactId:null,sourceCommit:null,setupSha256:null},controlCommit=sourceCommit,run={id:'1',attempt:1}){
- return {schema:1,kind:'KSESSION_FRESH_TRIAL',sourceCommit,controlCommit,run,mode,status:'FAIL',stage:'ENV',reason:'DEPENDENCY_UNPROVEN',setupSha256:null,candidate,checks:[],setupDiagnostics:[],cleanup:{ownedLauncherExited:null,ownedNodeExited:null,handlesClosed:null,lockReleased:null,ownedRulesAbsent:null,ownedRegistrationAbsent:null,ownedShortcutsAbsent:null,ownedToolchainAbsent:null,ownedDriveRestored:null,environmentRestored:null},humanPending:[...HUMAN],historical:{upgrade:{result:'FAIL',workStatus:'DEFERRED'},uninstallReinstall:{result:'FAIL',workStatus:'DEFERRED'},LC01:{result:'FAIL',workStatus:'DEFERRED'},U27:{result:'FAIL',workStatus:'DEFERRED'}}};
+ return {schema:1,kind:'KSESSION_FRESH_TRIAL',sourceCommit,controlCommit,run,mode,status:'FAIL',stage:'ENV',reason:'DEPENDENCY_UNPROVEN',setupSha256:null,candidate,checks:[],setupDiagnostics:[],buildDiagnostic:{stage:'NOT_STARTED',classification:'NOT_STARTED',script:null,line:null},cleanup:{ownedLauncherExited:null,ownedNodeExited:null,handlesClosed:null,lockReleased:null,ownedRulesAbsent:null,ownedRegistrationAbsent:null,ownedShortcutsAbsent:null,ownedToolchainAbsent:null,ownedDriveRestored:null,environmentRestored:null},humanPending:[...HUMAN],historical:{upgrade:{result:'FAIL',workStatus:'DEFERRED'},uninstallReinstall:{result:'FAIL',workStatus:'DEFERRED'},LC01:{result:'FAIL',workStatus:'DEFERRED'},U27:{result:'FAIL',workStatus:'DEFERRED'}}};
 }
 module.exports={IDS,WITNESSES,HUMAN,METHODS,validate,initial};

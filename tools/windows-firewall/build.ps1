@@ -61,8 +61,13 @@ try {
   if($FreshTrial){
     $taskFreshTests=@('TestFreshStrictBindingAndStandardSchemaIsolation','TestFreshFirewallBindingBeforeAnyMutation')
     $taskFreshRaw=Join-Path $taskEnvironment.Root 'fresh-go-test.jsonl'
+    $taskFreshOverlay=Join-Path $taskEnvironment.Root 'fresh-firewall-overlay.json'
+    $taskOverlayBuilder=Join-Path $PSScriptRoot '../tests/fresh-lan-trial/prepare-policy-overlay.cjs'
+    # Use the pinned Node executable from the caller's private toolchain.
+    & $env:KSESSION_FRESH_BUILD_NODE $taskOverlayBuilder FIREWALL $taskFreshOverlay|Out-Null
+    if($LASTEXITCODE -ne 0){throw 'Fresh Firewall overlay source rejected'}
     Push-Location $PSScriptRoot
-    try{& $GoExe test -tags fresh_trial_tests -json -count=1 -run ('^(' + ($taskFreshTests -join '|') + ')$') . *> $taskFreshRaw;$taskFreshExit=$LASTEXITCODE}finally{Pop-Location}
+    try{& $GoExe test -overlay $taskFreshOverlay -tags fresh_trial_tests -json -count=1 -run ('^(' + ($taskFreshTests -join '|') + ')$') . *> $taskFreshRaw;$taskFreshExit=$LASTEXITCODE}finally{Pop-Location}
     $taskFreshSummary=Read-KSessionGoTestSummary $taskFreshRaw
     if($taskFreshExit -ne 0 -or $taskFreshSummary.JSONInvalid -or $taskFreshSummary.PackagePass -ne 1 -or $taskFreshSummary.PackageFail -ne 0 -or @($taskFreshSummary.FailedNames).Count -ne 0 -or @($taskFreshSummary.SkippedNames).Count -ne 0 -or (Compare-Object @($taskFreshTests|Sort-Object) @($taskFreshSummary.Passed|Sort-Object))){throw 'Fresh Firewall policy gate failed'}
   }

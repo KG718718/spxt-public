@@ -1,0 +1,5 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),{early,safe}=require('./safe-failure.cjs'),{initial}=require('./report.cjs');
+const control='a'.repeat(40),runId='12',r={schema:1,kind:'FRESH_TRIAL_EARLY_FAILURE',controlCommit:control,runId,runAttempt:1,stage:'ENV',reason:'ISOLATION_UNPROVEN',status:'FAIL',cleanup:'UNKNOWN'};
+test('early failure uploads only fixed white fields and accurate pending/unknown cleanup',()=>{early(r,control,runId);assert.throws(()=>early({...r,path:'private'},control,runId));assert.throws(()=>early({...r,cleanup:true},control,runId));assert.throws(()=>early({...r,status:'PASS'},control,runId));});
+test('full safe failure rejects sensitive extras rather than copying malformed JSON',()=>{const expected={sourceCommit:control,controlCommit:control,mode:'CANDIDATE',run:{id:runId,attempt:1}},report=initial(control,'CANDIDATE',undefined,control,expected.run);safe(report,expected);assert.throws(()=>safe({...report,stderr:'private token'},expected));});

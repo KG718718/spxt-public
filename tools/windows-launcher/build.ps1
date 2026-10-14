@@ -30,7 +30,10 @@ try {
    . (Join-Path $PSScriptRoot '../windows-firewall/test-environment.ps1')
    $taskFreshTests=@('TestFreshLogonPlanIsCurrentUserInstalledOnly','TestFreshEnvironmentAndNetworkBindingFailClosed')
    $taskFreshRaw=Join-Path $taskScratch 'fresh-launcher-tests.jsonl'
-   & $GoExe test -tags fresh_trial_tests -json -count=1 -run ('^(' + ($taskFreshTests -join '|') + ')$') . *> $taskFreshRaw
+   $taskFreshOverlay=Join-Path $taskScratch 'fresh-launcher-overlay.json'
+   & $env:KSESSION_FRESH_BUILD_NODE (Join-Path $PSScriptRoot '../tests/fresh-lan-trial/prepare-policy-overlay.cjs') LAUNCHER $taskFreshOverlay|Out-Null
+   if($LASTEXITCODE -ne 0){throw 'Fresh Launcher overlay source rejected'}
+   & $GoExe test -overlay $taskFreshOverlay -tags fresh_trial_tests -json -count=1 -run ('^(' + ($taskFreshTests -join '|') + ')$') . *> $taskFreshRaw
    $taskFreshExit=$LASTEXITCODE;$taskFreshSummary=Read-KSessionGoTestSummary $taskFreshRaw
    if($taskFreshExit -ne 0 -or $taskFreshSummary.JSONInvalid -or $taskFreshSummary.PackagePass -ne 1 -or $taskFreshSummary.PackageFail -ne 0 -or @($taskFreshSummary.FailedNames).Count -ne 0 -or @($taskFreshSummary.SkippedNames).Count -ne 0 -or (Compare-Object @($taskFreshTests|Sort-Object) @($taskFreshSummary.Passed|Sort-Object))){throw 'Fresh Launcher policy gate failed'}
  }

@@ -3,11 +3,14 @@ param(
   [Parameter(Mandatory=$true)][string]$Commit,
   [string]$NodeDir,
   [string]$GoRoot,
-  [switch]$FreshTrial
+  [switch]$FreshTrial,
+  [string]$BuildDiagnostic=''
 )
 $ErrorActionPreference='Stop'
 $taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $FreshTrial=$true
+function Build-Stage([string]$Stage){if($BuildDiagnostic){[IO.File]::WriteAllText($BuildDiagnostic,(@{stage=$Stage;classification='COMMAND_FAILED';script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}}
+Build-Stage 'RUNTIME'
 $taskWork=[IO.Path]::GetFullPath($Work)
 if($taskWork -notmatch '^E:\\' -or (Test-Path -LiteralPath $taskWork)){throw 'Fresh isolated E output required'}
 $taskGit=(Get-Command git).Source
@@ -36,6 +39,7 @@ if(!$NodeDir){
 }
 $taskGo=Join-Path $GoRoot 'bin/go.exe'
 $taskNode=Join-Path $NodeDir 'node.exe'
+$env:KSESSION_FRESH_BUILD_NODE=$taskNode
 $taskBuild=Join-Path $taskWork 'runtime-build';New-Item -ItemType Directory -Path $taskBuild|Out-Null
 $taskDeriveProfile=if($FreshTrial){'fresh-trial'}else{'standard'}
 Run-Checked $taskNode @((Join-Path $taskRepo 'tools/windows-runtime/build.cjs'),$Commit,$taskBuild,$NodeDir,$taskGit,$taskDeriveProfile)
@@ -49,6 +53,7 @@ $taskNodeHash=(Get-FileHash -LiteralPath (Join-Path $taskRoot 'runtime/node.exe'
 $taskHelper=Join-Path $taskWork 'firewall-helper-output'
 $taskFirewallBuildReport=Join-Path $taskWork 'firewall-build-diagnostic.json'
 $taskFirewallBuildLog=Join-Path $taskWork 'firewall-build-entry.log'
+Build-Stage 'HELPER'
 & pwsh -NoLogo -NoProfile -File (Join-Path $taskRepo 'tools/windows-firewall/build.ps1') -OutputDir $taskHelper -SourceCommit $Commit `
   -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.4' -GoExe $taskGo -DiagnosticReport $taskFirewallBuildReport -FreshTrial:$FreshTrial *> $taskFirewallBuildLog
 if($LASTEXITCODE -ne 0){throw 'Firewall helper build failed'}
@@ -68,6 +73,7 @@ try{
 Run-Checked $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),$taskFirewallRaw,$taskFirewallReport,'FIREWALL')+$taskFirewallTests)
 $taskHelperHash=(Get-FileHash -LiteralPath (Join-Path $taskHelper 'K-SESSION-Firewall.exe') -Algorithm SHA256).Hash.ToLower()
 $taskLauncher=Join-Path $taskWork 'launcher-output'
+Build-Stage 'LAUNCHER'
 $taskLauncherBuildVariables=@('GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOCACHE','GOTMPDIR','TEMP','TMP','GOPROXY','GOSUMDB','GOENV','GOFLAGS','GOEXPERIMENT')
 Invoke-KSessionWithRestoredEnvironment $taskLauncherBuildVariables {
   & (Join-Path $taskRepo 'tools/windows-launcher/build.ps1') -RuntimeRoot $taskRoot -OutputDir $taskLauncher `

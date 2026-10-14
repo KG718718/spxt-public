@@ -9,10 +9,33 @@ if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted
 $taskReportPath=Join-Path $taskWork 'fresh-report.json'
 $taskReport=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
 . (Join-Path $taskRepo 'tools/tests/lan-host/node-test-environment.ps1')
-$taskVariables=@('TEMP','TMP','GOCACHE','GOTMPDIR','GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','NODE_PATH','NODE_OPTIONS','PLAYWRIGHT_BROWSERS_PATH','KSESSION_FRESH_TESTED_SOURCE')
+$taskVariables=@('TEMP','TMP','GOCACHE','GOTMPDIR','GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','NODE_PATH','NODE_OPTIONS','PLAYWRIGHT_BROWSERS_PATH','KSESSION_FRESH_TESTED_SOURCE','KSESSION_FRESH_BUILD_NODE')
 $taskPrevious=Save-KSessionProcessEnvironment $taskVariables
 $taskFinalStarted=$false
-function Stage([string]$Reason){$taskReport.stage='BUILD';$taskReport.reason=$Reason;[IO.File]::WriteAllText($taskReportPath,($taskReport|ConvertTo-Json -Depth 12 -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
+$taskToolchainStarted=$false;$taskToolchainOwned=$false;$taskToolchainRestored=$true
+$taskBuildDiagnostic=Join-Path $taskWork 'build-diagnostic.json'
+function Stage([string]$Reason){
+  $taskReport.stage='BUILD';$taskReport.reason=$Reason
+  $taskPhase=switch($Reason){'BUILD_PORTABLE_FAILED'{'RUNTIME'}'BUILD_TOOLCHAIN_FAILED'{'TOOLCHAIN'}'BUILD_COMPILER_FAILED'{'ISCC'}'BROWSER_TOOL_FAILED'{'BROWSER_TOOL'}default{'ASSEMBLY'}}
+  $taskReport.buildDiagnostic=[pscustomobject]@{stage=$taskPhase;classification='COMMAND_FAILED';script=$null;line=$null}
+  [IO.File]::WriteAllText($taskBuildDiagnostic,($taskReport.buildDiagnostic|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+  [IO.File]::WriteAllText($taskReportPath,($taskReport|ConvertTo-Json -Depth 12 -Compress)+"`n",[Text.UTF8Encoding]::new($false))
+}
+function User-Uninstall-Snapshot {
+  $taskMap=[ordered]@{}
+  foreach($taskView in @([Microsoft.Win32.RegistryView]::Registry64,[Microsoft.Win32.RegistryView]::Registry32)){
+    $taskHive=[Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser,$taskView)
+    try{
+      $taskParent=$taskHive.OpenSubKey('Software\Microsoft\Windows\CurrentVersion\Uninstall')
+      if($null -eq $taskParent){continue}
+      try{foreach($taskName in @($taskParent.GetSubKeyNames()|Sort-Object)){
+        $taskKey=$taskParent.OpenSubKey($taskName);if($null -eq $taskKey){throw 'User registration unknown'}
+        try{$taskValues=[ordered]@{};foreach($taskValue in @($taskKey.GetValueNames()|Sort-Object)){$taskValues[$taskValue]=$taskKey.GetValue($taskValue)};if($taskKey.GetSubKeyNames().Count -ne 0){$taskValues['_nested']=$true};$taskMap[([string]$taskView+':'+$taskName)]=$taskValues}finally{$taskKey.Dispose()}
+      }}finally{$taskParent.Dispose()}
+    }finally{$taskHive.Dispose()}
+  }
+  return $taskMap
+}
 function Checked([string]$Exe,[string[]]$Arguments){& $Exe @Arguments;if($LASTEXITCODE -ne 0){throw 'Fresh checked command failed'}}
 function Pinned([string]$Uri,[string]$Hash,[string]$Zip,[string]$Output){Invoke-WebRequest -Uri $Uri -OutFile $Zip -TimeoutSec 240;if((Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash.ToLowerInvariant() -cne $Hash){throw 'Pinned tool identity rejected'};Expand-Archive -LiteralPath $Zip -DestinationPath $Output}
 try {
@@ -20,13 +43,26 @@ try {
   if($taskContext.mode -eq 'CANDIDATE'){
     Stage 'BUILD_PORTABLE_FAILED'
     $taskPortable=Join-Path $taskWork 'portable'
-    & (Join-Path $taskRepo 'tools/windows-portable/ci-lan.ps1') -Work $taskPortable -Commit $taskContext.sourceCommit -FreshTrial
+    & (Join-Path $PSScriptRoot 'build-payload.ps1') -Work $taskPortable -Commit $taskContext.sourceCommit -BuildDiagnostic $taskBuildDiagnostic
     if($LASTEXITCODE -ne 0){throw 'Fresh portable build failed'}
     $taskNode=Join-Path $taskPortable 'node-tool/node-v24.21.0-win-x64/node.exe'
     $taskGo=Join-Path $taskPortable 'go-tool/go/bin/go.exe'
     Stage 'BUILD_TOOLCHAIN_FAILED'
+    $taskUserBefore=User-Uninstall-Snapshot
+    foreach($taskValue in $taskUserBefore.Values){if([string]$taskValue.DisplayName -match '^Inno Setup'){throw 'Existing user compiler registration; refuse install'}}
+    $taskToolchainStarted=$true;$taskToolchainRestored=$false
     & (Join-Path $taskRepo 'tools/windows-installer/toolchain.ps1') -Work (Join-Path $taskWork 'inno')
     if($LASTEXITCODE -ne 0){throw 'Fresh compiler toolchain failed'}
+    $taskUserAfter=User-Uninstall-Snapshot
+    foreach($taskKey in $taskUserBefore.Keys){if(!$taskUserAfter.Contains($taskKey) -or ($taskUserAfter[$taskKey]|ConvertTo-Json -Depth 8 -Compress) -cne ($taskUserBefore[$taskKey]|ConvertTo-Json -Depth 8 -Compress)){throw 'User registration changed; ownership unknown'}}
+    $taskNewKeys=@($taskUserAfter.Keys|Where-Object{!$taskUserBefore.Contains($_)})
+    if($taskNewKeys.Count -ne 1){throw 'Compiler registration ownership unknown'}
+    $taskCompilerRegistration=$taskUserAfter[$taskNewKeys[0]]
+    if([string]$taskCompilerRegistration.DisplayName -notmatch '^Inno Setup' -or [string]$taskCompilerRegistration.InstallLocation -ine (Join-Path $taskWork 'inno/compiler') -or $taskCompilerRegistration.Contains('_nested')){throw 'Compiler registration ownership unknown'}
+    $taskCompilerUninstall=Join-Path $taskWork 'inno/compiler/unins000.exe'
+    if(!(Test-Path -LiteralPath $taskCompilerUninstall -PathType Leaf)){throw 'Compiler uninstaller unknown'}
+    $taskCompilerUninstallHash=(Get-FileHash -LiteralPath $taskCompilerUninstall -Algorithm SHA256).Hash
+    $taskToolchainOwned=$true
     Stage 'BUILD_COMPILER_FAILED'
     Checked $taskNode @((Join-Path $PSScriptRoot 'build.cjs'),$taskPortable,(Join-Path $taskWork 'inno/compiler'),(Join-Path $taskWork 'setup'),$taskContext.sourceCommit)
     Copy-Item -LiteralPath (Join-Path $taskWork 'setup/artifact') -Destination (Join-Path $taskWork 'artifact') -Recurse
@@ -65,10 +101,23 @@ try {
   if(!$taskFinalStarted){$taskReport.status='FAIL';[IO.File]::WriteAllText($taskReportPath,($taskReport|ConvertTo-Json -Depth 12 -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
   $script:taskFailed=$true
 }finally{
+  if($taskToolchainStarted){
+    try{
+      if(!$taskToolchainOwned){throw 'Compiler cleanup unproven'}
+      $taskCurrentUser=User-Uninstall-Snapshot
+      if(($taskCurrentUser|ConvertTo-Json -Depth 8 -Compress) -cne ($taskUserAfter|ConvertTo-Json -Depth 8 -Compress) -or (Get-FileHash -LiteralPath $taskCompilerUninstall -Algorithm SHA256).Hash -cne $taskCompilerUninstallHash -or (((Get-Item -LiteralPath $taskCompilerUninstall).Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)){throw 'Compiler ownership changed'}
+      $taskToolCleanup=Start-Process -FilePath $taskCompilerUninstall -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -WindowStyle Hidden -PassThru -Wait
+      if($taskToolCleanup.ExitCode -ne 0 -or ((User-Uninstall-Snapshot)|ConvertTo-Json -Depth 8 -Compress) -cne ($taskUserBefore|ConvertTo-Json -Depth 8 -Compress) -or (Test-Path -LiteralPath $taskCompilerUninstall)){throw 'Compiler cleanup failed'}
+      $taskToolchainRestored=$true
+    }catch{$taskToolchainRestored=$false;$script:taskFailed=$true}
+  }
   Restore-KSessionProcessEnvironment $taskPrevious
   $taskFinal=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
-  $taskFinal.cleanup.environmentRestored=$true
-  if(!$taskFinalStarted){$taskFinal.cleanup.ownedLauncherExited=$true;$taskFinal.cleanup.ownedNodeExited=$true;$taskFinal.cleanup.handlesClosed=$true;$taskFinal.cleanup.lockReleased=$true;$taskFinal.cleanup.ownedRulesAbsent=$true}
+  $taskFinal.cleanup.environmentRestored=(Test-KSessionProcessEnvironmentRestored $taskPrevious)
+  $taskFinal.cleanup.ownedToolchainAbsent=$taskToolchainRestored
+  if(Test-Path -LiteralPath $taskBuildDiagnostic){$taskFinal.buildDiagnostic=Get-Content -Raw -LiteralPath $taskBuildDiagnostic|ConvertFrom-Json}
+  if(!$taskFinalStarted){$taskFinal.cleanup.ownedLauncherExited=$true;$taskFinal.cleanup.ownedNodeExited=$true;$taskFinal.cleanup.handlesClosed=$true;$taskFinal.cleanup.lockReleased=$true;$taskFinal.cleanup.ownedRulesAbsent=$true;$taskFinal.cleanup.ownedRegistrationAbsent=$true;$taskFinal.cleanup.ownedShortcutsAbsent=$true}
+  if(!$taskFinal.cleanup.environmentRestored -or !$taskToolchainRestored){$taskFinal.status='FAIL';$taskFinal.reason='CLEANUP_UNPROVEN';if($taskFinal.stage -eq 'COMPLETE'){$taskFinal.stage='F09'};$script:taskFailed=$true}
   [IO.File]::WriteAllText($taskReportPath,($taskFinal|ConvertTo-Json -Depth 12 -Compress)+"`n",[Text.UTF8Encoding]::new($false))
   if($taskFinal.status -eq 'FRESH_TRIAL_AUTOMATION_PASS_HUMAN_PENDING'){Copy-Item -LiteralPath $taskReportPath -Destination (Join-Path $taskWork 'artifact/fresh-report.json')}
 }

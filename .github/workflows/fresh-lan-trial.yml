@@ -30,8 +30,11 @@ jobs:
           if(Test-Path E:/fresh-trial){throw 'Fresh isolation unavailable'}
           New-Item -ItemType Directory -Path E:/fresh-trial|Out-Null
           [IO.File]::WriteAllText('E:/fresh-trial/early.json',(@{schema=1;kind='FRESH_TRIAL_EARLY_FAILURE';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';reason='SOURCE_REJECTED';status='FAIL';cleanup='NOT_STARTED'}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
-          git config --global core.autocrlf false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
         with:
           fetch-depth: 0
           persist-credentials: false
