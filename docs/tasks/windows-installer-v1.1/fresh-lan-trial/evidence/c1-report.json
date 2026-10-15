@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "kind": "KSESSION_FRESH_TRIAL",
+  "sourceCommit": "76f574cad1ba68f488a406ffa87ef9ebcb0568be",
+  "controlCommit": "71ce988199b13a8ab47d4191cae66a2a0e09a087",
+  "run": {
+    "id": "38566205060",
+    "attempt": 1
+  },
+  "mode": "CANDIDATE",
+  "status": "FAIL",
+  "stage": "BUILD",
+  "reason": "BUILD_PORTABLE_FAILED",
+  "setupSha256": null,
+  "candidate": {
+    "runId": null,
+    "artifactId": null,
+    "sourceCommit": null,
+    "setupSha256": null
+  },
+  "checks": [],
+  "setupDiagnostics": [],
+  "buildDiagnostic": {
+    "stage": "LAUNCHER",
+    "classification": "COMMAND_FAILED",
+    "script": null,
+    "line": null
+  },
+  "cleanup": {
+    "ownedLauncherExited": true,
+    "ownedNodeExited": true,
+    "handlesClosed": true,
+    "lockReleased": true,
+    "ownedRulesAbsent": true,
+    "ownedRegistrationAbsent": true,
+    "ownedShortcutsAbsent": true,
+    "ownedToolchainAbsent": true,
+    "ownedDriveRestored": true,
+    "environmentRestored": true
+  },
+  "humanPending": [
+    "REAL_GUI_UAC",
+    "PHYSICAL_PRIVATE_ADAPTER",
+    "FIREWALL_AUTHORIZATION",
+    "SECOND_PHYSICAL_DEVICE",
+    "WINDOWS_LOGIN_STARTUP",
+    "SECOND_LAUNCHER_GUI"
+  ],
+  "historical": {
+    "upgrade": {
+      "result": "FAIL",
+      "workStatus": "DEFERRED"
+    },
+    "uninstallReinstall": {
+      "result": "FAIL",
+      "workStatus": "DEFERRED"
+    },
+    "LC01": {
+      "result": "FAIL",
+      "workStatus": "DEFERRED"
+    },
+    "U27": {
+      "result": "FAIL",
+      "workStatus": "DEFERRED"
+    }
+  }
+}

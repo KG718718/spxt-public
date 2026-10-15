@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "mode": "CANDIDATE",
+  "slot": "C3",
+  "reviewedSource": "de6c2312a9a827f57808d63dc9ac9614f2c0aa33",
+  "testedSource": "de6c2312a9a827f57808d63dc9ac9614f2c0aa33",
+  "approvalMarker": "FRESH_TRIAL_MASTER_REVIEWED_C3_de6c2312a9a827f57808d63dc9ac9614f2c0aa33",
+  "candidateRunId": "",
+  "candidateArtifactId": "",
+  "candidateSetupSha256": ""
+}

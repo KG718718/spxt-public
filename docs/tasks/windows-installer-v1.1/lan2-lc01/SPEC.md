@@ -17,7 +17,7 @@
 
 - 仅本任务目录的报告/固定证据；如确有必要，可新增明确 research-only 的小型诊断 harness/测试 overlay 于 `tools/research/lan2-lc01/`。不得修改现有生产、现有测试/门禁、manifest、Setup、Runtime、identity、transaction、rollback、业务 schema 或旧证据。
 - 不 push、不合并、不触碰冻结分支/main/tag/Release；允许在任务分支 local commit。零 GitHub Actions/Full/QA。
-- 禁止修改防火墙、网络配置、注册表、服务、实际部署或真实业务数据；不访问实际 LAN、19 主机或内部版，不使用真实身份/凭据/邮件。
+- 禁止修改防火墙、网络配置、注册表、服务、实际部署或真实业务数据；不访问实际 LAN、真实部署主机或内部版，不使用真实身份/凭据/邮件。
 - 已有公共证据目录可只读：主控公共 checkout 下 `.test-work/lan2-full4-fixed-evidence-20260928/`（六个固定 JSON）；`.test-work/lan2-full4-master-review-003cdb3/harness/`（生成的 Full #4 Go 测试）。禁止改这些历史文件或读取无关测试/其他用途资料。
 
 ## 顺序与预算

@@ -1,54 +1,74 @@
 ===== CHATGPT HANDOFF BEGIN =====
 
-项目：K⁺-SESSION公开版
-当前阶段：第一阶段Fresh LAN Trial / 最小方案
-结论：PROPOSED — WEB APPROVAL REQUIRED
+项目：
+K⁺-SESSION 公开版 Windows 一键安装重构
+
+当前 Batch：
+Fresh LAN Trial — Autonomous Delivery Loop，2026-10-14
+
+结论：
+BLOCKED — FRESH TRIAL CANDIDATE BUDGET EXHAUSTED
 
 一句话结论：
-建议交付独立fresh-only局域网试用包，历史升级/卸载重装/LC01失败保留FAIL、后续工作DEFERRED。先批准安装器限定模式、验收分工及最多2次GitHub预算，再实施。
+三次Candidate全部在构建阶段FAIL，安装未开始，没有可交付EXE。预算3/3耗尽，已停止工程及Hosted；独立QA0/1未使用，不能进入人工试用。
 
 【本轮实际完成】
-- 只读核验公共仓库、9d1d8da基线与现有Setup/LAN/验收接线，提交最小矩阵F01—F09和预算。
-- 已确认当前Setup接受可信F3 beta.2升级；现有双会话测试使用repo/server.js、fetch和合成发现，不等于安装后浏览器完整验证。
+- 两条长期Execution独立实施，Master逐轮Review、集成与非force同步；无普通sub-agent。
+- 实现fresh-only严格拒绝旧登记/Binding/instance/不安全目标，接线自动物理Private发现、唯一预选、首次明确授权、后台及当前用户登录自启；保持安全契约和业务schema。
+- 独立Candidate/同字节QA流水线、固定失败报告及受控cleanup已接线。实现与本地通过不代表客户安装通过。
 
 【关键数字 / 技术事实】
-- repo：KG718718/spxt-public；方案source基线：9d1d8da21a1127b430b992b9681a46307134f5ec。
-- 沿用Node固定24.21.0；npm、Runtime大小/文件数/生产依赖数、新Artifact/EXE SHA256：N/A，本轮没有构建。
-- 提议包：K-SESSION-Fresh-Trial-1.1.0-beta.4.exe；appVersion1.0.0、dataContractVersion1、Runtime identity/schema/AppId不变。
+- source commit：de6c2312a9a827f57808d63dc9ac9614f2c0aa33
+- HEAD：冻结治理前d051587dac605d82dc66c0eb98a2f637b43ef781；最终治理HEAD另见Git回执，不冒充受测source。
+- C3控制提交：73cf120bb87b691a0aca1d9750bcc416e86a7bea
+- Node：本地固定24.21.0复验；Go1.27.1/CGO0/offline。
+- npm：N/A；Runtime大小：N/A；最终文件数：N/A；最终生产依赖数：N/A。
+- Artifact：11901796902 / fresh-trial-safe-failure-38578047457，仅安全报告。
+- EXE SHA256：N/A，无成功安装包。
 
-【最小交付与自动验收】
-- 新Win10 x64 Host安装→本机创建Admin→明确选择可信LAN/授权Firewall→第二设备浏览器登录，使用测试数据。
-- 新试用构建必须在写入前拒绝旧登记/Binding、同名快捷方式、已有业务instance、非空/不安全目标及运行冲突。不删旧环境、不迁移、不提供绕过开关；旧标准模式/升级信任/事务/rollback不变。这一更严格安装器模式须明确批准，不能只改文件名。
-- 独立fresh入口只构建一份candidate，验证实际Setup、安装身份/零种子、真实单实例锁、Host-only Admin、双监听/selected subnet/端口安全、实际安装payload的无头浏览器登录/保存/附件/双会话、正常退出再启动后的数据和LAN配置保持、核心26 suites/742 checks fail0skip0及Artifact隐私/SHA。
-- 不搬入旧TestSetup整体卸载重装链，不下载F3、不构建六个upgrade fault包，不降低旧verifier或历史PASS条件。
+【实际测试结果】
+- C1 Run38566205060：BUILD/LAUNCHER/COMMAND_FAILED；Artifact11896545773。
+- C2 Run38572354045：BUILD/LAUNCHER_UNIT/COMMAND_FAILED；Artifact11897209874。
+- C3 Run38578047457：BUILD/HELPER/COMMAND_FAILED；Artifact11901796902。
+- 三次attempt均1，固定报告隐私/来源绑定核验通过，cleanup十项均true；setupSha=null、checks=[]。
+- Master本地首轮132/132、文档追加后133/133；C1返工138/138，C2返工143/143，fail0skip0；PS/CJS、生成器、Go编译和diff-check通过。相关反例有证据，三次Hosted首因均未唯一证明。
 
-【自动与人工边界】
-- Hosted虚拟网卡必须继续被生产helper拒绝；合成/隔离LAN服务及Private最小规则证据显式TEST_ONLY，不进入用户包。
-- 真实网卡选择、UAC、可见向导/Launcher启用、实体双设备连通及第二Launcher弹窗/自然退出，由最后一轮Win10人工闭合，不能静态检查冒充实测。
-- QA通过后交同一EXE字节、source/run/Artifact/SHA；仅标FRESH_TRIAL_AUTOMATION_PASS_HUMAN_PENDING，不称企业LAN认证。
+【未完成 / 未验证】
+- fresh真实Setup、安装后身份、F01—F09、核心26/742、独立QA均未到达。
+- 物理Private网卡、GUI/UAC、防火墙授权、双设备、Windows登录自启、真实第二Launcher未验收。不能称AUTOMATION_PASS_HUMAN_PENDING或企业LAN认证。
 
-【实际测试结果 / 未完成】
-- 本轮测试/Actions均0，新矩阵全部NOT RUN。
-- 旧Full、U27及LC01继续FAIL；工作DEFERRED，不改成PASS或skip。U27网络恢复FAILED也未修复，新路径不调用其断网链。
-- 无最终试用包，未创建分支/Execution/QA或worktree。
+【当前阻塞】
+1. Candidate3/3全部FAIL，强制停止；无C4、旧Full/U27/LC01/Diagnostic或QA调试。
+2. C3只定位到HELPER构建边界，具体失败命令/首因UNKNOWN，不能推断生产产品缺陷。
+3. T1会话已归档、原7b54工作树路径不在；任务分支79d9355及已集成代码存在，未提交现场可恢复性UNKNOWN。主控未执行清理，不擅自重建。T2原bea7工作树确认冻结保留。
 
-【预算建议】
-1. Fresh Trial Candidate最多1次，本地门禁及Master Review后运行。
-2. 独立QA最多1次，仅Candidate PASS后；下载并复核同一待交付EXE，重新fresh验证，不能用不同rebuild冒充。
-3. Diagnostic/旧Full/U27/LC01均0次，不借预算、不无修改retry；任一FAIL/UNKNOWN/收尾未证即STOP。
-合计2次；建议每次45分钟硬超时，正常工程估计总25—55个job分钟，不是计费承诺。
+【本轮修改范围】
+- 新增：fresh构建/验收入口、合成反例、固定报告与治理。
+- 修改：公开LAN/Launcher/helper的fresh接线、条件Setup与封装环境/报告缺口。
+- 明确未修改：业务schema/账号权限、历史F3身份、upgrade事务/rollback及旧FAIL含义；收尾只治理。
 
-【修改范围 / Git状态 / 安全】
-- 仅方案及治理Markdown；当前治理分支codex/lan2-manual-host-v1.1，基线HEAD9d1d8da；计划批准后另建codex/lan-fresh-trial-v1.1。
-- commit/push仅本轮方案治理，最终同步HEAD由Master另报；保留已有.test-work/node_modules和旧worktree，未清理。
-- PR/Release：无；main/v1.0.0未改；未访问内部SPXT、未含真实业务数据/账号/Token/密码、未改生产功能或测试。
-- 唯一Master及长期Execution+独立QA模式不变；禁止普通sub-agent及后代Thread。
+【Git状态】
+- branch：codex/lan-fresh-trial-v1.1。
+- HEAD：受测source与控制提交如上；治理提交独立，不自引用。
+- working tree：治理提交后tracked clean；.test-work、node_modules未跟踪内容保留。
+- commit：C1返工5daa62c、C2返工d76e22b；最终冻结治理见Git回执。
+- push：仅fresh分支非force同步并核验三方SHA；普通Git连接失败时使用逐对象同SHA的GitHub API快进。
+- PR：无；Release：无；main是否修改：否；v1.0.0是否修改：否。
 
-【下一阶段判断 / 需要网页版决定】
-目前不允许工程执行。请批准或调整：fresh-only构建/拒绝旧环境门禁、beta.4 Fresh Trial标识、上述自动/人工矩阵、Candidate1+QA1预算。批准后按原长期Thread治理实施；人工FAIL停止，人工PASS仅为fresh限定试用，不承诺迁移、升级/卸载重装认证或其他平台。
+【安全与边界】
+- 未访问内部SPXT；无真实业务数据、业务账号、Token或密码。业务逻辑未改。
+- 历史升级/卸载重装/LC01/U27仍FAIL、工作DEFERRED；原F3 beta.2单机人工1—10 PASS仍有效，LAN未发布/未认证。
+- 受验基线来源：c8886e6b6d413c2fd73d6716621d07a80b337e58，Run36246132535、Artifact10907910968。不会以当前试验分支替代该正式基线，也不承诺旧数据迁移或覆盖现有安装。
+
+【下一阶段判断】
+- 不允许进入下一Batch或用户试用。没有Candidate/QA PASS，不发布main/tag/Release，不做Batch5/OCR。
+
+【需要 ChatGPT 网页版决定】
+1. 根据C3固定证据决定是否另行批准有界HELPER构建定位、修改及验证预算；本轮不申请C4、不自动继续。现有证据不足以指定具体最小生产修复。
 
 【详细报告文件】
-docs/tasks/windows-installer-v1.1/fresh-lan-trial/MINIMAL-ACCEPTANCE-PLAN.md
-旧证据：batch-lan-2/LAN2-U27-R2-HOSTED-RESULT.md及原Full/LC01记录。
+- docs/tasks/windows-installer-v1.1/fresh-lan-trial/RESULT.md
+- 同目录ORCHESTRATION.md、C1/C2/C3-RESULT.md、两份REWORK-MASTER-REVIEW.md、BATCH-FROZEN.md、evidence/c1-report.json至c3-report.json。
+- 原方案卡保留PLANNING-HANDOFF-20261014.md。
 
 ===== CHATGPT HANDOFF END =====
