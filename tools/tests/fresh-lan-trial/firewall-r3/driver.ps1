@@ -7,6 +7,14 @@ if($Local){if($taskContext.execution -ne 'LOCAL'){throw 'Local context required'
 if((git -C $taskRepo rev-parse HEAD).Trim() -cne $taskContext.sourceCommit){throw 'Tested source mismatch'}
 . (Join-Path $taskRepo 'tools/tests/lan-host/node-test-environment.ps1')
 . (Join-Path $PSScriptRoot 'job.ps1')
+function Invoke-R3ControlNode([string[]]$Arguments){
+  $taskNodeState=Save-KSessionProcessEnvironment @('NODE_OPTIONS','NODE_PATH')
+  try{
+    $env:NODE_OPTIONS='';$env:NODE_PATH=''
+    & $taskBootstrapNode @Arguments
+    $script:taskControlExit=$LASTEXITCODE
+  }finally{Restore-KSessionProcessEnvironment $taskNodeState}
+}
 $taskWork=Join-Path $ControlRoot 'owned-work'
 if(Test-Path -LiteralPath $taskWork){throw 'Unknown work directory'}
 New-Item -ItemType Directory -Path $taskWork|Out-Null
@@ -15,8 +23,8 @@ $taskReport=Join-Path $ControlRoot 'firewall-r3-report.json'
 $taskData=[ordered]@{repo=$taskRepo;work=$taskWork;control=$ControlRoot;report=$taskReport;gate=(Join-Path $taskWork 'job-ready');go=$Go;execution=$taskContext.execution;sourceCommit=$taskContext.sourceCommit;controlCommit=$taskContext.controlCommit;codeFingerprint=$taskContext.codeFingerprint;run=$taskContext.run}
 [IO.File]::WriteAllText((Join-Path $taskWork '.r3-owned.json'),(@{schema=1;sourceCommit=$taskContext.sourceCommit;run=$taskContext.run}|ConvertTo-Json -Depth 4 -Compress),[Text.UTF8Encoding]::new($false))
 function Encoded-Context{return [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($taskData|ConvertTo-Json -Depth 8 -Compress)))}
-& $taskBootstrapNode (Join-Path $PSScriptRoot 'runner.cjs') INIT (Encoded-Context)
-if($LASTEXITCODE -ne 0){throw 'Report initialization failed'}
+Invoke-R3ControlNode @((Join-Path $PSScriptRoot 'runner.cjs'),'INIT',(Encoded-Context))
+if($script:taskControlExit -ne 0){throw 'Report initialization failed'}
 $taskNames=@('GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','TEMP','TMP','GOTMPDIR','GOCACHE','NODE_OPTIONS','NODE_PATH','KSESSION_FIREWALL_TEST_ROOT','KSESSION_R3_GUARD_FILE','KSESSION_R3_REGISTER_FILE')
 $taskBefore=Save-KSessionProcessEnvironment $taskNames
 $taskJob=[IntPtr]::Zero;$taskProcess=$null;$taskEmpty=$false;$taskForced=$false;$taskRestore=$false;$taskRemoved=$false;$taskNatural=$false;$taskStderr=$false
@@ -48,7 +56,7 @@ try{
   if($taskJob -ne [IntPtr]::Zero){[FirewallR3Job]::CloseHandle($taskJob)|Out-Null}
   Restore-KSessionProcessEnvironment $taskBefore
   $taskRestore=Test-KSessionProcessEnvironmentRestored $taskBefore
-  if($taskEmpty){& $taskBootstrapNode (Join-Path $PSScriptRoot 'runner.cjs') CLEAN (Encoded-Context) *> (Join-Path $ControlRoot 'cleanup-private.log');$taskRemoved=$LASTEXITCODE -eq 0}
+  if($taskEmpty){Invoke-R3ControlNode @((Join-Path $PSScriptRoot 'runner.cjs'),'CLEAN',(Encoded-Context)) *> (Join-Path $ControlRoot 'cleanup-private.log');$taskRemoved=$script:taskControlExit -eq 0}
   $r=Get-Content -Raw -LiteralPath $taskReport|ConvertFrom-Json
   $r.supervisor.runnerNaturalExit=$taskNatural;$r.supervisor.runnerStderrEmpty=$taskStderr
   $r.cleanup.jobEmpty=if($taskEmpty){$true}else{'UNKNOWN'};$r.cleanup.forcedTermination=$taskForced;$r.cleanup.environmentRestored=if($taskRestore){$true}else{'UNKNOWN'}
@@ -56,5 +64,5 @@ try{
   [IO.File]::WriteAllText($taskReport,($r|ConvertTo-Json -Depth 12 -Compress),[Text.UTF8Encoding]::new($false))
 }
 $taskOuterFailure=(!$taskNatural -or !$taskStderr)
-& $taskBootstrapNode (Join-Path $PSScriptRoot 'finalize.cjs') $ControlRoot $taskContext.sourceCommit $taskContext.controlCommit $taskContext.run.id $taskContext.execution $taskOuterFailure.ToString().ToLowerInvariant()
-if($LASTEXITCODE -ne 0){exit 1}
+Invoke-R3ControlNode @((Join-Path $PSScriptRoot 'finalize.cjs'),$ControlRoot,$taskContext.sourceCommit,$taskContext.controlCommit,$taskContext.run.id,$taskContext.execution,$taskOuterFailure.ToString().ToLowerInvariant())
+if($script:taskControlExit -ne 0){exit 1}
