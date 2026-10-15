@@ -1,0 +1,27 @@
+# FAST DELIVERY V1 — FINAL RESULT / STOP
+
+2026-10-16。**BLOCKED — CANDIDATE 2/2 EXHAUSTED / F01 INSTALL_FATAL / CLEANUP_UNPROVEN。** 独立QA0/1为UNUSED—FROZEN，不创建/不触发；不追加Hosted，不继续工程实现或清理。
+
+## 已证事实
+
+- 唯一R1C2 Run38767500533/attempt1，受测source990f605ed230d13e2bddde71e2071259a62ad2bf，control9eb28d84e232e9d6c73ad17af4cffd23ba8ae9a8，job116534421032，结论FAIL。来源绑定步骤PASS，执行和always finalization均FAIL；仅安全失败Artifact上传成功。
+- Artifact11989268695，build-first-r1-safe-failure-38767500533，只有fresh-report.json。来源/Run/attempt/Schema/ZIP白名单/隐私独立校验PASS。ZIP SHA5e53ad7650404cd41058a36e49f115f4201e5f44ff3441dc3c7eaf2a00f53e66；报告SHA29d72f484c3797b36e812296b28c5ab7e6e47b2d606e8c93d96b099b782e883c。
+- buildDiagnostic COMPLETE/PASS，Setup SHA4340a9bd571aba2897dfd02ca9801900f8af82caf646b297832498e3fbf245f6；不再是历史Helper Fresh12超时构建阻塞。但安全失败Artifact不含EXE，没有可下载合格候选包；不能把该SHA对应程序交用户。
+- F01尚未完整PASS、checks=[]。NONEMPTY_TARGET/EXISTING_INSTANCE/DESKTOP_SHORTCUT/STARTUP_SHORTCUT/OLD_BINDING已记录各自固定拒绝；第六调用FRESH_ACCEPT返回INNO_EXIT_INSTALL_FATAL。markers为KSESSION_PREINSTALL_READY与KSESSION_FRESH_STARTUP_CLEANUP_UNKNOWN，preInstall OBSERVED、copy UNKNOWN、postInstall NOT_OBSERVED，outcome UNKNOWN。REGISTERED_REJECT未到达。不能据此宣称安装成功或未复制文件。
+- cleanup：Launcher/Node退出、handlesClosed、lockReleased、driveRestored、environmentRestored六项true；ownedRulesAbsent、ownedRegistrationAbsent、ownedShortcutsAbsent、ownedToolchainAbsent四项false。总reason=CLEANUP_UNPROVEN；不得称Runner完整恢复或隔离证明PASS。
+
+## 只读源码收窄与未知
+
+setup-beta4.iss的CreateFreshStartup在移动登录启动快捷方式后置FreshStartupCreated，再检查FreshStartupMatches并保存fresh-startup.ini；DeinitializeSetup仅在该标志true且FreshInstallCompleted=false时，对再次匹配失败记录CLEANUP_UNKNOWN。因此已证失败涉及登录启动项创建后的身份/失败收尾路径。FreshStartupMatches内部的目录安全、attributes/hash、COM读取、TargetPath/Arguments/WorkingDirectory究竟哪项不符仍UNKNOWN；初始具体异常及是否另有保存INI问题未被固定报告区分。不能认定产品安全规则错误或直接放宽身份。
+
+收尾false不可逐项等价于真实残留：hosted-run.cjs在F07未到达、firewall观察不存在时把ownedRulesAbsent算为false，不证明实际Firewall被修改；installed-hosted模板用同一restored值汇总登记/快捷方式，且FRESH_ACCEPT失败发生在cleanupInstallation后续赋值前，具体残留细目未证。ci.ps1工具链恢复false可能是snapshot不等或owned文件清除未成功，现有报告不能区分。仍然必须按恢复未证停止，不能把这些false改成true。
+
+## 本轮实际改动与本地证据
+
+T2实现51efe216/57b7df4e，报告9d3f27a8，Master Review990f605e；只Fresh Go测试驱动+治理，生产/原13/Setup/业务/安全/历史身份/workflow未改。system WinPS直接Command、禁autoload、精确内联bindingguard、同语义.NET事件及15反例；正常20秒未放宽。Master实际Fresh3父/根134/EXE1049文件20依赖核验PASS；T2同源完整Runtime/Helper/Launcher/Node44/ISCC构建PASS。实构建source57b7df4e，local EXE33556103 bytes/SHA7af35ddda3f1b095cb9c9d9f2ebdd3beaab8d67232ced4c484af79ee8b7a242e，仅BUILD资格，不冒充本Run Setup字节或安装验收。
+
+## 未完成与停止边界
+
+F01未通过，F02—F09未形成正式PASS，实际浏览器业务/26 suites742 checks/最终Artifact privacy/独立QA未到达。物理Win10/真实网卡/UAC/Firewall授权/双设备/登录自启/实际第二Launcher均HUMAN_PENDING。历史C1、R3、Smoke、旧C1—C3及LAN2/LC01/U27的FAIL/UNKNOWN不变；受验F3 beta.2单机基线保持。
+
+Candidate2/2耗尽且恢复未证，触发用户双重强制停止。原T2已通知冻结，原Thread/worktree/test-work/旧EXE/历史证据全部保留；无main/tag/Release/内部SPXT/未知清理。下一步只建议网页版先决定登录启动项精确布尔定位及失败安装所有权/恢复路径的有界本地范围；本轮不申请、不执行任何额外Hosted或生产修复。

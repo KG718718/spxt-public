@@ -26,11 +26,11 @@
       "attempt": 1,
       "source": "990f605ed230d13e2bddde71e2071259a62ad2bf",
       "control": "9eb28d84e232e9d6c73ad17af4cffd23ba8ae9a8",
-      "status": "IN_PROGRESS",
-      "artifactId": null,
-      "stage": "PENDING",
-      "classification": "PENDING",
-      "cleanupVerified": null
+      "status": "FAIL",
+      "artifactId": "11989268695",
+      "stage": "F01",
+      "classification": "CLEANUP_UNPROVEN",
+      "cleanupVerified": false
     }
   ],
   "historicalSmoke": {
@@ -47,5 +47,7 @@
   },
   "extraDiagnosticAllowed": 0,
   "oldFullU27Lc01Allowed": 0,
-  "physicalLanCertification": "HUMAN_PENDING"
+  "physicalLanCertification": "HUMAN_PENDING",
+  "finalState": "BLOCKED_CANDIDATE_BUDGET_EXHAUSTED_CLEANUP_UNPROVEN",
+  "qaState": "UNUSED_FROZEN"
 }

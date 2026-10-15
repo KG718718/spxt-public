@@ -1,3 +1,7 @@
+## 最终STOP｜2026-10-16 FAST V1 / CANDIDATE 2/2 FAIL
+
+R1C2 Run38767500533/attempt1，source990f605ed230d13e2bddde71e2071259a62ad2bf/control9eb28d84e232e9d6c73ad17af4cffd23ba8ae9a8，安全Artifact11989268695来源/Schema/单JSON白名单核验PASS。BUILD COMPLETE/PASS、SetupSHA4340a9bd...3fbf245f6，已突破Helper构建；F01 FRESH_ACCEPT=INNO_EXIT_INSTALL_FATAL，PREINSTALL_READY+FRESH_STARTUP_CLEANUP_UNKNOWN，具体身份子条件UNKNOWN。最终CLEANUP_UNPROVEN，6项收尾true、规则/登记/快捷方式/工具链4项false，不能等同逐项真实残留或声称Runner完整恢复。F01未PASS/checks空，F02—F09/26-742/QA未到达；失败Artifact不含EXE，无合格用户包。Candidate2/2耗尽，QA0/1 UNUSED—FROZEN；停止工程和全部Hosted，不重试/不追加/不挪QA。原T2/现场/历史FAIL保留，受验beta.2单机基线不变，无内部SPXT/main/tag/Release/清理。详见fresh-lan-trial/fast-delivery-v1/RESULT.md与固定报告；下方运行/Review均为历史。
+
 ## 最终止损｜2026-10-15 Fresh Firewall R3 FAIL / STOP
 
 唯一Run38737813798/attempt1，source7709d22d/control f6112e43，Artifact11974890253严格来源/单JSON/隐私核验PASS；实际FRESH2/TEST_FAILED，原13 PASS、目标12全部TIMEOUT，固定读/mock/mutation/path均UNKNOWN；4反例3FAIL/1报告PASS（MISSING_MOCK存在已证oracle缺口，不能作正确拒绝证明）。Node/Go/编译/vet PASS，runner自然退出/Job empty/owned清理/环境恢复已证，真实系统mutation仍UNKNOWN。Master另更正准入Review：raw私有临时落盘不满足本轮“不保存”的字面要求，不把Artifact隐私PASS代替合规。R3 1/1耗尽，原Smoke1/1 FAIL、Candidate0/2、QA0/1冻结；停止工程/全部Hosted，无Payload/Setup/用户包，不生产/内部SPXT/main/tag/Release/清历史。最小测试建议未实施，后续范围预算交网页版，见FRESH-FIREWALL-R3-RESULT.md及REVIEW-QUALIFICATION.md；下方运行/Review文字均保留历史。

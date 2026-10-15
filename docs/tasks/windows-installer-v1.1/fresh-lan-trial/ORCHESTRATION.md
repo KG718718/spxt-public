@@ -1,3 +1,7 @@
+## 最终STOP｜2026-10-16 FAST V1 / CANDIDATE 2/2 FAIL
+
+R1C2 Run38767500533/attempt1，source990f605ed230d13e2bddde71e2071259a62ad2bf/control9eb28d84e232e9d6c73ad17af4cffd23ba8ae9a8，安全Artifact11989268695来源/Schema/单JSON白名单核验PASS。BUILD COMPLETE/PASS、SetupSHA4340a9bd...3fbf245f6，已突破Helper构建；F01 FRESH_ACCEPT=INNO_EXIT_INSTALL_FATAL，PREINSTALL_READY+FRESH_STARTUP_CLEANUP_UNKNOWN，具体身份子条件UNKNOWN。最终CLEANUP_UNPROVEN，6项收尾true、规则/登记/快捷方式/工具链4项false，不能等同逐项真实残留或声称Runner完整恢复。F01未PASS/checks空，F02—F09/26-742/QA未到达；失败Artifact不含EXE，无合格用户包。Candidate2/2耗尽，QA0/1 UNUSED—FROZEN；停止工程和全部Hosted，不重试/不追加/不挪QA。原T2/现场/历史FAIL保留，受验beta.2单机基线不变，无内部SPXT/main/tag/Release/清理。详见fresh-lan-trial/fast-delivery-v1/RESULT.md与固定报告；下方运行/Review均为历史。
+
 ## 唯一R1C2运行中｜2026-10-16 FAST V1
 
 Run38767500533/attempt1，source990f605ed230d13e2bddde71e2071259a62ad2bf、control9eb28d84e232e9d6c73ad17af4cffd23ba8ae9a8；三方HEAD核验后只触发原R1专用workflow，结果IN_PROGRESS不称PASS。Candidate2/2已用，QA0/1仅完整Candidate PASS后同EXE可用；C2任意FAIL即停止Hosted，不retry/新增预算。T2冻结，真实安装/F01-F09/26-742/QA均待本Run，不以本地构建冒充。旧FAIL/首因UNKNOWN/现场保留，无内部SPXT/main/tag/Release/清理。后续治理提交不改变该受测source。
