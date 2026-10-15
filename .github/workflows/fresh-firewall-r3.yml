@@ -39,14 +39,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          node tools/tests/fresh-lan-trial/firewall-r3/bootstrap.cjs $env:GITHUB_WORKSPACE $env:FIREWALL_R3_CONTROL | Out-Null
+          node tools/tests/fresh-lan-trial/firewall-r3/bootstrap.cjs $env:GITHUB_WORKSPACE $env:FIREWALL_R3_CONTROL *> (Join-Path $env:FIREWALL_R3_CONTROL 'bootstrap-private.log')
           if($LASTEXITCODE -ne 0){exit 1}
       - name: Original13 Fresh2 all12 and negative4 only
         id: execution
         timeout-minutes: 35
         shell: pwsh
         run: |
-          & ./tools/tests/fresh-lan-trial/firewall-r3/driver.ps1 -ControlRoot $env:FIREWALL_R3_CONTROL | Out-Null
+          & ./tools/tests/fresh-lan-trial/firewall-r3/driver.ps1 -ControlRoot $env:FIREWALL_R3_CONTROL *> (Join-Path $env:FIREWALL_R3_CONTROL 'driver-private.log')
           if($LASTEXITCODE -ne 0){exit 1}
       - name: Always verify single safe JSON
         if: always()
@@ -61,9 +61,9 @@ jobs:
           $taskPublish=Join-Path $env:FIREWALL_R3_CONTROL 'publish'
           try {
             $taskOuter=$env:R3_SOURCE_OUTCOME -ne 'success' -or $env:R3_EXECUTION_OUTCOME -ne 'success'
-            node tools/tests/fresh-lan-trial/firewall-r3/finalize.cjs $env:FIREWALL_R3_CONTROL $env:R3_TESTED_SOURCE $env:GITHUB_SHA $env:GITHUB_RUN_ID HOSTED $taskOuter.ToString().ToLowerInvariant() | Out-Null
+            node tools/tests/fresh-lan-trial/firewall-r3/finalize.cjs $env:FIREWALL_R3_CONTROL $env:R3_TESTED_SOURCE $env:GITHUB_SHA $env:GITHUB_RUN_ID HOSTED $taskOuter.ToString().ToLowerInvariant() *> (Join-Path $env:FIREWALL_R3_CONTROL 'final-private.log')
             $taskFinalExit=$LASTEXITCODE
-            node tools/tests/fresh-lan-trial/firewall-r3/verify.cjs $taskPublish $env:GITHUB_SHA $env:GITHUB_RUN_ID $env:R3_TESTED_SOURCE | Out-Null
+            node tools/tests/fresh-lan-trial/firewall-r3/verify.cjs $taskPublish $env:GITHUB_SHA $env:GITHUB_RUN_ID $env:R3_TESTED_SOURCE *> (Join-Path $env:FIREWALL_R3_CONTROL 'verify-private.log')
             if($LASTEXITCODE -ne 0){throw 'Safe report rejected'}
           }catch{
             $taskFinalExit=1
