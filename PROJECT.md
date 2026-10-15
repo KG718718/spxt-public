@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前有限恢复｜2026-10-15 Build-First Recovery R1
+
+用户批准从C3 HELPER粗失败边界恢复：优先原FRESH-T2，独立本地真实构建/反例/Master Review后Smoke最多1次，PASS后新Candidate最多2次，完整PASS后独立QA同EXE最多1次。新增账本0/1、0/2、0/1，旧C1—C3 FAIL与3/3永久保留、旧Full/U27/LC01/Diagnostic0。Smoke FAIL/新Candidate两次FAIL/QA FAIL或安全收尾等强制条件立即STOP。目标仍Win10 fresh-only自动安全LAN，无用户安装包或自动化PASS结论；T1缺失现场不猜测、不重建。详见fresh-lan-trial/BUILD-FIRST-R1-AUTHORIZATION.md及BUILD-FIRST-R1-ORCHESTRATION.md。
+
 ## 当前最终止损｜2026-10-14 Fresh LAN Trial
 
 **BLOCKED — FRESH TRIAL CANDIDATE BUDGET EXHAUSTED。** 三次Candidate均BUILD FAIL；最后Run38578047457@控制73cf120、受测source de6c2312，安全Artifact11901796902，HELPER/COMMAND_FAILED，具体首因UNKNOWN。三次cleanup10/10 true不代表安装通过；安装/F01—F09/核心26/742未到达，无用户试用EXE。Candidate3/3已耗尽，QA0/1 UNUSED，不再工程/Hosted，仅治理冻结。受验F3 beta.2单机PASS仍是正式基线，LAN未发布/未认证。T2原工作树冻结保留；T1已归档且原路径不在，已提交分支及集成代码保留，未提交现场未证；主控未执行清理，不自行恢复。旧FAIL不重写；不访问内部SPXT/main/tag/Release。详见fresh-lan-trial/RESULT.md及CHATGPT-HANDOFF.md，以下均阶段性历史。
