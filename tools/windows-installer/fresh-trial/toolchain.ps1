@@ -1,6 +1,6 @@
-param([Parameter(Mandatory=$true)][string]$Work)
+param([Parameter(Mandatory=$true)][string]$Work,[switch]$LocalBuild)
 $ErrorActionPreference='Stop'
-if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public'){throw 'Fresh toolchain Hosted only'}
+if(!$LocalBuild -and ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public')){throw 'Fresh toolchain Hosted only'}
 $taskWork=[IO.Path]::GetFullPath($Work)
 if($taskWork -notmatch '^E:\\' -or (Test-Path -LiteralPath $taskWork)){throw 'Fresh owned tool directory required'}
 $taskPin=Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '../toolchain.json')|ConvertFrom-Json
@@ -13,7 +13,7 @@ if($taskSignature.Status -ne 'Valid' -or $taskSignature.SignerCertificate.Subjec
 $taskCompiler=Join-Path $taskWork 'compiler'
 # Upstream is-6_7_3/isportable.iss explicitly disables prior directory reuse,
 # uninstall registration, icons, file associations and external desktop deletion.
-$taskArgs=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/CURRENTUSER','/PORTABLE=1','/NOICONS','/TASKS=',('/DIR="'+$taskCompiler+'"'),('/LOG="'+(Join-Path $taskWork 'tool-private.log')+'"'))
+$taskArgs=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/CURRENTUSER','/PORTABLE=1','/NOICONS','/TASKS=',('/DIR="'+$taskCompiler+'"'))
 $taskProcess=Start-Process -FilePath $taskFile -ArgumentList $taskArgs -WindowStyle Hidden -PassThru -Wait
 if($taskProcess.ExitCode -ne 0){throw 'Portable compiler extraction failed'}
 if(!(Test-Path -LiteralPath (Join-Path $taskCompiler 'ISCC.exe') -PathType Leaf) -or (Test-Path -LiteralPath (Join-Path $taskCompiler 'unins000.exe'))){throw 'Portable compiler output rejected'}

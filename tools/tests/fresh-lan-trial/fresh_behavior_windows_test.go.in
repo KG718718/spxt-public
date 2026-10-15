@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,8 @@ import (
 	"testing"
 	"time"
 )
+
+const freshPowerShellStdinLoader = "[Console]::InputEncoding=[Text.UTF8Encoding]::new($false); & ([scriptblock]::Create([Console]::In.ReadToEnd()))"
 
 var freshBindingScenarios = []string{"exact-binding", "guid-changed", "ip-changed", "prefix-changed", "subnet-changed", "missing-binding", "public", "unknown-virtual", "unknown-hardware", "unknown-hidden", "route-unknown", "read-failure"}
 
@@ -37,6 +40,8 @@ type freshBindingObservation struct {
 	MutationObserved      bool   `json:"mutationObserved"`
 	ExpectationMatched    bool   `json:"expectationMatched"`
 	PathProven            bool   `json:"pathProven"`
+	GuardRejected         bool   `json:"-"`
+	TraceKnown            bool   `json:"-"`
 }
 
 func freshBindingRun(t *testing.T, scenario, fault string) freshBindingObservation {
@@ -77,20 +82,33 @@ func freshBindingRun(t *testing.T, scenario, fault string) freshBindingObservati
 	if fault == "ROUTE_ABORT" {
 		override += "function Get-NetRoute {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) Record-TestRead 'route';throw 'synthetic simulator failure'}\n"
 	}
-	guard := `$mockNames=@('Import-Module','Get-NetAdapter','Get-NetConnectionProfile','Get-NetIPAddress','Get-NetRoute','Get-NetFirewallProfile','Get-NetFirewallRule','Get-NetFirewallPortFilter','Get-NetFirewallApplicationFilter','Get-NetFirewallAddressFilter','Get-NetFirewallInterfaceFilter','New-NetFirewallRule','Set-NetFirewallRule','Set-NetFirewallPortFilter','Set-NetFirewallApplicationFilter','Set-NetFirewallAddressFilter','Set-NetFirewallInterfaceFilter');foreach($mockName in $mockNames){if(-not(Test-Path -LiteralPath ('Function:\'+$mockName))){exit 26};$mockItem=Get-Item -LiteralPath ('Function:\'+$mockName);if($mockItem.ScriptBlock.File){exit 26}};Record-TestRead 'MOCKS_VERIFIED'` + "\n"
+	guard := `$mockNames=@('Import-Module','Get-NetAdapter','Get-NetConnectionProfile','Get-NetIPAddress','Get-NetRoute','Get-NetFirewallProfile','Get-NetFirewallRule','Get-NetFirewallPortFilter','Get-NetFirewallApplicationFilter','Get-NetFirewallAddressFilter','Get-NetFirewallInterfaceFilter','New-NetFirewallRule','Set-NetFirewallRule','Set-NetFirewallPortFilter','Set-NetFirewallApplicationFilter','Set-NetFirewallAddressFilter','Set-NetFirewallInterfaceFilter');foreach($mockName in $mockNames){if(-not(Test-Path -LiteralPath ('Function:\'+$mockName))){Record-TestRead 'GUARD_REJECTED';exit 26};$mockItem=Get-Item -LiteralPath ('Function:\'+$mockName);if($mockItem.ScriptBlock.File){Record-TestRead 'GUARD_REJECTED';exit 26}};Record-TestRead 'MOCKS_VERIFIED'` + "\n"
 	if fault == "MISSING_MOCK" {
 		override += "Remove-Item -LiteralPath Function:\\Get-NetAdapter\n"
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", firewallMockHarness+"\n"+freshReadHarness+override+guard+firewallScript)
+	cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", freshPowerShellStdinLoader)
+	cmd.Stdin = strings.NewReader(firewallMockHarness + "\n" + freshReadHarness + override + guard + firewallScript)
+	cmd.WaitDelay = time.Second
 	root := os.Getenv("SystemRoot")
 	system32 := filepath.Join(root, "System32")
-	cmd.Env = []string{"SystemRoot=" + root, "WINDIR=" + root, "PATH=" + system32, "PSModulePath=" + filepath.Join(system32, "WindowsPowerShell", "v1.0", "Modules"), "TEMP=" + directory, "TMP=" + directory,
+	cmd.Env = []string{"SystemRoot=" + root, "WINDIR=" + root, "PATH=" + system32, "PSModulePath=" + filepath.Join(system32, "WindowsPowerShell", "v1.0", "Modules"), "TEMP=" + directory, "TMP=" + directory, "ComSpec=" + filepath.Join(system32, "cmd.exe"), "USERPROFILE=" + directory, "HOME=" + directory, "APPDATA=" + directory, "LOCALAPPDATA=" + directory,
 		"KSESSION_FW_ACTION=enable", "KSESSION_FW_INTERFACE_NAME=Ethernet", "KSESSION_FW_PORT=8083", `KSESSION_FW_PROGRAM=C:\KSESSION\program\runtime\node.exe`,
 		"KSESSION_FW_FRESH_TRIAL=1", "KSESSION_FW_ADAPTER_ID=" + guid, "KSESSION_FW_ADDRESS=" + address, "KSESSION_FW_PREFIX=" + prefix, "KSESSION_FW_SUBNET=" + subnet,
 		"KSESSION_TEST_READ_FILE=" + reads, "KSESSION_TEST_EVENT_FILE=" + events, "KSESSION_TEST_SCENARIO=" + scenario}
-	output, runErr := cmd.CombinedOutput()
+	var outputBuffer bytes.Buffer
+	cmd.Stdout = &outputBuffer
+	cmd.Stderr = &outputBuffer
+	runErr := cmd.Run()
+	output := outputBuffer.Bytes()
+	traceBefore, traceBeforeErr := os.ReadFile(reads)
+	tokensBefore, validBefore := freshReadTokens(traceBefore)
+	observed.TraceKnown = traceBeforeErr == nil && validBefore
+	observed.MockVerified = observed.TraceKnown && tokensBefore["MOCKS_VERIFIED"]
+	observed.GuardRejected = observed.TraceKnown && len(tokensBefore) == 1 && tokensBefore["GUARD_REJECTED"]
+	eventsBefore, _ := os.ReadFile(events)
+	observed.MutationObserved = len(eventsBefore) > 0
 	err = runErr
 	if ctx.Err() != nil {
 		observed.Phase = "TIMEOUT"
@@ -107,6 +125,9 @@ func freshBindingRun(t *testing.T, scenario, fault string) freshBindingObservati
 	}
 	observed.Phase = "ASSERTION"
 	switch code {
+	case 26:
+		observed.ExitClass = "GUARD_REJECTED"
+		observed.Phase = "PS_EXECUTION"
 	case 0:
 		observed.ExitClass = "ZERO"
 	case exitNetwork:
@@ -174,7 +195,7 @@ func freshReadTokens(data []byte) (map[string]bool, bool) {
 	tokens := map[string]bool{}
 	for _, token := range strings.Split(strings.TrimSuffix(string(data), "\n"), "\n") {
 		switch token {
-		case "MOCKS_VERIFIED", "adapter", "profile", "address", "route":
+		case "MOCKS_VERIFIED", "GUARD_REJECTED", "adapter", "profile", "address", "route":
 			if tokens[token] {
 				return tokens, false
 			}
@@ -188,7 +209,18 @@ func freshReadTokens(data []byte) (map[string]bool, bool) {
 
 func logFreshBindingObservation(t *testing.T, observed freshBindingObservation) {
 	t.Helper()
-	data, err := json.Marshal(observed)
+	var value any = observed
+	if observed.Phase == "GO_START" || observed.Phase == "TIMEOUT" {
+		fixed := map[string]any{"scenario": observed.Scenario, "phase": observed.Phase, "exitClass": observed.ExitClass, "mockVerified": "UNKNOWN", "requiredReadsObserved": "UNKNOWN", "mutationObserved": "UNKNOWN", "expectationMatched": "UNKNOWN", "pathProven": "UNKNOWN"}
+		if observed.MockVerified {
+			fixed["mockVerified"] = true
+		}
+		if observed.MutationObserved {
+			fixed["mutationObserved"] = true
+		}
+		value = fixed
+	}
+	data, err := json.Marshal(value)
 	if err != nil {
 		t.Fatal("fixed scenario diagnostic invalid")
 	}
@@ -217,14 +249,40 @@ func TestFreshFirewallHarnessCannotMaskInfrastructureFailure(t *testing.T) {
 			if c[1] != "MISSING_MOCK" && (!observed.ExpectationMatched || observed.PathProven) {
 				t.Fatal("legacy generic rejection counterexample did not reproduce")
 			}
-			if c[1] == "MISSING_MOCK" && observed.MockVerified {
+			if c[1] == "MISSING_MOCK" && !freshMissingMockRejected(observed) {
 				t.Fatal("missing mock reached production script")
 			}
 		})
+	}
+	ps, err := systemPowerShell()
+	if err != nil {
+		t.Fatal("system PS unavailable")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	unicode := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", freshPowerShellStdinLoader)
+	unicode.Stdin = strings.NewReader("[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);[Console]::Write('中文 Ω 🚀 literal $ quote')")
+	encoded, err := unicode.Output()
+	if err != nil || string(encoded) != "中文 Ω 🚀 literal $ quote" {
+		t.Fatal("stdin Unicode fidelity gate failed")
+	}
+	for _, badExit := range []string{"OTHER", "ZERO", "NETWORK", "UNKNOWN", "TIMEOUT"} {
+		if freshMissingMockRejected(freshBindingObservation{Phase: "PS_EXECUTION", ExitClass: badExit, GuardRejected: true, TraceKnown: true}) {
+			t.Fatal("wrong exit masked as guard rejection")
+		}
+	}
+	for _, phase := range []string{"GO_START", "TIMEOUT", "ASSERTION"} {
+		if freshMissingMockRejected(freshBindingObservation{Phase: phase, ExitClass: "OTHER", GuardRejected: true}) {
+			t.Fatal("infrastructure failure masked as guard rejection")
+		}
 	}
 	for _, bad := range []string{"prefix-adapter\n", "adapter\nadapter\n", "adapter\nunknown\n"} {
 		if _, valid := freshReadTokens([]byte(bad)); valid {
 			t.Fatal("invalid read token accepted")
 		}
 	}
+}
+
+func freshMissingMockRejected(o freshBindingObservation) bool {
+	return o.Phase == "PS_EXECUTION" && o.ExitClass == "GUARD_REJECTED" && o.TraceKnown && o.GuardRejected && !o.MockVerified && !o.MutationObserved
 }

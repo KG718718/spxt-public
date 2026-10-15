@@ -11,13 +11,14 @@ param(
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot '../tests/fresh-lan-trial/memory-process.ps1')
 function Write-FreshStage([string]$Stage,[string]$Classification='COMMAND_FAILED'){
   if($FreshTrial -and $FreshBuildDiagnostic){[IO.File]::WriteAllText($FreshBuildDiagnostic,(@{stage=$Stage;classification=$Classification;script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
 }
 function Write-FreshGoResult([string]$Raw,[int]$Exit,[string]$Kind){
   if($FreshTrial -and $FreshBuildDiagnostic){
-    & $env:KSESSION_FRESH_BUILD_NODE (Join-Path $PSScriptRoot '../tests/fresh-lan-trial/helper-go-diagnostic.cjs') $Raw $FreshBuildDiagnostic $Exit $Kind
-    if($LASTEXITCODE -ne 0){throw 'Fresh helper test evidence rejected'}
+    $taskDiagnostic=Invoke-KSessionMemoryNode $env:KSESSION_FRESH_BUILD_NODE @((Join-Path $PSScriptRoot '../tests/fresh-lan-trial/helper-go-diagnostic.cjs'),'-',$FreshBuildDiagnostic,[string]$Exit,$Kind) $Raw
+    if($taskDiagnostic.ExitCode -ne 0){throw 'Fresh helper test evidence rejected'}
   }
 }
 Write-FreshStage 'HELPER_INPUT'
@@ -61,13 +62,12 @@ try {
   Write-FreshStage 'HELPER_ENVIRONMENT'
   $taskEnvironment=Enter-KSessionFirewallTestEnvironment $taskPhysicalParent ('firewall-build-'+$PID+'-'+[guid]::NewGuid().ToString('N')+'-env')
   $taskReport.stage='TESTS';$taskReport.reason='RUNNING';Write-FixedReport
-  $taskRaw=Join-Path $taskEnvironment.Root 'go-test.jsonl'
-  [IO.File]::WriteAllText($taskRaw,'',[Text.UTF8Encoding]::new($false))
+  $taskRaw=''
   Push-Location $PSScriptRoot
   Write-FreshStage 'HELPER_STANDARD_TESTS'
-  try{& $GoExe test -json -count=1 -run ('^(' + ($taskExpectedTests -join '|') + ')$') ./... *> $taskRaw;$taskTestExit=$LASTEXITCODE}finally{Pop-Location}
+  try{$taskResult=Invoke-KSessionMemoryProcess $GoExe @('test','-json','-count=1','-run',('^(' + ($taskExpectedTests -join '|') + ')$'),'./...');$taskRaw=$taskResult.Stdout+$taskResult.Stderr;$taskTestExit=$taskResult.ExitCode}finally{Pop-Location}
   Write-FreshGoResult $taskRaw $taskTestExit 'ORIGINAL'
-  $taskSummary=Read-KSessionGoTestSummary $taskRaw;$taskJSONInvalid=$taskSummary.JSONInvalid
+  $taskSummary=Read-KSessionGoTestSummary $taskRaw -FromText;$taskJSONInvalid=$taskSummary.JSONInvalid
   $taskFailedNames=@($taskSummary.FailedNames);$taskSkippedNames=@($taskSummary.SkippedNames);$taskPassed=@($taskSummary.Passed)
   $taskExpectedSorted=@($taskExpectedTests|Sort-Object);$taskPassedSorted=@($taskPassed|Sort-Object)
   $taskExactTests=!(Compare-Object -ReferenceObject $taskExpectedSorted -DifferenceObject $taskPassedSorted)
@@ -84,7 +84,7 @@ try {
   if($FreshTrial){
     Write-FreshStage 'HELPER_FRESH_OVERLAY'
     $taskFreshTests=@('TestFreshStrictBindingAndStandardSchemaIsolation','TestFreshFirewallBindingBeforeAnyMutation')
-    $taskFreshRaw=Join-Path $taskEnvironment.Root 'fresh-go-test.jsonl'
+    $taskFreshRaw=''
     $taskFreshOverlay=Join-Path $taskEnvironment.Root 'fresh-firewall-overlay.json'
     $taskOverlayBuilder=Join-Path $PSScriptRoot '../tests/fresh-lan-trial/prepare-policy-overlay.cjs'
     # Use the pinned Node executable from the caller's private toolchain.
@@ -92,17 +92,22 @@ try {
     if($LASTEXITCODE -ne 0){throw 'Fresh Firewall overlay source rejected'}
     Push-Location $PSScriptRoot
     Write-FreshStage 'HELPER_FRESH_TESTS'
-    try{& $GoExe test -overlay $taskFreshOverlay -tags fresh_trial_tests -json -count=1 -run ('^(' + ($taskFreshTests -join '|') + ')$') . *> $taskFreshRaw;$taskFreshExit=$LASTEXITCODE}finally{Pop-Location}
+    try{$taskResult=Invoke-KSessionMemoryProcess $GoExe @('test','-overlay',$taskFreshOverlay,'-tags','fresh_trial_tests','-json','-count=1','-run',('^(' + ($taskFreshTests -join '|') + ')$'),'.');$taskFreshRaw=$taskResult.Stdout+$taskResult.Stderr;$taskFreshExit=$taskResult.ExitCode}finally{Pop-Location}
     Write-FreshGoResult $taskFreshRaw $taskFreshExit 'FRESH'
-    $taskFreshSummary=Read-KSessionGoTestSummary $taskFreshRaw
+    $taskFreshSummary=Read-KSessionGoTestSummary $taskFreshRaw -FromText
     if($taskFreshExit -ne 0 -or $taskFreshSummary.JSONInvalid -or $taskFreshSummary.PackagePass -ne 1 -or $taskFreshSummary.PackageFail -ne 0 -or @($taskFreshSummary.FailedNames).Count -ne 0 -or @($taskFreshSummary.SkippedNames).Count -ne 0 -or (Compare-Object @($taskFreshTests|Sort-Object) @($taskFreshSummary.Passed|Sort-Object))){throw 'Fresh Firewall policy gate failed'}
   }
+  if($FreshTrial){
+    Push-Location $PSScriptRoot
+    try{$taskCounter=Invoke-KSessionMemoryProcess $GoExe @('test','-overlay',$taskFreshOverlay,'-tags','fresh_trial_tests','-json','-count=1','-run','^TestFreshFirewallHarnessCannotMaskInfrastructureFailure$', '.')}finally{Pop-Location}
+    $taskCounterSummary=Read-KSessionGoTestSummary ($taskCounter.Stdout+$taskCounter.Stderr) -FromText
+    if($taskCounter.ExitCode -ne 0 -or $taskCounterSummary.JSONInvalid -or $taskCounterSummary.PackagePass -ne 1 -or $taskCounterSummary.PackageFail -ne 0 -or @($taskCounterSummary.FailedNames).Count -ne 0 -or @($taskCounterSummary.SkippedNames).Count -ne 0 -or @($taskCounterSummary.Passed).Count -ne 1 -or $taskCounterSummary.Passed[0] -ne 'TestFreshFirewallHarnessCannotMaskInfrastructureFailure'){throw 'Fresh failure oracle gate failed'}
+  }
   New-Item -ItemType Directory -Path $taskOutput | Out-Null
-  $taskBuildRaw=Join-Path $taskEnvironment.Root 'go-build.log'
-  [IO.File]::WriteAllText($taskBuildRaw,'',[Text.UTF8Encoding]::new($false))
+  $taskBuildRaw=''
   Push-Location $PSScriptRoot
   Write-FreshStage 'HELPER_COMPILE'
-  try{& $GoExe build -trimpath -buildvcs=false -ldflags $flags -o (Join-Path $taskOutput 'K-SESSION-Firewall.exe') . *> $taskBuildRaw;$taskBuildExit=$LASTEXITCODE}finally{Pop-Location}
+  try{$taskResult=Invoke-KSessionMemoryProcess $GoExe @('build','-trimpath','-buildvcs=false','-ldflags',$flags,'-o',(Join-Path $taskOutput 'K-SESSION-Firewall.exe'),'.');$taskBuildExit=$taskResult.ExitCode}finally{Pop-Location}
   if($taskBuildExit -ne 0){$taskReport.status='FAIL';$taskReport.reason='COMPILE_FAILED';Write-FixedReport;throw 'Firewall helper build failed'}
   Write-FreshStage 'HELPER_IDENTITY'
   Complete-BuildIdentity

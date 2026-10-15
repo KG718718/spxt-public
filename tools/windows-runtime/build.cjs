@@ -47,9 +47,9 @@ try {
   report.packageLockHash=sha(fs.readFileSync(path.join(app,'package-lock.json')));
   const userRC=path.join(out,'empty-user.npmrc'),globalRC=path.join(out,'empty-global.npmrc');
   writeNew(userRC,'');writeNew(globalRC,'');
-  const flags=['ci','--omit=dev','--omit=optional','--ignore-scripts','--bin-links=false','--audit=false','--fund=false','--strict-ssl=true','--registry=https://registry.npmjs.org/', '--userconfig='+userRC,'--globalconfig='+globalRC,'--cache='+path.join(out,'npm-cache')];
+  const flags=['ci','--omit=dev','--omit=optional','--ignore-scripts','--bin-links=false','--logs-max=0','--loglevel=silent','--audit=false','--fund=false','--strict-ssl=true','--registry=https://registry.npmjs.org/', '--userconfig='+userRC,'--globalconfig='+globalRC,'--cache='+path.join(out,'npm-cache')];
   console.log('Installing fresh production closure from public registry...');
-  const npmLog=command(node,[npm,...flags],{cwd:app});writeNew(path.join(out,'npm-ci.log'),npmLog);
+  const npmLog=command(node,[npm,...flags],{cwd:app});if(profile!=='fresh-trial')writeNew(path.join(out,'npm-ci.log'),npmLog);
   if(sha(fs.readFileSync(path.join(app,'package-lock.json')))!==report.packageLockHash)throw Error('npm changed lockfile');
   // Verify exact installed graph and disk directories; unknown omissions/additions fail.
   const actual=[];

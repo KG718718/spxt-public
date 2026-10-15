@@ -98,7 +98,7 @@ const args=['/Qp','/DPayload='+root,'/DGenerated='+gen,'/DOutput='+artifact,...(
 const diagnosticFile=freshTrial?path.join(path.dirname(out),'build-diagnostic.json'):null;
 if(freshTrial)fs.writeFileSync(diagnosticFile,JSON.stringify({stage:'ISCC',classification:'UNKNOWN',script:null,line:null})+'\n');
 const result=cp.spawnSync(path.join(compiler,'ISCC.exe'),args,{encoding:'utf8',windowsHide:true,timeout:240000,maxBuffer:4e6});
-writeNew(path.join(out,'compiler.stdout.log'),result.stdout||'');writeNew(path.join(out,'compiler.stderr.log'),result.stderr||'');
+if(!freshTrial){writeNew(path.join(out,'compiler.stdout.log'),result.stdout||'');writeNew(path.join(out,'compiler.stderr.log'),result.stderr||'');}
 if(freshTrial)fs.writeFileSync(diagnosticFile,JSON.stringify(require('../../tests/fresh-lan-trial/build-diagnostic.cjs').compiler((result.stdout||'')+'\n'+(result.stderr||''),result.status,{setupScript:path.join(__dirname,'setup-beta4.iss'),generated:gen}))+'\n');
 if(result.status!==0){if(!freshTrial)console.error(result.stdout,result.stderr);throw Error('ISCC failed');}
 if(freshTrial)fs.writeFileSync(diagnosticFile,JSON.stringify({stage:'ASSEMBLY',classification:'OUTPUT_IDENTITY_REJECTED',script:null,line:null})+'\n');

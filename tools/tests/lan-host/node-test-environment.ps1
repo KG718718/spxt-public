@@ -66,9 +66,9 @@ function Enter-KSessionLanCandidateTestEnvironment([string]$OwnedParent,[string]
 
 function Exit-KSessionLanCandidateTestEnvironment($State) {Restore-KSessionProcessEnvironment $State.Snapshot}
 
-function Read-KSessionNodeTestSummary([string]$RawFile) {
+function Read-KSessionNodeTestSummary([string]$RawFile,[switch]$FromText) {
   $values=@{}
-  foreach($line in Get-Content -LiteralPath $RawFile){
+  foreach($line in $(if($FromText){$RawFile -split "`r?`n"}else{Get-Content -LiteralPath $RawFile})){
     if($line-match'^# (tests|pass|fail|skipped) ([0-9]+)$'){$values[$matches[1]]=[int]$matches[2]}
   }
   $valid=@('tests','pass','fail','skipped')|ForEach-Object {$values.ContainsKey($_)}
