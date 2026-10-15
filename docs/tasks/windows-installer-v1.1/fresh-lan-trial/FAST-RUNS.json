@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "authorization": "FAST_DELIVERY_AUTONOMOUS_LOOP_V1",
+  "date": "2026-10-15",
+  "workflow": ".github/workflows/fresh-build-first-r1.yml",
+  "candidateUsed": 1,
+  "candidateMax": 2,
+  "qaUsed": 0,
+  "qaMax": 1,
+  "runs": [
+    {
+      "slot": "R1C1",
+      "runId": "38758814656",
+      "attempt": 1,
+      "source": "656bc6236a8b523d74e0faa73947023d57d6aa80",
+      "control": "478d42d8c1d67ac1df442084f48817a9fa25a060",
+      "status": "IN_PROGRESS",
+      "artifactId": null
+    }
+  ],
+  "historicalSmoke": {
+    "runId": "38674907559",
+    "used": 1,
+    "max": 1,
+    "result": "FAIL"
+  },
+  "historicalFirewallR3": {
+    "runId": "38737813798",
+    "used": 1,
+    "max": 1,
+    "result": "FAIL"
+  },
+  "extraDiagnosticAllowed": 0,
+  "oldFullU27Lc01Allowed": 0,
+  "physicalLanCertification": "HUMAN_PENDING"
+}

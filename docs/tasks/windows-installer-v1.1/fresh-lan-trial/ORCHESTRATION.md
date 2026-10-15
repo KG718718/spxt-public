@@ -1,3 +1,6 @@
+## 当前运行｜2026-10-15 FAST V1 / R1C1
+
+唯一Candidate Run38758814656 / attempt1，source656bc6236a8b523d74e0faa73947023d57d6aa80、control478d42d8c1d67ac1df442084f48817a9fa25a060，三方HEAD一致后已单独触发；SOURCE绑定PASS，整体IN_PROGRESS，不能宣称安装/26-742/LAN通过。原预算Candidate1/2、独立QA0/1，旧Smoke/R3等不增；无retry。原T2已RETURN/独立Review/ff整合并冻结，失败按原Thread返工；必须新证据、实际修改、本地验证/Review和可信收尾才C2。首次PASS直接独立QA同一EXE。用户安全/隔离恢复等强制停止保持；不main/tag/Release/内部SPXT/未知清理。详见FAST-CANDIDATE-MASTER-REVIEW.md及FAST-RUNS.json；后续治理提交不改变本Run受测来源。
 ## 当前执行｜2026-10-15 FAST DELIVERY V1 / P0
 
 用户新授权连续工程，原FRESH-T2/bea7已DISPATCHED，基线757f73993f5acf0a9084deb3af2b60df293f456d，return target 01a0db0e-c950-79e0-8e11-07155e0742f2。目标真实完整EXE→隔离fresh安装→自动可信LAN→安装后浏览器业务→独立QA同一EXE。Candidate0/2、QA0/1有条件恢复（真实本地完整构建/门禁/独立Review后），旧Smoke/R3/Full/U27/LC01/微诊断额度0；历史FAIL不改。raw输出只在内存处理，安全固定报告可保存。禁止普通sub-agent/后代/内部SPXT/main/tag/Release/未知清理。详见FAST-DELIVERY-V1.md；下方停止仅历史，新安全/恢复不可证及预算强制停点保持。
