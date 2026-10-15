@@ -16,4 +16,4 @@
 
 ## 当前编排
 
-FRESH-T2 / P0-P3 ENGINEERING：DISPATCHED；原local HEAD 2d694f240055e247799b3c7cf785b6a08bbb91d7，先核验现场再将新Master基线合入原local branch（不reset/不覆盖未知内容）。Hosted仅Master触发；Execution不得push/创建trigger/后代。先以完整EXE和明确本地门禁回单，后续返工继续原Thread。不要求每轮长报告。
+FRESH-T2 / P0：RETURNED → REVIEWED → INTEGRATED（实构建source2f40a30d，33,553,023-byte完整EXE；整合3086264c，见FAST-P0-MASTER-REVIEW.md）。原local基线2d694f24已安全合入Master授权757f7399。原Thread/worktree继续Candidate准备RUNNING；本地131项5FAIL、准入/无raw/Job与安装后验收仍须闭合，Candidate0/2、QA0/1未触发。不把P0构建PASS当安装/产品PASS，不交用户包。Hosted仅Master触发；Execution不得push/创建trigger/后代。不要求每轮长报告。
