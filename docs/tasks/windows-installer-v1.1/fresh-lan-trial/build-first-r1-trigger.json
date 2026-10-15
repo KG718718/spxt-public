@@ -1,15 +1,20 @@
 {
-  "schema": 1,
-  "mode": "SMOKE",
-  "slot": "R1S1",
-  "reviewedSource": "c503fe094c07b9e1c7e33648072701461afd73be",
-  "testedSource": "c503fe094c07b9e1c7e33648072701461afd73be",
-  "approvalMarker": "BUILD_FIRST_R1_MASTER_REVIEWED_R1S1_c503fe094c07b9e1c7e33648072701461afd73be",
+  "schema": 2,
+  "mode": "CANDIDATE",
+  "slot": "R1C1",
+  "reviewedSource": "656bc6236a8b523d74e0faa73947023d57d6aa80",
+  "testedSource": "656bc6236a8b523d74e0faa73947023d57d6aa80",
+  "approvalMarker": "FAST_DELIVERY_V1_MASTER_REVIEWED_R1C1_656bc6236a8b523d74e0faa73947023d57d6aa80",
   "smokeRunId": "",
   "smokeArtifactId": "",
   "firstCandidateRunId": "",
   "firstCandidateArtifactId": "",
   "candidateRunId": "",
   "candidateArtifactId": "",
-  "candidateSetupSha256": ""
+  "candidateSetupSha256": "",
+  "authorizationCommit": "757f73993f5acf0a9084deb3af2b60df293f456d",
+  "localBuildSource": "df3e40909289a647afe6eb86e2d08b07137a9cf4",
+  "localBuildReportSha256": "432e196492d3530bbafc95f417de62bf0321f500a572b8b9382c6571ce69f888",
+  "localBuildSetupSha256": "e870c5e6a7a8cc13d429dc8c9d858ce086bde43a00b2f387520f606974ee7e6e",
+  "codeFingerprint": "9360c967f306d3d0c3c071d3e10b23cba88ee6bdd1d50dca1f2887a7261ad0ac"
 }
