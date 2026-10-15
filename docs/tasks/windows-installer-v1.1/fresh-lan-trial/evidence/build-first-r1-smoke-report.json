@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "kind": "BUILD_FIRST_R1_SMOKE",
+  "sourceCommit": "c503fe094c07b9e1c7e33648072701461afd73be",
+  "controlCommit": "f2195dd4191cf4a5341c09483a1d60e3cce8acd7",
+  "run": {
+    "id": "38674907559",
+    "attempt": 1
+  },
+  "slot": "R1S1",
+  "codeFingerprint": "913b5e9a45eb2ac98cf1437c3812cbd3c7a1499710366a6ef64af4861a6833a6",
+  "status": "FAIL",
+  "reason": "OUTER_FAILED",
+  "setupSha256": null,
+  "checks": {
+    "runtimeIdentity": null,
+    "originalHelper13": null,
+    "freshHelper2": null,
+    "originalLauncher28": null,
+    "freshLauncher2": null,
+    "lanNode44": null,
+    "setupCompiled": null,
+    "setupIdentity": null
+  },
+  "buildDiagnostic": {
+    "stage": "HELPER_FRESH_TESTS",
+    "classification": "GO_TEST_FAILED_TestFreshFirewallBindingBeforeAnyMutation",
+    "script": null,
+    "line": null
+  },
+  "cleanup": {
+    "ownedLauncherExited": true,
+    "ownedNodeExited": true,
+    "handlesClosed": true,
+    "lockReleased": true,
+    "ownedRulesAbsent": true,
+    "ownedRegistrationAbsent": true,
+    "ownedShortcutsAbsent": true,
+    "ownedToolchainAbsent": true,
+    "ownedDriveRestored": true,
+    "environmentRestored": true
+  },
+  "productExecuted": false,
+  "qualifiedForInstallation": false
+}

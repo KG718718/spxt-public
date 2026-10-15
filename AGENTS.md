@@ -1,4 +1,20 @@
+## 当前授权｜2026-10-15 Fresh Firewall R2 / LOCAL ONLY
+
+用户批准仅原FRESH-T2定点定位并修复 TestFreshFirewallBindingBeforeAnyMutation 的12子场景，本地真实构建/差异反例/Master独立Review；具体首因目前UNKNOWN。本轮新增Hosted0，R1 Smoke Run38674907559历史FAIL不改，Candidate0/2、QA0/1继续冻结，严禁触发任何Actions。仅公开fresh开发分支、原长期Thread/worktree；不放宽安全、不清历史、不访问内部SPXT/main/tag/Release。详见fresh-lan-trial/FRESH-FIREWALL-R2-AUTHORIZATION.md及ORCHESTRATION；下方止损仅在本轮明确本地范围内有限续行。
+
 # K⁺-SESSION 协作边界
+
+## 当前最终止损｜2026-10-15 Build-First R1 Smoke FAIL
+
+**BLOCKED — BUILD-FIRST R1 SMOKE FAILED / HELPER FRESH TEST。** 唯一Run38674907559 / attempt1，source c503fe094c07b9e1c7e33648072701461afd73be、control f2195dd4191cf4a5341c09483a1d60e3cce8acd7，安全Artifact11946315115，严格来源/代码指纹/白名单核验通过。固定statusFAIL/reasonOUTER_FAILED，阶段HELPER_FRESH_TESTS，分类GO_TEST_FAILED_TestFreshFirewallBindingBeforeAnyMutation；具体子场景/底层原因UNKNOWN，不等于已证生产安全缺陷，也不追认C3同一首因。全部8项最终构建checks=null、setupSha=null，cleanup10/10true，productExecuted=false、qualifiedForInstallation=false；无Setup/用户包。按用户强制停点：新Smoke1/1耗尽，Candidate0/2与独立QA0/1记UNUSED—FROZEN，停止工程/全部Hosted，不retry、不挪额度。T2冻结、原树/test-work/提交/失败证据保留，T1原归档/路径缺失不重建。仅本次治理/非force同步/网页版交接后STOP。旧三次Candidate及全部FAIL保留，F3 beta.2单机PASS不动；不main/tag/Release/内部SPXT/未知清理。详见BUILD-FIRST-R1-RESULT.md与build-first-r1/CHATGPT-HANDOFF.md；下方运行/Review/授权均为本轮止损前历史。
+
+## 当前唯一Smoke运行中｜2026-10-15 Build-First R1
+
+R1S1 Run38674907559 / attempt1，受测source c503fe094c07b9e1c7e33648072701461afd73be、唯一trigger控制f2195dd4191cf4a5341c09483a1d60e3cce8acd7，三方HEAD同SHA后已触发。结果IN_PROGRESS，不宣称构建/Setup/安装通过。新增Smoke1/1已使用、Candidate0/2、独立QA0/1；Smoke任何FAIL即冻结后续Hosted，不retry、不借Candidate调试。只该新workflow运行，旧C1—C3及所有冻结FAIL/预算不变，T2已RETURN并冻结，正式F3 beta.2基线不动。此后治理提交不改变本Run受测source，详见BUILD-FIRST-R1-ORCHESTRATION.md。
+
+## 当前Review PASS｜2026-10-15 Build-First R1 / Smoke待中央触发
+
+原FRESH-T2正式RETURN实现401ea7f9/报告efaf1890，Master独立Review及实际Fresh138+旧兼容20=158/158 fail0skip0、真实完整payload原函数身份核验PASS；本机完整Runtime、Helper13两次/Fresh2、Launcher28两次/Fresh2、Node44、三方1049文件/20依赖及污染/外层环境恢复均已证。实现整合308a1269，报告acf72006，源码与受审完全相同，生产Go/业务/Setup/旧信任/事务/rollback未修改。C3历史首因仍UNKNOWN，不追认本地封装缺口为唯一根因。新R1专用workflow/13键trigger/4槽位仅Master中央触发；真实trigger尚未创建，预算Smoke0/1、Candidate0/2、独立QA0/1，旧预算不改。需三方HEAD一致后唯一Smoke（只编译payload/Setup及身份/恢复，不安装、不产品EXE/用户包），FAIL立即STOP；PASS才Candidate。ISCC/实际安装/F01—F09/核心26-742/QA/物理LAN未验，详见BUILD-FIRST-R1-MASTER-REVIEW.md与独立账本。禁止普通sub-agent/main/tag/Release/内部SPXT/未知清理。
 
 ## 当前有限恢复｜2026-10-15 Build-First Recovery R1
 

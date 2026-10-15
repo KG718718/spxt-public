@@ -1,4 +1,20 @@
+## 当前授权｜2026-10-15 Fresh Firewall R2 / LOCAL ONLY
+
+用户批准仅原FRESH-T2定点定位并修复 TestFreshFirewallBindingBeforeAnyMutation 的12子场景，本地真实构建/差异反例/Master独立Review；具体首因目前UNKNOWN。本轮新增Hosted0，R1 Smoke Run38674907559历史FAIL不改，Candidate0/2、QA0/1继续冻结，严禁触发任何Actions。仅公开fresh开发分支、原长期Thread/worktree；不放宽安全、不清历史、不访问内部SPXT/main/tag/Release。详见fresh-lan-trial/FRESH-FIREWALL-R2-AUTHORIZATION.md及ORCHESTRATION；下方止损仅在本轮明确本地范围内有限续行。
+
 # K⁺-SESSION｜项目状态
+
+## 当前最终止损｜2026-10-15 Build-First R1
+
+**BLOCKED — BUILD-FIRST R1 SMOKE FAILED / HELPER FRESH TEST。** 唯一Run38674907559@source c503fe09/control f2195dd4，Artifact11946315115，HELPER_FRESH_TESTS / GO_TEST_FAILED_TestFreshFirewallBindingBeforeAnyMutation，子场景和底层首因未证。安全固定报告/来源指纹验证PASS、cleanup10/10true，不代表构建成功；checks全null、Setup SHA空，产品未执行/不具安装资格。Smoke1/1 FAIL后按用户立即停止所有工程/Hosted，Candidate0/2、QA0/1 UNUSED—FROZEN；无beta.4用户包，旧F3 beta.2正式单机基线不变。仅治理保全/非force同步并交网页版，见BUILD-FIRST-R1-RESULT.md；下方阶段文字均历史。
+
+## 当前唯一Smoke运行中｜2026-10-15 R1S1
+
+Run38674907559@控制f2195dd4191cf4a5341c09483a1d60e3cce8acd7 / source c503fe094c07b9e1c7e33648072701461afd73be / attempt1，IN_PROGRESS。Smoke1/1已使用，Candidate0/2、独立QA0/1仍冻结待Smoke完整PASS；FAIL即STOP。只是build/identity/恢复，不安装，无用户包或LAN PASS结论。旧C1—C3 FAIL/3/3不改，后续治理SHA不能冒充本次受测source。
+
+## 当前Review PASS｜2026-10-15 Build-First R1 / Smoke待运行
+
+原T2已正式RETURN，Master独立158/158 fail0skip0及本机真实完整payload身份/13与28重复门禁/Fresh2/44/环境恢复核验通过；实现308a1269、治理acf72006与受审401ea7f9/efaf1890相同。新Smoke0/1、Candidate0/2、独立QA0/1，尚未触发；仅中央三方HEAD核验后唯一Smoke，FAIL即冻结后续Hosted。真实ISCC、安装、F01—F09/26-742、QA尚未通过，无交付EXE，不是HUMAN_PENDING终态。C3及旧FAIL不改、首因UNKNOWN，详见BUILD-FIRST-R1-MASTER-REVIEW.md。
 
 ## 当前有限恢复｜2026-10-15 Build-First Recovery R1
 
