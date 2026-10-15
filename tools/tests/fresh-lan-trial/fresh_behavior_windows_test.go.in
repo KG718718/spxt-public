@@ -329,7 +329,7 @@ func TestFreshFirewallHarnessCannotMaskInfrastructureFailure(t *testing.T) {
 			if c[1] != "MISSING_MOCK" && (!observed.ExpectationMatched || observed.PathProven || !observed.MockVerified || !observed.FaultReached || !observed.MutationAbsenceKnown) {
 				t.Fatal("legacy generic rejection counterexample did not reproduce")
 			}
-			if c[1] == "MISSING_MOCK" && !freshMissingMockRejected(observed) {
+			if c[1] == "MISSING_MOCK" && (!freshMissingMockRejected(observed) || !observed.AutoloadAbsenceKnown) {
 				t.Fatal("missing mock reached production script")
 			}
 		})
