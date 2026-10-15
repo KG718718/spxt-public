@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "mode": "SMOKE",
+  "slot": "R1S1",
+  "reviewedSource": "c503fe094c07b9e1c7e33648072701461afd73be",
+  "testedSource": "c503fe094c07b9e1c7e33648072701461afd73be",
+  "approvalMarker": "BUILD_FIRST_R1_MASTER_REVIEWED_R1S1_c503fe094c07b9e1c7e33648072701461afd73be",
+  "smokeRunId": "",
+  "smokeArtifactId": "",
+  "firstCandidateRunId": "",
+  "firstCandidateArtifactId": "",
+  "candidateRunId": "",
+  "candidateArtifactId": "",
+  "candidateSetupSha256": ""
+}
