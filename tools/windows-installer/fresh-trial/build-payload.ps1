@@ -10,7 +10,7 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/memory-process.ps1')
 $taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $FreshTrial=$true
-function Build-Stage([string]$Stage){if($BuildDiagnostic){[IO.File]::WriteAllText($BuildDiagnostic,(@{stage=$Stage;classification='COMMAND_FAILED';script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}}
+function Build-Stage([string]$Stage){if($BuildDiagnostic){if(Test-Path -LiteralPath $BuildDiagnostic){$prior=Get-Content -Raw -LiteralPath $BuildDiagnostic|ConvertFrom-Json;if($prior.classification -ceq 'GO_FRESH_SCENARIOS_FAILED_MULTIPLE'){return}};[IO.File]::WriteAllText($BuildDiagnostic,(@{stage=$Stage;classification='COMMAND_FAILED';script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}}
 Build-Stage 'RUNTIME'
 $taskWork=[IO.Path]::GetFullPath($Work)
 if($taskWork -notmatch '^E:\\' -or (Test-Path -LiteralPath $taskWork)){throw 'Fresh isolated E output required'}

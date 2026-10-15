@@ -13,7 +13,7 @@ $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot '../tests/fresh-lan-trial/memory-process.ps1')
 function Write-FreshStage([string]$Stage,[string]$Classification='COMMAND_FAILED'){
-  if($FreshTrial -and $FreshBuildDiagnostic){[IO.File]::WriteAllText($FreshBuildDiagnostic,(@{stage=$Stage;classification=$Classification;script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
+  if($FreshTrial -and $FreshBuildDiagnostic){if(Test-Path -LiteralPath $FreshBuildDiagnostic){$prior=Get-Content -Raw -LiteralPath $FreshBuildDiagnostic|ConvertFrom-Json;if($prior.classification -ceq 'GO_FRESH_SCENARIOS_FAILED_MULTIPLE'){return}};[IO.File]::WriteAllText($FreshBuildDiagnostic,(@{stage=$Stage;classification=$Classification;script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
 }
 function Write-FreshGoResult([string]$Raw,[int]$Exit,[string]$Kind){
   if($FreshTrial -and $FreshBuildDiagnostic){
