@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-16 FAST INSTALL RECOVERY R2 / LOCAL ONLY
+
+用户批准首次安装登录启动项精确身份诊断/最小修复与失败安装分项所有权恢复；原T2/原bea7树，基线aca5b792三方核验，Master独立Review。普通本地工程自主loop，真实payload/Setup编译与受控链接可执行测试/反例/恢复门禁；不得在日常业务机跑真实Fresh Setup或碰真实Startup/产品登记，不以模拟当安装证明。新增Hosted0，Candidate2/2历史FAIL和QA0/1冻结；禁止Actions/trigger/普通sub-agent/后代/内部SPXT/main/tag/Release/未知清理。真实权限/架构/数据/未知所有权/无法安全恢复按用户止损。详见FAST-INSTALL-R2-AUTHORIZATION.md；下方旧停止仍为历史，不授权Hosted。
+
 ## 最终STOP｜2026-10-16 FAST V1 / CANDIDATE 2/2 FAIL
 
 R1C2 Run38767500533/attempt1，source990f605ed230d13e2bddde71e2071259a62ad2bf/control9eb28d84e232e9d6c73ad17af4cffd23ba8ae9a8，安全Artifact11989268695来源/Schema/单JSON白名单核验PASS。BUILD COMPLETE/PASS、SetupSHA4340a9bd...3fbf245f6，已突破Helper构建；F01 FRESH_ACCEPT=INNO_EXIT_INSTALL_FATAL，PREINSTALL_READY+FRESH_STARTUP_CLEANUP_UNKNOWN，具体身份子条件UNKNOWN。最终CLEANUP_UNPROVEN，6项收尾true、规则/登记/快捷方式/工具链4项false，不能等同逐项真实残留或声称Runner完整恢复。F01未PASS/checks空，F02—F09/26-742/QA未到达；失败Artifact不含EXE，无合格用户包。Candidate2/2耗尽，QA0/1 UNUSED—FROZEN；停止工程和全部Hosted，不重试/不追加/不挪QA。原T2/现场/历史FAIL保留，受验beta.2单机基线不变，无内部SPXT/main/tag/Release/清理。详见fresh-lan-trial/fast-delivery-v1/RESULT.md与固定报告；下方运行/Review均为历史。
@@ -70,3 +74,6 @@ T1/T2 已独立 Review 并集成。三方 HEAD 核验后，仅创建 C1 单文�
 ## C2 后原线程返工
 
 原FRESH-T2再次返工，精确只处理LAUNCHER_UNIT四步调用及恢复环境，正式RETURN已独立Review并整合。原source污染环境继承与安全子结果丢失已用实际mock反例证明；新owned物理环境/明确Go0离线参数、finally恢复及固定white diagnostics闭合，旧28/strictreport零改。Master固定Node24.21独立Fresh123+旧compat20=143/143 fail0skip0，PS/CJS/diff-check PASS，整合源码与受审184308完全一致；实际原Go28与完整builder重放来源证据保留。C2真实首因仍UNKNOWN，不将这些缺口追认为C2唯一原因。源卡及预算见C2-RESULT.md及C2-REWORK-MASTER-REVIEW.md。最后C3已具完整Candidate准入，须三方HEAD核验后中央触发；不是新增Diagnostic，不借QA/旧预算，任何C3 FAIL即预算STOP。
+
+## FAST-INSTALL-R2 DISPATCH
+TASK=FAST-INSTALL-R2；Execution=01a13948-7433-7571-8330-a09bfd12a0dc；returnMaster=01a0db0e-c950-79e0-8e11-07155e0742f2；worktree=bea7/public-source；localBranch=codex/fresh-t2-installer-ci；baseline=aca5b792795217ba0047bae29bb4f21bc0f3df6e；state=DISPATCHED。新增Hosted0；最终需RETURN→Master Review→Integration。

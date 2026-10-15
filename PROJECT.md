@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-16 FAST INSTALL RECOVERY R2 / LOCAL ONLY
+
+用户批准首次安装登录启动项精确身份诊断/最小修复与失败安装分项所有权恢复；原T2/原bea7树，基线aca5b792三方核验，Master独立Review。普通本地工程自主loop，真实payload/Setup编译与受控链接可执行测试/反例/恢复门禁；不得在日常业务机跑真实Fresh Setup或碰真实Startup/产品登记，不以模拟当安装证明。新增Hosted0，Candidate2/2历史FAIL和QA0/1冻结；禁止Actions/trigger/普通sub-agent/后代/内部SPXT/main/tag/Release/未知清理。真实权限/架构/数据/未知所有权/无法安全恢复按用户止损。详见FAST-INSTALL-R2-AUTHORIZATION.md；下方旧停止仍为历史，不授权Hosted。
+
 ## 最终STOP｜2026-10-16 FAST V1 / CANDIDATE 2/2 FAIL
 
 R1C2 Run38767500533/attempt1，source990f605ed230d13e2bddde71e2071259a62ad2bf/control9eb28d84e232e9d6c73ad17af4cffd23ba8ae9a8，安全Artifact11989268695来源/Schema/单JSON白名单核验PASS。BUILD COMPLETE/PASS、SetupSHA4340a9bd...3fbf245f6，已突破Helper构建；F01 FRESH_ACCEPT=INNO_EXIT_INSTALL_FATAL，PREINSTALL_READY+FRESH_STARTUP_CLEANUP_UNKNOWN，具体身份子条件UNKNOWN。最终CLEANUP_UNPROVEN，6项收尾true、规则/登记/快捷方式/工具链4项false，不能等同逐项真实残留或声称Runner完整恢复。F01未PASS/checks空，F02—F09/26-742/QA未到达；失败Artifact不含EXE，无合格用户包。Candidate2/2耗尽，QA0/1 UNUSED—FROZEN；停止工程和全部Hosted，不重试/不追加/不挪QA。原T2/现场/历史FAIL保留，受验beta.2单机基线不变，无内部SPXT/main/tag/Release/清理。详见fresh-lan-trial/fast-delivery-v1/RESULT.md与固定报告；下方运行/Review均为历史。
