@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-15 Fresh Firewall R2 / LOCAL ONLY
+
+用户批准仅原FRESH-T2定点定位并修复 TestFreshFirewallBindingBeforeAnyMutation 的12子场景，本地真实构建/差异反例/Master独立Review；具体首因目前UNKNOWN。本轮新增Hosted0，R1 Smoke Run38674907559历史FAIL不改，Candidate0/2、QA0/1继续冻结，严禁触发任何Actions。仅公开fresh开发分支、原长期Thread/worktree；不放宽安全、不清历史、不访问内部SPXT/main/tag/Release。详见fresh-lan-trial/FRESH-FIREWALL-R2-AUTHORIZATION.md及ORCHESTRATION；下方止损仅在本轮明确本地范围内有限续行。
+
 # K⁺-SESSION｜项目状态
 
 ## 当前最终止损｜2026-10-15 Build-First R1
