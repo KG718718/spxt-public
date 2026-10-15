@@ -17,7 +17,7 @@ BLOCKED — HISTORICAL HOSTED ROOT CAUSE UNKNOWN。
 - 继续原FRESH-T2长期Thread及bea7隔离树，无普通sub-agent；正式回单、Master独立复验、集成完成。
 - 原拒绝条件允许23/25且无模拟变更，受控adapter中止、route记录后中止、unknown-virtual中止可满足旧条件；这是已证测试缺口，不是历史FAIL或产品缺陷的已证根因。
 - 保留原12场景、成功条件与23/25集合；另加精确固定拒绝协议、预期退出类别、完整inline mock和严格读取路径证明。
-- 四字段安全诊断透传有限scene/phase/exitClass；缺观察为UNKNOWN，未知/重复child、敏感extra、矛盾证据不能PASS。未保存或上传原始输出。
+- 四字段安全诊断透传有限scene/phase/exitClass；缺观察为UNKNOWN，未知/重复child、敏感extra、矛盾证据不能PASS。公开报告不含原始输出，私有本地日志不上传。
 
 【关键数字 / 技术事实】
 - source commit：73f79d8e59760ab45719fc5420747acc07bdcebf；独立受审Execution fbb6e9eb21deaf9524bf88c635659c9bdad7ffdf，两者代码一致。
@@ -55,7 +55,7 @@ BLOCKED — HISTORICAL HOSTED ROOT CAUSE UNKNOWN。
 - PR/Release：无；main/v1.0.0/tag：未修改。
 
 【安全与边界】
-- 内部SPXT、真实业务数据、账号/Token/密码：未访问或导入。
+- 未访问内部SPXT或真实业务数据；公开资料未包含真实业务账号或凭据，仅使用已授权GitHub认证同步。
 - 业务逻辑、系统网络/Firewall/Registry/Service/Startup：未修改；无真实安装或产品EXE执行。
 - 历史C1—C3、R1 Smoke、LC01/U27及冻结结论不改写。
 
