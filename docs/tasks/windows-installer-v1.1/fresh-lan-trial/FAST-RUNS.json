@@ -3,7 +3,7 @@
   "authorization": "FAST_DELIVERY_AUTONOMOUS_LOOP_V1",
   "date": "2026-10-15",
   "workflow": ".github/workflows/fresh-build-first-r1.yml",
-  "candidateUsed": 1,
+  "candidateUsed": 2,
   "candidateMax": 2,
   "qaUsed": 0,
   "qaMax": 1,
@@ -19,6 +19,18 @@
       "stage": "BUILD_HELPER_FRESH_TESTS",
       "classification": "GO_FRESH_SCENARIOS_FAILED_MULTIPLE",
       "cleanupVerified": true
+    },
+    {
+      "slot": "R1C2",
+      "runId": "38767500533",
+      "attempt": 1,
+      "source": "990f605ed230d13e2bddde71e2071259a62ad2bf",
+      "control": "9eb28d84e232e9d6c73ad17af4cffd23ba8ae9a8",
+      "status": "IN_PROGRESS",
+      "artifactId": null,
+      "stage": "PENDING",
+      "classification": "PENDING",
+      "cleanupVerified": null
     }
   ],
   "historicalSmoke": {

@@ -1,3 +1,7 @@
+## 唯一R1C2运行中｜2026-10-16 FAST V1
+
+Run38767500533/attempt1，source990f605ed230d13e2bddde71e2071259a62ad2bf、control9eb28d84e232e9d6c73ad17af4cffd23ba8ae9a8；三方HEAD核验后只触发原R1专用workflow，结果IN_PROGRESS不称PASS。Candidate2/2已用，QA0/1仅完整Candidate PASS后同EXE可用；C2任意FAIL即停止Hosted，不retry/新增预算。T2冻结，真实安装/F01-F09/26-742/QA均待本Run，不以本地构建冒充。旧FAIL/首因UNKNOWN/现场保留，无内部SPXT/main/tag/Release/清理。后续治理提交不改变该受测source。
+
 ## 当前Review PASS｜2026-10-16 FAST V1 / R1C2待中央触发
 
 原T2正式RETURN9d3f27a8、实构建57b7df4e；Master独立Fresh3父/根134及EXE三方Manifest1049文件20依赖核验PASS。代码仅Fresh测试驱动，生产/原13/workflow不变；正常20秒不变，禁autoload/精确binding和失败拒绝保持。完整EXE33556103 bytes/SHA7af35ddd...ee8b7a242e，仅BUILD资格。C1 Run38758814656历史FAIL/12TIMEOUT/首因UNKNOWN保留，cleanup10true已证；新代码/差异反例/环境恢复闭合。Candidate1/2、QA0/1；三方HEAD与安全契约准入后仅唯一R1C2，C2或QA FAIL即停Hosted，无旧Smoke/R3/Full/U27/LC01。安装/F01-F09/26-742/QA尚未验，实体LAN等HUMAN_PENDING。原T2冻结，无内部SPXT/main/tag/Release/清理。详见fresh-lan-trial/FAST-R1C2-MASTER-REVIEW.md。下方C1失败及旧停点保留历史。
