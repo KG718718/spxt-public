@@ -65,7 +65,9 @@ $taskInfo | ConvertTo-Json | Set-Content -Encoding utf8 -LiteralPath (Join-Path 
 if($FreshTrial){[ordered]@{schema=1;kind='FRESH_LAUNCHER_POLICY';sourceCommit=$SourceCommit;status='PASS';expectedTests=$taskFreshTests;pass=2;fail=0;skipped=0} | ConvertTo-Json | Set-Content -Encoding utf8 -LiteralPath (Join-Path $taskOutput 'fresh-policy-report.json')}
 "$taskExeHash  K-SESSION.exe" | Set-Content -Encoding ascii -LiteralPath (Join-Path $taskOutput 'SHA256SUMS.txt')
 # Go links its runtime into the EXE; retain the original Go license with the artifact.
-$taskGoRoot=& $GoExe env GOROOT
+$taskGoRootResult=Invoke-KSessionMemoryProcess $GoExe @('env','GOROOT')
+if($taskGoRootResult.ExitCode -ne 0){throw 'Go license root query failed'}
+$taskGoRoot=$taskGoRootResult.Stdout.Trim()
 Copy-Item -LiteralPath (Join-Path $taskGoRoot 'LICENSE') -Destination (Join-Path $taskOutput 'LICENSE-Go.txt')
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot '../../LICENSE') -Destination (Join-Path $taskOutput 'LICENSE-KSESSION.txt')
 $taskInfo | ConvertTo-Json
