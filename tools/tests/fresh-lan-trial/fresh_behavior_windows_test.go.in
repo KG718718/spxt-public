@@ -5,23 +5,26 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
+	"unicode/utf16"
 )
-
-const freshPowerShellStdinLoader = "[Console]::InputEncoding=[Text.UTF8Encoding]::new($false); & ([scriptblock]::Create([Console]::In.ReadToEnd()))"
 
 var freshBindingScenarios = []string{"exact-binding", "guid-changed", "ip-changed", "prefix-changed", "subnet-changed", "missing-binding", "public", "unknown-virtual", "unknown-hardware", "unknown-hidden", "route-unknown", "read-failure"}
 
 // Test-only wrappers reuse the original mocks; the original13 harness has no
 // added environment input or observation side effect.
-const freshReadHarness = `
+const freshLegacyReadHarness = `
 function Record-TestRead([string]$name){[IO.File]::AppendAllText($env:KSESSION_TEST_READ_FILE,$name+[char]10,[Text.UTF8Encoding]::new($false))}
 $script:r2Adapter=(Get-Item -LiteralPath Function:\Get-NetAdapter).ScriptBlock
 $script:r2Profile=(Get-Item -LiteralPath Function:\Get-NetConnectionProfile).ScriptBlock
@@ -44,9 +47,17 @@ type freshBindingObservation struct {
 	TraceKnown            bool   `json:"-"`
 	MutationAbsenceKnown  bool   `json:"-"`
 	FaultReached          bool   `json:"-"`
+	DependencyRejected    bool   `json:"-"`
+	PipeEntered           bool   `json:"-"`
+	AutoloadAbsenceKnown  bool   `json:"-"`
+	EventProtocolVerified bool   `json:"-"`
 }
 
 func freshBindingRun(t *testing.T, scenario, fault string) freshBindingObservation {
+	return freshBindingRunDeadline(t, scenario, fault, 20*time.Second)
+}
+
+func freshBindingRunDeadline(t *testing.T, scenario, fault string, timeout time.Duration) freshBindingObservation {
 	t.Helper()
 	observed := freshBindingObservation{Scenario: scenario, Phase: "GO_START", ExitClass: "START_FAILED"}
 
@@ -57,6 +68,21 @@ func freshBindingRun(t *testing.T, scenario, fault string) freshBindingObservati
 	directory := fixtureDir(t)
 	events := filepath.Join(directory, "events.jsonl")
 	reads := filepath.Join(directory, "reads.txt")
+	moduleRoot := filepath.Join(directory, "modules")
+	sentinel := filepath.Join(directory, "autoload-sentinel")
+	bindingFile := filepath.Join(directory, "binding.ps1")
+	if err := os.MkdirAll(filepath.Join(moduleRoot, "SyntheticBinding"), 0700); err != nil {
+		t.Fatal("controlled module fixture failed")
+	}
+	for name, content := range map[string]string{
+		filepath.Join(moduleRoot, "SyntheticBinding", "SyntheticBinding.psd1"): "@{RootModule='SyntheticBinding.psm1';ModuleVersion='1.0';GUID='abc45678-1234-4234-8234-123456789abc';FunctionsToExport=@('Get-NetAdapter');CmdletsToExport=@();AliasesToExport=@()}",
+		filepath.Join(moduleRoot, "SyntheticBinding", "SyntheticBinding.psm1"): "[IO.File]::WriteAllText($env:KSESSION_TEST_AUTOLOAD_SENTINEL,'UNEXPECTED');function Get-NetAdapter {throw 'synthetic module sentinel'}",
+		bindingFile: "function Get-NetAdapter {throw 'synthetic file binding sentinel'}",
+	} {
+		if err := os.WriteFile(name, []byte(content), 0600); err != nil {
+			t.Fatal("controlled binding fixture failed")
+		}
+	}
 	guid, address, prefix, subnet := "12345678-1234-1234-1234-123456789abc", "192.168.10.23", "24", "192.168.10.0/24"
 	override := `function Get-NetRoute {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) Record-TestRead 'route';[pscustomobject]@{DestinationPrefix='192.168.10.0/24';NextHop='0.0.0.0';State='Alive'}}` + "\n"
 	switch scenario {
@@ -85,13 +111,23 @@ func freshBindingRun(t *testing.T, scenario, fault string) freshBindingObservati
 		override += "function Get-NetRoute {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) Record-TestRead 'route';throw 'synthetic simulator failure'}\n"
 	}
 	guard := `$mockNames=@('Import-Module','Get-NetAdapter','Get-NetConnectionProfile','Get-NetIPAddress','Get-NetRoute','Get-NetFirewallProfile','Get-NetFirewallRule','Get-NetFirewallPortFilter','Get-NetFirewallApplicationFilter','Get-NetFirewallAddressFilter','Get-NetFirewallInterfaceFilter','New-NetFirewallRule','Set-NetFirewallRule','Set-NetFirewallPortFilter','Set-NetFirewallApplicationFilter','Set-NetFirewallAddressFilter','Set-NetFirewallInterfaceFilter');foreach($mockName in $mockNames){if(-not(Test-Path -LiteralPath ('Function:\'+$mockName))){Record-TestRead 'GUARD_REJECTED';exit 26};$mockItem=Get-Item -LiteralPath ('Function:\'+$mockName);if($mockItem.ScriptBlock.File){Record-TestRead 'GUARD_REJECTED';exit 26}};Record-TestRead 'MOCKS_VERIFIED'` + "\n"
-	if fault == "MISSING_MOCK" {
-		override += "Remove-Item -LiteralPath Function:\\Get-NetAdapter\n"
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", freshPowerShellStdinLoader)
-	cmd.Stdin = strings.NewReader(firewallMockHarness + "\n" + freshReadHarness + override + guard + firewallScript)
+	script := freshBoundScript(t, override, guard, fault)
+	cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script)
+	quoted := make([]string, len(cmd.Args))
+	for i, arg := range cmd.Args {
+		quoted[i] = syscall.EscapeArg(arg)
+	}
+	commandLine := strings.Join(quoted, " ")
+	if len(utf16.Encode([]rune(commandLine)))+1 > 32767 {
+		t.Fatal("complete native command line exceeds Windows bound")
+	}
+	cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: commandLine}
+	if fault == "START_FAILURE" {
+		cmd.Dir = filepath.Join(directory, "missing-working-directory")
+	}
 	cmd.WaitDelay = time.Second
 	root := os.Getenv("SystemRoot")
 	system32 := filepath.Join(root, "System32")
@@ -99,17 +135,53 @@ func freshBindingRun(t *testing.T, scenario, fault string) freshBindingObservati
 		"KSESSION_FW_ACTION=enable", "KSESSION_FW_INTERFACE_NAME=Ethernet", "KSESSION_FW_PORT=8083", `KSESSION_FW_PROGRAM=C:\KSESSION\program\runtime\node.exe`,
 		"KSESSION_FW_FRESH_TRIAL=1", "KSESSION_FW_ADAPTER_ID=" + guid, "KSESSION_FW_ADDRESS=" + address, "KSESSION_FW_PREFIX=" + prefix, "KSESSION_FW_SUBNET=" + subnet,
 		"KSESSION_TEST_READ_FILE=" + reads, "KSESSION_TEST_EVENT_FILE=" + events, "KSESSION_TEST_SCENARIO=" + scenario}
+	if fault == "MODULE_UNAVAILABLE" || fault == "AUTOLOAD_CONTROL" || fault == "MISSING_MOCK" || fault == "WRONG_BINDING" || fault == "WRONG_PARAMETERS" || fault == "ALIAS_BINDING" || fault == "FILE_BINDING" {
+		for i, value := range cmd.Env {
+			if strings.HasPrefix(value, "PSModulePath=") {
+				cmd.Env[i] = "PSModulePath=" + moduleRoot
+			}
+		}
+	}
+	cmd.Env = append(cmd.Env, "KSESSION_TEST_AUTOLOAD_SENTINEL="+sentinel, "KSESSION_TEST_BINDING_FILE="+bindingFile)
 	var outputBuffer bytes.Buffer
 	cmd.Stdout = &outputBuffer
 	cmd.Stderr = &outputBuffer
 	runErr := cmd.Run()
 	output := outputBuffer.Bytes()
+	_, sentinelErr := os.Stat(sentinel)
+	observed.AutoloadAbsenceKnown = os.IsNotExist(sentinelErr)
 	traceBefore, traceBeforeErr := os.ReadFile(reads)
 	tokensBefore, validBefore := freshReadTokens(traceBefore)
 	observed.TraceKnown = traceBeforeErr == nil && validBefore
+	observed.DependencyRejected = observed.TraceKnown && tokensBefore["DEPENDENCY_REJECTED"]
+	observed.PipeEntered = observed.TraceKnown && tokensBefore["PIPE_BLOCK_ENTERED"]
 	observed.MockVerified = observed.TraceKnown && tokensBefore["MOCKS_VERIFIED"]
-	observed.GuardRejected = observed.TraceKnown && len(tokensBefore) == 1 && tokensBefore["GUARD_REJECTED"]
+	observed.GuardRejected = observed.TraceKnown && tokensBefore["GUARD_REJECTED"] && !tokensBefore["MOCKS_VERIFIED"] && !tokensBefore["adapter"] && !tokensBefore["profile"] && !tokensBefore["address"] && !tokensBefore["route"]
 	eventsBefore, eventBeforeErr := os.ReadFile(events)
+	if fault == "EVENT_PROTOCOL" && eventBeforeErr == nil {
+		lines := bytes.Split(bytes.TrimSpace(eventsBefore), []byte("\n"))
+		valid := len(lines) == 18
+		for i, line := range lines {
+			var e firewallEvent
+			if json.Unmarshal(line, &e) != nil {
+				valid = false
+				break
+			}
+			if e.Event != freshEventNames[i%6] {
+				valid = false
+			}
+			if i < 6 {
+				valid = valid && e.Enabled == nil
+			} else {
+				want := "False"
+				if i >= 12 {
+					want = "True"
+				}
+				valid = valid && e.Enabled != nil && *e.Enabled == want
+			}
+		}
+		observed.EventProtocolVerified = valid && string(output) == "EVENT_PROTOCOL_OK" && runErr == nil
+	}
 	observed.MutationObserved = len(eventsBefore) > 0
 	observed.MutationAbsenceKnown = (eventBeforeErr == nil || os.IsNotExist(eventBeforeErr)) && !observed.MutationObserved
 	observed.RequiredReadsObserved = freshRequiredReadGate(scenario, tokensBefore, observed.TraceKnown)
@@ -190,7 +262,7 @@ func freshBindingRun(t *testing.T, scenario, fault string) freshBindingObservati
 		expectedExit = exitBlocked
 	}
 	observed.PathProven = signal == want && code == expectedExit
-	if observed.ExpectationMatched && observed.MockVerified && observed.RequiredReadsObserved && observed.PathProven {
+	if observed.ExpectationMatched && observed.MockVerified && observed.RequiredReadsObserved && observed.PathProven && observed.AutoloadAbsenceKnown {
 		observed.Phase = "COMPLETE"
 	}
 	return observed
@@ -200,7 +272,7 @@ func freshReadTokens(data []byte) (map[string]bool, bool) {
 	tokens := map[string]bool{}
 	for _, token := range strings.Split(strings.TrimSuffix(string(data), "\n"), "\n") {
 		switch token {
-		case "MOCKS_VERIFIED", "GUARD_REJECTED", "adapter", "profile", "address", "route":
+		case "BOOTSTRAP_STARTED", "HARNESS_BOUND", "DEPENDENCY_REJECTED", "PIPE_BLOCK_ENTERED", "MOCKS_VERIFIED", "GUARD_REJECTED", "adapter", "profile", "address", "route":
 			if tokens[token] {
 				return tokens, false
 			}
@@ -262,17 +334,63 @@ func TestFreshFirewallHarnessCannotMaskInfrastructureFailure(t *testing.T) {
 			}
 		})
 	}
+	for _, fault := range []string{"PROVIDER_UNAVAILABLE", "MODULE_UNAVAILABLE"} {
+		t.Run("trusted_direct_"+fault, func(t *testing.T) {
+			o := freshBindingRun(t, "exact-binding", fault)
+			if o.Phase != "COMPLETE" || !o.AutoloadAbsenceKnown {
+				t.Fatal("trusted dependency independent path failed")
+			}
+		})
+	}
+	t.Run("legacy_provider_dependency", func(t *testing.T) {
+		o := freshBindingRun(t, "exact-binding", "LEGACY_PROVIDER_UNAVAILABLE")
+		if !o.DependencyRejected || o.MockVerified || o.MutationObserved || !o.MutationAbsenceKnown || o.Phase != "PS_EXECUTION" {
+			t.Fatal("legacy provider dependency difference not demonstrated")
+		}
+	})
+	t.Run("synthetic_autoload_positive_control", func(t *testing.T) {
+		o := freshBindingRun(t, "exact-binding", "AUTOLOAD_CONTROL")
+		if o.AutoloadAbsenceKnown || o.MockVerified || o.MutationObserved || !o.MutationAbsenceKnown || o.Phase != "PS_EXECUTION" {
+			t.Fatal("synthetic module discovery control not demonstrated")
+		}
+	})
+	for _, fault := range []string{"WRONG_BINDING", "WRONG_PARAMETERS", "ALIAS_BINDING", "FILE_BINDING"} {
+		t.Run("reject_"+fault, func(t *testing.T) {
+			o := freshBindingRun(t, "exact-binding", fault)
+			if !freshMissingMockRejected(o) || !o.AutoloadAbsenceKnown {
+				t.Logf("binding rejection observation=%+v", o)
+				t.Fatal("controlled incorrect binding escaped guard")
+			}
+		})
+	}
+	t.Run("native_start_failure", func(t *testing.T) {
+		o := freshBindingRun(t, "exact-binding", "START_FAILURE")
+		if o.Phase != "GO_START" || o.MockVerified || o.MutationObserved || !o.MutationAbsenceKnown {
+			t.Fatal("native startup failure became normal rejection")
+		}
+	})
+	t.Run("bounded_pipe_block", func(t *testing.T) {
+		o := freshBindingRunDeadline(t, "exact-binding", "PIPE_BLOCK", 5*time.Second)
+		if o.Phase != "TIMEOUT" || !o.PipeEntered || o.MockVerified || o.MutationObserved || !o.MutationAbsenceKnown {
+			t.Fatal("controlled block did not fail closed")
+		}
+	})
+	t.Run("event_protocol_equivalence", func(t *testing.T) {
+		o := freshBindingRun(t, "exact-binding", "EVENT_PROTOCOL")
+		if !o.EventProtocolVerified || !o.MockVerified || !o.AutoloadAbsenceKnown {
+			t.Fatal("fixed event protocol equivalence failed")
+		}
+	})
 	ps, err := systemPowerShell()
 	if err != nil {
 		t.Fatal("system PS unavailable")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	unicode := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", freshPowerShellStdinLoader)
-	unicode.Stdin = strings.NewReader("[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);[Console]::Write('中文 Ω 🚀 literal $ quote')")
+	unicode := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);[Console]::Write('中文 Ω 🚀 literal $ quote')")
 	encoded, err := unicode.Output()
 	if err != nil || string(encoded) != "中文 Ω 🚀 literal $ quote" {
-		t.Fatal("stdin Unicode fidelity gate failed")
+		t.Fatal("native command Unicode fidelity gate failed")
 	}
 	for _, badExit := range []string{"OTHER", "ZERO", "NETWORK", "UNKNOWN", "TIMEOUT"} {
 		if freshMissingMockRejected(freshBindingObservation{Phase: "PS_EXECUTION", ExitClass: badExit, GuardRejected: true, TraceKnown: true, MutationAbsenceKnown: true}) {
@@ -315,4 +433,164 @@ func freshRequiredReadGate(scenario string, tokens map[string]bool, valid bool) 
 		}
 	}
 	return true
+}
+
+// This is test-only source parsing, never parsing untrusted process output.
+// Hashes are computed from the reviewed inline definitions before fault injection.
+type freshFunctionSpan struct {
+	name       string
+	start, end int
+	body       string
+}
+
+var freshFunctionStart = regexp.MustCompile(`(?m)^\s*function\s+([A-Za-z][A-Za-z0-9-]*)[^\{\n]*\{`)
+
+func freshFunctionSpans(t *testing.T, source string) []freshFunctionSpan {
+	t.Helper()
+	var spans []freshFunctionSpan
+	for at := 0; at < len(source); {
+		m := freshFunctionStart.FindStringSubmatchIndex(source[at:])
+		if m == nil {
+			break
+		}
+		start, open := at+m[0], at+m[1]-1
+		name := source[at+m[2] : at+m[3]]
+		depth := 1
+		quote := byte(0)
+		end := open + 1
+		for ; end < len(source) && depth > 0; end++ {
+			c := source[end]
+			if quote != 0 {
+				if c == '`' && quote == '"' {
+					end++
+					continue
+				}
+				if c == quote {
+					if end+1 < len(source) && source[end+1] == quote {
+						end++
+						continue
+					}
+					quote = 0
+				}
+				continue
+			}
+			if c == '\'' || c == '"' {
+				quote = c
+				continue
+			}
+			if c == '{' {
+				depth++
+			}
+			if c == '}' {
+				depth--
+			}
+		}
+		if depth != 0 {
+			t.Fatal("reviewed function body is unbalanced")
+		}
+		spans = append(spans, freshFunctionSpan{name, start, end, strings.TrimSpace(source[open+1 : end-1])})
+		at = end
+	}
+	return spans
+}
+func freshFunctionHashes(t *testing.T, source string) map[string]string {
+	out := map[string]string{}
+	for _, s := range freshFunctionSpans(t, source) {
+		out[s.name] = fmt.Sprintf("%x", sha256.Sum256([]byte(strings.ReplaceAll(s.body, "\r\n", "\n"))))
+	}
+	return out
+}
+
+var freshMockNames = []string{"Import-Module", "Get-NetAdapter", "Get-NetConnectionProfile", "Get-NetIPAddress", "Get-NetRoute", "Get-NetFirewallProfile", "Get-NetFirewallRule", "Get-NetFirewallPortFilter", "Get-NetFirewallApplicationFilter", "Get-NetFirewallAddressFilter", "Get-NetFirewallInterfaceFilter", "New-NetFirewallRule", "Set-NetFirewallRule", "Set-NetFirewallPortFilter", "Set-NetFirewallApplicationFilter", "Set-NetFirewallAddressFilter", "Set-NetFirewallInterfaceFilter"}
+var freshEventNames = []string{"new-rule", "set-rule", "set-port", "set-program", "set-remote", "set-interface"}
+
+const freshDirectPrelude = `$ErrorActionPreference='Stop'
+$PSModuleAutoLoadingPreference='None'
+function Record-TestRead {param([string]$name) [IO.File]::AppendAllText($env:KSESSION_TEST_READ_FILE,$name+[char]10,[Text.UTF8Encoding]::new($false))}
+Record-TestRead 'BOOTSTRAP_STARTED'
+function Find-FreshMock {param([string]$name,[string]$expectedHash)
+ $functions=@($ExecutionContext.SessionState.InvokeCommand.GetCommands($name,[Management.Automation.CommandTypes]::Function,$false))
+ $aliases=@($ExecutionContext.SessionState.InvokeCommand.GetCommands($name,[Management.Automation.CommandTypes]::Alias,$false))
+ if($functions.Count -ne 1 -or $aliases.Count -ne 0){Record-TestRead 'GUARD_REJECTED';exit 26}
+ $mockItem=$functions[0]
+ if($mockItem.Name -cne $name -or $null -eq $mockItem.ScriptBlock -or $mockItem.ScriptBlock.File){Record-TestRead 'GUARD_REJECTED';exit 26}
+ $source=$mockItem.ScriptBlock.ToString().Replace([string][char]13+[char]10,[string][char]10).Trim()
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try{$actual=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($source))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}
+ if($actual -cne $expectedHash){Record-TestRead 'GUARD_REJECTED';exit 26}
+ return $mockItem
+}
+`
+const freshDirectWrappers = `function Get-NetAdapter {[CmdletBinding()]param([switch]$IncludeHidden) Record-TestRead 'adapter'; & $script:r2Adapter @PSBoundParameters}
+function Get-NetConnectionProfile {[CmdletBinding()]param($InterfaceIndex) Record-TestRead 'profile'; & $script:r2Profile @PSBoundParameters}
+function Get-NetIPAddress {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) Record-TestRead 'address'; & $script:r2Address @PSBoundParameters}
+function Record-TestEvent {param([string]$event)
+ if($event -notin @('new-rule','set-rule','set-port','set-program','set-remote','set-interface')){throw 'invalid synthetic event'}
+ $enabled='null'
+ if($null -ne $script:rule){$value=[string]$script:rule.Enabled;if($value -notin @('True','False')){throw 'invalid synthetic enabled value'};$enabled='"'+$value+'"'}
+ [IO.File]::AppendAllText($script:eventFile,'{"event":"'+$event+'","enabled":'+$enabled+'}'+[char]10,[Text.UTF8Encoding]::new($false))
+}
+Record-TestRead 'HARNESS_BOUND'
+`
+const freshUnavailableProvider = `function Get-Item {param($LiteralPath) Record-TestRead 'DEPENDENCY_REJECTED';throw 'synthetic provider unavailable'}
+function Test-Path {param($LiteralPath) Record-TestRead 'DEPENDENCY_REJECTED';throw 'synthetic provider unavailable'}
+`
+
+func freshBoundScript(t *testing.T, override, legacyGuard, fault string) string {
+	t.Helper()
+	if fault == "LEGACY_PROVIDER_UNAVAILABLE" {
+		return freshDirectPrelude + firewallMockHarness + "\n" + freshUnavailableProvider + freshLegacyReadHarness + override + legacyGuard + firewallScript
+	}
+	original := firewallMockHarness
+	if fault == "MISSING_MOCK" {
+		for _, span := range freshFunctionSpans(t, original) {
+			if span.name == "Get-NetAdapter" {
+				original = original[:span.start] + original[span.end:]
+				break
+			}
+		}
+	}
+	base := freshFunctionHashes(t, firewallMockHarness)
+	capture := ""
+	for _, pair := range [][2]string{{"r2Adapter", "Get-NetAdapter"}, {"r2Profile", "Get-NetConnectionProfile"}, {"r2Address", "Get-NetIPAddress"}} {
+		capture += "$script:" + pair[0] + "=(Find-FreshMock '" + pair[1] + "' '" + base[pair[1]] + "').ScriptBlock\n"
+	}
+	clean := freshDirectPrelude + original + "\n" + capture + freshDirectWrappers + override
+	expected := freshFunctionHashes(t, freshDirectPrelude+firewallMockHarness+"\n"+capture+freshDirectWrappers+override)
+	guard := ""
+	for _, name := range append(append([]string{}, freshMockNames...), "Record-TestRead", "Record-TestEvent") {
+		hash, ok := expected[name]
+		if !ok {
+			t.Fatal("reviewed mock source missing")
+		}
+		guard += "$null=Find-FreshMock '" + name + "' '" + hash + "'\n"
+	}
+	injection := ""
+	switch fault {
+	case "PROVIDER_UNAVAILABLE":
+		injection = freshUnavailableProvider
+	case "WRONG_BINDING":
+		injection = "function Get-NetAdapter {throw 'synthetic incorrect function binding'}\n"
+	case "WRONG_PARAMETERS":
+		injection = "function Get-NetAdapter {[CmdletBinding()]param([switch]$Unrelated) Record-TestRead 'adapter'; & $script:r2Adapter @PSBoundParameters}\n"
+	case "ALIAS_BINDING":
+		injection = "function Fresh-Sentinel {throw 'synthetic alias sentinel'};$null=$ExecutionContext.SessionState.InvokeProvider.Item.Set('Alias:Get-NetAdapter','Fresh-Sentinel')\n"
+	case "FILE_BINDING":
+		injection = ". $env:KSESSION_TEST_BINDING_FILE\n"
+	case "PIPE_BLOCK":
+		injection = "Record-TestRead 'PIPE_BLOCK_ENTERED';[Threading.Thread]::Sleep(30000)\n"
+	}
+	script := clean + injection + guard + "Record-TestRead 'MOCKS_VERIFIED'\n" + firewallScript
+	if fault == "EVENT_PROTOCOL" {
+		script = clean + guard + "Record-TestRead 'MOCKS_VERIFIED'\nforeach($enabled in @($null,'False','True')){if($null -eq $enabled){$script:rule=$null}else{$script:rule=[pscustomobject]@{Enabled=$enabled}};foreach($event in @('new-rule','set-rule','set-port','set-program','set-remote','set-interface')){Record-TestEvent $event}};[Console]::Write('EVENT_PROTOCOL_OK')"
+	}
+	if fault == "AUTOLOAD_CONTROL" {
+		script = freshDirectPrelude + "$PSModuleAutoLoadingPreference='All';try{Get-NetAdapter}catch{};exit 27"
+	}
+	// Match the successful original13 native -Command protocol, without stdin or
+	// a second PowerShell process. Reserve space for executable and switch quoting.
+	if len(utf16.Encode([]rune(script))) > 30000 {
+		t.Fatal("reviewed inline command exceeds native bound")
+	}
+	return script
 }
