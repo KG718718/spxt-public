@@ -6,10 +6,21 @@ param(
   [Parameter(Mandatory=$true)][string]$InstallerVersion,
   [string]$GoExe='go',
   [string]$DiagnosticReport='',
-  [switch]$FreshTrial
+  [switch]$FreshTrial,
+  [string]$FreshBuildDiagnostic=''
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
+function Write-FreshStage([string]$Stage,[string]$Classification='COMMAND_FAILED'){
+  if($FreshTrial -and $FreshBuildDiagnostic){[IO.File]::WriteAllText($FreshBuildDiagnostic,(@{stage=$Stage;classification=$Classification;script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
+}
+function Write-FreshGoResult([string]$Raw,[int]$Exit,[string]$Kind){
+  if($FreshTrial -and $FreshBuildDiagnostic){
+    & $env:KSESSION_FRESH_BUILD_NODE (Join-Path $PSScriptRoot '../tests/fresh-lan-trial/helper-go-diagnostic.cjs') $Raw $FreshBuildDiagnostic $Exit $Kind
+    if($LASTEXITCODE -ne 0){throw 'Fresh helper test evidence rejected'}
+  }
+}
+Write-FreshStage 'HELPER_INPUT'
 if($SourceCommit -notmatch '^[a-f0-9]{40}$'){throw 'Exact source commit required'}
 if($RuntimeManifestSha256 -notmatch '^[a-f0-9]{64}$'){throw 'Exact runtime manifest SHA256 required'}
 if($NodeSha256 -ne 'ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32'){throw 'Pinned Node SHA256 required'}
@@ -33,17 +44,29 @@ $taskReport=[ordered]@{schema=1;kind='k-session-firewall-build-diagnostic';quali
 function Write-FixedReport(){if($taskReportPath){[IO.File]::WriteAllText($taskReportPath,($taskReport|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}}
 Write-FixedReport
 $env:GOOS='windows';$env:GOARCH='amd64';$env:CGO_ENABLED='0';$env:GOTOOLCHAIN='local';$env:GOPROXY='off';$env:GOSUMDB='off';$env:GOENV='off';$env:GOFLAGS='';$env:GOEXPERIMENT=''
+if($FreshTrial){$env:GOWORK='off'}
 $flags="-H windowsgui -s -w -buildid= -X main.buildSourceCommit=$SourceCommit -X main.buildRuntimeManifestSHA256=$RuntimeManifestSha256 -X main.buildNodeSHA256=$NodeSha256 -X main.buildInstallerVersion=$InstallerVersion"
 if($FreshTrial){$flags+=' -X main.buildFreshTrial=1'}
+function Complete-BuildIdentity {
+$exe=Join-Path $taskOutput 'K-SESSION-Firewall.exe'
+$taskBuildInfo=[ordered]@{product='K⁺-SESSION';component='firewall-helper';qualification='UNSIGNED DEVELOPMENT ARTIFACT';sourceCommit=$SourceCommit;runtimeManifestSha256=$RuntimeManifestSha256;nodeSha256=$NodeSha256;installerVersion=$InstallerVersion;toolchain=(& $GoExe version);GOOS='windows';GOARCH='amd64';CGO_ENABLED='0';windowsSubsystem='gui';bytes=(Get-Item -LiteralPath $exe).Length;sha256=(Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLower()}
+if($FreshTrial){$taskBuildInfo['deriveProfile']='fresh-trial';$taskBuildInfo['freshTrialMarker']='1'}
+$taskBuildInfo | ConvertTo-Json | Set-Content -Encoding utf8 -LiteralPath (Join-Path $taskOutput 'build-info.json')
+if($FreshTrial){[ordered]@{schema=1;kind='FRESH_FIREWALL_POLICY';sourceCommit=$SourceCommit;status='PASS';expectedTests=$taskFreshTests;pass=2;fail=0;skipped=0} | ConvertTo-Json | Set-Content -Encoding utf8 -LiteralPath (Join-Path $taskOutput 'fresh-policy-report.json')}
+}
+
 $taskEnvironment=$null
 $taskFailed=$false
 try {
+  Write-FreshStage 'HELPER_ENVIRONMENT'
   $taskEnvironment=Enter-KSessionFirewallTestEnvironment $taskPhysicalParent ('firewall-build-'+$PID+'-'+[guid]::NewGuid().ToString('N')+'-env')
   $taskReport.stage='TESTS';$taskReport.reason='RUNNING';Write-FixedReport
   $taskRaw=Join-Path $taskEnvironment.Root 'go-test.jsonl'
   [IO.File]::WriteAllText($taskRaw,'',[Text.UTF8Encoding]::new($false))
   Push-Location $PSScriptRoot
+  Write-FreshStage 'HELPER_STANDARD_TESTS'
   try{& $GoExe test -json -count=1 -run ('^(' + ($taskExpectedTests -join '|') + ')$') ./... *> $taskRaw;$taskTestExit=$LASTEXITCODE}finally{Pop-Location}
+  Write-FreshGoResult $taskRaw $taskTestExit 'ORIGINAL'
   $taskSummary=Read-KSessionGoTestSummary $taskRaw;$taskJSONInvalid=$taskSummary.JSONInvalid
   $taskFailedNames=@($taskSummary.FailedNames);$taskSkippedNames=@($taskSummary.SkippedNames);$taskPassed=@($taskSummary.Passed)
   $taskExpectedSorted=@($taskExpectedTests|Sort-Object);$taskPassedSorted=@($taskPassed|Sort-Object)
@@ -59,6 +82,7 @@ try {
   }
   $taskReport.stage='COMPILE';$taskReport.reason='RUNNING';$taskReport.compileReached=$true;Write-FixedReport
   if($FreshTrial){
+    Write-FreshStage 'HELPER_FRESH_OVERLAY'
     $taskFreshTests=@('TestFreshStrictBindingAndStandardSchemaIsolation','TestFreshFirewallBindingBeforeAnyMutation')
     $taskFreshRaw=Join-Path $taskEnvironment.Root 'fresh-go-test.jsonl'
     $taskFreshOverlay=Join-Path $taskEnvironment.Root 'fresh-firewall-overlay.json'
@@ -67,7 +91,9 @@ try {
     & $env:KSESSION_FRESH_BUILD_NODE $taskOverlayBuilder FIREWALL $taskFreshOverlay|Out-Null
     if($LASTEXITCODE -ne 0){throw 'Fresh Firewall overlay source rejected'}
     Push-Location $PSScriptRoot
+    Write-FreshStage 'HELPER_FRESH_TESTS'
     try{& $GoExe test -overlay $taskFreshOverlay -tags fresh_trial_tests -json -count=1 -run ('^(' + ($taskFreshTests -join '|') + ')$') . *> $taskFreshRaw;$taskFreshExit=$LASTEXITCODE}finally{Pop-Location}
+    Write-FreshGoResult $taskFreshRaw $taskFreshExit 'FRESH'
     $taskFreshSummary=Read-KSessionGoTestSummary $taskFreshRaw
     if($taskFreshExit -ne 0 -or $taskFreshSummary.JSONInvalid -or $taskFreshSummary.PackagePass -ne 1 -or $taskFreshSummary.PackageFail -ne 0 -or @($taskFreshSummary.FailedNames).Count -ne 0 -or @($taskFreshSummary.SkippedNames).Count -ne 0 -or (Compare-Object @($taskFreshTests|Sort-Object) @($taskFreshSummary.Passed|Sort-Object))){throw 'Fresh Firewall policy gate failed'}
   }
@@ -75,16 +101,27 @@ try {
   $taskBuildRaw=Join-Path $taskEnvironment.Root 'go-build.log'
   [IO.File]::WriteAllText($taskBuildRaw,'',[Text.UTF8Encoding]::new($false))
   Push-Location $PSScriptRoot
+  Write-FreshStage 'HELPER_COMPILE'
   try{& $GoExe build -trimpath -buildvcs=false -ldflags $flags -o (Join-Path $taskOutput 'K-SESSION-Firewall.exe') . *> $taskBuildRaw;$taskBuildExit=$LASTEXITCODE}finally{Pop-Location}
   if($taskBuildExit -ne 0){$taskReport.status='FAIL';$taskReport.reason='COMPILE_FAILED';Write-FixedReport;throw 'Firewall helper build failed'}
+  Write-FreshStage 'HELPER_IDENTITY'
+  Complete-BuildIdentity
   $taskReport.status='PASS';$taskReport.stage='COMPLETE';$taskReport.reason='PASS';Write-FixedReport
 } catch {
   if($taskReport.status -eq 'RUNNING'){$taskReport.status='FAIL';$taskReport.reason='INTERNAL';Write-FixedReport}
   $taskFailed=$true
-} finally {if($null-ne$taskEnvironment){Exit-KSessionFirewallTestEnvironment $taskEnvironment}}
+} finally {
+  if($null-ne$taskEnvironment){
+    try{
+      if(!$taskFailed){Write-FreshStage 'HELPER_ENVIRONMENT'}
+      Exit-KSessionFirewallTestEnvironment $taskEnvironment
+      foreach($taskName in @('TEMP','TMP','GOTMPDIR','GOCACHE')){if([Environment]::GetEnvironmentVariable($taskName,'Process') -cne $taskEnvironment.$taskName){throw 'Helper environment restoration mismatch'}}
+      if([Environment]::GetEnvironmentVariable('KSESSION_FIREWALL_TEST_ROOT','Process') -cne $taskEnvironment.Fixture){throw 'Helper fixture restoration mismatch'}
+    }catch{
+      $taskFailed=$true;$taskReport.status='FAIL';$taskReport.stage='ENVIRONMENT';$taskReport.reason='ENV_RESTORE_FAILED';Write-FixedReport
+      Write-FreshStage 'HELPER_ENVIRONMENT' 'ENV_RESTORE_FAILED'
+    }
+  }
+}
 if($taskFailed){Write-Output ('FIREWALL_BUILD_FAILED stage='+$taskReport.stage+' reason='+$taskReport.reason);exit 71}
-$exe=Join-Path $taskOutput 'K-SESSION-Firewall.exe'
-$taskBuildInfo=[ordered]@{product='K⁺-SESSION';component='firewall-helper';qualification='UNSIGNED DEVELOPMENT ARTIFACT';sourceCommit=$SourceCommit;runtimeManifestSha256=$RuntimeManifestSha256;nodeSha256=$NodeSha256;installerVersion=$InstallerVersion;toolchain=(& $GoExe version);GOOS='windows';GOARCH='amd64';CGO_ENABLED='0';windowsSubsystem='gui';bytes=(Get-Item -LiteralPath $exe).Length;sha256=(Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLower()}
-if($FreshTrial){$taskBuildInfo['deriveProfile']='fresh-trial';$taskBuildInfo['freshTrialMarker']='1'}
-$taskBuildInfo | ConvertTo-Json | Set-Content -Encoding utf8 -LiteralPath (Join-Path $taskOutput 'build-info.json')
-if($FreshTrial){[ordered]@{schema=1;kind='FRESH_FIREWALL_POLICY';sourceCommit=$SourceCommit;status='PASS';expectedTests=$taskFreshTests;pass=2;fail=0;skipped=0} | ConvertTo-Json | Set-Content -Encoding utf8 -LiteralPath (Join-Path $taskOutput 'fresh-policy-report.json')}
+Write-FreshStage 'HELPER_COMPLETE' 'PASS'
