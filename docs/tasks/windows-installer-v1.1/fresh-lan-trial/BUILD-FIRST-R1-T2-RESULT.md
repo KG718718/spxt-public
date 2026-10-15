@@ -1,6 +1,6 @@
 # Build-First Recovery R1 — FRESH-T2 执行结果
 
-日期2026-10-15。状态：IMPLEMENTED / FINAL REAL PAYLOAD BUILD PENDING；尚非正式RETURN或Hosted准入。
+日期2026-10-15。状态：RETURNED / MASTER REVIEW PENDING；本地实际构建闭合，不是Hosted PASS或触发授权。
 
 ## 来源与授权
 
@@ -33,6 +33,25 @@ Candidate/QA继续原严格schema、F01–F09/26-742/真实安装及浏览器；
 
 ## 本地验证进度
 
-固定Node全Fresh+R1 138/138 fail0skip0，旧beta4 compatibility20/20；最新来源控制与公开旧基线调整的局部复验待最后记录。安装态完整Go overlay test-c/vet PASS（未执行安装测试）。变更CJS/PS syntax、YAML uniqueKeys/push-only/45min及内联PS机器parse PASS。Master并行独立已验14个helper/R1/QA反例和语法/YAML，最终仍以受审提交为准。
+固定Node全Fresh+R1 138/138 fail0skip0，旧beta4 compatibility20/20；最新来源控制与公开旧基线调整的局部12/12复验PASS。安装态完整Go overlay test-c/vet PASS（未执行安装测试）。变更CJS/PS syntax、YAML uniqueKeys/push-only/45min及内联PS机器parse PASS。Master并行独立已验14个helper/R1/QA反例和语法/YAML，最终仍以受审提交为准。
 
-本轮没有运行Setup/产品EXE/真实Registry/Firewall/Startup/LAN或业务数据操作；所有native构建反例、失败日志、缓存/实际编译产物留在私有owned scratch/.test-work，不上传、不未知清理。真实ISCC本地NOT_RUN（没有受验本地compiler），将只由获准Smoke构建验证；不是ISCC或安装PASS。真正完整payload最终结果待下面追加后正式RETURN。
+本轮没有运行Setup/产品EXE/真实Registry/Firewall/Startup/LAN或业务数据操作；所有native构建反例、失败日志、缓存/实际编译产物留在私有owned scratch/.test-work，不上传、不未知清理。真实ISCC本地NOT_RUN（没有受验本地compiler），将只由获准Smoke构建验证；不是ISCC或安装PASS。真正完整payload最终结果见下方。
+
+## 最终提交与整条真实构建 — 已完成
+
+实现commit401ea7f926be2c2123e6922fd5081ae0935bf30b。在该精确HEAD、构建相关文件冻结且tracked clean条件下，传固定真实NodeDir/GoRoot执行完整build-payload.ps1，owned普通输出目录位于bea7下，不是Git worktree。Runtime工具执行前为精确HEAD blob，通过git add仅刷新同blob index（cached diff=0），运行后恢复原autocrlf形式；没有更改运行中源码或未知文件。
+
+结果：exit0，FRESH_PAYLOAD_IDENTITY PASS / BUILD_AND_PURE_TESTS_ONLY，productionExeRun=false。Helper原13/13及父重复13/13、Fresh2/2；Launcher原28/28及父重复28/28、Fresh2/2；LAN44/44，均fail0skip0；runtime-manifest、实际两EXE、package-lan.finish/verify及完整1049文件/20依赖身份组装PASS。刻意污染的父Go env隔离后恢复true，外层env恢复true；未写未知global cache。整条链不再仅direct build或overlay compile。
+
+- sourceCommit：401ea7f926be2c2123e6922fd5081ae0935bf30b。
+- manifest SHA256：2532f4832d0240110e0a890869f30f9fba0cad82a89e177da7d4e765a1839b02。
+- Helper EXE：3,573,760 bytes；SHA256 6b15c9cc951634607c40bd908d5e7517360b89578fad39a467903cca38909bae。
+- Launcher EXE：7,446,016 bytes；SHA256 19fdb38e88b57fb7ea064a5d2cb479beb80125d344d45805f4ceea7cd14f55f7。
+- 实际raw报告来源：.test-work/fresh-r1-full-path.txt指向的owned目录，artifact/fresh-payload-report.json、firewall-build-diagnostic.json、firewall-unit-report.json、launcher-unit-report.json、lan-node-test-environment.json及两组件build-info/fresh-policy-report。
+- 固定本地摘要：.test-work/fresh-r1-full-summary.json、fresh-r1-real-identity-summary.json；私有整链日志由fresh-r1-build-root.txt指向目录内private-full-payload.log保存，不提交/上传。
+
+PAYLOAD_REPORT/COMMAND_FAILED是build-payload在执行前写入的最后进度marker，成功返回后由外层CI下一个阶段覆盖；此次实际exit0及完整报告PASS已独立核对，不能只凭该预写marker把成功链算失败，也未把它改写为历史C3证据。R1 Smoke在真实Setup identity后才写COMPLETE/PASS，不受该中间marker误判。
+
+验证过程保留：初次helper父block反例取finally后缀未规范CRLF导致截取断言失败，统一源文本行尾后通过；只修测试采样，不改条件。Helper原13/Fresh2/compile/identity/restore实际脚本stub9情形通过。后续新增CI失败flag初始化反例及源父子控制反例，最终Node全138、旧compat20、相关局部12均fail0skip0。原旧报告/预算/失败不更改。报告后续提交仅治理，所有构建相关文件与401ea保持零diff；Master可对最终代码与实际source作独立核验。
+
+本执行回单停止于Master独立Review/中央Smoke准入，R1 Hosted仍0/1、0/2、0/1，没有真实trigger/push。Master若发现权限/安全/架构或关键收尾不可证明须按授权STOP，不把本地PASS称作用户安装或LAN认证。实体GUI/UAC/物理Private网卡/授权/第二设备/登录/第二Launcher均HUMAN_PENDING。
