@@ -1,3 +1,6 @@
+## REVIEWED → INTEGRATED / HOSTED PENDING
+
+2026-10-15：原Thread主动RETURN，Master独立Review与实际测试PASS，整合代码e40e6044/报告9e18a542；代码指纹与受审相同。Hosted0/1，source/control/run仍PENDING。原Execution停止，保留工作树与证据；仅Master中央同步/trigger。详见MASTER-REVIEW。
 # R3 Orchestration
 
 State PREPARING / Hosted0/1; source/review/run PENDING.

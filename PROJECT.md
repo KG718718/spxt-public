@@ -1,3 +1,6 @@
+## 当前Review PASS｜2026-10-15 Fresh Firewall R3 / HOSTED PENDING
+
+原FRESH-T2正式RETURN实现b6202d82/报告2d694f24；Master独立原13/Fresh2/全部12/4异常、Go overlay真实编译/vet、Node14反例、实际Job正常/强制两例、污染环境恢复及安全JSON核验PASS，fail0skip0。整合代码e40e6044、报告9e18a542，tools/.github与受审完全相同，指纹ce81d3fa0bad96459d120e50380922ee1cc53ee23dff275fab9fa8bb30069358；生产/R2语义/旧workflow零diff。仅独立R3 Hosted0/1，须三方HEAD和source/control/trigger核验后唯一触发；任何结果STOP回网页。原Smoke1/1 FAIL、Candidate0/2与QA0/1冻结；不构建Payload/Setup，不访问内部SPXT/main/tag/Release，不清历史。详见FRESH-FIREWALL-R3-MASTER-REVIEW.md与ORCHESTRATION。下方停止文字保留历史，本次仅有限例外。
 ## 当前有限授权｜2026-10-15 Fresh Firewall R3 / PREPARATION
 
 用户已批准独立R3 Hosted最多1次，仅原Firewall13、Fresh2、目标12场景及异常反例/固定安全诊断与环境恢复。本地门禁和Master独立Review PASS后由Master中央唯一触发；原FRESH-T2/原bea7工作树复用。R2受审73f79d8e语义不放宽，生产/安全不修改，不真实操作Firewall/网卡/Registry。R1 Smoke1/1历史FAIL、Candidate0/2与QA0/1继续冻结；本次PASS/FAIL后均STOP回网页版，不进入Payload/Setup/完整试用验收。详见fresh-lan-trial/FRESH-FIREWALL-R3-AUTHORIZATION.md与ORCHESTRATION。下方停点均保留历史，仅此专项有限例外。

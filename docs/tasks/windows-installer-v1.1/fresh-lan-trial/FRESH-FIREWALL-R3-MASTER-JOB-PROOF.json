@@ -1,0 +1,16 @@
+[
+  {
+    "descendantOwned": true,
+    "mode": "normal",
+    "forcedTermination": false,
+    "jobEmpty": true,
+    "naturalSuccess": true
+  },
+  {
+    "descendantOwned": true,
+    "mode": "forced",
+    "forcedTermination": true,
+    "jobEmpty": true,
+    "naturalSuccess": false
+  }
+]
