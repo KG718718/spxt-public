@@ -14,9 +14,9 @@ function Invoke-KSessionMemoryProcess([string]$Executable,[string[]]$Arguments,[
     $taskOut=$taskChild.StandardOutput.ReadToEndAsync();$taskErr=$taskChild.StandardError.ReadToEndAsync()
     $taskInput=$taskChild.StandardInput.WriteAsync($InputText)
     while(!$taskInput.IsCompleted -and $taskClock.Elapsed.TotalSeconds -lt $TimeoutSeconds){Start-Sleep -Milliseconds 10}
-    if($taskInput.IsCompleted){$taskInput.GetAwaiter().GetResult();$taskInput=$taskChild.StandardInput.FlushAsync()}
+    if($taskInput.IsCompleted){$null=$taskInput.GetAwaiter().GetResult();$taskInput=$taskChild.StandardInput.FlushAsync()}
     while(!$taskInput.IsCompleted -and $taskClock.Elapsed.TotalSeconds -lt $TimeoutSeconds){Start-Sleep -Milliseconds 10}
-    if($taskInput.IsCompleted){$taskInput.GetAwaiter().GetResult();$taskChild.StandardInput.Close()}
+    if($taskInput.IsCompleted){$null=$taskInput.GetAwaiter().GetResult();$taskChild.StandardInput.Close()}
     while((!$taskInput.IsCompleted -or !$taskChild.HasExited -or !$taskOut.IsCompleted -or !$taskErr.IsCompleted) -and $taskClock.Elapsed.TotalSeconds -lt $TimeoutSeconds){Start-Sleep -Milliseconds 10}
     if(!$taskInput.IsCompleted -or !$taskChild.HasExited -or !$taskOut.IsCompleted -or !$taskErr.IsCompleted){
       if(!$taskChild.HasExited){$taskChild.Kill($true);$null=$taskChild.WaitForExit(5000)}
