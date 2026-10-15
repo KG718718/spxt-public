@@ -1,3 +1,6 @@
+## 当前执行｜2026-10-15 FAST V1 / C1 FAIL → LOCAL REWORK
+
+R1C1唯一Run38758814656/attempt1、source656bc623/control478d42d8、Artifact11984418940已FAIL；严格来源/单JSON/白名单核验PASS。BUILD/HELPER_FRESH_TESTS，多失败固定12行全部TIMEOUT、mock/read/mutation/path仍UNKNOWN，checks为空/setupSha=null。10项cleanup全部true，首次失败可按新授权继续本地普通修复；不直接retry、不加Hosted。Candidate1/2已用、剩1次须新证据/实际修改/本地闭合/Master Review，QA0/1仅Candidate完整PASS后。原FRESH-T2/bea7复用，改变共同阻塞定位/测试驱动方法，不继续原样微探针；内部原因未证，不称产品防火墙缺陷。旧R3/Smoke/Full/U27/LC01失败不改，禁止sub-agent/main/tag/Release/内部SPXT/未知清理。详见FAST-R1C1-HOSTED-REPORT.json；下方运行中/Review为历史。
 ## 当前运行｜2026-10-15 FAST V1 / R1C1
 
 唯一Candidate Run38758814656 / attempt1，source656bc6236a8b523d74e0faa73947023d57d6aa80、control478d42d8c1d67ac1df442084f48817a9fa25a060，三方HEAD一致后已单独触发；SOURCE绑定PASS，整体IN_PROGRESS，不能宣称安装/26-742/LAN通过。原预算Candidate1/2、独立QA0/1，旧Smoke/R3等不增；无retry。原T2已RETURN/独立Review/ff整合并冻结，失败按原Thread返工；必须新证据、实际修改、本地验证/Review和可信收尾才C2。首次PASS直接独立QA同一EXE。用户安全/隔离恢复等强制停止保持；不main/tag/Release/内部SPXT/未知清理。详见FAST-CANDIDATE-MASTER-REVIEW.md及FAST-RUNS.json；后续治理提交不改变本Run受测来源。

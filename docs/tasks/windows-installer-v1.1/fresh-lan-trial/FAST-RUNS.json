@@ -14,8 +14,11 @@
       "attempt": 1,
       "source": "656bc6236a8b523d74e0faa73947023d57d6aa80",
       "control": "478d42d8c1d67ac1df442084f48817a9fa25a060",
-      "status": "IN_PROGRESS",
-      "artifactId": null
+      "status": "FAIL",
+      "artifactId": "11984418940",
+      "stage": "BUILD_HELPER_FRESH_TESTS",
+      "classification": "GO_FRESH_SCENARIOS_FAILED_MULTIPLE",
+      "cleanupVerified": true
     }
   ],
   "historicalSmoke": {
