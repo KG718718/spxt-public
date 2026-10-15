@@ -1,0 +1,20 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process');
+const {candidateMetadata}=require('../../../windows-installer/fresh-trial/recovery-r1/bootstrap.cjs');
+const repo=path.resolve(__dirname,'../../../..'),quote=s=>"'"+s.replaceAll("'","''")+"'";
+test('R1 metadata feeds the actual original hosted QA identity block, without any rebuild',()=>{
+ const r=require('./fixtures.cjs').trialPass(),input={candidateRunId:r.run.id,candidateArtifactId:'22',candidateSetupSha256:r.setupSha256},context={sourceCommit:r.sourceCommit,mode:'QA',candidate:{runId:r.run.id,setupSha256:r.setupSha256}},metadata=candidateMetadata({report:r,run:{head_sha:r.controlCommit}},context,input);
+ const work=fs.mkdtempSync(path.join(repo,'.test-work/r1-qa-meta-')),artifact=path.join(work,'artifact');fs.mkdirSync(artifact);fs.writeFileSync(path.join(work,'candidate-metadata.json'),JSON.stringify(metadata));fs.writeFileSync(path.join(artifact,'fresh-report.json'),JSON.stringify(r));
+ const source=fs.readFileSync(path.join(repo,'tools/windows-installer/fresh-trial/hosted-run.cjs'),'utf8'),begin=source.indexOf(" if(context.mode==='QA'){"),end=source.indexOf('\n const writer=',begin),block=source.slice(begin,end);
+ let calls=0;const verify=(_root,expected)=>{calls++;assert.equal(expected.sourceCommit,r.sourceCommit);assert.equal(expected.controlCommit,r.controlCommit);assert.deepEqual(expected.run,{id:r.run.id,attempt:1});assert.equal(expected.mode,'CANDIDATE');};
+ new Function('context','work','artifact','setupHash','fs','path','assert','verify',block)(context,work,artifact,r.setupSha256,fs,path,assert,verify);assert.equal(calls,1);
+ assert.throws(()=>new Function('context','work','artifact','setupHash','fs','path','assert','verify',block)(context,work,artifact,'d'.repeat(64),fs,path,assert,verify));
+ assert.throws(()=>candidateMetadata({report:r,run:{head_sha:'d'.repeat(40)}},context,input));
+});
+test('actual original CI QA extraction branch keeps exact immutable seven-file allowlist, no component build',()=>{
+ const ci=fs.readFileSync(path.join(repo,'tools/windows-installer/fresh-trial/ci.ps1'),'utf8'),start=ci.indexOf("    Stage 'BUILD_TOOLCHAIN_FAILED'",ci.indexOf("}elseif($taskContext.mode -eq 'QA')")),end=ci.indexOf("  }else{throw 'Fresh mode rejected'}",start),block=ci.slice(start,end);assert.ok(block.includes('candidate.zip'));assert.doesNotMatch(block,/build-payload|build\.ps1|build\.cjs/);
+ const root=fs.mkdtempSync(path.join(repo,'.test-work/r1-qa-extract-')),files=require('../../../windows-installer/fresh-trial/verify-artifact.cjs').FILES;
+ for(const extra of [false,true]){const work=path.join(root,extra?'extra':'good');fs.mkdirSync(work);const script=path.join(work,'run.ps1');fs.writeFileSync(script,`$ErrorActionPreference='Stop';$taskRepo=${quote(repo)};$taskWork=${quote(work)};$script:pins=0;function Stage($s){};function Pinned($u,$h,$z,$o){$script:pins++};function Get-FileHash($LiteralPath,$Algorithm){[pscustomobject]@{Hash=(Get-Content -Raw (Join-Path $taskRepo 'tools/installer/distribution.json')|ConvertFrom-Json).nodeExeSha256}};Add-Type -AssemblyName System.IO.Compression.FileSystem;$zip=[IO.Compression.ZipFile]::Open((Join-Path $taskWork 'candidate.zip'),[IO.Compression.ZipArchiveMode]::Create);try{foreach($name in @(${[...files,...(extra?['unknown-private.txt']:[])].map(quote).join(',')})){$e=$zip.CreateEntry($name);$w=[IO.StreamWriter]::new($e.Open());try{$w.Write('SYNTHETIC_IMMUTABLE_EXTRACTION_ONLY')}finally{$w.Dispose()}}}finally{$zip.Dispose()};try{${block};$pass=$true}catch{$pass=$false};[Console]::WriteLine((@{pass=$pass;pins=$script:pins;files=if(Test-Path (Join-Path $taskWork 'artifact')){@(Get-ChildItem -LiteralPath (Join-Path $taskWork 'artifact') -File).Count}else{0}}|ConvertTo-Json -Compress))`);
+  const r=cp.spawnSync('pwsh',['-NoLogo','-NoProfile','-File',script],{encoding:'utf8',windowsHide:true,timeout:10000});assert.equal(r.status,0);const actual=JSON.parse(r.stdout);assert.equal(actual.pass,!extra);assert.equal(actual.pins,2);assert.equal(actual.files,extra?0:7);
+ }
+});

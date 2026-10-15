@@ -1,8 +1,9 @@
-param([Parameter(Mandatory=$true)][string]$Work)
+param([Parameter(Mandatory=$true)][string]$Work,[switch]$BuildOnly)
 $ErrorActionPreference='Stop'
 $taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $taskWork=[IO.Path]::GetFullPath($Work)
 $taskContext=Get-Content -Raw -LiteralPath (Join-Path $taskWork 'context.json')|ConvertFrom-Json
+if($BuildOnly -and ($taskContext.r1.schema -ne 1 -or $taskContext.r1.mode -ne 'SMOKE' -or $taskContext.r1.slot -ne 'R1S1' -or $taskContext.mode -ne 'CANDIDATE')){throw 'Build-only R1 smoke context required'}
 if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public' -or
    $taskContext.controlCommit -cne $env:GITHUB_SHA -or $env:GITHUB_RUN_ATTEMPT -ne '1' -or $taskContext.run.id -ne $env:GITHUB_RUN_ID -or
    $taskWork -notmatch '^E:\\' -or (git -C $taskRepo rev-parse HEAD).Trim() -cne $taskContext.sourceCommit){throw 'Fresh source context rejected'}
@@ -12,6 +13,7 @@ $taskReport=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
 $taskVariables=@('TEMP','TMP','GOCACHE','GOTMPDIR','GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','NODE_PATH','NODE_OPTIONS','PLAYWRIGHT_BROWSERS_PATH','KSESSION_FRESH_TESTED_SOURCE','KSESSION_FRESH_BUILD_NODE','KSESSION_FRESH_PHYSICAL_WORK')
 $taskPrevious=Save-KSessionProcessEnvironment $taskVariables
 $taskFinalStarted=$false
+$script:taskFailed=$false
 $taskToolchainStarted=$false;$taskToolchainOwned=$false;$taskToolchainRestored=$true
 $taskBuildDiagnostic=Join-Path $taskWork 'build-diagnostic.json'
 function Stage([string]$Reason){
@@ -108,6 +110,11 @@ try {
       foreach($taskEntry in $taskZip.Entries){[IO.Compression.ZipFileExtensions]::ExtractToFile($taskEntry,(Join-Path $taskWork "artifact/$($taskEntry.FullName)"),$false)}
     }finally{$taskZip.Dispose()}
   }else{throw 'Fresh mode rejected'}
+  if($BuildOnly){
+    [IO.File]::WriteAllText($taskBuildDiagnostic,(@{stage='SMOKE_IDENTITY';classification='COMMAND_FAILED';script=$null;line=$null}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+    Checked $taskNode @((Join-Path $PSScriptRoot 'recovery-r1/smoke.cjs'),'READY',$taskRepo,$taskWork)
+    [IO.File]::WriteAllText($taskBuildDiagnostic,(@{stage='COMPLETE';classification='PASS';script=$null;line=$null}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+  }else{
   Stage 'BROWSER_TOOL_FAILED'
   $taskBrowser=Join-Path $taskWork 'browser-tool';Copy-Item -LiteralPath (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/browser-tool') -Destination $taskBrowser -Recurse
   $taskNpm=Join-Path (Split-Path $taskNode) 'node_modules/npm/bin/npm-cli.js'
@@ -121,6 +128,7 @@ try {
   $env:TEMP=Resolve-KSessionFirewallPhysicalPath $env:GOTMPDIR;$env:TMP=$env:TEMP
   $taskFinalStarted=$true
   Checked $taskNode @((Join-Path $PSScriptRoot 'hosted-run.cjs'),$taskRepo,$taskWork,$taskNode,$taskGo)
+  }
 }catch{
   if(!$taskFinalStarted){$taskReport.status='FAIL';[IO.File]::WriteAllText($taskReportPath,($taskReport|ConvertTo-Json -Depth 12 -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
   $script:taskFailed=$true

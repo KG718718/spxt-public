@@ -6,7 +6,7 @@ const functions=part('function Build-Stage',"Build-Stage 'RUNTIME'")+part('funct
 const unit=part("Build-Stage 'LAUNCHER_UNIT'","Build-Stage 'PAYLOAD_ASSEMBLY'");
 const quote=s=>"'"+s.replaceAll("'","''")+"'";
 test('actual C2 parent unit source inherits polluted caller Go settings without touching the named global cache',()=>{
- const old=cp.execFileSync('git',['show','68880d6:tools/windows-installer/fresh-trial/build-payload.ps1'],{cwd:repo,encoding:'utf8',windowsHide:true});
+ const old=cp.execFileSync('git',['show','ca8302c32976645a83174d055dc22d1f620e5ea3:tools/windows-installer/fresh-trial/build-payload.ps1'],{cwd:repo,encoding:'utf8',windowsHide:true});
  const start=old.indexOf("Build-Stage 'LAUNCHER_UNIT'"),end=old.indexOf("Build-Stage 'PAYLOAD_ASSEMBLY'",start),oldUnit=old.slice(start,end);
  const work=fs.mkdtempSync(path.join(repo,'.test-work/fresh-unit-legacy-')),raw=path.join(work,'synthetic-go.jsonl'),stub=path.join(work,'go-stub.ps1'),runner=path.join(work,'runner.ps1'),observation=path.join(work,'observation.json');
  fs.writeFileSync(raw,[...expected.map(Test=>({Action:'pass',Test})),{Action:'pass'}].map(e=>JSON.stringify(e)).join('\n'));

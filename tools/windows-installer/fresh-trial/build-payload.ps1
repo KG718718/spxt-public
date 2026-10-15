@@ -29,6 +29,10 @@ function Get-Pinned($url,$hash,$zip,$destination){
   Expand-Archive -LiteralPath $zip -DestinationPath $destination
 }
 . (Join-Path $taskRepo 'tools/tests/lan-host/node-test-environment.ps1')
+$taskBuildVariables=@('GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','TEMP','TMP','GOTMPDIR','GOCACHE','KSESSION_FRESH_BUILD_NODE','KSESSION_FIREWALL_TEST_ROOT')
+$taskBuildSnapshot=Save-KSessionProcessEnvironment $taskBuildVariables
+try{
+$env:GOOS='windows';$env:GOARCH='amd64';$env:CGO_ENABLED='0';$env:GOTOOLCHAIN='local';$env:GOPROXY='off';$env:GOSUMDB='off';$env:GOENV='off';$env:GOWORK='off';$env:GOFLAGS='';$env:GOEXPERIMENT=''
 if(!$GoRoot){
   Get-Pinned $taskPin.goWindowsZip $taskPin.sha256 (Join-Path $taskWork 'go.zip') (Join-Path $taskWork 'go-tool')
   $GoRoot=Join-Path $taskWork 'go-tool/go'
@@ -55,21 +59,29 @@ $taskFirewallBuildReport=Join-Path $taskWork 'firewall-build-diagnostic.json'
 $taskFirewallBuildLog=Join-Path $taskWork 'firewall-build-entry.log'
 Build-Stage 'HELPER'
 & pwsh -NoLogo -NoProfile -File (Join-Path $taskRepo 'tools/windows-firewall/build.ps1') -OutputDir $taskHelper -SourceCommit $Commit `
-  -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.4' -GoExe $taskGo -DiagnosticReport $taskFirewallBuildReport -FreshTrial:$FreshTrial *> $taskFirewallBuildLog
+  -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.4' -GoExe $taskGo -DiagnosticReport $taskFirewallBuildReport -FreshTrial:$FreshTrial -FreshBuildDiagnostic $BuildDiagnostic *> $taskFirewallBuildLog
 if($LASTEXITCODE -ne 0){throw 'Firewall helper build failed'}
 $taskGoTestPolicy=Join-Path $taskRepo 'tools/tests/lan-host/expected-go-tests.cjs'
+Build-Stage 'HELPER_UNIT_POLICY'
 $taskFirewallTests=@(& $taskNode $taskGoTestPolicy 'FIREWALL'|ConvertFrom-Json)
 if($LASTEXITCODE -ne 0){throw 'Fixed firewall test policy failed'}
 $taskFirewallRaw=Join-Path $taskWork 'firewall-tests.jsonl';$taskFirewallReport=Join-Path $taskWork 'firewall-unit-report.json'
 $taskFirewallEnvironment=$null
 try{
+  Build-Stage 'HELPER_UNIT_GO_JSON'
   $taskFirewallEnvironment=Enter-KSessionFirewallTestEnvironment (Resolve-KSessionFirewallPhysicalPath $env:TEMP) ('firewall-unit-'+$PID+'-'+[guid]::NewGuid().ToString('N')+'-env')
   Push-Location (Join-Path $taskRepo 'tools/windows-firewall')
   try{
     & $taskGo test -json -count=1 -run ('^(' + ($taskFirewallTests -join '|') + ')$') . | Set-Content -Encoding utf8 -LiteralPath $taskFirewallRaw
-    if($LASTEXITCODE -ne 0){throw 'Explicit firewall unit and isolated cmdlet tests failed'}
+    $taskFirewallUnitExit=$LASTEXITCODE
   }finally{Pop-Location}
 }finally{if($null-ne$taskFirewallEnvironment){Exit-KSessionFirewallTestEnvironment $taskFirewallEnvironment}}
+if($BuildDiagnostic){
+  & $taskNode (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/helper-go-diagnostic.cjs') $taskFirewallRaw $BuildDiagnostic $taskFirewallUnitExit UNIT
+  if($LASTEXITCODE -ne 0){throw 'Explicit helper unit evidence failed'}
+}
+if($taskFirewallUnitExit -ne 0){throw 'Explicit firewall unit and isolated cmdlet tests failed'}
+Build-Stage 'HELPER_UNIT_REPORT'
 Run-Checked $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),$taskFirewallRaw,$taskFirewallReport,'FIREWALL')+$taskFirewallTests)
 $taskHelperHash=(Get-FileHash -LiteralPath (Join-Path $taskHelper 'K-SESSION-Firewall.exe') -Algorithm SHA256).Hash.ToLower()
 $taskLauncher=Join-Path $taskWork 'launcher-output'
@@ -173,3 +185,10 @@ $taskPayloadReport=[ordered]@{schema=1;kind='FRESH_PAYLOAD_IDENTITY';qualificati
   firewallFreshPolicy=(Get-Content -Raw -LiteralPath (Join-Path $taskHelper 'fresh-policy-report.json')|ConvertFrom-Json);
   launcherFreshPolicy=(Get-Content -Raw -LiteralPath (Join-Path $taskLauncher 'fresh-policy-report.json')|ConvertFrom-Json)}
 $taskPayloadReport|ConvertTo-Json -Depth 12|Set-Content -LiteralPath (Join-Path $taskArtifact 'fresh-payload-report.json') -Encoding utf8
+}finally{
+  Restore-KSessionProcessEnvironment $taskBuildSnapshot
+  if(!(Test-KSessionProcessEnvironmentRestored $taskBuildSnapshot)){
+    if($BuildDiagnostic){[IO.File]::WriteAllText($BuildDiagnostic,(@{stage='BUILD_ENVIRONMENT';classification='ENV_RESTORE_FAILED';script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
+    throw 'Fresh payload environment restoration failed'
+  }
+}
