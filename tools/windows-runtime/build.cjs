@@ -122,7 +122,7 @@ try {
   report.manifestHash=sha(fs.readFileSync(path.join(stage,'manifest/runtime-manifest.json')));
   const {verify}=require('./verify.cjs');verify(stage);report.checks.push('manifest-and-exact-file-set');
   // Successful staging is not a ZIP gate. A future finalizer must verify matching test evidence.
-} catch(e) {report.failures.push(e.message);process.exitCode=1;}
+} catch(e) {report.failures.push(profile==='fresh-trial'?'RUNTIME_BUILD_FAILED':e.message);process.exitCode=1;}
 finally {
   report.status=report.failures.length?'FAIL':'PASS';
   writeJSON(path.join(out,'build-report.json'),report);
