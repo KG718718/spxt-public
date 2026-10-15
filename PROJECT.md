@@ -1,3 +1,6 @@
+## 当前执行｜2026-10-15 FAST DELIVERY V1 / P0
+
+用户新授权连续工程，原FRESH-T2/bea7已DISPATCHED，基线757f73993f5acf0a9084deb3af2b60df293f456d，return target 01a0db0e-c950-79e0-8e11-07155e0742f2。目标真实完整EXE→隔离fresh安装→自动可信LAN→安装后浏览器业务→独立QA同一EXE。Candidate0/2、QA0/1有条件恢复（真实本地完整构建/门禁/独立Review后），旧Smoke/R3/Full/U27/LC01/微诊断额度0；历史FAIL不改。raw输出只在内存处理，安全固定报告可保存。禁止普通sub-agent/后代/内部SPXT/main/tag/Release/未知清理。详见FAST-DELIVERY-V1.md；下方停止仅历史，新安全/恢复不可证及预算强制停点保持。
 ## 最终止损｜2026-10-15 Fresh Firewall R3 FAIL / STOP
 
 唯一Run38737813798/attempt1，source7709d22d/control f6112e43，Artifact11974890253严格来源/单JSON/隐私核验PASS；实际FRESH2/TEST_FAILED，原13 PASS、目标12全部TIMEOUT，固定读/mock/mutation/path均UNKNOWN；4反例3FAIL/1报告PASS（MISSING_MOCK存在已证oracle缺口，不能作正确拒绝证明）。Node/Go/编译/vet PASS，runner自然退出/Job empty/owned清理/环境恢复已证，真实系统mutation仍UNKNOWN。Master另更正准入Review：raw私有临时落盘不满足本轮“不保存”的字面要求，不把Artifact隐私PASS代替合规。R3 1/1耗尽，原Smoke1/1 FAIL、Candidate0/2、QA0/1冻结；停止工程/全部Hosted，无Payload/Setup/用户包，不生产/内部SPXT/main/tag/Release/清历史。最小测试建议未实施，后续范围预算交网页版，见FRESH-FIREWALL-R3-RESULT.md及REVIEW-QUALIFICATION.md；下方运行/Review文字均保留历史。
