@@ -1,3 +1,6 @@
+## 唯一R3专项运行中｜2026-10-15 Fresh Firewall R3
+
+Run38737813798 / attempt1，source7709d22d3dd7535091e954ea299d374de015a1d4、control f6112e43ef629a54cade54abba215844a855a8ae，三方控制HEAD一致后已唯一触发fresh-firewall-r3.yml。R3 Hosted1/1已使用，不retry；结果IN_PROGRESS，不宣称Hosted/构建/产品PASS。旧Smoke1/1 FAIL、Candidate0/2与QA0/1冻结，任何专项结果STOP回网页；无Payload/Setup/安装/业务执行。原Execution冻结，原树/证据保留，不内部SPXT/main/tag/Release。此后治理提交不改变受测source/control。
 ## REVIEWED → INTEGRATED / HOSTED PENDING
 
 2026-10-15：原Thread主动RETURN，Master独立Review与实际测试PASS，整合代码e40e6044/报告9e18a542；代码指纹与受审相同。Hosted0/1，source/control/run仍PENDING。原Execution停止，保留工作树与证据；仅Master中央同步/trigger。详见MASTER-REVIEW。
