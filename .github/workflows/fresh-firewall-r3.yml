@@ -1,0 +1,83 @@
+name: Fresh Firewall R3
+run-name: ${{ github.event.head_commit.message }}
+on:
+  push:
+    branches: [codex/lan-fresh-trial-v1.1]
+    paths: [docs/tasks/windows-installer-v1.1/fresh-lan-trial/firewall-r3-trigger.json]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: fresh-lan-trial-exclusive
+  cancel-in-progress: false
+jobs:
+  firewall-r3:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-fresh-trial-v1.1' && github.run_attempt == 1
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - name: Initialize fixed safe failure
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $taskRoot=Join-Path $env:RUNNER_TEMP ('firewall-r3-'+$env:GITHUB_RUN_ID+'-'+[guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Path $taskRoot|Out-Null
+          ('FIREWALL_R3_CONTROL='+$taskRoot)|Out-File -LiteralPath $env:GITHUB_ENV -Append -Encoding utf8
+          $r=@{schema=1;kind='FRESH_FIREWALL_R3_EARLY';execution='HOSTED';sourceCommit=$null;controlCommit=$env:GITHUB_SHA;run=@{id=$env:GITHUB_RUN_ID;attempt=1};status='FAIL';stage='SOURCE';reason='SOURCE_REJECTED';cleanup='UNKNOWN'}
+          [IO.File]::WriteAllText((Join-Path $taskRoot 'firewall-r3-report.json'),($r|ConvertTo-Json -Depth 4 -Compress),[Text.UTF8Encoding]::new($false))
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reserve single R3 and bind reviewed source
+        id: source
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node tools/tests/fresh-lan-trial/firewall-r3/bootstrap.cjs $env:GITHUB_WORKSPACE $env:FIREWALL_R3_CONTROL *> (Join-Path $env:FIREWALL_R3_CONTROL 'bootstrap-private.log')
+          if($LASTEXITCODE -ne 0){exit 1}
+      - name: Original13 Fresh2 all12 and negative4 only
+        id: execution
+        timeout-minutes: 35
+        shell: pwsh
+        run: |
+          & ./tools/tests/fresh-lan-trial/firewall-r3/driver.ps1 -ControlRoot $env:FIREWALL_R3_CONTROL *> (Join-Path $env:FIREWALL_R3_CONTROL 'driver-private.log')
+          if($LASTEXITCODE -ne 0){exit 1}
+      - name: Always verify single safe JSON
+        if: always()
+        id: final
+        shell: pwsh
+        env:
+          R3_SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          R3_EXECUTION_OUTCOME: ${{ steps.execution.outcome }}
+          R3_TESTED_SOURCE: ${{ steps.source.outputs.source }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $taskPublish=Join-Path $env:FIREWALL_R3_CONTROL 'publish'
+          try {
+            $taskOuter=$env:R3_SOURCE_OUTCOME -ne 'success' -or $env:R3_EXECUTION_OUTCOME -ne 'success'
+            node tools/tests/fresh-lan-trial/firewall-r3/finalize.cjs $env:FIREWALL_R3_CONTROL $env:R3_TESTED_SOURCE $env:GITHUB_SHA $env:GITHUB_RUN_ID HOSTED $taskOuter.ToString().ToLowerInvariant() *> (Join-Path $env:FIREWALL_R3_CONTROL 'final-private.log')
+            $taskFinalExit=$LASTEXITCODE
+            node tools/tests/fresh-lan-trial/firewall-r3/verify.cjs $taskPublish $env:GITHUB_SHA $env:GITHUB_RUN_ID $env:R3_TESTED_SOURCE *> (Join-Path $env:FIREWALL_R3_CONTROL 'verify-private.log')
+            if($LASTEXITCODE -ne 0){throw 'Safe report rejected'}
+          }catch{
+            $taskFinalExit=1
+            $taskPublish=Join-Path $env:FIREWALL_R3_CONTROL ('publish-failure-'+[guid]::NewGuid().ToString('N'))
+            New-Item -ItemType Directory -Path $taskPublish|Out-Null
+            $r=@{schema=1;kind='FRESH_FIREWALL_R3_EARLY';execution='HOSTED';sourceCommit=$null;controlCommit=$env:GITHUB_SHA;run=@{id=$env:GITHUB_RUN_ID;attempt=1};status='FAIL';stage='SOURCE';reason='REPORT_INVALID';cleanup='UNKNOWN'}
+            [IO.File]::WriteAllText((Join-Path $taskPublish 'firewall-r3-report.json'),($r|ConvertTo-Json -Depth 4 -Compress),[Text.UTF8Encoding]::new($false))
+          }
+          ('publish='+$taskPublish)|Out-File -LiteralPath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          if($taskFinalExit -ne 0){exit 1}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always() && steps.final.outputs.publish != ''
+        with:
+          name: fresh-firewall-r3-safe-${{ github.run_id }}
+          path: ${{ steps.final.outputs.publish }}/firewall-r3-report.json
+          if-no-files-found: error
+          retention-days: 30
