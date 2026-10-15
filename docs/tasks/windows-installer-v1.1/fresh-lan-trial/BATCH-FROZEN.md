@@ -1,3 +1,9 @@
+## 最终止损｜2026-10-15 Fresh Firewall R3 FAIL / STOP
+
+唯一Run38737813798/attempt1，source7709d22d/control f6112e43，Artifact11974890253严格来源/单JSON/隐私核验PASS；实际FRESH2/TEST_FAILED，原13 PASS、目标12全部TIMEOUT，固定读/mock/mutation/path均UNKNOWN；4反例3FAIL/1报告PASS（MISSING_MOCK存在已证oracle缺口，不能作正确拒绝证明）。Node/Go/编译/vet PASS，runner自然退出/Job empty/owned清理/环境恢复已证，真实系统mutation仍UNKNOWN。Master另更正准入Review：raw私有临时落盘不满足本轮“不保存”的字面要求，不把Artifact隐私PASS代替合规。R3 1/1耗尽，原Smoke1/1 FAIL、Candidate0/2、QA0/1冻结；停止工程/全部Hosted，无Payload/Setup/用户包，不生产/内部SPXT/main/tag/Release/清历史。最小测试建议未实施，后续范围预算交网页版，见FRESH-FIREWALL-R3-RESULT.md及REVIEW-QUALIFICATION.md；下方运行/Review文字均保留历史。
+## 当前Review PASS｜2026-10-15 Fresh Firewall R3 / HOSTED PENDING
+
+原FRESH-T2正式RETURN实现b6202d82/报告2d694f24；Master独立原13/Fresh2/全部12/4异常、Go overlay真实编译/vet、Node14反例、实际Job正常/强制两例、污染环境恢复及安全JSON核验PASS，fail0skip0。整合代码e40e6044、报告9e18a542，tools/.github与受审完全相同，指纹ce81d3fa0bad96459d120e50380922ee1cc53ee23dff275fab9fa8bb30069358；生产/R2语义/旧workflow零diff。仅独立R3 Hosted0/1，须三方HEAD和source/control/trigger核验后唯一触发；任何结果STOP回网页。原Smoke1/1 FAIL、Candidate0/2与QA0/1冻结；不构建Payload/Setup，不访问内部SPXT/main/tag/Release，不清历史。详见FRESH-FIREWALL-R3-MASTER-REVIEW.md与ORCHESTRATION。下方停止文字保留历史，本次仅有限例外。
 ## 2026-10-15 R2 local-only result
 
 本地测试/诊断Review PASS，历史Hosted首因UNKNOWN，BLOCKED继续；新增Hosted0，Candidate/QA冻结。真实产物构建本轮未重跑，不冒称完整R2通过。详见FRESH-FIREWALL-R2-RESULT.md及fresh-firewall-r2/CHATGPT-HANDOFF.md。下方R1/C1—C3及全部历史结论原样保留。

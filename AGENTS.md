@@ -1,3 +1,16 @@
+## 当前授权｜2026-10-15 FAST DELIVERY V1 / P0 ENGINEERING
+
+用户批准连续交付本地自主Loop，恢复原Candidate0/2、独立QA0/1（本地真实完整EXE/反例/独立Review后才Hosted），不新增Smoke/R3/微诊断。原FRESH-T2/bea7继续，禁止普通sub-agent/后代；Master只Review/集成/中央触发。优先完整Runtime/Helper/Launcher/Setup EXE→fresh安装→自动可信LAN→安装后浏览器业务→独立QA同一EXE。修R3共同超时、oracle及raw落盘但不扩大研究Batch，不降安全、不只加超时、raw仅内存。历史FAIL不改；新安全/架构/恢复不可证/预算等强制STOP条件有效。详见fresh-lan-trial/FAST-DELIVERY-V1.md；下方冻结作为历史保留，本次明确范围例外。
+
+## 最终止损｜2026-10-15 Fresh Firewall R3 FAIL / STOP
+
+唯一Run38737813798/attempt1，source7709d22d/control f6112e43，Artifact11974890253严格来源/单JSON/隐私核验PASS；实际FRESH2/TEST_FAILED，原13 PASS、目标12全部TIMEOUT，固定读/mock/mutation/path均UNKNOWN；4反例3FAIL/1报告PASS（MISSING_MOCK存在已证oracle缺口，不能作正确拒绝证明）。Node/Go/编译/vet PASS，runner自然退出/Job empty/owned清理/环境恢复已证，真实系统mutation仍UNKNOWN。Master另更正准入Review：raw私有临时落盘不满足本轮“不保存”的字面要求，不把Artifact隐私PASS代替合规。R3 1/1耗尽，原Smoke1/1 FAIL、Candidate0/2、QA0/1冻结；停止工程/全部Hosted，无Payload/Setup/用户包，不生产/内部SPXT/main/tag/Release/清历史。最小测试建议未实施，后续范围预算交网页版，见FRESH-FIREWALL-R3-RESULT.md及REVIEW-QUALIFICATION.md；下方运行/Review文字均保留历史。
+## 唯一R3专项运行中｜2026-10-15 Fresh Firewall R3
+
+Run38737813798 / attempt1，source7709d22d3dd7535091e954ea299d374de015a1d4、control f6112e43ef629a54cade54abba215844a855a8ae，三方控制HEAD一致后已唯一触发fresh-firewall-r3.yml。R3 Hosted1/1已使用，不retry；结果IN_PROGRESS，不宣称Hosted/构建/产品PASS。旧Smoke1/1 FAIL、Candidate0/2与QA0/1冻结，任何专项结果STOP回网页；无Payload/Setup/安装/业务执行。原Execution冻结，原树/证据保留，不内部SPXT/main/tag/Release。此后治理提交不改变受测source/control。
+## 当前Review PASS｜2026-10-15 Fresh Firewall R3 / HOSTED PENDING
+
+原FRESH-T2正式RETURN实现b6202d82/报告2d694f24；Master独立原13/Fresh2/全部12/4异常、Go overlay真实编译/vet、Node14反例、实际Job正常/强制两例、污染环境恢复及安全JSON核验PASS，fail0skip0。整合代码e40e6044、报告9e18a542，tools/.github与受审完全相同，指纹ce81d3fa0bad96459d120e50380922ee1cc53ee23dff275fab9fa8bb30069358；生产/R2语义/旧workflow零diff。仅独立R3 Hosted0/1，须三方HEAD和source/control/trigger核验后唯一触发；任何结果STOP回网页。原Smoke1/1 FAIL、Candidate0/2与QA0/1冻结；不构建Payload/Setup，不访问内部SPXT/main/tag/Release，不清历史。详见FRESH-FIREWALL-R3-MASTER-REVIEW.md与ORCHESTRATION。下方停止文字保留历史，本次仅有限例外。
 ## 当前有限授权｜2026-10-15 Fresh Firewall R3 / PREPARATION
 
 用户已批准独立R3 Hosted最多1次，仅原Firewall13、Fresh2、目标12场景及异常反例/固定安全诊断与环境恢复。本地门禁和Master独立Review PASS后由Master中央唯一触发；原FRESH-T2/原bea7工作树复用。R2受审73f79d8e语义不放宽，生产/安全不修改，不真实操作Firewall/网卡/Registry。R1 Smoke1/1历史FAIL、Candidate0/2与QA0/1继续冻结；本次PASS/FAIL后均STOP回网页版，不进入Payload/Setup/完整试用验收。详见fresh-lan-trial/FRESH-FIREWALL-R3-AUTHORIZATION.md与ORCHESTRATION。下方停点均保留历史，仅此专项有限例外。
