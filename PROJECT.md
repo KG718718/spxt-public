@@ -1,3 +1,7 @@
+## 当前停点｜2026-10-15 Fresh Firewall R2 / LOCAL REVIEW PASS / ROOT UNKNOWN
+
+本地定点修复已正式回单并经Master独立Review整合73f79d8e：仅测试oracle/固定scene-phase-exit诊断，原13/Fresh2/目标12/4故障反例及Node141+兼容20均PASS、fail0skip0，环境恢复true。原场景本地未复现，R1 Hosted具体子场景/首因仍UNKNOWN，不能宣称产品或Hosted已修复。本轮真实Helper/Launcher/完整payload NOT_RERUN，R1构建仅历史，未达到全部产物验收条件；依用户UNKNOWN止损规则停止、不盲跑。新增Hosted0，Run38674907559/Smoke1/1仍FAIL，Candidate0/2、QA0/1冻结。原T2/工作树/历史证据保留，生产/安全/workflow/trigger零diff，无内部SPXT/main/tag/Release。详见fresh-lan-trial/FRESH-FIREWALL-R2-RESULT.md与MASTER-REVIEW.md；后续最小Hosted仅建议，需网页版另批。
+
 ## 当前授权｜2026-10-15 Fresh Firewall R2 / LOCAL ONLY
 
 用户批准仅原FRESH-T2定点定位并修复 TestFreshFirewallBindingBeforeAnyMutation 的12子场景，本地真实构建/差异反例/Master独立Review；具体首因目前UNKNOWN。本轮新增Hosted0，R1 Smoke Run38674907559历史FAIL不改，Candidate0/2、QA0/1继续冻结，严禁触发任何Actions。仅公开fresh开发分支、原长期Thread/worktree；不放宽安全、不清历史、不访问内部SPXT/main/tag/Release。详见fresh-lan-trial/FRESH-FIREWALL-R2-AUTHORIZATION.md及ORCHESTRATION；下方止损仅在本轮明确本地范围内有限续行。

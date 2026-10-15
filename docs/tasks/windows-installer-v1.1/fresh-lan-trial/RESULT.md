@@ -1,3 +1,7 @@
+## 2026-10-15 R2 local-only result
+
+本地测试/诊断Review PASS，历史Hosted首因UNKNOWN，BLOCKED继续；新增Hosted0，Candidate/QA冻结。真实产物构建本轮未重跑，不冒称完整R2通过。详见FRESH-FIREWALL-R2-RESULT.md及fresh-firewall-r2/CHATGPT-HANDOFF.md。下方R1/C1—C3及全部历史结论原样保留。
+
 # Fresh LAN Trial — 最终结果
 
 ## 2026-10-15最新：Build-First R1已执行并止损
