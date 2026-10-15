@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const [input,output,suite,...expected]=process.argv.slice(2);
 assert.ok(input&&output&&/^[A-Z0-9_-]+$/.test(suite));assert.ok(expected.length>0);assert.equal(new Set(expected).size,expected.length);
-assert.equal(fs.existsSync(output),false);const events=fs.readFileSync(input,'utf8').split(/\r?\n/).filter(Boolean).map(line=>JSON.parse(line));
+assert.equal(fs.existsSync(output),false);const events=fs.readFileSync(input==='-'?0:input,'utf8').split(/\r?\n/).filter(Boolean).map(line=>JSON.parse(line));
 const testEvents=events.filter(event=>typeof event.Test==='string'),failed=testEvents.filter(event=>event.Action==='fail');
 const skipped=testEvents.filter(event=>event.Action==='skip'),passed=new Set(testEvents.filter(event=>event.Action==='pass'&&!event.Test.includes('/')).map(event=>event.Test));
 const packagePass=events.some(event=>event.Action==='pass'&&!event.Test);

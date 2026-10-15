@@ -7,6 +7,7 @@ param(
   [string]$BuildDiagnostic=''
 )
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/memory-process.ps1')
 $taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $FreshTrial=$true
 function Build-Stage([string]$Stage){if($BuildDiagnostic){[IO.File]::WriteAllText($BuildDiagnostic,(@{stage=$Stage;classification='COMMAND_FAILED';script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}}
@@ -20,8 +21,8 @@ New-Item -ItemType Directory -Path $taskWork|Out-Null
 $taskPin=Get-Content -Raw (Join-Path $taskRepo 'tools/windows-launcher/toolchain.json')|ConvertFrom-Json
 $taskDist=Get-Content -Raw (Join-Path $taskRepo 'tools/installer/distribution.json')|ConvertFrom-Json
 function Run-Checked([string]$exe,[string[]]$arguments){
-  & $exe @arguments
-  if($LASTEXITCODE -ne 0){throw "Command failed: $exe (exit $LASTEXITCODE)"}
+  $taskChecked=Invoke-KSessionMemoryProcess $exe $arguments
+  if($taskChecked.ExitCode -ne 0){throw "Command failed: $exe (exit $LASTEXITCODE)"}
 }
 function Get-Pinned($url,$hash,$zip,$destination){
   Invoke-WebRequest -Uri $url -OutFile $zip -TimeoutSec 240
@@ -56,41 +57,41 @@ $taskRuntimeHash=(Get-FileHash -LiteralPath $taskManifest -Algorithm SHA256).Has
 $taskNodeHash=(Get-FileHash -LiteralPath (Join-Path $taskRoot 'runtime/node.exe') -Algorithm SHA256).Hash.ToLower()
 $taskHelper=Join-Path $taskWork 'firewall-helper-output'
 $taskFirewallBuildReport=Join-Path $taskWork 'firewall-build-diagnostic.json'
-$taskFirewallBuildLog=Join-Path $taskWork 'firewall-build-entry.log'
+$taskFirewallBuildLog=$null
 Build-Stage 'HELPER'
-& pwsh -NoLogo -NoProfile -File (Join-Path $taskRepo 'tools/windows-firewall/build.ps1') -OutputDir $taskHelper -SourceCommit $Commit `
-  -RuntimeManifestSha256 $taskRuntimeHash -NodeSha256 $taskNodeHash -InstallerVersion '1.1.0-beta.4' -GoExe $taskGo -DiagnosticReport $taskFirewallBuildReport -FreshTrial:$FreshTrial -FreshBuildDiagnostic $BuildDiagnostic *> $taskFirewallBuildLog
-if($LASTEXITCODE -ne 0){throw 'Firewall helper build failed'}
+$taskHelperArgs=@('-NoLogo','-NoProfile','-File',(Join-Path $taskRepo 'tools/windows-firewall/build.ps1'),'-OutputDir',$taskHelper,'-SourceCommit',$Commit,'-RuntimeManifestSha256',$taskRuntimeHash,'-NodeSha256',$taskNodeHash,'-InstallerVersion','1.1.0-beta.4','-GoExe',$taskGo,'-DiagnosticReport',$taskFirewallBuildReport,'-FreshTrial','-FreshBuildDiagnostic',$BuildDiagnostic)
+$taskHelperResult=Invoke-KSessionMemoryProcess (Get-Command pwsh).Source $taskHelperArgs
+if($taskHelperResult.ExitCode -ne 0){throw 'Firewall helper build failed'}
 $taskGoTestPolicy=Join-Path $taskRepo 'tools/tests/lan-host/expected-go-tests.cjs'
 Build-Stage 'HELPER_UNIT_POLICY'
 $taskFirewallTests=@(& $taskNode $taskGoTestPolicy 'FIREWALL'|ConvertFrom-Json)
 if($LASTEXITCODE -ne 0){throw 'Fixed firewall test policy failed'}
-$taskFirewallRaw=Join-Path $taskWork 'firewall-tests.jsonl';$taskFirewallReport=Join-Path $taskWork 'firewall-unit-report.json'
+$taskFirewallRaw='';$taskFirewallReport=Join-Path $taskWork 'firewall-unit-report.json'
 $taskFirewallEnvironment=$null
 try{
   Build-Stage 'HELPER_UNIT_GO_JSON'
   $taskFirewallEnvironment=Enter-KSessionFirewallTestEnvironment (Resolve-KSessionFirewallPhysicalPath $env:TEMP) ('firewall-unit-'+$PID+'-'+[guid]::NewGuid().ToString('N')+'-env')
   Push-Location (Join-Path $taskRepo 'tools/windows-firewall')
   try{
-    & $taskGo test -json -count=1 -run ('^(' + ($taskFirewallTests -join '|') + ')$') . | Set-Content -Encoding utf8 -LiteralPath $taskFirewallRaw
-    $taskFirewallUnitExit=$LASTEXITCODE
+    $taskResult=Invoke-KSessionMemoryProcess $taskGo @('test','-json','-count=1','-run',('^(' + ($taskFirewallTests -join '|') + ')$'),'.')
+    $taskFirewallRaw=$taskResult.Stdout+$taskResult.Stderr;$taskFirewallUnitExit=$taskResult.ExitCode
   }finally{Pop-Location}
 }finally{if($null-ne$taskFirewallEnvironment){Exit-KSessionFirewallTestEnvironment $taskFirewallEnvironment}}
 if($BuildDiagnostic){
-  & $taskNode (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/helper-go-diagnostic.cjs') $taskFirewallRaw $BuildDiagnostic $taskFirewallUnitExit UNIT
-  if($LASTEXITCODE -ne 0){throw 'Explicit helper unit evidence failed'}
+  $taskD=Invoke-KSessionMemoryNode $taskNode @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/helper-go-diagnostic.cjs'),'-',$BuildDiagnostic,[string]$taskFirewallUnitExit,'UNIT') $taskFirewallRaw
+  if($taskD.ExitCode -ne 0){throw 'Explicit helper unit evidence failed'}
 }
 if($taskFirewallUnitExit -ne 0){throw 'Explicit firewall unit and isolated cmdlet tests failed'}
 Build-Stage 'HELPER_UNIT_REPORT'
-Run-Checked $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),$taskFirewallRaw,$taskFirewallReport,'FIREWALL')+$taskFirewallTests)
+$taskD=Invoke-KSessionMemoryNode $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),'-',$taskFirewallReport,'FIREWALL')+$taskFirewallTests) $taskFirewallRaw
+if($taskD.ExitCode -ne 0){throw 'Fixed firewall report failed'}
 $taskHelperHash=(Get-FileHash -LiteralPath (Join-Path $taskHelper 'K-SESSION-Firewall.exe') -Algorithm SHA256).Hash.ToLower()
 $taskLauncher=Join-Path $taskWork 'launcher-output'
 Build-Stage 'LAUNCHER'
 $taskLauncherBuildVariables=@('GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOCACHE','GOTMPDIR','TEMP','TMP','GOPROXY','GOSUMDB','GOENV','GOFLAGS','GOEXPERIMENT')
 Invoke-KSessionWithRestoredEnvironment $taskLauncherBuildVariables {
-  & (Join-Path $taskRepo 'tools/windows-launcher/build.ps1') -RuntimeRoot $taskRoot -OutputDir $taskLauncher `
-    -SourceCommit $Commit -FirewallHelperSha256 $taskHelperHash -GoExe $taskGo -FreshTrial:$FreshTrial -BuildDiagnostic $BuildDiagnostic
-  if($LASTEXITCODE -ne 0){throw 'LAN Launcher build failed'}
+  $taskLauncherResult=Invoke-KSessionMemoryProcess (Get-Command pwsh).Source @('-NoProfile','-File',(Join-Path $taskRepo 'tools/windows-launcher/build.ps1'),'-RuntimeRoot',$taskRoot,'-OutputDir',$taskLauncher,'-SourceCommit',$Commit,'-FirewallHelperSha256',$taskHelperHash,'-GoExe',$taskGo,'-FreshTrial','-BuildDiagnostic',$BuildDiagnostic)
+  if($taskLauncherResult.ExitCode -ne 0){throw 'LAN Launcher build failed'}
 }
 Build-Stage 'LAUNCHER_UNIT'
 $taskLauncherUnitVariables=@('GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','TEMP','TMP','GOTMPDIR','GOCACHE')
@@ -103,20 +104,21 @@ $env:GOOS='windows';$env:GOARCH='amd64';$env:CGO_ENABLED='0';$env:GOTOOLCHAIN='l
 Build-Stage 'LAUNCHER_UNIT_POLICY'
 $taskLauncherUnitTests=@(& $taskNode $taskGoTestPolicy 'LAUNCHER'|ConvertFrom-Json)
 if($LASTEXITCODE -ne 0){throw 'Fixed Launcher test policy failed'}
-$taskLauncherRaw=Join-Path $taskWork 'launcher-tests.jsonl';$taskLauncherReport=Join-Path $taskWork 'launcher-unit-report.json'
+$taskLauncherRaw='';$taskLauncherReport=Join-Path $taskWork 'launcher-unit-report.json'
 Build-Stage 'LAUNCHER_UNIT_GO_JSON'
 Push-Location (Join-Path $taskRepo 'tools/windows-launcher')
 try{
-  & $taskGo test -json -count=1 -run ('^(' + ($taskLauncherUnitTests -join '|') + ')$') . | Set-Content -Encoding utf8 -LiteralPath $taskLauncherRaw
-  $taskLauncherUnitExit=$LASTEXITCODE
+  $taskResult=Invoke-KSessionMemoryProcess $taskGo @('test','-json','-count=1','-run',('^(' + ($taskLauncherUnitTests -join '|') + ')$'),'.')
+  $taskLauncherRaw=$taskResult.Stdout+$taskResult.Stderr;$taskLauncherUnitExit=$taskResult.ExitCode
 }finally{Pop-Location}
 if($BuildDiagnostic){
-  & $taskNode (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/unit-diagnostic.cjs') $taskLauncherRaw $BuildDiagnostic $taskLauncherUnitExit
-  if($LASTEXITCODE -ne 0){throw 'Explicit Launcher unit evidence failed'}
+  $taskD=Invoke-KSessionMemoryNode $taskNode @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/unit-diagnostic.cjs'),'-',$BuildDiagnostic,[string]$taskLauncherUnitExit) $taskLauncherRaw
+  if($taskD.ExitCode -ne 0){throw 'Explicit Launcher unit evidence failed'}
 }
 if($taskLauncherUnitExit -ne 0){throw 'Explicit Launcher unit tests failed'}
 Build-Stage 'LAUNCHER_UNIT_REPORT'
-Run-Checked $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),$taskLauncherRaw,$taskLauncherReport,'LAUNCHER')+$taskLauncherUnitTests)
+$taskD=Invoke-KSessionMemoryNode $taskNode (@((Join-Path $taskRepo 'tools/tests/lan-host/go-test-report.cjs'),'-',$taskLauncherReport,'LAUNCHER')+$taskLauncherUnitTests) $taskLauncherRaw
+if($taskD.ExitCode -ne 0){throw 'Fixed Launcher report failed'}
 }finally{
   try{if($null-ne$taskLauncherUnitEnvironment){Exit-KSessionLanCandidateTestEnvironment $taskLauncherUnitEnvironment}}finally{
   Restore-KSessionProcessEnvironment $taskLauncherUnitSnapshot
@@ -152,10 +154,11 @@ try{
   $taskNodeTestReport.selectedRootClass=$taskNodeEnvironment.SelectedRootClass;$taskNodeTestReport.stage='TESTS';Write-Node-Test-Report
   $env:NODE_PATH=$taskRuntimeModules
   Run-Checked $taskNode @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/runtime-dependency.cjs'),$taskRuntimeModules)
-  $taskNodeRaw=Join-Path $taskNodeEnvironment.Root 'node-tests.tap'
+  $taskNodeRaw=''
   $taskNodeArguments=@('--test','--test-concurrency=1','--test-reporter=tap')+$taskLanTests+$taskLauncherTests
-  & $taskNode @taskNodeArguments *> $taskNodeRaw
-  $taskNodeExit=$LASTEXITCODE;$taskNodeSummary=Read-KSessionNodeTestSummary $taskNodeRaw
+  $taskResult=Invoke-KSessionMemoryProcess $taskNode $taskNodeArguments
+  $taskNodeRaw=$taskResult.Stdout+$taskResult.Stderr
+  $taskNodeExit=$taskResult.ExitCode;$taskNodeSummary=Read-KSessionNodeTestSummary $taskNodeRaw -FromText
   $taskNodeTestReport.tests=$taskNodeSummary.Tests;$taskNodeTestReport.pass=$taskNodeSummary.Pass;$taskNodeTestReport.fail=$taskNodeSummary.Fail;$taskNodeTestReport.skipped=$taskNodeSummary.Skipped
   if(!$taskNodeSummary.Valid){$taskNodeTestReport.reason='NODE_TEST_REPORT_INVALID';throw 'NODE_TEST_REPORT_INVALID'}
   if($taskNodeExit-ne0-or$taskNodeSummary.Tests-ne44-or$taskNodeSummary.Pass-ne44-or$taskNodeSummary.Fail-ne0-or$taskNodeSummary.Skipped-ne0){$taskNodeTestReport.reason='NODE_TESTS_FAILED';throw 'NODE_TESTS_FAILED'}

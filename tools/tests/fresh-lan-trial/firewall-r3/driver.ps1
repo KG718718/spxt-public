@@ -41,14 +41,17 @@ try{
   $taskData.go=$Go
   $taskJob=[FirewallR3Job]::Create()
   $taskArgs='"'+(Join-Path $PSScriptRoot 'runner.cjs')+'" RUN '+(Encoded-Context)
-  $taskProcess=Start-Process -FilePath $Node -ArgumentList $taskArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $ControlRoot 'runner-private.out') -RedirectStandardError (Join-Path $ControlRoot 'runner-private.err')
+  $taskInfo=[Diagnostics.ProcessStartInfo]::new();$taskInfo.FileName=$Node;$taskInfo.UseShellExecute=$false;$taskInfo.CreateNoWindow=$true;$taskInfo.RedirectStandardOutput=$true;$taskInfo.RedirectStandardError=$true
+  foreach($taskArg in @((Join-Path $PSScriptRoot 'runner.cjs'),'RUN',(Encoded-Context))){$taskInfo.ArgumentList.Add($taskArg)}
+  $taskProcess=[Diagnostics.Process]::new();$taskProcess.StartInfo=$taskInfo;if(!$taskProcess.Start()){throw 'Runner start failed'}
+  $taskOut=$taskProcess.StandardOutput.ReadToEndAsync();$taskErr=$taskProcess.StandardError.ReadToEndAsync()
   [FirewallR3Job]::Assign($taskJob,$taskProcess.Handle)
   [IO.File]::WriteAllText($taskData.gate,'ASSIGNED',[Text.UTF8Encoding]::new($false))
   if(!$taskProcess.WaitForExit(30*60*1000)){$taskForced=$true;[FirewallR3Job]::Stop($taskJob)}
   $taskEmpty=Wait-FirewallR3JobEmpty $taskJob
   if(!$taskEmpty){$taskForced=$true;[FirewallR3Job]::Stop($taskJob);$taskEmpty=Wait-FirewallR3JobEmpty $taskJob}
   $taskProcess.Refresh();$taskNatural=!$taskForced -and $taskProcess.HasExited -and $taskProcess.ExitCode -eq 0
-  $taskStderr=(Get-Item -LiteralPath (Join-Path $ControlRoot 'runner-private.err')).Length -eq 0
+  $taskStderr=$taskErr.IsCompleted -and $taskOut.IsCompleted -and $taskErr.GetAwaiter().GetResult().Length -eq 0 -and $taskOut.GetAwaiter().GetResult().Length -eq 0
 }catch{
   if($null-ne$taskProcess -and !$taskProcess.HasExited){$taskForced=$true;if($taskJob -ne [IntPtr]::Zero){try{[FirewallR3Job]::Stop($taskJob)}catch{}};if(!$taskProcess.HasExited){$taskProcess.Kill();$taskProcess.WaitForExit()}}
   if($taskJob -ne [IntPtr]::Zero){try{$taskEmpty=Wait-FirewallR3JobEmpty $taskJob}catch{}}
@@ -56,7 +59,7 @@ try{
   if($taskJob -ne [IntPtr]::Zero){[FirewallR3Job]::CloseHandle($taskJob)|Out-Null}
   Restore-KSessionProcessEnvironment $taskBefore
   $taskRestore=Test-KSessionProcessEnvironmentRestored $taskBefore
-  if($taskEmpty){Invoke-R3ControlNode @((Join-Path $PSScriptRoot 'runner.cjs'),'CLEAN',(Encoded-Context)) *> (Join-Path $ControlRoot 'cleanup-private.log');$taskRemoved=$script:taskControlExit -eq 0}
+  if($taskEmpty){Invoke-R3ControlNode @((Join-Path $PSScriptRoot 'runner.cjs'),'CLEAN',(Encoded-Context)) | Out-Null;$taskRemoved=$script:taskControlExit -eq 0}
   $r=Get-Content -Raw -LiteralPath $taskReport|ConvertFrom-Json
   $r.supervisor.runnerNaturalExit=$taskNatural;$r.supervisor.runnerStderrEmpty=$taskStderr
   $r.cleanup.jobEmpty=if($taskEmpty){$true}else{'UNKNOWN'};$r.cleanup.forcedTermination=$taskForced;$r.cleanup.environmentRestored=if($taskRestore){$true}else{'UNKNOWN'}

@@ -77,9 +77,9 @@ function Exit-KSessionFirewallTestEnvironment($State) {
   if($null -eq $State.Fixture){Remove-Item Env:KSESSION_FIREWALL_TEST_ROOT -ErrorAction SilentlyContinue}else{$env:KSESSION_FIREWALL_TEST_ROOT=$State.Fixture}
 }
 
-function Read-KSessionGoTestSummary([string]$RawFile) {
+function Read-KSessionGoTestSummary([string]$RawFile,[switch]$FromText) {
   $events=@();$invalid=$false
-  foreach($line in Get-Content -LiteralPath $RawFile){try{$events+=($line|ConvertFrom-Json -ErrorAction Stop)}catch{$invalid=$true}}
+  foreach($line in $(if($FromText){$RawFile -split "`r?`n"|Where-Object{$_}}else{Get-Content -LiteralPath $RawFile})){try{$events+=($line|ConvertFrom-Json -ErrorAction Stop)}catch{$invalid=$true}}
   $failed=@($events|ForEach-Object {if($_.Action -eq 'fail' -and $null-ne$_.PSObject.Properties['Test']){[string]$_.Test}})
   $skipped=@($events|ForEach-Object {if($_.Action -eq 'skip' -and $null-ne$_.PSObject.Properties['Test']){[string]$_.Test}})
   $passed=@($events|ForEach-Object {if($_.Action -eq 'pass' -and $null-ne$_.PSObject.Properties['Test'] -and $_.Test -notmatch '/'){[string]$_.Test}}|Select-Object -Unique)

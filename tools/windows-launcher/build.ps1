@@ -1,5 +1,6 @@
 param([Parameter(Mandatory=$true)][string]$RuntimeRoot,[Parameter(Mandatory=$true)][string]$OutputDir,[Parameter(Mandatory=$true)][string]$SourceCommit,[string]$FirewallHelperSha256='',[string]$GoExe='go',[switch]$FreshTrial,[string]$BuildDiagnostic='')
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot '../tests/fresh-lan-trial/memory-process.ps1')
 function Fresh-Build-Stage([string]$Stage){if($FreshTrial -and $BuildDiagnostic){[IO.File]::WriteAllText($BuildDiagnostic,(@{stage=$Stage;classification='COMMAND_FAILED';script=$null;line=$null}|ConvertTo-Json -Compress)+"`n",[Text.UTF8Encoding]::new($false))}}
 Fresh-Build-Stage 'LAUNCHER_IDENTITY'
 $taskRoot=(Resolve-Path -LiteralPath $RuntimeRoot).Path
@@ -34,25 +35,26 @@ $env:GOPROXY='off';$env:GOSUMDB='off';$env:GOENV='off';$env:GOFLAGS='';$env:GOEX
 Push-Location $PSScriptRoot
 try {
  Fresh-Build-Stage 'LAUNCHER_STANDARD_TESTS'
- & $GoExe test -count=1 -run '^Test(RelativePathSafety|EnvironmentAllowlist|InstanceOutsidePackage|RuntimeMissing|JobOwnsOnlyChild|InstallDataSafety|LANReadyRequiresEveryGate|FixedServerStatusesMapToProductStates|CandidateAndJSONAreStrict|EnvironmentLANModeIsExplicitAndAllowlisted|ExactListenerOwnershipRejectsWildcardThirdNICPortAndPIDImpersonationRows|CopyURLSourceIsOnlyCurrentPrivateEndpoint|PersistedPortNeverSilentlyFallsThroughRange|FirewallHelperFixedHashBeforeElevation|FirewallHelperAbsentHashKeepsHistoricalLocalMode|FirewallEnvironmentFailureIsFailClosed|FirewallInterfaceNameArgumentIsQuoted|EnableRejectionRestoresDisabledPreferenceAndLocalChild|LANSettingsTransitionDoesNotBlockUIThread|TransitionStartFailureRestoresOldConfigAndService|FirstTransitionStartFailureKeepsDeterminedPort|TransitionRejectsUnexpectedFallbackPort|FailedRefreshRevokesStaleCopyURL|FreshDiscoveryMismatchRevokesCopyURL|FreshDiscoveryMatchPublishesURLWhenFirewallBlocked|StopDispatchRetriesBusyOwnedWindow|StopDispatchKeepsStrictOverallTimeout|StrictLocalStatusAndActualPIDSocketOwnership)$' ./...
- if($LASTEXITCODE -ne 0){throw 'Go tests failed'}
+ $taskStandardResult=Invoke-KSessionMemoryProcess $GoExe @('test','-count=1','-run','^Test(RelativePathSafety|EnvironmentAllowlist|InstanceOutsidePackage|RuntimeMissing|JobOwnsOnlyChild|InstallDataSafety|LANReadyRequiresEveryGate|FixedServerStatusesMapToProductStates|CandidateAndJSONAreStrict|EnvironmentLANModeIsExplicitAndAllowlisted|ExactListenerOwnershipRejectsWildcardThirdNICPortAndPIDImpersonationRows|CopyURLSourceIsOnlyCurrentPrivateEndpoint|PersistedPortNeverSilentlyFallsThroughRange|FirewallHelperFixedHashBeforeElevation|FirewallHelperAbsentHashKeepsHistoricalLocalMode|FirewallEnvironmentFailureIsFailClosed|FirewallInterfaceNameArgumentIsQuoted|EnableRejectionRestoresDisabledPreferenceAndLocalChild|LANSettingsTransitionDoesNotBlockUIThread|TransitionStartFailureRestoresOldConfigAndService|FirstTransitionStartFailureKeepsDeterminedPort|TransitionRejectsUnexpectedFallbackPort|FailedRefreshRevokesStaleCopyURL|FreshDiscoveryMismatchRevokesCopyURL|FreshDiscoveryMatchPublishesURLWhenFirewallBlocked|StopDispatchRetriesBusyOwnedWindow|StopDispatchKeepsStrictOverallTimeout|StrictLocalStatusAndActualPIDSocketOwnership)$','./...')
+ if($taskStandardResult.ExitCode -ne 0){throw 'Go tests failed'}
  if($FreshTrial){
    Fresh-Build-Stage 'LAUNCHER_FRESH_TESTS'
    . (Join-Path $PSScriptRoot '../windows-firewall/test-environment.ps1')
    $taskFreshTests=@('TestFreshLogonPlanIsCurrentUserInstalledOnly','TestFreshEnvironmentAndNetworkBindingFailClosed')
-   $taskFreshRaw=Join-Path $taskScratch 'fresh-launcher-tests.jsonl'
+   $taskFreshRaw=''
    $taskFreshOverlay=Join-Path $taskScratch 'fresh-launcher-overlay.json'
    & $env:KSESSION_FRESH_BUILD_NODE (Join-Path $PSScriptRoot '../tests/fresh-lan-trial/prepare-policy-overlay.cjs') LAUNCHER $taskFreshOverlay|Out-Null
    if($LASTEXITCODE -ne 0){throw 'Fresh Launcher overlay source rejected'}
-   & $GoExe test -overlay $taskFreshOverlay -tags fresh_trial_tests -json -count=1 -run ('^(' + ($taskFreshTests -join '|') + ')$') . *> $taskFreshRaw
-   $taskFreshExit=$LASTEXITCODE;$taskFreshSummary=Read-KSessionGoTestSummary $taskFreshRaw
+   $taskResult=Invoke-KSessionMemoryProcess $GoExe @('test','-overlay',$taskFreshOverlay,'-tags','fresh_trial_tests','-json','-count=1','-run',('^(' + ($taskFreshTests -join '|') + ')$'),'.')
+   $taskFreshRaw=$taskResult.Stdout+$taskResult.Stderr
+   $taskFreshExit=$taskResult.ExitCode;$taskFreshSummary=Read-KSessionGoTestSummary $taskFreshRaw -FromText
    if($taskFreshExit -ne 0 -or $taskFreshSummary.JSONInvalid -or $taskFreshSummary.PackagePass -ne 1 -or $taskFreshSummary.PackageFail -ne 0 -or @($taskFreshSummary.FailedNames).Count -ne 0 -or @($taskFreshSummary.SkippedNames).Count -ne 0 -or (Compare-Object @($taskFreshTests|Sort-Object) @($taskFreshSummary.Passed|Sort-Object))){throw 'Fresh Launcher policy gate failed'}
  }
  $taskFlags="-H windowsgui -s -w -buildid= -X main.buildCommit=$SourceCommit -X main.runtimeHash=$taskHash -X main.firewallHelperHash=$FirewallHelperSha256"
  if($FreshTrial){$taskFlags+=' -X main.freshTrial=1'}
  Fresh-Build-Stage 'LAUNCHER_COMPILE'
- & $GoExe build -trimpath -buildvcs=false -ldflags $taskFlags -o (Join-Path $taskOutput 'K-SESSION.exe') .
- if($LASTEXITCODE -ne 0){throw 'Go build failed'}
+ $taskCompile=Invoke-KSessionMemoryProcess $GoExe @('build','-trimpath','-buildvcs=false','-ldflags',$taskFlags,'-o',(Join-Path $taskOutput 'K-SESSION.exe'),'.')
+ if($taskCompile.ExitCode -ne 0){throw 'Go build failed'}
 } finally {Pop-Location}
 $taskExe=Join-Path $taskOutput 'K-SESSION.exe'
 Fresh-Build-Stage 'LAUNCHER_IDENTITY'
