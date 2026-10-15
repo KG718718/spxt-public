@@ -1,8 +1,15 @@
 param([Parameter(Mandatory=$true)][string]$Work,[switch]$BuildOnly)
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/memory-process.ps1')
 $taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $taskWork=[IO.Path]::GetFullPath($Work)
 $taskContext=Get-Content -Raw -LiteralPath (Join-Path $taskWork 'context.json')|ConvertFrom-Json
+if($null -ne $taskContext.PSObject.Properties['r1'] -and $null -ne $taskContext.r1.PSObject.Properties['fastDelivery']){
+  $taskGateDeadline=[DateTime]::UtcNow.AddSeconds(30)
+  if(!$env:KSESSION_FAST_JOB_GATE){throw 'Fast complete-process supervision required'}
+  while(!(Test-Path -LiteralPath $env:KSESSION_FAST_JOB_GATE)){if([DateTime]::UtcNow -gt $taskGateDeadline){throw 'Scope assignment unavailable'};Start-Sleep -Milliseconds 20}
+  if((Get-Content -Raw -LiteralPath $env:KSESSION_FAST_JOB_GATE) -cne 'ASSIGNED'){throw 'Scope assignment rejected'}
+}
 if($BuildOnly -and ($taskContext.r1.schema -ne 1 -or $taskContext.r1.mode -ne 'SMOKE' -or $taskContext.r1.slot -ne 'R1S1' -or $taskContext.mode -ne 'CANDIDATE')){throw 'Build-only R1 smoke context required'}
 if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public' -or
    $taskContext.controlCommit -cne $env:GITHUB_SHA -or $env:GITHUB_RUN_ATTEMPT -ne '1' -or $taskContext.run.id -ne $env:GITHUB_RUN_ID -or
@@ -66,7 +73,7 @@ function Inno-Environment-Snapshot {
   }
   return $taskState
 }
-function Checked([string]$Exe,[string[]]$Arguments){& $Exe @Arguments;if($LASTEXITCODE -ne 0){throw 'Fresh checked command failed'}}
+function Checked([string]$Exe,[string[]]$Arguments){$taskChecked=Invoke-KSessionMemoryProcess $Exe $Arguments;if($taskChecked.ExitCode -ne 0){throw 'Fresh checked command failed'}}
 function Pinned([string]$Uri,[string]$Hash,[string]$Zip,[string]$Output){Invoke-WebRequest -Uri $Uri -OutFile $Zip -TimeoutSec 240;if((Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash.ToLowerInvariant() -cne $Hash){throw 'Pinned tool identity rejected'};Expand-Archive -LiteralPath $Zip -DestinationPath $Output}
 try {
   $env:NODE_OPTIONS='';$env:GOWORK='off';$env:KSESSION_FRESH_TESTED_SOURCE=$taskContext.sourceCommit
@@ -119,7 +126,7 @@ try {
   $taskBrowser=Join-Path $taskWork 'browser-tool';Copy-Item -LiteralPath (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/browser-tool') -Destination $taskBrowser -Recurse
   $taskNpm=Join-Path (Split-Path $taskNode) 'node_modules/npm/bin/npm-cli.js'
   Push-Location $taskBrowser
-  try{Checked $taskNode @($taskNpm,'ci','--ignore-scripts','--omit=optional','--bin-links=false','--no-audit','--no-fund','--cache',(Join-Path $taskWork 'browser-cache'))}finally{Pop-Location}
+  try{Checked $taskNode @($taskNpm,'ci','--logs-max=0','--loglevel=silent','--ignore-scripts','--omit=optional','--bin-links=false','--no-audit','--no-fund','--cache',(Join-Path $taskWork 'browser-cache'))}finally{Pop-Location}
   $env:PLAYWRIGHT_BROWSERS_PATH=Join-Path $taskWork 'browser-binaries';$env:NODE_PATH=Join-Path $taskBrowser 'node_modules'
   Checked $taskNode @((Join-Path $taskBrowser 'node_modules/playwright-core/cli.js'),'install','chromium')
   [IO.File]::WriteAllText($taskBuildDiagnostic,(@{stage='COMPLETE';classification='PASS';script=$null;line=$null}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))

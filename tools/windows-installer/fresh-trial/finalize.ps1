@@ -1,5 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$ControlRoot,[ValidateSet('success','failure','cancelled','skipped')][string]$SourceOutcome='failure',[ValidateSet('success','failure','cancelled','skipped')][string]$ExecutionOutcome='failure',[switch]$BuildSmoke)
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/memory-process.ps1')
+$taskControlNode=(Get-Command node).Source
 $taskRepo=$env:GITHUB_WORKSPACE
 $taskEntry=if($BuildSmoke){Join-Path $PSScriptRoot 'recovery-r1/smoke.cjs'}else{Join-Path $PSScriptRoot 'finalize-entry.cjs'}
 $taskFinalReportName=if($BuildSmoke){'smoke-report.json'}else{'fresh-report.json'}
@@ -17,7 +19,7 @@ if($taskState.created){
   $taskMayReadWork=$LASTEXITCODE -eq 0 -and $taskOwn.Count -eq 1 -and $taskState.target -ieq $taskExpected -and ($taskOwn[0] -replace '^E:\\: => ','').TrimEnd('\') -ieq $taskExpected.TrimEnd('\')
 }
 try{
-  if($taskMayReadWork){& node $taskEntry CHECK $taskWork $taskPublish false *> (Join-Path $ControlRoot 'final-check-private.log');$taskValid=$LASTEXITCODE -eq 0}
+  if($taskMayReadWork){$taskControl=Invoke-KSessionMemoryNode $taskControlNode @($taskEntry,'CHECK',$taskWork,$taskPublish,'false');$taskValid=$taskControl.ExitCode -eq 0}
   if($taskValid){
     Copy-Item -LiteralPath (Join-Path $taskWork 'context.json') -Destination (Join-Path $taskPublish 'context-private.json')
     Copy-Item -LiteralPath (Join-Path $taskWork 'fresh-report.json') -Destination (Join-Path $taskPublish 'report-private.json')
@@ -48,8 +50,8 @@ if($taskValid){
   Copy-Item -LiteralPath (Join-Path $taskPublish 'report-private.json') -Destination (Join-Path $taskFinalizeWork 'fresh-report.json')
   if($BuildSmoke -and (Test-Path -LiteralPath (Join-Path $taskPublish 'smoke-ready-private.json'))){Copy-Item -LiteralPath (Join-Path $taskPublish 'smoke-ready-private.json') -Destination (Join-Path $taskFinalizeWork 'smoke-ready-private.json')}
   $taskOuterFailure=$SourceOutcome -ne 'success' -or $ExecutionOutcome -ne 'success'
-  & node $taskEntry FINAL $taskFinalizeWork $taskPublish $taskDriveRestored.ToString().ToLowerInvariant() $taskOuterFailure.ToString().ToLowerInvariant() *> (Join-Path $ControlRoot 'final-report-private.log')
-  $taskPass=$LASTEXITCODE -eq 0
+  $taskControl=Invoke-KSessionMemoryNode $taskControlNode @($taskEntry,'FINAL',$taskFinalizeWork,$taskPublish,$taskDriveRestored.ToString().ToLowerInvariant(),$taskOuterFailure.ToString().ToLowerInvariant())
+  $taskPass=$taskControl.ExitCode -eq 0
 }
 if(!$taskValid -or !(Test-Path -LiteralPath (Join-Path $taskPublish $taskFinalReportName))){
   New-Item -ItemType Directory -Path (Join-Path $taskPublish 'failure') -Force|Out-Null

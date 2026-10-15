@@ -10,7 +10,15 @@ async function main(){
  const api=async route=>{const r=await fetch('https://api.github.com/repos/KG718718/spxt-public/'+route,{headers,signal:AbortSignal.timeout(60000)});assert.equal(r.status,200);return r.json();};
  const current=await api('actions/runs/'+process.env.GITHUB_RUN_ID);assert.equal(current.head_sha,control);assert.equal(current.path,contract.WORKFLOW);assert.ok(Number.isSafeInteger(current.workflow_id));
  const history=[];for(let page=1;page<=100;page++){const r=await api('actions/workflows/'+current.workflow_id+'/runs?per_page=100&page='+page);assert.ok(Array.isArray(r.workflow_runs));history.push(...r.workflow_runs);if(r.workflow_runs.length<100)break;if(page===100)throw Error('incomplete history');}
- const context=contract.request({repository:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF,event:process.env.GITHUB_EVENT_NAME,attempt:process.env.GITHUB_RUN_ATTEMPT,sha:control,parent:parents[1],title:git('log','-1','--format=%B'),changedFiles:git('diff','--name-only',parents[1],control).split('\n'),runId:process.env.GITHUB_RUN_ID},input,history);
+ const fast=require('../../../tests/fresh-lan-trial/fast-delivery/contract.cjs');
+ let facts,proof;if(input.schema===2){
+  for(const name of ['reviewedSource','testedSource','localBuildSource'])assert.match(input[name],/^[a-f0-9]{40}$/);
+  const provenAncestor=(a,b)=>{git('merge-base','--is-ancestor',a,b);return true;};
+  facts={authorizationAncestor:provenAncestor(fast.AUTHORIZATION,input.localBuildSource),buildAncestor:provenAncestor(input.localBuildSource,input.reviewedSource),testedAncestor:provenAncestor(input.testedSource,input.reviewedSource),buildTree:git('ls-tree','-r',input.localBuildSource),reviewTree:git('ls-tree','-r',input.reviewedSource),testedTree:git('ls-tree','-r',input.testedSource)};
+  proof=cp.execFileSync('git',['-C',repo,'show',input.reviewedSource+':'+fast.PROOF],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:15000});
+ }
+ const requestGate=input.schema===2?fast.request:contract.request;
+ const context=requestGate({repository:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF,event:process.env.GITHUB_EVENT_NAME,attempt:process.env.GITHUB_RUN_ATTEMPT,sha:control,parent:parents[1],title:git('log','-1','--format=%B'),changedFiles:git('diff','--name-only',parents[1],control).split('\n'),runId:process.env.GITHUB_RUN_ID},input,history,proof,facts);
  context.run={id:process.env.GITHUB_RUN_ID,attempt:1};context.r1.codeFingerprint=contract.codeFingerprint(git('ls-tree','-r',context.sourceCommit));context.candidate=input.mode==='QA'?{runId:input.candidateRunId,artifactId:input.candidateArtifactId,sourceCommit:input.testedSource,setupSha256:input.candidateSetupSha256}:{runId:null,artifactId:null,sourceCommit:null,setupSha256:null};
  const ancestor=(old,newer)=>{assert.match(old,/^[a-f0-9]{40}$/);git('merge-base','--is-ancestor',old,newer);};
  async function readArtifact(runId,artifactId,kind,sourceCommit){
@@ -19,7 +27,7 @@ async function main(){
   const response=await fetch('https://api.github.com/repos/KG718718/spxt-public/actions/artifacts/'+artifactId+'/zip',{headers,signal:AbortSignal.timeout(240000)});assert.equal(response.status,200);const zip=path.join(work,kind.toLowerCase()+'-reference.zip');fs.writeFileSync(zip,Buffer.from(await response.arrayBuffer()),{flag:'wx'});
   const r=cp.spawnSync('pwsh',['-NoLogo','-NoProfile','-File',path.join(__dirname,'read-report.ps1'),'-Zip',zip,'-Kind',kind],{encoding:'utf8',windowsHide:true,timeout:30000,maxBuffer:512*1024});assert.equal(r.status,0);assert.equal((r.stderr||'').trim(),'');return{run,report:JSON.parse(r.stdout),zip};
  }
- if(input.mode!=='SMOKE'){
+ if(input.mode!=='SMOKE'&&input.schema!==2){
   const run=history.find(r=>String(r.id)===input.smokeRunId),source=run.display_title.split(' ')[2],evidence=await readArtifact(input.smokeRunId,input.smokeArtifactId,'SMOKE',source);
   ancestor(source,context.sourceCommit);contract.smokeEvidence(evidence.report,{sourceCommit:source,controlCommit:evidence.run.head_sha,run:{id:input.smokeRunId,attempt:1},codeFingerprint:contract.codeFingerprint(git('ls-tree','-r',source))},{slot:input.slot,codeHash:context.r1.codeFingerprint,ancestor:true});
  }

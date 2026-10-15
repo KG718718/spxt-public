@@ -98,6 +98,7 @@ try {
     if($taskFreshExit -ne 0 -or $taskFreshSummary.JSONInvalid -or $taskFreshSummary.PackagePass -ne 1 -or $taskFreshSummary.PackageFail -ne 0 -or @($taskFreshSummary.FailedNames).Count -ne 0 -or @($taskFreshSummary.SkippedNames).Count -ne 0 -or (Compare-Object @($taskFreshTests|Sort-Object) @($taskFreshSummary.Passed|Sort-Object))){throw 'Fresh Firewall policy gate failed'}
   }
   if($FreshTrial){
+    Write-FreshStage 'HELPER_FRESH_TESTS'
     Push-Location $PSScriptRoot
     try{$taskCounter=Invoke-KSessionMemoryProcess $GoExe @('test','-overlay',$taskFreshOverlay,'-tags','fresh_trial_tests','-json','-count=1','-run','^TestFreshFirewallHarnessCannotMaskInfrastructureFailure$', '.')}finally{Pop-Location}
     $taskCounterSummary=Read-KSessionGoTestSummary ($taskCounter.Stdout+$taskCounter.Stderr) -FromText

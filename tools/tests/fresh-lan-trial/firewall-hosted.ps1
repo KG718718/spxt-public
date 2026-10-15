@@ -15,6 +15,8 @@ if((Test-Path -LiteralPath $taskOutput) -or !(Test-Path -LiteralPath $Helper -Pa
   throw 'Fresh output and installed candidate required'
 }
 Import-Module NetAdapter,NetConnection,NetTCPIP,NetSecurity -ErrorAction Stop
+. (Join-Path $PSScriptRoot 'firewall-state.ps1')
+$taskSystemStateBefore=Read-FastFirewallState
 $taskRows=@()
 foreach($taskAdapter in @(Get-NetAdapter -IncludeHidden -ErrorAction Stop|Where-Object Status -eq 'Up')){
   foreach($taskIp in @(Get-NetIPAddress -InterfaceIndex $taskAdapter.ifIndex -AddressFamily IPv4 -ErrorAction Stop|Where-Object AddressState -eq 'Preferred')){
@@ -107,10 +109,13 @@ try{
 }
 if(@(Find-ExactRule $taskRule 'PersistentStore').Count -ne 0 -or
    @(Find-ExactRule $taskRule 'ActiveStore').Count -ne 0){throw 'Hosted test rule cleanup failed'}
+$taskSystemStateAfter=Read-FastFirewallState
+$taskGlobalProfileChanged=$taskSystemStateBefore -cne $taskSystemStateAfter
+if($taskGlobalProfileChanged){throw 'Global firewall or connection profile state changed'}
 $taskReport=[ordered]@{schema=1;sourceCommit=$env:KSESSION_FRESH_TESTED_SOURCE;status='PASS';productionHelperHostedVirtualRejected=$true;productRuleCreated=$false;
   netSecurityPersistentExact=$true;netSecurityActiveStoreExact=$true;testRuleDisabledBeforeMutation=$true;testRuleCleanup=$true;
   profile='Private';direction='Inbound';protocol='TCP';port=8083;remoteScope='EXACT_RUNNER_PRIVATE_SUBNET';program='INSTALLED_RUNTIME_NODE';
   interface='EXACT_RUNNER_INTERFACE';edgeTraversal='Block';publicProfile=$false;remoteAny=$false;programAny=$false;
-  globalFirewallProfileChanged=$false;realPhysicalLanClaim=$false}
+  globalFirewallProfileChanged=$taskGlobalProfileChanged;realPhysicalLanClaim=$false}
 New-Item -ItemType Directory -Path (Split-Path $taskOutput) -Force|Out-Null
 [IO.File]::WriteAllText($taskOutput,($taskReport|ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))

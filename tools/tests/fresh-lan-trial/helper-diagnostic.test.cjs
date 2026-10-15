@@ -19,7 +19,7 @@ test('helper reports COMPLETE only after actual identity writes; parent retains 
  assert.ok(source.indexOf('function Complete-BuildIdentity')<source.indexOf('try {\n  Write-FreshStage')||source.indexOf('function Complete-BuildIdentity')<source.indexOf('try {\r\n  Write-FreshStage'));
  assert.ok(source.indexOf('  Complete-BuildIdentity')<source.indexOf("$taskReport.status='PASS'"));
  assert.ok(source.includes("Write-FreshStage 'HELPER_FRESH_TESTS'"));assert.ok(source.includes("Write-FreshStage 'HELPER_IDENTITY'"));
- assert.ok(payload.includes('-FreshBuildDiagnostic $BuildDiagnostic'));
- assert.ok(payload.includes("helper-go-diagnostic.cjs') $taskFirewallRaw $BuildDiagnostic $taskFirewallUnitExit UNIT"));
+ assert.ok(payload.includes("'-FreshBuildDiagnostic',$BuildDiagnostic"));
+ assert.ok(payload.includes("helper-go-diagnostic.cjs'),'-',$BuildDiagnostic,[string]$taskFirewallUnitExit,'UNIT'"));assert.ok(payload.includes('Invoke-KSessionMemoryNode'));
  assert.ok(payload.includes('Restore-KSessionProcessEnvironment $taskBuildSnapshot'));
 });

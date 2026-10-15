@@ -42,6 +42,8 @@ type freshBindingObservation struct {
 	PathProven            bool   `json:"pathProven"`
 	GuardRejected         bool   `json:"-"`
 	TraceKnown            bool   `json:"-"`
+	MutationAbsenceKnown  bool   `json:"-"`
+	FaultReached          bool   `json:"-"`
 }
 
 func freshBindingRun(t *testing.T, scenario, fault string) freshBindingObservation {
@@ -107,8 +109,11 @@ func freshBindingRun(t *testing.T, scenario, fault string) freshBindingObservati
 	observed.TraceKnown = traceBeforeErr == nil && validBefore
 	observed.MockVerified = observed.TraceKnown && tokensBefore["MOCKS_VERIFIED"]
 	observed.GuardRejected = observed.TraceKnown && len(tokensBefore) == 1 && tokensBefore["GUARD_REJECTED"]
-	eventsBefore, _ := os.ReadFile(events)
+	eventsBefore, eventBeforeErr := os.ReadFile(events)
 	observed.MutationObserved = len(eventsBefore) > 0
+	observed.MutationAbsenceKnown = (eventBeforeErr == nil || os.IsNotExist(eventBeforeErr)) && !observed.MutationObserved
+	observed.RequiredReadsObserved = freshRequiredReadGate(scenario, tokensBefore, observed.TraceKnown)
+	observed.FaultReached = observed.TraceKnown && ((fault == "ADAPTER_ABORT" && tokensBefore["adapter"]) || (fault == "ROUTE_ABORT" && tokensBefore["route"]))
 	err = runErr
 	if ctx.Err() != nil {
 		observed.Phase = "TIMEOUT"
@@ -218,6 +223,9 @@ func logFreshBindingObservation(t *testing.T, observed freshBindingObservation) 
 		if observed.MutationObserved {
 			fixed["mutationObserved"] = true
 		}
+		if observed.RequiredReadsObserved {
+			fixed["requiredReadsObserved"] = true
+		}
 		value = fixed
 	}
 	data, err := json.Marshal(value)
@@ -246,7 +254,7 @@ func TestFreshFirewallHarnessCannotMaskInfrastructureFailure(t *testing.T) {
 			if observed.Phase == "COMPLETE" {
 				t.Fatal("infrastructure failure became PASS")
 			}
-			if c[1] != "MISSING_MOCK" && (!observed.ExpectationMatched || observed.PathProven) {
+			if c[1] != "MISSING_MOCK" && (!observed.ExpectationMatched || observed.PathProven || !observed.MockVerified || !observed.FaultReached || !observed.MutationAbsenceKnown) {
 				t.Fatal("legacy generic rejection counterexample did not reproduce")
 			}
 			if c[1] == "MISSING_MOCK" && !freshMissingMockRejected(observed) {
@@ -267,12 +275,12 @@ func TestFreshFirewallHarnessCannotMaskInfrastructureFailure(t *testing.T) {
 		t.Fatal("stdin Unicode fidelity gate failed")
 	}
 	for _, badExit := range []string{"OTHER", "ZERO", "NETWORK", "UNKNOWN", "TIMEOUT"} {
-		if freshMissingMockRejected(freshBindingObservation{Phase: "PS_EXECUTION", ExitClass: badExit, GuardRejected: true, TraceKnown: true}) {
+		if freshMissingMockRejected(freshBindingObservation{Phase: "PS_EXECUTION", ExitClass: badExit, GuardRejected: true, TraceKnown: true, MutationAbsenceKnown: true}) {
 			t.Fatal("wrong exit masked as guard rejection")
 		}
 	}
 	for _, phase := range []string{"GO_START", "TIMEOUT", "ASSERTION"} {
-		if freshMissingMockRejected(freshBindingObservation{Phase: phase, ExitClass: "OTHER", GuardRejected: true}) {
+		if freshMissingMockRejected(freshBindingObservation{Phase: phase, ExitClass: "GUARD_REJECTED", GuardRejected: true, TraceKnown: true, MutationAbsenceKnown: true}) {
 			t.Fatal("infrastructure failure masked as guard rejection")
 		}
 	}
@@ -284,5 +292,27 @@ func TestFreshFirewallHarnessCannotMaskInfrastructureFailure(t *testing.T) {
 }
 
 func freshMissingMockRejected(o freshBindingObservation) bool {
-	return o.Phase == "PS_EXECUTION" && o.ExitClass == "GUARD_REJECTED" && o.TraceKnown && o.GuardRejected && !o.MockVerified && !o.MutationObserved
+	return o.Phase == "PS_EXECUTION" && o.ExitClass == "GUARD_REJECTED" && o.TraceKnown && o.GuardRejected && o.MutationAbsenceKnown && !o.MockVerified && !o.MutationObserved
+}
+
+func freshRequiredReadGate(scenario string, tokens map[string]bool, valid bool) bool {
+	if !valid {
+		return false
+	}
+	required := []string{"adapter"}
+	if scenario != "unknown-virtual" && scenario != "unknown-hardware" && scenario != "unknown-hidden" {
+		required = append(required, "profile")
+		if scenario != "public" {
+			required = append(required, "address")
+			if scenario != "read-failure" {
+				required = append(required, "route")
+			}
+		}
+	}
+	for _, name := range required {
+		if !tokens[name] {
+			return false
+		}
+	}
+	return true
 }

@@ -21,7 +21,7 @@ async function main(){
  const physical=process.env.KSESSION_FRESH_PHYSICAL_WORK;assert.ok(physical&&path.isAbsolute(physical));
  const evidence=path.join(physical,'installed-core');let core=null,socket=null,firewall=null,coreExit=null;
  const baseEnv={...process.env,KSESSION_FRESH_EVIDENCE:evidence,KSESSION_FRESH_SETUP:setup,KSESSION_FRESH_TEST_NODE:node,KSESSION_FRESH_REPO:repo,KSESSION_FRESH_TESTED_SOURCE:context.sourceCommit};
- function command(exe,args,cwd=repo,env=baseEnv){const p=cp.spawnSync(exe,args,{cwd,env,windowsHide:true,encoding:'utf8',timeout:25*60*1000,maxBuffer:32*1024*1024});fs.writeFileSync(path.join(work,'command-private.log'),(p.stdout||'')+(p.stderr||''));return p;}
+ function command(exe,args,cwd=repo,env=baseEnv){const p=cp.spawnSync(exe,args,{cwd,env,windowsHide:true,encoding:'utf8',timeout:25*60*1000,maxBuffer:32*1024*1024});return p;}
  const fail=()=>{const e=Error('fixed gate');e.fixedStage=report.IDS.includes(core?.stage)?core.stage:'F09';e.fixedReason=core?.reason==='CLEANUP_UNPROVEN'?'CLEANUP_UNPROVEN':'GATE_FAILED';throw e;};
  function coreWitness(id){const witnesses=Object.fromEntries(report.WITNESSES[id].map(k=>[k,core?.checks?.[k]===true]));if(Object.values(witnesses).some(v=>v!==true))fail();return witnesses;}
  function readCore(){
@@ -40,7 +40,7 @@ async function main(){
    const p=command(node,['--test','--test-reporter=tap','--test-concurrency=1','tools/tests/lan-host/fresh-deployment.test.cjs']);assert.equal(p.status,0);assert.deepEqual([...p.stdout.matchAll(/^ok \d+ - (.+)$/gm)].map(m=>m[1]),expected);assert.match(p.stdout,/# fail 0/);assert.match(p.stdout,/# skipped 0/);
    for(const [kind,name]of [['FRESH_FIREWALL_POLICY','FIREWALL'],['FRESH_LAUNCHER_POLICY','LAUNCHER']]){
     const output=path.join(physical,'policy-'+name.toLowerCase());
-    const p=command(path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe'),['-NoLogo','-NoProfile','-NonInteractive','-File',path.join(repo,'tools/tests/fresh-lan-trial/run-policy.ps1'),'-Repo',repo,'-Work',output,'-Go',go,'-Node',node,'-Package',name,'-Commit',context.sourceCommit]);assert.equal(p.status,0);
+    const p=command('pwsh',['-NoLogo','-NoProfile','-NonInteractive','-File',path.join(repo,'tools/tests/fresh-lan-trial/run-policy.ps1'),'-Repo',repo,'-Work',output,'-Go',go,'-Node',node,'-Package',name,'-Commit',context.sourceCommit]);assert.equal(p.status,0);
     policy(JSON.parse(fs.readFileSync(path.join(output,'report.json'),'utf8').replace(/^\ufeff/,'')),kind,context.sourceCommit);
    }
    assert.equal(socket.dualListening,true);assert.equal(socket.ownedSocketsClosed,true);return Object.fromEntries(report.WITNESSES.F04.map(k=>[k,true]));
@@ -48,9 +48,9 @@ async function main(){
   F05:async()=>coreWitness('F05'),F06:async()=>coreWitness('F06'),
   F07:async()=>{firewall=require('../../tests/fresh-lan-trial/observations.cjs').firewall(JSON.parse(fs.readFileSync(path.join(evidence,'firewall.json'))),context.sourceCommit);assert.equal(firewall.schema,1);assert.equal(firewall.status,'PASS');assert.equal(firewall.productionHelperHostedVirtualRejected,true);assert.equal(firewall.netSecurityPersistentExact,true);assert.equal(firewall.netSecurityActiveStoreExact,true);assert.equal(firewall.testRuleCleanup,true);assert.equal(firewall.realPhysicalLanClaim,false);assert.equal(firewall.globalFirewallProfileChanged,false);assert.equal(firewall.profile,'Private');assert.equal(firewall.remoteScope,'EXACT_RUNNER_PRIVATE_SUBNET');return{helperIdentity:core.checks.helperHash===true,virtualRejected:true,privateNarrowRuleTests:true,ownedRuleRemoved:true};},
   F08:async()=>{
-   const env={...baseEnv,GITHUB_SHA:context.sourceCommit};let p=command(node,['tools/tests/windows-runtime/hosted-gate.cjs','preflight'],repo,env);assert.equal(p.status,0);
-   const npm=path.join(path.dirname(node),'node_modules/npm/bin/npm-cli.js');p=command(node,[npm,'ci','--omit=optional','--ignore-scripts','--no-audit','--no-fund','--cache',path.join(work,'regression-cache')]);assert.equal(p.status,0);
-   p=command(node,['tools/tests/windows-runtime/hosted-gate.cjs','regression'],repo,env);assert.equal(p.status,0);const r=JSON.parse(fs.readFileSync(path.join(repo,'.test-work/r5a-gate/regression.json')));assert.equal(r.sourceCommit,context.sourceCommit);assert.equal(r.status,'PASS');assert.equal(r.testTotal,742);assert.equal(r.suitePass,26);assert.equal(r.fail,0);assert.equal(r.skipped,0);return Object.fromEntries(report.WITNESSES.F08.map(k=>[k,true]));
+   const env={...baseEnv,GITHUB_SHA:context.sourceCommit};let p;
+   const npm=path.join(path.dirname(node),'node_modules/npm/bin/npm-cli.js');p=command(node,[npm,'ci','--logs-max=0','--loglevel=silent','--omit=optional','--ignore-scripts','--no-audit','--no-fund','--cache',path.join(work,'regression-cache')]);assert.equal(p.status,0);
+   p=command(node,['tools/tests/fresh-lan-trial/fast-delivery/regression.cjs',repo,physical],repo,env);assert.equal(p.status,0);const r=JSON.parse(fs.readFileSync(path.join(physical,'regression.json')));assert.equal(r.sourceCommit,context.sourceCommit);assert.equal(r.status,'PASS');assert.equal(r.testTotal,742);assert.equal(r.suitePass,26);assert.equal(r.fail,0);assert.equal(r.skipped,0);return Object.fromEntries(report.WITNESSES.F08.map(k=>[k,true]));
   },
   F09:async()=>{assert.equal(sha(fs.readFileSync(setup)),setupHash);const provisional=report.initial(context.sourceCommit,context.mode,context.candidate,context.controlCommit,context.run);fs.writeFileSync(path.join(artifact,'fresh-report.json'),JSON.stringify(provisional)+'\n');const v=inspect(artifact,context.sourceCommit,context.mode==='QA'?context.candidate.setupSha256:undefined);assert.equal(v.setupSha256,setupHash);return Object.fromEntries(report.WITNESSES.F09.map(k=>[k,true]));}
  };

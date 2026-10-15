@@ -52,8 +52,10 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          NODE_OPTIONS: ''
+          NODE_PATH: ''
         run: |
-          node tools/windows-installer/fresh-trial/recovery-r1/bootstrap.cjs $env:GITHUB_WORKSPACE E:/fresh-trial *> E:/fresh-trial/bootstrap-private.log
+          $taskSourceOutput=@(node tools/windows-installer/fresh-trial/recovery-r1/bootstrap.cjs $env:GITHUB_WORKSPACE E:/fresh-trial 2>&1)
           if($LASTEXITCODE -ne 0){Write-Output 'FRESH_TRIAL_SOURCE_REJECTED';exit 1}
       - name: Independent fresh build or same immutable candidate QA
         id: execution
@@ -61,7 +63,7 @@ jobs:
         shell: pwsh
         run: |
           try {
-            & ./tools/windows-installer/fresh-trial/ci.ps1 -Work E:/fresh-trial -BuildOnly:('${{ steps.source.outputs.mode }}' -eq 'SMOKE') *> E:/fresh-trial/ci-private.log
+            & ./tools/windows-installer/fresh-trial/hosted-supervisor.ps1 -Work E:/fresh-trial
             if($LASTEXITCODE -ne 0){throw 'Fresh trial gate failed'}
           } catch {Write-Output 'FRESH_TRIAL_GATE_FAILED';exit 1}
       - name: Always owned finalization and physical publication
