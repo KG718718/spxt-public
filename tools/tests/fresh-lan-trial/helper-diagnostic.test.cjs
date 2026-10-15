@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process');
 const {ORIGINAL,FRESH,classify}=require('./helper-go-diagnostic.cjs'),{validate}=require('./build-diagnostic.cjs');
-const encode=names=>[...names.map(Test=>({Action:'pass',Test})),{Action:'pass'}].map(e=>JSON.stringify(e)).join('\n');
+const encode=names=>[...names.map(Test=>({Action:'pass',Test})),...(names===FRESH?require('./fresh-scenario-fixture.cjs').goodEvents():[]),{Action:'pass'}].map(e=>JSON.stringify(e)).join('\n');
 test('helper original13/fresh2/unit13 keep independent exact sets and safe fixed failures',()=>{
  for(const [kind,names] of [['ORIGINAL',ORIGINAL],['FRESH',FRESH],['UNIT',ORIGINAL]]){
   assert.equal(classify(encode(names),0,kind).classification,'PASS');

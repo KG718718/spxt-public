@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
@@ -13,68 +14,217 @@ import (
 	"time"
 )
 
+var freshBindingScenarios = []string{"exact-binding", "guid-changed", "ip-changed", "prefix-changed", "subnet-changed", "missing-binding", "public", "unknown-virtual", "unknown-hardware", "unknown-hidden", "route-unknown", "read-failure"}
+
+// Test-only wrappers reuse the original mocks; the original13 harness has no
+// added environment input or observation side effect.
+const freshReadHarness = `
+function Record-TestRead([string]$name){[IO.File]::AppendAllText($env:KSESSION_TEST_READ_FILE,$name+[char]10,[Text.UTF8Encoding]::new($false))}
+$script:r2Adapter=(Get-Item -LiteralPath Function:\Get-NetAdapter).ScriptBlock
+$script:r2Profile=(Get-Item -LiteralPath Function:\Get-NetConnectionProfile).ScriptBlock
+$script:r2Address=(Get-Item -LiteralPath Function:\Get-NetIPAddress).ScriptBlock
+function Get-NetAdapter {[CmdletBinding()]param([switch]$IncludeHidden) Record-TestRead 'adapter'; & $script:r2Adapter @PSBoundParameters}
+function Get-NetConnectionProfile {[CmdletBinding()]param($InterfaceIndex) Record-TestRead 'profile'; & $script:r2Profile @PSBoundParameters}
+function Get-NetIPAddress {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) Record-TestRead 'address'; & $script:r2Address @PSBoundParameters}
+`
+
+type freshBindingObservation struct {
+	Scenario              string `json:"scenario"`
+	Phase                 string `json:"phase"`
+	ExitClass             string `json:"exitClass"`
+	MockVerified          bool   `json:"mockVerified"`
+	RequiredReadsObserved bool   `json:"requiredReadsObserved"`
+	MutationObserved      bool   `json:"mutationObserved"`
+	ExpectationMatched    bool   `json:"expectationMatched"`
+	PathProven            bool   `json:"pathProven"`
+}
+
+func freshBindingRun(t *testing.T, scenario, fault string) freshBindingObservation {
+	t.Helper()
+	observed := freshBindingObservation{Scenario: scenario, Phase: "GO_START", ExitClass: "START_FAILED"}
+
+	ps, err := systemPowerShell()
+	if err != nil {
+		return observed
+	}
+	directory := fixtureDir(t)
+	events := filepath.Join(directory, "events.jsonl")
+	reads := filepath.Join(directory, "reads.txt")
+	guid, address, prefix, subnet := "12345678-1234-1234-1234-123456789abc", "192.168.10.23", "24", "192.168.10.0/24"
+	override := `function Get-NetRoute {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) Record-TestRead 'route';[pscustomobject]@{DestinationPrefix='192.168.10.0/24';NextHop='0.0.0.0';State='Alive'}}` + "\n"
+	switch scenario {
+	case "guid-changed":
+		guid = "22222222-2222-4222-8222-222222222222"
+	case "ip-changed":
+		address = "192.168.10.24"
+	case "prefix-changed":
+		prefix = "25"
+	case "subnet-changed":
+		subnet = "192.168.11.0/24"
+	case "missing-binding":
+		guid = ""
+	case "unknown-virtual", "unknown-hardware", "unknown-hidden":
+		property := map[string]string{"unknown-virtual": "Virtual", "unknown-hardware": "HardwareInterface", "unknown-hidden": "Hidden"}[scenario]
+		override += `function Get-NetAdapter {[CmdletBinding()]param([switch]$IncludeHidden) Record-TestRead 'adapter';$a=[pscustomobject]@{InterfaceGuid=[guid]'12345678-1234-1234-1234-123456789abc';Status='Up';HardwareInterface=$true;Virtual=$false;Hidden=$false;InterfaceType=6;Name='Ethernet';InterfaceDescription='Synthetic Ethernet';InterfaceIndex=7};$a.` + property + `=$null;$a}` + "\n"
+	case "route-unknown":
+		override = `function Get-NetRoute {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) Record-TestRead 'route';[pscustomobject]@{DestinationPrefix='192.168.10.0/24';NextHop='0.0.0.0';State='Unknown'}}` + "\n"
+	case "read-failure":
+		override += `function Get-NetIPAddress {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) Record-TestRead 'address';throw 'synthetic read failure'}` + "\n"
+	}
+	if fault == "ADAPTER_ABORT" {
+		override += "function Get-NetAdapter {[CmdletBinding()]param([switch]$IncludeHidden) Record-TestRead 'adapter';throw 'synthetic simulator failure'}\n"
+	}
+	if fault == "ROUTE_ABORT" {
+		override += "function Get-NetRoute {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) Record-TestRead 'route';throw 'synthetic simulator failure'}\n"
+	}
+	guard := `$mockNames=@('Import-Module','Get-NetAdapter','Get-NetConnectionProfile','Get-NetIPAddress','Get-NetRoute','Get-NetFirewallProfile','Get-NetFirewallRule','Get-NetFirewallPortFilter','Get-NetFirewallApplicationFilter','Get-NetFirewallAddressFilter','Get-NetFirewallInterfaceFilter','New-NetFirewallRule','Set-NetFirewallRule','Set-NetFirewallPortFilter','Set-NetFirewallApplicationFilter','Set-NetFirewallAddressFilter','Set-NetFirewallInterfaceFilter');foreach($mockName in $mockNames){if(-not(Test-Path -LiteralPath ('Function:\'+$mockName))){exit 26};$mockItem=Get-Item -LiteralPath ('Function:\'+$mockName);if($mockItem.ScriptBlock.File){exit 26}};Record-TestRead 'MOCKS_VERIFIED'` + "\n"
+	if fault == "MISSING_MOCK" {
+		override += "Remove-Item -LiteralPath Function:\\Get-NetAdapter\n"
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", firewallMockHarness+"\n"+freshReadHarness+override+guard+firewallScript)
+	root := os.Getenv("SystemRoot")
+	system32 := filepath.Join(root, "System32")
+	cmd.Env = []string{"SystemRoot=" + root, "WINDIR=" + root, "PATH=" + system32, "PSModulePath=" + filepath.Join(system32, "WindowsPowerShell", "v1.0", "Modules"), "TEMP=" + directory, "TMP=" + directory,
+		"KSESSION_FW_ACTION=enable", "KSESSION_FW_INTERFACE_NAME=Ethernet", "KSESSION_FW_PORT=8083", `KSESSION_FW_PROGRAM=C:\KSESSION\program\runtime\node.exe`,
+		"KSESSION_FW_FRESH_TRIAL=1", "KSESSION_FW_ADAPTER_ID=" + guid, "KSESSION_FW_ADDRESS=" + address, "KSESSION_FW_PREFIX=" + prefix, "KSESSION_FW_SUBNET=" + subnet,
+		"KSESSION_TEST_READ_FILE=" + reads, "KSESSION_TEST_EVENT_FILE=" + events, "KSESSION_TEST_SCENARIO=" + scenario}
+	output, runErr := cmd.CombinedOutput()
+	err = runErr
+	if ctx.Err() != nil {
+		observed.Phase = "TIMEOUT"
+		observed.ExitClass = "TIMEOUT"
+		return observed
+	}
+	code := 0
+	if err != nil {
+		var exit *exec.ExitError
+		if !errors.As(err, &exit) {
+			return observed
+		}
+		code = exit.ExitCode()
+	}
+	observed.Phase = "ASSERTION"
+	switch code {
+	case 0:
+		observed.ExitClass = "ZERO"
+	case exitNetwork:
+		observed.ExitClass = "NETWORK"
+	case exitBlocked:
+		observed.ExitClass = "BLOCKED"
+	default:
+		observed.ExitClass = "OTHER"
+		observed.Phase = "PS_EXECUTION"
+	}
+	trace, readErr := os.ReadFile(reads)
+	readTokens, traceValid := freshReadTokens(trace)
+	observed.MockVerified = readErr == nil && traceValid && readTokens["MOCKS_VERIFIED"]
+	required := []string{"adapter"}
+	if scenario != "unknown-virtual" && scenario != "unknown-hardware" && scenario != "unknown-hidden" {
+		required = append(required, "profile")
+		if scenario != "public" {
+			required = append(required, "address")
+			if scenario != "read-failure" {
+				required = append(required, "route")
+			}
+		}
+	}
+	observed.RequiredReadsObserved = readErr == nil && traceValid
+	for _, name := range required {
+		if !readTokens[name] {
+			observed.RequiredReadsObserved = false
+		}
+	}
+	mutations, eventErr := os.ReadFile(events)
+	observed.MutationObserved = len(mutations) > 0
+	if scenario == "exact-binding" {
+		observed.ExpectationMatched = code == 0 && eventErr == nil && strings.Contains(string(mutations), "new-rule")
+	} else {
+		observed.ExpectationMatched = (code == exitNetwork || code == exitBlocked) && !observed.MutationObserved && (eventErr == nil || os.IsNotExist(eventErr))
+	}
+	signal := strings.TrimSpace(string(output))
+	want := "NETWORK_BINDING_CHANGED"
+	switch scenario {
+	case "exact-binding":
+		want = `{"schema":1,"status":"ENABLED"}`
+	case "public":
+		want = "NETWORK_NOT_PRIVATE"
+	case "unknown-virtual", "unknown-hardware", "unknown-hidden":
+		want = "ADAPTER_UNSAFE"
+	case "route-unknown":
+		want = "SUBNET_ROUTE_MISSING"
+	case "read-failure":
+		want = "FIREWALL_OPERATION_FAILED"
+	}
+	expectedExit := exitNetwork
+	if scenario == "exact-binding" {
+		expectedExit = 0
+	} else if scenario == "read-failure" {
+		expectedExit = exitBlocked
+	}
+	observed.PathProven = signal == want && code == expectedExit
+	if observed.ExpectationMatched && observed.MockVerified && observed.RequiredReadsObserved && observed.PathProven {
+		observed.Phase = "COMPLETE"
+	}
+	return observed
+}
+
+func freshReadTokens(data []byte) (map[string]bool, bool) {
+	tokens := map[string]bool{}
+	for _, token := range strings.Split(strings.TrimSuffix(string(data), "\n"), "\n") {
+		switch token {
+		case "MOCKS_VERIFIED", "adapter", "profile", "address", "route":
+			if tokens[token] {
+				return tokens, false
+			}
+			tokens[token] = true
+		default:
+			return tokens, false
+		}
+	}
+	return tokens, true
+}
+
+func logFreshBindingObservation(t *testing.T, observed freshBindingObservation) {
+	t.Helper()
+	data, err := json.Marshal(observed)
+	if err != nil {
+		t.Fatal("fixed scenario diagnostic invalid")
+	}
+	t.Log("FRESH_FIREWALL_SCENARIO_JSON=" + string(data))
+}
+
 func TestFreshFirewallBindingBeforeAnyMutation(t *testing.T) {
-	for _, scenario := range []string{"exact-binding", "guid-changed", "ip-changed", "prefix-changed", "subnet-changed", "missing-binding", "public", "unknown-virtual", "unknown-hardware", "unknown-hidden", "route-unknown", "read-failure"} {
+	for _, scenario := range freshBindingScenarios {
 		t.Run(scenario, func(t *testing.T) {
-			ps, err := systemPowerShell()
-			if err != nil {
-				t.Fatal(err)
-			}
-			directory := fixtureDir(t)
-			events := filepath.Join(directory, "events.jsonl")
-			guid, address, prefix, subnet := "12345678-1234-1234-1234-123456789abc", "192.168.10.23", "24", "192.168.10.0/24"
-			override := `function Get-NetRoute {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) [pscustomobject]@{DestinationPrefix='192.168.10.0/24';NextHop='0.0.0.0';State='Alive'}}` + "\n"
-			switch scenario {
-			case "guid-changed":
-				guid = "22222222-2222-4222-8222-222222222222"
-			case "ip-changed":
-				address = "192.168.10.24"
-			case "prefix-changed":
-				prefix = "25"
-			case "subnet-changed":
-				subnet = "192.168.11.0/24"
-			case "missing-binding":
-				guid = ""
-			case "unknown-virtual", "unknown-hardware", "unknown-hidden":
-				property := map[string]string{"unknown-virtual": "Virtual", "unknown-hardware": "HardwareInterface", "unknown-hidden": "Hidden"}[scenario]
-				override += `function Get-NetAdapter {[CmdletBinding()]param([switch]$IncludeHidden) $a=[pscustomobject]@{InterfaceGuid=[guid]'12345678-1234-1234-1234-123456789abc';Status='Up';HardwareInterface=$true;Virtual=$false;Hidden=$false;InterfaceType=6;Name='Ethernet';InterfaceDescription='Synthetic Ethernet';InterfaceIndex=7};$a.` + property + `=$null;$a}` + "\n"
-			case "route-unknown":
-				override = `function Get-NetRoute {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) [pscustomobject]@{DestinationPrefix='192.168.10.0/24';NextHop='0.0.0.0';State='Unknown'}}` + "\n"
-			case "read-failure":
-				override += `function Get-NetIPAddress {[CmdletBinding()]param($InterfaceIndex,$AddressFamily) throw 'synthetic read failure'}` + "\n"
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-			defer cancel()
-			cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", firewallMockHarness+"\n"+override+firewallScript)
-			root := os.Getenv("SystemRoot")
-			system32 := filepath.Join(root, "System32")
-			cmd.Env = []string{"SystemRoot=" + root, "WINDIR=" + root, "PATH=" + system32, "PSModulePath=" + filepath.Join(system32, "WindowsPowerShell", "v1.0", "Modules"), "TEMP=" + directory, "TMP=" + directory,
-				"KSESSION_FW_ACTION=enable", "KSESSION_FW_INTERFACE_NAME=Ethernet", "KSESSION_FW_PORT=8083", `KSESSION_FW_PROGRAM=C:\KSESSION\program\runtime\node.exe`,
-				"KSESSION_FW_FRESH_TRIAL=1", "KSESSION_FW_ADAPTER_ID=" + guid, "KSESSION_FW_ADDRESS=" + address, "KSESSION_FW_PREFIX=" + prefix, "KSESSION_FW_SUBNET=" + subnet,
-				"KSESSION_TEST_EVENT_FILE=" + events, "KSESSION_TEST_SCENARIO=" + scenario}
-			output, err := cmd.CombinedOutput()
-			if ctx.Err() != nil {
-				t.Fatal(ctx.Err())
-			}
-			if scenario == "exact-binding" {
-				if err != nil {
-					t.Fatalf("exact binding rejected: %v %s", err, output)
-				}
-				data, readErr := os.ReadFile(events)
-				if readErr != nil || !strings.Contains(string(data), "new-rule") {
-					t.Fatal("synthetic mutation never reached")
-				}
-			} else {
-				var exit *exec.ExitError
-				if !errors.As(err, &exit) || (exit.ExitCode() != exitNetwork && exit.ExitCode() != exitBlocked) {
-					t.Fatalf("unexpected rejection: %v %s", err, output)
-				}
-				if data, readErr := os.ReadFile(events); readErr == nil && len(data) > 0 {
-					t.Fatalf("mutation before binding rejection: %s", data)
-				} else if readErr != nil && !os.IsNotExist(readErr) {
-					t.Fatal(readErr)
-				}
+			observed := freshBindingRun(t, scenario, "")
+			logFreshBindingObservation(t, observed)
+			if observed.Phase != "COMPLETE" {
+				t.Fatal("fixed scenario gates failed")
 			}
 		})
+	}
+}
+
+func TestFreshFirewallHarnessCannotMaskInfrastructureFailure(t *testing.T) {
+	for _, c := range [][2]string{{"guid-changed", "ADAPTER_ABORT"}, {"guid-changed", "ROUTE_ABORT"}, {"unknown-virtual", "ADAPTER_ABORT"}, {"guid-changed", "MISSING_MOCK"}} {
+		t.Run(c[0]+"_"+c[1], func(t *testing.T) {
+			observed := freshBindingRun(t, c[0], c[1])
+			if observed.Phase == "COMPLETE" {
+				t.Fatal("infrastructure failure became PASS")
+			}
+			if c[1] != "MISSING_MOCK" && (!observed.ExpectationMatched || observed.PathProven) {
+				t.Fatal("legacy generic rejection counterexample did not reproduce")
+			}
+			if c[1] == "MISSING_MOCK" && observed.MockVerified {
+				t.Fatal("missing mock reached production script")
+			}
+		})
+	}
+	for _, bad := range []string{"prefix-adapter\n", "adapter\nadapter\n", "adapter\nunknown\n"} {
+		if _, valid := freshReadTokens([]byte(bad)); valid {
+			t.Fatal("invalid read token accepted")
+		}
 	}
 }
