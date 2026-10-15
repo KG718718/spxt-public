@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前唯一Smoke运行中｜2026-10-15 Build-First R1
+
+R1S1 Run38674907559 / attempt1，受测source c503fe094c07b9e1c7e33648072701461afd73be、唯一trigger控制f2195dd4191cf4a5341c09483a1d60e3cce8acd7，三方HEAD同SHA后已触发。结果IN_PROGRESS，不宣称构建/Setup/安装通过。新增Smoke1/1已使用、Candidate0/2、独立QA0/1；Smoke任何FAIL即冻结后续Hosted，不retry、不借Candidate调试。只该新workflow运行，旧C1—C3及所有冻结FAIL/预算不变，T2已RETURN并冻结，正式F3 beta.2基线不动。此后治理提交不改变本Run受测source，详见BUILD-FIRST-R1-ORCHESTRATION.md。
+
 ## 当前Review PASS｜2026-10-15 Build-First R1 / Smoke待中央触发
 
 原FRESH-T2正式RETURN实现401ea7f9/报告efaf1890，Master独立Review及实际Fresh138+旧兼容20=158/158 fail0skip0、真实完整payload原函数身份核验PASS；本机完整Runtime、Helper13两次/Fresh2、Launcher28两次/Fresh2、Node44、三方1049文件/20依赖及污染/外层环境恢复均已证。实现整合308a1269，报告acf72006，源码与受审完全相同，生产Go/业务/Setup/旧信任/事务/rollback未修改。C3历史首因仍UNKNOWN，不追认本地封装缺口为唯一根因。新R1专用workflow/13键trigger/4槽位仅Master中央触发；真实trigger尚未创建，预算Smoke0/1、Candidate0/2、独立QA0/1，旧预算不改。需三方HEAD一致后唯一Smoke（只编译payload/Setup及身份/恢复，不安装、不产品EXE/用户包），FAIL立即STOP；PASS才Candidate。ISCC/实际安装/F01—F09/核心26-742/QA/物理LAN未验，详见BUILD-FIRST-R1-MASTER-REVIEW.md与独立账本。禁止普通sub-agent/main/tag/Release/内部SPXT/未知清理。

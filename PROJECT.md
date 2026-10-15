@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前唯一Smoke运行中｜2026-10-15 R1S1
+
+Run38674907559@控制f2195dd4191cf4a5341c09483a1d60e3cce8acd7 / source c503fe094c07b9e1c7e33648072701461afd73be / attempt1，IN_PROGRESS。Smoke1/1已使用，Candidate0/2、独立QA0/1仍冻结待Smoke完整PASS；FAIL即STOP。只是build/identity/恢复，不安装，无用户包或LAN PASS结论。旧C1—C3 FAIL/3/3不改，后续治理SHA不能冒充本次受测source。
+
 ## 当前Review PASS｜2026-10-15 Build-First R1 / Smoke待运行
 
 原T2已正式RETURN，Master独立158/158 fail0skip0及本机真实完整payload身份/13与28重复门禁/Fresh2/44/环境恢复核验通过；实现308a1269、治理acf72006与受审401ea7f9/efaf1890相同。新Smoke0/1、Candidate0/2、独立QA0/1，尚未触发；仅中央三方HEAD核验后唯一Smoke，FAIL即冻结后续Hosted。真实ISCC、安装、F01—F09/26-742、QA尚未通过，无交付EXE，不是HUMAN_PENDING终态。C3及旧FAIL不改、首因UNKNOWN，详见BUILD-FIRST-R1-MASTER-REVIEW.md。
