@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前Review PASS｜2026-10-15 Build-First R1 / Smoke待运行
+
+原T2已正式RETURN，Master独立158/158 fail0skip0及本机真实完整payload身份/13与28重复门禁/Fresh2/44/环境恢复核验通过；实现308a1269、治理acf72006与受审401ea7f9/efaf1890相同。新Smoke0/1、Candidate0/2、独立QA0/1，尚未触发；仅中央三方HEAD核验后唯一Smoke，FAIL即冻结后续Hosted。真实ISCC、安装、F01—F09/26-742、QA尚未通过，无交付EXE，不是HUMAN_PENDING终态。C3及旧FAIL不改、首因UNKNOWN，详见BUILD-FIRST-R1-MASTER-REVIEW.md。
+
 ## 当前有限恢复｜2026-10-15 Build-First Recovery R1
 
 用户批准从C3 HELPER粗失败边界恢复：优先原FRESH-T2，独立本地真实构建/反例/Master Review后Smoke最多1次，PASS后新Candidate最多2次，完整PASS后独立QA同EXE最多1次。新增账本0/1、0/2、0/1，旧C1—C3 FAIL与3/3永久保留、旧Full/U27/LC01/Diagnostic0。Smoke FAIL/新Candidate两次FAIL/QA FAIL或安全收尾等强制条件立即STOP。目标仍Win10 fresh-only自动安全LAN，无用户安装包或自动化PASS结论；T1缺失现场不猜测、不重建。详见fresh-lan-trial/BUILD-FIRST-R1-AUTHORIZATION.md及BUILD-FIRST-R1-ORCHESTRATION.md。

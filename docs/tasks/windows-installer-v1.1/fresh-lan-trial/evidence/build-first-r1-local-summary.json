@@ -1,0 +1,1 @@
+{"schema":1,"sourceCommit":"401ea7f926be2c2123e6922fd5081ae0935bf30b","exit":0,"status":"PASS","buildDiagnostic":{"classification":"COMMAND_FAILED","line":null,"stage":"PAYLOAD_REPORT","script":null},"payloadReportPresent":true,"pollutedParentRestored":true,"outerEnvironmentRestored":true,"productionExeRun":false}

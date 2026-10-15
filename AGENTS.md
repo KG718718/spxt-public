@@ -1,5 +1,9 @@
 # K⁺-SESSION 协作边界
 
+## 当前Review PASS｜2026-10-15 Build-First R1 / Smoke待中央触发
+
+原FRESH-T2正式RETURN实现401ea7f9/报告efaf1890，Master独立Review及实际Fresh138+旧兼容20=158/158 fail0skip0、真实完整payload原函数身份核验PASS；本机完整Runtime、Helper13两次/Fresh2、Launcher28两次/Fresh2、Node44、三方1049文件/20依赖及污染/外层环境恢复均已证。实现整合308a1269，报告acf72006，源码与受审完全相同，生产Go/业务/Setup/旧信任/事务/rollback未修改。C3历史首因仍UNKNOWN，不追认本地封装缺口为唯一根因。新R1专用workflow/13键trigger/4槽位仅Master中央触发；真实trigger尚未创建，预算Smoke0/1、Candidate0/2、独立QA0/1，旧预算不改。需三方HEAD一致后唯一Smoke（只编译payload/Setup及身份/恢复，不安装、不产品EXE/用户包），FAIL立即STOP；PASS才Candidate。ISCC/实际安装/F01—F09/核心26-742/QA/物理LAN未验，详见BUILD-FIRST-R1-MASTER-REVIEW.md与独立账本。禁止普通sub-agent/main/tag/Release/内部SPXT/未知清理。
+
 ## 当前有限恢复｜2026-10-15 Build-First Recovery R1
 
 用户正式批准从C3构建失败有限恢复，当前分支codex/lan-fresh-trial-v1.1，三方基线ba54b76280707655195e420c8ec9a3c18709a493。仅唯一Master/长期Execution，优先原FRESH-T2 bea7，禁止普通sub-agent/后代；T1归档/缺失现场不猜测、不重建清理。独立新增预算Build Smoke1、Fresh Candidate2、独立QA1，均从0起、单次45分钟；旧C1—C3 3/3 FAIL不改，旧Full/U27/LC01/其他Diagnostic0。先定位HELPER边界，固定Go/Node本地真实Helper及Launcher构建、反例fail0skip0/语法/生成器/编译/diff-check及Master独立Review通过，才Smoke。Smoke FAIL立即STOP，不能用Candidate调试构建；Smoke PASS才Candidate，首PASS即独立QA同一EXE字节，Candidate2次FAIL或QA FAIL/UNKNOWN即STOP。其余产品、安全、隔离/收尾不可证明等强制停止继承用户完整授权，详见fresh-lan-trial/BUILD-FIRST-R1-AUTHORIZATION.md。生产安全、fresh-only、业务契约不放宽，不访问内部SPXT/main/tag/Release，不自动跨预算或清理未知文件。下方旧冻结为本次有限授权前历史，旧FAIL与证据仍有效。

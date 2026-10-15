@@ -4,7 +4,7 @@
 
 | 任务 | 原Thread / 工作树 / 分支 | 状态 |
 |---|---|---|
-| R1构建定位、真实本地构建、测试/Smoke接线 | FRESH-T2 01a13948-7433-7571-8330-a09bfd12a0dc / bea7/public-source / codex/fresh-t2-installer-ci | DISPATCHED / 本地实施中；安全merge基线a02b76ff；真实Runtime/Helper/Launcher首轮已通过，尚未正式RETURN/最终Review |
+| R1构建定位、真实本地构建、测试/Smoke接线 | FRESH-T2 01a13948-7433-7571-8330-a09bfd12a0dc / bea7/public-source / codex/fresh-t2-installer-ci | RETURNED→REVIEWED→INTEGRATED；401ea7f9→308a1269、efaf1890→acf72006；原树冻结保留 |
 | 独立QA | 尚未创建 | Candidate完整PASS后才准入 |
 
 | 新预算槽位 | 已使用 | Run/source/control/阶段/cleanup |
@@ -17,3 +17,5 @@
 每轮Master独立Review/来源、模式、槽位、触发路径/预算/attempt/cleanup必须记录。Execution不得push/Hosted/后代，原工作树及未知文件保留。T1不恢复。Smoke失败冻结所有后续Hosted；Candidate两次失败或QA失败/UNKNOWN立即STOP。
 
 初始真实构建与Master字节核验详见BUILD-FIRST-R1-LOCAL-PREFLIGHT.md；与C3构建相关代码同源但历史首因未复现，不能以本地PASS宣称C3根因已闭合。已识别父重复Helper13未固定Go环境及内层诊断丢失/identity写完前报PASS等封装缺口，原T2正补实际反例和最小修正；最终必须整条payload真实重放/本地全部门禁/独立Review后才Smoke。新R1独立workflow/trigger/slots草稿不是触发许可，不能在未RETURN时运行。
+
+上段为实施过程记录。最终401ea7f9完整真实payload已exit0/PASS，Master实际158/158及完整1049文件身份核验PASS，父污染环境和外层恢复true，详见BUILD-FIRST-R1-MASTER-REVIEW.md。ISCC本地NOT_RUN，Smoke可验证真实Setup编译但不安装；不是Candidate。当前只允许三方同步后的中央R1S1一次，尚无真实trigger，不准提前使用Candidate或QA。
