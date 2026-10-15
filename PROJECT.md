@@ -1,5 +1,9 @@
 # K⁺-SESSION｜项目状态
 
+## 当前最终止损｜2026-10-15 Build-First R1
+
+**BLOCKED — BUILD-FIRST R1 SMOKE FAILED / HELPER FRESH TEST。** 唯一Run38674907559@source c503fe09/control f2195dd4，Artifact11946315115，HELPER_FRESH_TESTS / GO_TEST_FAILED_TestFreshFirewallBindingBeforeAnyMutation，子场景和底层首因未证。安全固定报告/来源指纹验证PASS、cleanup10/10true，不代表构建成功；checks全null、Setup SHA空，产品未执行/不具安装资格。Smoke1/1 FAIL后按用户立即停止所有工程/Hosted，Candidate0/2、QA0/1 UNUSED—FROZEN；无beta.4用户包，旧F3 beta.2正式单机基线不变。仅治理保全/非force同步并交网页版，见BUILD-FIRST-R1-RESULT.md；下方阶段文字均历史。
+
 ## 当前唯一Smoke运行中｜2026-10-15 R1S1
 
 Run38674907559@控制f2195dd4191cf4a5341c09483a1d60e3cce8acd7 / source c503fe094c07b9e1c7e33648072701461afd73be / attempt1，IN_PROGRESS。Smoke1/1已使用，Candidate0/2、独立QA0/1仍冻结待Smoke完整PASS；FAIL即STOP。只是build/identity/恢复，不安装，无用户包或LAN PASS结论。旧C1—C3 FAIL/3/3不改，后续治理SHA不能冒充本次受测source。

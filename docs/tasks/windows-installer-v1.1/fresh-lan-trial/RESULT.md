@@ -1,5 +1,9 @@
 # Fresh LAN Trial — 最终结果
 
+## 2026-10-15最新：Build-First R1已执行并止损
+
+用户另行批准R1预算后已实施真实本地完整构建/独立Review及唯一Smoke。Run38674907559失败于HELPER_FRESH_TESTS / GO_TEST_FAILED_TestFreshFirewallBindingBeforeAnyMutation，Artifact11946315115，cleanup10/10true，尚无Setup/候选包。R1 Smoke1/1 FAIL，Candidate0/2、独立QA0/1 UNUSED—FROZEN，全部工程/Hosted停止。详细现状BUILD-FIRST-R1-RESULT.md与build-first-r1/CHATGPT-HANDOFF.md；下方是2026-10-14旧C1—C3永久历史，未重置/改写。
+
 状态：**BLOCKED — FRESH TRIAL CANDIDATE BUDGET EXHAUSTED**。
 
 本轮已完成独立fresh分支、两条长期Execution、fresh-only安装/自动Private LAN部署/登录自启接线和验收流水线、本地反例、逐轮Master独立Review及集成。候选实际安装证明尚未取得；实现完成不等于可交付。
