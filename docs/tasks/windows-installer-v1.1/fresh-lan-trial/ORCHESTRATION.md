@@ -1,3 +1,7 @@
+## 当前结论｜2026-10-16 FAST INSTALL R2 / LOCAL BUILD & REVIEW PASS / INSTALL NOT PROVEN
+
+原FRESH-T2正式RETURN并冻结：实现4e7f58e8341bc69822570838a1716667fb8e654b、报告b748b359，Master独立Review及ff-only整合。真实完整Payload/Helper/Launcher/ISCC构建PASS，EXE33554844字节/SHA1b4e7723...f7ac9111，1049文件/20依赖逐字节身份核验；Master独立CJS28/root134/Windows Recovery5/PS22/finally7均fail0skip0、来源绑定与环境/Job恢复通过。生产仅Fresh固定诊断，安全谓词不放宽，旧FAIL不改。原函数本机可通过，历史Run38767500533 F01首因仍UNKNOWN；无安全隔离产品安装环境，实际安装/业务/26-742 NOT_RUN；早期无receipt资源保留UNKNOWN，真实rules QUERY_CIM_FAILED/NOT_PROVEN，不能宣称整体恢复或交付PASS。本轮Hosted0，Candidate2/2耗尽、QA0/1继续冻结，禁止触发/重跑/挪额度。只治理非force同步及网页版交接后STOP，保留原现场，无内部SPXT/main/tag/Release/未知清理。详见fresh-lan-trial/fast-install-r2/RESULT.md、MASTER-REVIEW.md与专属固定证据；下方授权/停点均为历史。
+
 ## 当前授权｜2026-10-16 FAST INSTALL RECOVERY R2 / LOCAL ONLY
 
 用户批准首次安装登录启动项精确身份诊断/最小修复与失败安装分项所有权恢复；原T2/原bea7树，基线aca5b792三方核验，Master独立Review。普通本地工程自主loop，真实payload/Setup编译与受控链接可执行测试/反例/恢复门禁；不得在日常业务机跑真实Fresh Setup或碰真实Startup/产品登记，不以模拟当安装证明。新增Hosted0，Candidate2/2历史FAIL和QA0/1冻结；禁止Actions/trigger/普通sub-agent/后代/内部SPXT/main/tag/Release/未知清理。真实权限/架构/数据/未知所有权/无法安全恢复按用户止损。详见FAST-INSTALL-R2-AUTHORIZATION.md；下方旧停止仍为历史，不授权Hosted。
@@ -77,3 +81,7 @@ T1/T2 已独立 Review 并集成。三方 HEAD 核验后，仅创建 C1 单文�
 
 ## FAST-INSTALL-R2 DISPATCH
 TASK=FAST-INSTALL-R2；Execution=01a13948-7433-7571-8330-a09bfd12a0dc；returnMaster=01a0db0e-c950-79e0-8e11-07155e0742f2；worktree=bea7/public-source；localBranch=codex/fresh-t2-installer-ci；baseline=aca5b792795217ba0047bae29bb4f21bc0f3df6e；state=DISPATCHED。新增Hosted0；最终需RETURN→Master Review→Integration。
+
+## FAST-INSTALL-R2 正式返回与主控整合｜2026-10-16
+
+Task FRESH-T2 / returnMaster 01a0db0e-c950-79e0-8e11-07155e0742f2 / Thread01a13948-7433-7571-8330-a09bfd12a0dc / bea7原树 / codex/fresh-t2-installer-ci / baseline1a9b9248。原Execution RETURNED→Master独立Review PASS→ff-only整合b748b359→Execution FROZEN。实现4e7f58e8构建来源不随报告提交改变。实际Fresh安装/完整恢复未证，不恢复Hosted；Candidate2/2、QA0/1冻结不变，后续新预算须网页版明确决定。原工作树/提交/测试现场/失败证据保留；本轮STOP。

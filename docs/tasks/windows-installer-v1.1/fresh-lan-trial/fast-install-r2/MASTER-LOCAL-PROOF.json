@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "kind": "MASTER_INSTALL_R2_LOCAL_PROOF",
+  "sourceCommit": "4e7f58e8341bc69822570838a1716667fb8e654b",
+  "review": "PASS_BOUNDED_IMPLEMENTATION_ONLY",
+  "installation": "NOT_RUN",
+  "fullFailedInstallRecovery": "NOT_PROVEN",
+  "hostedRuns": 0,
+  "cjs": {
+    "schema": 1,
+    "kind": "MASTER_INSTALL_R2_CJS_REVIEW",
+    "sourceCommit": "4e7f58e8341bc69822570838a1716667fb8e654b",
+    "sourceBound": true,
+    "status": "PASS",
+    "targets": {
+      "tests": 28,
+      "pass": 28,
+      "fail": 0,
+      "skipped": 0,
+      "todo": 0,
+      "exitZero": true,
+      "stderrEmpty": true
+    },
+    "root": {
+      "schema": 1,
+      "kind": "FAST_ROOT_FRESH_GATE",
+      "sourceCommit": "4e7f58e8341bc69822570838a1716667fb8e654b",
+      "sourceBound": true,
+      "status": "PASS",
+      "tests": 134,
+      "pass": 134,
+      "fail": 0,
+      "skipped": 0,
+      "exitClass": "ZERO",
+      "failures": [],
+      "rawOutputStored": false
+    },
+    "rawOutputStored": false,
+    "productInstalled": false
+  },
+  "cjsScope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "go": {
+    "schema": 1,
+    "kind": "MASTER_INSTALL_R2_GO_REVIEW",
+    "sourceCommit": "4e7f58e8341bc69822570838a1716667fb8e654b",
+    "sourceBound": true,
+    "status": "PASS",
+    "phase": "COMPLETE",
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0,
+    "environmentRestored": true,
+    "rawOutputStored": false,
+    "productInstalled": false
+  },
+  "goScope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "powershell": {
+    "sourceBound": true,
+    "schema": 1,
+    "kind": "MASTER_INSTALL_R2_PS_REVIEW",
+    "environmentRestored": true,
+    "phase": "COMPLETE",
+    "status": "PASS",
+    "rawOutputStored": false,
+    "productInstalled": false,
+    "sourceCommit": "4e7f58e8341bc69822570838a1716667fb8e654b",
+    "syntaxErrors": 0,
+    "tests": [
+      {
+        "skipped": 0,
+        "pass": 22,
+        "id": "RECOVERY",
+        "fail": 0,
+        "verified": true
+      },
+      {
+        "skipped": 0,
+        "pass": 7,
+        "id": "ACTUAL_FINALLY",
+        "fail": 0,
+        "verified": true
+      }
+    ]
+  },
+  "psScope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "build": {
+    "schema": 1,
+    "kind": "MASTER_INSTALL_R2_BUILD_REVIEW",
+    "status": "PASS",
+    "sourceCommit": "4e7f58e8341bc69822570838a1716667fb8e654b",
+    "sourceTree": "e85f572f2414222deb67dd15d4bb14a32df7cd14",
+    "setupSha256": "1b4e7723d3f1b6d466bc78cdaed25d63a8eed9c87782efe64dcea41af7ac9111",
+    "setupBytes": 33554844,
+    "files": 1049,
+    "uncompressedBytes": 147923786,
+    "dependencyCount": 20,
+    "nodeVersion": "24.21.0",
+    "goVersion": "1.27.1",
+    "innoSetupVersion": "6.7.3",
+    "allPayloadBytesVerified": true,
+    "manifestMatches": true,
+    "productionInstalled": false,
+    "productExecuted": false,
+    "rawOutputStored": false
+  },
+  "rawOutputStored": false
+}
