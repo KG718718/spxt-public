@@ -24,6 +24,7 @@
 - Master独立：CJS28/28、root134/134、Windows Recovery5顶层、PS22/22、实际finally7/7，fail0skip0、来源绑定及环境/Job恢复通过。
 - 真实owned Inno/COM14/14；完整P0的Helper13+Fresh2、Launcher28+Fresh2、Node44通过。Master另逐字节核验payload/manifest/EXE及source/tree一致。
 - 测试仅使用新owned输出、合成实例/链接和只读系统观察；未执行产品安装或产品EXE。
+- 首个安装失败与收尾失败分开保留，不会被后续匹配成功覆盖；缺失、占位、非法、矛盾报告及未知所有权均不能转为通过。外来替换、部分写入、锁定删除失败均保留原资源，未以强制终止伪造自然退出。
 
 【未完成 / 未验证】
 - 实际Fresh Setup、安装后业务、完整26/742、QA、物理Win10双设备、实际登录自启未验证。没有可交付beta.4包。
