@@ -27,5 +27,5 @@ function inspect(root,sourceCommit,expectedSha){
  for(const l of license.runtime){assert.ok(Object.keys(l).every(k=>['name','version','license','files'].includes(k)));assert.equal(typeof l.name,'string');assert.match(l.name,/^[a-zA-Z0-9@/._ -]{1,100}$/);if(l.version)assert.match(l.version,/^[0-9.]+$/);assert.ok(Array.isArray(l.files));for(const f of l.files){exact(f,['path','sha256']);safePath(f.path);assert.match(f.sha256,/^[a-f0-9]{64}$/);}}
  return {setupSha256};
 }
-function verify(root,expected){const r=validate(JSON.parse(fs.readFileSync(path.join(root,'fresh-report.json'))),expected);assert.equal(r.status,'FRESH_TRIAL_AUTOMATION_PASS_HUMAN_PENDING');const identity=inspect(root,expected.sourceCommit,expected.mode==='QA'?expected.candidate.setupSha256:undefined);assert.equal(identity.setupSha256,r.setupSha256);return identity;}
+function verify(root,expected){assert.ok(expected.reportSchema===undefined||expected.reportSchema===2);const r=validate(JSON.parse(fs.readFileSync(path.join(root,'fresh-report.json'))),{...expected,reportSchema:2});assert.equal(r.status,'FRESH_TRIAL_AUTOMATION_PASS_HUMAN_PENDING');const identity=inspect(root,expected.sourceCommit,expected.mode==='QA'?expected.candidate.setupSha256:undefined);assert.equal(identity.setupSha256,r.setupSha256);return identity;}
 module.exports={NAME,FILES,INFO,inspect,verify};

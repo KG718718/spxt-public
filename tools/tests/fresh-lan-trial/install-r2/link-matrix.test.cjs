@@ -1,0 +1,5 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),matrix=require('./link-matrix.cjs');
+const observed=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/link-matrix-observed.json')));
+test('actual Inno matrix receipt independently validates all fourteen cases',()=>{matrix.validate(observed);assert.equal(observed.allPassed,true);assert.equal(observed.cases.length,14);});
+test('claimed pass cannot replace missing, wrong or another case reason',()=>{for(const name of matrix.NAMES){for(const alter of [x=>x.lastStage='',x=>x.lastContext='',x=>x.lastStage='INI_WRITE_FAILED',x=>x.matched=!x.matched,x=>x.removed=!x.removed,x=>x.preserved=!x.preserved,x=>x.nativeMove='UNKNOWN']){const r=structuredClone(observed),c=r.cases.find(c=>c.case===name);alter(c);c.pass=true;c.reasonProven=true;r.allPassed=true;assert.throws(()=>matrix.validate(r));}}});

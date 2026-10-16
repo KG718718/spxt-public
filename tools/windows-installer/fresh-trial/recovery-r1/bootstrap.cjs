@@ -19,7 +19,7 @@ async function main(){
  }
  const requestGate=input.schema===2?fast.request:contract.request;
  const context=requestGate({repository:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF,event:process.env.GITHUB_EVENT_NAME,attempt:process.env.GITHUB_RUN_ATTEMPT,sha:control,parent:parents[1],title:git('log','-1','--format=%B'),changedFiles:git('diff','--name-only',parents[1],control).split('\n'),runId:process.env.GITHUB_RUN_ID},input,history,proof,facts);
- context.run={id:process.env.GITHUB_RUN_ID,attempt:1};context.r1.codeFingerprint=contract.codeFingerprint(git('ls-tree','-r',context.sourceCommit));context.candidate=input.mode==='QA'?{runId:input.candidateRunId,artifactId:input.candidateArtifactId,sourceCommit:input.testedSource,setupSha256:input.candidateSetupSha256}:{runId:null,artifactId:null,sourceCommit:null,setupSha256:null};
+ context.reportSchema=2;context.run={id:process.env.GITHUB_RUN_ID,attempt:1};context.r1.codeFingerprint=contract.codeFingerprint(git('ls-tree','-r',context.sourceCommit));context.candidate=input.mode==='QA'?{runId:input.candidateRunId,artifactId:input.candidateArtifactId,sourceCommit:input.testedSource,setupSha256:input.candidateSetupSha256}:{runId:null,artifactId:null,sourceCommit:null,setupSha256:null};
  const ancestor=(old,newer)=>{assert.match(old,/^[a-f0-9]{40}$/);git('merge-base','--is-ancestor',old,newer);};
  async function readArtifact(runId,artifactId,kind,sourceCommit){
   const [metadata,run]=await Promise.all([api('actions/artifacts/'+artifactId),api('actions/runs/'+runId)]);contract.artifact(metadata,run,{runId,artifactId,sourceCommit,kind,conclusion:kind==='FAILURE'?'failure':'success'});assert.ok(metadata.size_in_bytes>0&&metadata.size_in_bytes<(kind==='TRIAL'?512*1024*1024:512*1024));
@@ -37,10 +37,10 @@ async function main(){
  }
  if(input.mode==='QA'){
   const evidence=await readArtifact(input.candidateRunId,input.candidateArtifactId,'TRIAL',context.sourceCommit);
-  contract.candidateEvidence(evidence.report,{sourceCommit:context.sourceCommit,controlCommit:evidence.run.head_sha,run:{id:input.candidateRunId,attempt:1}},input.candidateSetupSha256);fs.renameSync(evidence.zip,path.join(work,'candidate.zip'));
+  trial.validate(evidence.report,{reportSchema:2,sourceCommit:context.sourceCommit,controlCommit:evidence.run.head_sha,run:{id:input.candidateRunId,attempt:1},mode:'CANDIDATE'});contract.candidateEvidence(evidence.report,{sourceCommit:context.sourceCommit,controlCommit:evidence.run.head_sha,run:{id:input.candidateRunId,attempt:1}},input.candidateSetupSha256);fs.renameSync(evidence.zip,path.join(work,'candidate.zip'));
   fs.writeFileSync(path.join(work,'candidate-metadata.json'),JSON.stringify(candidateMetadata(evidence,context,input))+'\n',{flag:'wx'});
  }
- fs.writeFileSync(path.join(work,'context.json'),JSON.stringify(context)+'\n',{flag:'wx'});fs.writeFileSync(path.join(work,'fresh-report.json'),JSON.stringify(trial.initial(context.sourceCommit,context.mode,context.candidate,context.controlCommit,context.run))+'\n',{flag:'wx'});
+ fs.writeFileSync(path.join(work,'context.json'),JSON.stringify(context)+'\n',{flag:'wx'});fs.writeFileSync(path.join(work,'fresh-report.json'),JSON.stringify(trial.initial(context.sourceCommit,context.mode,context.candidate,context.controlCommit,context.run,2))+'\n',{flag:'wx'});
  git('-c','core.autocrlf=false','checkout','--detach',context.sourceCommit);assert.equal(git('rev-parse','HEAD'),context.sourceCommit);assert.equal(git('status','--porcelain','--untracked-files=no'),'');
  fs.appendFileSync(process.env.GITHUB_OUTPUT,'mode='+input.mode+'\nsource='+context.sourceCommit+'\n');
 }

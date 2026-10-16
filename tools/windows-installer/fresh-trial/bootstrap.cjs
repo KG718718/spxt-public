@@ -17,8 +17,8 @@ async function main(){
  const prior=[];for(let page=1;page<=100;page++){const result=await api('actions/workflows/'+currentRun.workflow_id+'/runs?per_page=100&page='+page);assert.ok(Array.isArray(result.workflow_runs));prior.push(...result.workflow_runs);if(result.workflow_runs.length<100)break;if(page===100)throw Error('budget history incomplete');}
  const context=request({repository:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF,event:process.env.GITHUB_EVENT_NAME,attempt:process.env.GITHUB_RUN_ATTEMPT,sha:control,parent:parentLine[1],title:git('log','-1','--format=%B'),changedFiles:git('diff','--name-only',parentLine[1],control).split('\n'),runId:process.env.GITHUB_RUN_ID},input,prior);
  const run={id:process.env.GITHUB_RUN_ID,attempt:1},candidate=input.mode==='QA'?{runId:input.candidateRunId,artifactId:input.candidateArtifactId,sourceCommit:input.testedSource,setupSha256:input.candidateSetupSha256}:{runId:null,artifactId:null,sourceCommit:null,setupSha256:null};
- fs.writeFileSync(path.join(work,'context.json'),JSON.stringify({...context,run,candidate})+'\n',{flag:'wx'});
- const report=initial(context.sourceCommit,context.mode,candidate,context.controlCommit,run);report.stage='SOURCE';report.reason='SOURCE_REJECTED';fs.writeFileSync(path.join(work,'fresh-report.json'),JSON.stringify(report)+'\n');
+ fs.writeFileSync(path.join(work,'context.json'),JSON.stringify({...context,run,candidate,reportSchema:2})+'\n',{flag:'wx'});
+ const report=initial(context.sourceCommit,context.mode,candidate,context.controlCommit,run,2);report.stage='SOURCE';report.reason='SOURCE_REJECTED';fs.writeFileSync(path.join(work,'fresh-report.json'),JSON.stringify(report)+'\n');
  if(input.mode==='QA'){
   const metadata=await api('actions/artifacts/'+input.candidateArtifactId),candidateRun=await api('actions/runs/'+input.candidateRunId);
   candidateArtifact(metadata,candidateRun,input,context.sourceCommit,candidateRun.head_sha);

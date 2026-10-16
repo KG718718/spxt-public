@@ -16,12 +16,15 @@ if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted
    $taskWork -notmatch '^E:\\' -or (git -C $taskRepo rev-parse HEAD).Trim() -cne $taskContext.sourceCommit){throw 'Fresh source context rejected'}
 $taskReportPath=Join-Path $taskWork 'fresh-report.json'
 $taskReport=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
+if($taskContext.reportSchema -ne 2 -or $taskReport.schema -ne 2){throw 'Current schema2 report context required'}
+. (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/hosted-recovery.ps1')
 . (Join-Path $taskRepo 'tools/tests/lan-host/node-test-environment.ps1')
-$taskVariables=@('TEMP','TMP','GOCACHE','GOTMPDIR','GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','NODE_PATH','NODE_OPTIONS','PLAYWRIGHT_BROWSERS_PATH','KSESSION_FRESH_TESTED_SOURCE','KSESSION_FRESH_BUILD_NODE','KSESSION_FRESH_PHYSICAL_WORK')
+$taskVariables=@('TEMP','TMP','GOCACHE','GOTMPDIR','GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','NODE_PATH','NODE_OPTIONS','PLAYWRIGHT_BROWSERS_PATH','KSESSION_FRESH_TESTED_SOURCE','KSESSION_FRESH_BUILD_NODE','KSESSION_FRESH_PHYSICAL_WORK','PSModulePath')
 $taskPrevious=Save-KSessionProcessEnvironment $taskVariables
 $taskFinalStarted=$false
 $script:taskFailed=$false
 $taskToolchainStarted=$false;$taskToolchainOwned=$false;$taskToolchainRestored=$true
+$taskProductBefore=@{};$taskRegistryBefore=$null;$taskRulesBefore=$null;$taskCompilerFilesBefore=$null;$taskSettingsBefore=$null
 $taskBuildDiagnostic=Join-Path $taskWork 'build-diagnostic.json'
 function Stage([string]$Reason){
   $taskReport.stage='BUILD';$taskReport.reason=$Reason
@@ -48,7 +51,7 @@ function User-Uninstall-Snapshot {
 function Registry-Tree($Key,[int]$Depth=0){
   if($Depth -gt 16){throw 'Registry snapshot bound exceeded'}
   $taskTree=[ordered]@{values=[ordered]@{};children=[ordered]@{}}
-  foreach($taskName in @($Key.GetValueNames()|Sort-Object)){$taskTree.values[$taskName]=[ordered]@{kind=[string]$Key.GetValueKind($taskName);value=$Key.GetValue($taskName,$null,[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)}}
+  foreach($taskName in @($Key.GetValueNames()|Sort-Object)){if([string]$Key.GetValueKind($taskName) -eq 'Unknown'){throw 'Registry value type unproven'};$taskTree.values[$taskName]=[ordered]@{kind=[string]$Key.GetValueKind($taskName);value=$Key.GetValue($taskName,$null,[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)}}
   foreach($taskName in @($Key.GetSubKeyNames()|Sort-Object)){$taskChild=$Key.OpenSubKey($taskName);if($null -eq $taskChild){throw 'Registry subtree unknown'};try{$taskTree.children[$taskName]=Registry-Tree $taskChild ($Depth+1)}finally{$taskChild.Dispose()}}
   return $taskTree
 }
@@ -56,7 +59,7 @@ function Inno-Environment-Snapshot {
   $taskState=[ordered]@{}
   foreach($taskView in @([Microsoft.Win32.RegistryView]::Registry64,[Microsoft.Win32.RegistryView]::Registry32)){
     $taskHive=[Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser,$taskView)
-    try{foreach($taskPath in @('Software\Classes\.iss','Software\Classes\InnoSetupScriptFile','Software\Classes\Applications\Compil32.exe','Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.iss','Software\Microsoft\Windows\CurrentVersion\Uninstall')){
+    try{foreach($taskPath in @('Software\Classes\.iss','Software\Classes\InnoSetupScriptFile','Software\Classes\Applications\Compil32.exe','Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.iss')){
       $taskKey=$taskHive.OpenSubKey($taskPath)
       if($null -eq $taskKey){$taskState[([string]$taskView+':'+$taskPath)]=$null}else{try{$taskState[([string]$taskView+':'+$taskPath)]=Registry-Tree $taskKey}finally{$taskKey.Dispose()}}
     }}finally{$taskHive.Dispose()}
@@ -67,7 +70,7 @@ function Inno-Environment-Snapshot {
       try{
         $taskAttributes=[IO.File]::GetAttributes($taskPath)
         if(($taskAttributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'Shortcut snapshot path unknown'}
-        if(($taskAttributes -band [IO.FileAttributes]::Directory) -ne 0){$taskState[$taskPath]=@(Get-ChildItem -LiteralPath $taskPath -Recurse -File -ErrorAction Stop|Sort-Object FullName|ForEach-Object{[ordered]@{path=$_.FullName;hash=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}})}else{$taskState[$taskPath]=(Get-FileHash -LiteralPath $taskPath -Algorithm SHA256).Hash}
+        if(($taskAttributes -band [IO.FileAttributes]::Directory) -ne 0){$taskState[$taskPath]=@(Get-ChildItem -LiteralPath $taskPath -Recurse -File -ErrorAction Stop|Sort-Object FullName|ForEach-Object{if(($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'Compiler shortcut tree unknown'};[ordered]@{path=$_.FullName;hash=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}})}else{$taskState[$taskPath]=(Get-FileHash -LiteralPath $taskPath -Algorithm SHA256).Hash}
       }catch [IO.FileNotFoundException]{$taskState[$taskPath]=$null}catch [IO.DirectoryNotFoundException]{$taskState[$taskPath]=$null}
     }
   }
@@ -76,8 +79,19 @@ function Inno-Environment-Snapshot {
 function Checked([string]$Exe,[string[]]$Arguments){$taskChecked=Invoke-KSessionMemoryProcess $Exe $Arguments;if($taskChecked.ExitCode -ne 0){throw 'Fresh checked command failed'}}
 function Pinned([string]$Uri,[string]$Hash,[string]$Zip,[string]$Output){Invoke-WebRequest -Uri $Uri -OutFile $Zip -TimeoutSec 240;if((Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash.ToLowerInvariant() -cne $Hash){throw 'Pinned tool identity rejected'};Expand-Archive -LiteralPath $Zip -DestinationPath $Output}
 try {
+  $taskEnter=Invoke-KSessionMemoryNode (Get-Command node).Source @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/final-ci-report.cjs'),'ENV',$taskWork)
+  if($taskEnter.ExitCode -ne 0 -or $taskEnter.TimedOut -or $taskEnter.ForcedTermination -or $taskEnter.Stderr.Length -ne 0){throw 'Fresh ENV report entry unproven'}
+  $taskReport=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
   $env:NODE_OPTIONS='';$env:GOWORK='off';$env:KSESSION_FRESH_TESTED_SOURCE=$taskContext.sourceCommit
   $env:KSESSION_FRESH_PHYSICAL_WORK=Resolve-KSessionFirewallPhysicalPath $taskWork
+  $env:PSModulePath=Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/Modules'
+  $taskProductBefore=Get-FreshProductObservations $env:KSESSION_FRESH_PHYSICAL_WORK
+  $taskRegistryBefore=Get-FreshRegistryObservation @('Software\Microsoft\Windows\CurrentVersion\Uninstall','Software\KSESSION\Beta\InstallerBinding')
+  $taskRulesBefore=Get-FreshRulesObservation
+  $taskCompilerFilesBefore=Get-FreshPathObservation (Join-Path $taskWork 'inno/compiler')
+  $taskInnoBefore=Inno-Environment-Snapshot
+  $taskSettingsBefore=New-FreshObservation $true $false ($taskInnoBefore|ConvertTo-Json -Depth 60 -Compress)
+  if(!$taskRegistryBefore.known -or !$taskRulesBefore.known -or !$taskCompilerFilesBefore.known -or !$taskCompilerFilesBefore.absent -or @($taskProductBefore.Values|Where-Object{!$_.known}).Count){throw 'Fresh recovery prestate unproven'}
   if($taskContext.mode -eq 'CANDIDATE'){
     Stage 'BUILD_PORTABLE_FAILED'
     $taskPortable=Join-Path $taskWork 'portable'
@@ -87,7 +101,6 @@ try {
     $taskGo=Join-Path $taskPortable 'go-tool/go/bin/go.exe'
     Stage 'BUILD_TOOLCHAIN_FAILED'
     $taskUserBefore=User-Uninstall-Snapshot
-    $taskInnoBefore=Inno-Environment-Snapshot
     $taskToolchainStarted=$true;$taskToolchainRestored=$false
     & (Join-Path $PSScriptRoot 'toolchain.ps1') -Work (Join-Path $taskWork 'inno')
     if($LASTEXITCODE -ne 0){throw 'Fresh compiler toolchain failed'}
@@ -140,22 +153,30 @@ try {
   if(!$taskFinalStarted){$taskReport.status='FAIL';[IO.File]::WriteAllText($taskReportPath,($taskReport|ConvertTo-Json -Depth 12 -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
   $script:taskFailed=$true
 }finally{
+  $taskRecovery=@{};foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules')){$taskRecovery[$taskKey]='NOT_OBSERVED'}
+  try {
   if($taskToolchainStarted){
     try{
       if(!$taskToolchainOwned){throw 'Compiler cleanup unproven'}
-      if(((Inno-Environment-Snapshot)|ConvertTo-Json -Depth 60 -Compress) -cne ($taskInnoBefore|ConvertTo-Json -Depth 60 -Compress)){throw 'Compiler environment changed; cannot claim restoration'}
       Checked $taskNode @((Join-Path $PSScriptRoot 'owned-tool-files.cjs'),'remove',$taskWork)
       $taskToolchainRestored=$true
     }catch{$taskToolchainRestored=$false;$script:taskFailed=$true}
   }
-  Restore-KSessionProcessEnvironment $taskPrevious
-  $taskFinal=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
-  $taskFinal.cleanup.environmentRestored=(Test-KSessionProcessEnvironmentRestored $taskPrevious)
-  $taskFinal.cleanup.ownedToolchainAbsent=$taskToolchainRestored
-  if(Test-Path -LiteralPath $taskBuildDiagnostic){$taskFinal.buildDiagnostic=Get-Content -Raw -LiteralPath $taskBuildDiagnostic|ConvertFrom-Json}
-  if(!$taskFinalStarted){$taskFinal.cleanup.ownedLauncherExited=$true;$taskFinal.cleanup.ownedNodeExited=$true;$taskFinal.cleanup.handlesClosed=$true;$taskFinal.cleanup.lockReleased=$true;$taskFinal.cleanup.ownedRulesAbsent=$true;$taskFinal.cleanup.ownedRegistrationAbsent=$true;$taskFinal.cleanup.ownedShortcutsAbsent=$true}
-  if(!$taskFinal.cleanup.environmentRestored -or !$taskToolchainRestored){$taskFinal.status='FAIL';$taskFinal.reason='CLEANUP_UNPROVEN';if($taskFinal.stage -eq 'COMPLETE'){$taskFinal.stage='F09'};$script:taskFailed=$true}
-  [IO.File]::WriteAllText($taskReportPath,($taskFinal|ConvertTo-Json -Depth 12 -Compress)+"`n",[Text.UTF8Encoding]::new($false))
-  if($taskFinal.status -eq 'FRESH_TRIAL_AUTOMATION_PASS_HUMAN_PENDING'){Copy-Item -LiteralPath $taskReportPath -Destination (Join-Path $taskWork 'artifact/fresh-report.json')}
+  try{$taskProductAfter=Get-FreshProductObservations $env:KSESSION_FRESH_PHYSICAL_WORK}catch{$taskProductAfter=@{}}
+  if($null -eq $taskProductBefore){$taskProductBefore=@{}};if($null -eq $taskProductAfter){$taskProductAfter=@{}}
+  foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles')){$taskRecovery[$taskKey]=Get-FreshRecoveryState $taskProductBefore[$taskKey] $taskProductAfter[$taskKey]}
+  $taskCompilerFilesAfter=Invoke-FreshObservation {Get-FreshPathObservation (Join-Path $taskWork 'inno/compiler')}
+  $taskRecovery.compilerOwnedFiles=Get-FreshRecoveryState $taskCompilerFilesBefore $taskCompilerFilesAfter ($taskToolchainStarted -and $taskToolchainRestored)
+  try{$taskSettingsAfter=New-FreshObservation $true $false ((Inno-Environment-Snapshot)|ConvertTo-Json -Depth 60 -Compress)}catch{$taskSettingsAfter=New-FreshObservation $false $false}
+  $taskRecovery.compilerSettings=Get-FreshRecoveryState $taskSettingsBefore $taskSettingsAfter
+  $taskRecovery.globalRegistry=Get-FreshRecoveryState $taskRegistryBefore (Invoke-FreshObservation {Get-FreshRegistryObservation @('Software\Microsoft\Windows\CurrentVersion\Uninstall','Software\KSESSION\Beta\InstallerBinding')})
+  $taskRecovery.rules=Get-FreshRecoveryState $taskRulesBefore (Invoke-FreshObservation {Get-FreshRulesObservation})
+  }catch{$script:taskFailed=$true}finally{
+  $taskEnvironmentRestored=$false;try{Restore-KSessionProcessEnvironment $taskPrevious;$taskEnvironmentRestored=Test-KSessionProcessEnvironmentRestored $taskPrevious}catch{$script:taskFailed=$true}
+  $taskEvidence=[ordered]@{recovery=$taskRecovery;environmentRestored=$taskEnvironmentRestored;productPhaseStarted=$taskFinalStarted}
+  $taskFinalNode=(Get-Command node).Source
+  $taskFinalWrite=Invoke-KSessionMemoryNode $taskFinalNode @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/final-ci-report.cjs'),$taskWork) ($taskEvidence|ConvertTo-Json -Depth 8 -Compress)
+  if($taskFinalWrite.ExitCode -ne 0 -or $taskFinalWrite.TimedOut -or $taskFinalWrite.ForcedTermination -or $taskFinalWrite.Stderr.Length -ne 0){$script:taskFailed=$true}
+  }
 }
 if($script:taskFailed){exit 1}

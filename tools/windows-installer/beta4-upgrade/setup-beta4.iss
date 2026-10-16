@@ -110,6 +110,9 @@ const
 var
 #ifdef FreshTrial
   FreshStartupHash: String;
+  FreshStartupContext, FreshStartupLastContext, FreshStartupLastStage: String;
+  FreshStartupFirstFailureContext, FreshStartupFirstFailureStage, FreshStartupCleanupFailureStage: String;
+  FreshStartupCleanupVerified: Boolean;
   FreshStartupCreated, FreshInstallCompleted: Boolean;
 #endif
   InstanceLock, LauncherLock, NodeLock: LongWord;
@@ -417,39 +420,68 @@ begin
   Result := (E = 2) or (E = 3);
 end;
 
+procedure FreshStartupStage(Stage: String);
+begin
+  if FreshStartupContext = '' then FreshStartupContext := 'UNINSTALL_VERIFY';
+  FreshStartupLastContext := FreshStartupContext; FreshStartupLastStage := Stage;
+  if (Pos('MISMATCH', Stage) > 0) or (Pos('MISSING', Stage) > 0) or (Pos('UNSAFE', Stage) > 0) or
+     (Pos('REJECTED', Stage) > 0) or (Pos('FAILED', Stage) > 0) or (Pos('EXCEPTION', Stage) > 0) or
+     (Stage = 'CLEANUP_IDENTITY_UNKNOWN') then begin
+    if FreshStartupFirstFailureStage = '' then begin FreshStartupFirstFailureContext := FreshStartupContext; FreshStartupFirstFailureStage := Stage; end;
+    if FreshStartupContext = 'CLEANUP_VERIFY' then FreshStartupCleanupFailureStage := Stage;
+  end;
+  Log('KSESSION_FRESH_STARTUP_EVENT_' + FreshStartupContext + '_' + Stage);
+end;
+
 function FreshStartupMatches(ExpectedHash: String): Boolean;
-var Shell, Link: Variant; P: String; A: LongWord;
+var Shell, Link: Variant; P: String; A: LongWord; ExactArguments: Boolean;
 begin
   Result := False;
   try
+    if (FreshStartupContext <> 'INSTALL_VERIFY') and (FreshStartupContext <> 'CLEANUP_VERIFY') then FreshStartupContext := 'UNINSTALL_VERIFY';
     P := FreshStartupPath;
-    if not FreshSafeDirectoryChain(ExtractFileDir(P)) then exit;
-    A := GetFileAttributesW(P);
-    if (A = $FFFFFFFF) or ((A and $400) <> 0) or ((A and $10) <> 0) then exit;
-    if (ExpectedHash = '') or (GetSHA256OfFile(P) <> ExpectedHash) then exit;
-    Shell := CreateOleObject('WScript.Shell'); Link := Shell.CreateShortcut(P);
-    Result := (CompareText(Link.TargetPath, ExpandConstant('{app}\program\K-SESSION.exe')) = 0) and
-      (Link.Arguments = '--logon --instance "' + BetaInstance + '"') and
-      (CompareText(Link.WorkingDirectory, ExpandConstant('{app}\program')) = 0);
-  except Result := False; end;
+    FreshStartupStage('VERIFY_DIRECTORY');
+    if not FreshSafeDirectoryChain(ExtractFileDir(P)) then begin FreshStartupStage('DIRECTORY_UNSAFE'); exit; end;
+    FreshStartupStage('VERIFY_ATTRIBUTES'); A := GetFileAttributesW(P);
+    if (A = $FFFFFFFF) or ((A and $400) <> 0) or ((A and $10) <> 0) then begin FreshStartupStage('ATTRIBUTES_REJECTED'); exit; end;
+    FreshStartupStage('VERIFY_EXPECTED_HASH');
+    if ExpectedHash = '' then begin FreshStartupStage('EXPECTED_HASH_MISSING'); exit; end;
+    FreshStartupStage('VERIFY_HASH');
+    if GetSHA256OfFile(P) <> ExpectedHash then begin FreshStartupStage('HASH_MISMATCH'); exit; end;
+    FreshStartupStage('COM_INITIALIZE'); Shell := CreateOleObject('WScript.Shell');
+    FreshStartupStage('COM_OPEN_LINK'); Link := Shell.CreateShortcut(P);
+    FreshStartupStage('TARGET_READ');
+    if CompareText(Link.TargetPath, ExpandConstant('{app}\program\K-SESSION.exe')) <> 0 then begin FreshStartupStage('TARGET_MISMATCH'); exit; end;
+    FreshStartupStage('TARGET_MATCH'); FreshStartupStage('ARGUMENTS_READ');
+    ExactArguments := (Link.Arguments = '--logon --instance "' + BetaInstance + '"');
+    if not ExactArguments then begin FreshStartupStage('ARGUMENTS_MISMATCH'); exit; end;
+    FreshStartupStage('ARGUMENTS_MATCH'); FreshStartupStage('WORKDIR_READ');
+    if CompareText(Link.WorkingDirectory, ExpandConstant('{app}\program')) <> 0 then begin FreshStartupStage('WORKDIR_MISMATCH'); exit; end;
+    FreshStartupStage('WORKDIR_MATCH'); Result := True; FreshStartupStage('MATCHED');
+  except FreshStartupStage('VERIFY_EXCEPTION'); Result := False; end;
 end;
 
 procedure CreateFreshStartup;
 var Tmp, Made: String;
 begin
-  if not FreshStartupAbsent then RaiseException('登录启动项冲突或目录不安全，拒绝覆盖。');
+  FreshStartupContext := 'CREATE'; FreshStartupStage('CREATE_ENTER');
+  if not FreshStartupAbsent then begin FreshStartupStage('CREATE_PRECONDITION_REJECTED'); RaiseException('登录启动项冲突或目录不安全，拒绝覆盖。'); end;
   Tmp := ExpandConstant('{tmp}\ksession-fresh-startup.lnk');
+  FreshStartupStage('CREATE_LINK');
   Made := CreateShellLink(Tmp, 'K-SESSION Fresh Trial', ExpandConstant('{app}\program\K-SESSION.exe'),
     '--logon --instance "' + BetaInstance + '"', ExpandConstant('{app}\program'), '', 0, SW_SHOWNORMAL);
-  if CompareText(Made, Tmp) <> 0 then RaiseException('登录启动项格式无效。');
-  FreshStartupHash := GetSHA256OfFile(Tmp);
-  if (FreshStartupHash = '') or not FreshStartupAbsent or not MoveFileW(Tmp, FreshStartupPath) then
-    RaiseException('无法安全创建登录启动项；不会覆盖已有项。');
-  FreshStartupCreated := True;
+  FreshStartupStage('LINK_CREATED');
+  if CompareText(Made, Tmp) <> 0 then begin FreshStartupStage('RETURN_NAME_MISMATCH'); RaiseException('登录启动项格式无效。'); end;
+  FreshStartupStage('CREATE_HASH'); FreshStartupHash := GetSHA256OfFile(Tmp);
+  if FreshStartupHash = '' then begin FreshStartupStage('CREATE_HASH_MISSING'); RaiseException('无法安全创建登录启动项；不会覆盖已有项。'); end;
+  FreshStartupStage('CREATE_MOVE');
+  if not FreshStartupAbsent or not MoveFileW(Tmp, FreshStartupPath) then begin FreshStartupStage('MOVE_REJECTED'); RaiseException('无法安全创建登录启动项；不会覆盖已有项。'); end;
+  FreshStartupCreated := True; FreshStartupStage('LINK_MOVED');
+  FreshStartupContext := 'INSTALL_VERIFY';
   if not FreshStartupMatches(FreshStartupHash) then RaiseException('登录启动项身份验证失败。');
-  if not SetIniString('Startup', 'Sha256', FreshStartupHash, ExpandConstant('{app}\uninstall\fresh-startup.ini')) then
-    RaiseException('无法保存登录启动项身份。');
-  Log('KSESSION_FRESH_STARTUP_VERIFIED');
+  FreshStartupContext := 'CREATE'; FreshStartupStage('INI_WRITE');
+  if not SetIniString('Startup', 'Sha256', FreshStartupHash, ExpandConstant('{app}\uninstall\fresh-startup.ini')) then begin FreshStartupStage('INI_WRITE_FAILED'); RaiseException('无法保存登录启动项身份。'); end;
+  FreshStartupStage('INI_WRITTEN'); Log('KSESSION_FRESH_STARTUP_VERIFIED');
 end;
 #endif
 function RunningProduct: Boolean;
@@ -1083,9 +1115,14 @@ procedure DeinitializeSetup;
 begin
 #ifdef FreshTrial
   if FreshStartupCreated and not FreshInstallCompleted then begin
+    FreshStartupCleanupVerified := False; FreshStartupCleanupFailureStage := '';
+    FreshStartupContext := 'CLEANUP'; FreshStartupStage('CLEANUP_ENTER');
+    FreshStartupContext := 'CLEANUP_VERIFY';
     if FreshStartupMatches(FreshStartupHash) then begin
-      if not DeleteFile(FreshStartupPath) then Log('KSESSION_FRESH_STARTUP_CLEANUP_UNPROVEN');
-    end else Log('KSESSION_FRESH_STARTUP_CLEANUP_UNKNOWN');
+      FreshStartupCleanupVerified := True; FreshStartupContext := 'CLEANUP';
+      if not DeleteFile(FreshStartupPath) then begin FreshStartupStage('CLEANUP_DELETE_FAILED'); Log('KSESSION_FRESH_STARTUP_CLEANUP_UNPROVEN'); end
+      else FreshStartupStage('CLEANUP_REMOVED');
+    end else begin FreshStartupContext := 'CLEANUP'; FreshStartupStage('CLEANUP_IDENTITY_UNKNOWN'); Log('KSESSION_FRESH_STARTUP_CLEANUP_UNKNOWN'); end;
   end;
 #endif
   if UpgradeMode and TransactionPrepared and not TransactionFinalized then begin

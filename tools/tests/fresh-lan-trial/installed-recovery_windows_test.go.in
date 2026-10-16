@@ -1,0 +1,648 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+)
+
+type freshRecoverySnapshot struct {
+	Known, Absent bool
+	Identity      string
+}
+
+func freshObservePath(p string) freshRecoverySnapshot {
+	if p == "" || !filepath.IsAbs(p) || !noReparse(p) {
+		return freshRecoverySnapshot{}
+	}
+	info, e := os.Lstat(p)
+	if os.IsNotExist(e) {
+		return freshRecoverySnapshot{Known: true, Absent: true}
+	}
+	if e != nil || info.Mode()&os.ModeSymlink != 0 {
+		return freshRecoverySnapshot{}
+	}
+	if info.IsDir() {
+		return freshRecoverySnapshot{Known: true}
+	}
+	hash, e := hashFile(p)
+	if e != nil || !info.Mode().IsRegular() {
+		return freshRecoverySnapshot{}
+	}
+	return freshRecoverySnapshot{Known: true, Identity: hash}
+}
+func freshRecoveryStatus(before, after freshRecoverySnapshot, ownedAction bool) string {
+	if !before.Known || !after.Known {
+		return "OBSERVATION_FAILED"
+	}
+	if before.Absent && after.Absent {
+		if ownedAction {
+			return "OWNED_REMOVED"
+		}
+		return "ABSENT_UNCHANGED"
+	}
+	if !before.Absent && !after.Absent && before.Identity != "" && before.Identity == after.Identity && !ownedAction {
+		return "SNAPSHOT_UNCHANGED"
+	}
+	if before.Absent && !after.Absent {
+		return "OWNERSHIP_UNKNOWN"
+	}
+	if !before.Absent && !after.Absent && (before.Identity == "" || after.Identity == "") {
+		return "OBSERVATION_FAILED"
+	}
+	return "EXTERNAL_CHANGED"
+}
+func freshRecoveryRestored(state string) bool {
+	return state == "ABSENT_UNCHANGED" || state == "SNAPSHOT_UNCHANGED" || state == "OWNED_REMOVED"
+}
+func freshObserveRegistration(ps, key string) freshRecoverySnapshot {
+	keyJSON, _ := json.Marshal(key)
+	script := fmt.Sprintf(`$ErrorActionPreference='Stop';$ProgressPreference='SilentlyContinue';function Tree($k,$depth=0){if($depth -gt 16){throw 'Bound'};$v=[ordered]@{values=[ordered]@{};children=[ordered]@{}};foreach($n in @($k.GetValueNames()|Sort-Object)){$v.values[$n]=@([string]$k.GetValueKind($n),$k.GetValue($n,$null,[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames))};foreach($n in @($k.GetSubKeyNames()|Sort-Object)){$c=$k.OpenSubKey($n);if(!$c){throw 'Unknown'};try{$v.children[$n]=Tree $c ($depth+1)}finally{$c.Dispose()}};return $v};$rows=@();foreach($h in @([Microsoft.Win32.RegistryHive]::CurrentUser,[Microsoft.Win32.RegistryHive]::LocalMachine)){foreach($view in @([Microsoft.Win32.RegistryView]::Registry64,[Microsoft.Win32.RegistryView]::Registry32)){$r=[Microsoft.Win32.RegistryKey]::OpenBaseKey($h,$view);try{$k=$r.OpenSubKey((ConvertFrom-Json '%s'));if($null -eq $k){$rows+=@{id=([string]$h+':'+[string]$view);present=$false;tree=$null}}else{try{$rows+=@{id=([string]$h+':'+[string]$view);present=$true;tree=(Tree $k)}}finally{$k.Dispose()}}}finally{$r.Dispose()}}};[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);$rows|ConvertTo-Json -Depth 60 -Compress`, strings.ReplaceAll(string(keyJSON), "'", "''"))
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	root := os.Getenv("SystemRoot")
+	cmd.Env = []string{"SystemRoot=" + root, "WINDIR=" + root, "PATH=" + filepath.Join(root, "System32"), "PSModulePath=" + filepath.Join(root, "System32", "WindowsPowerShell", "v1.0", "Modules"), "TEMP=" + os.Getenv("TEMP"), "TMP=" + os.Getenv("TMP")}
+	return freshCaptureRegistration(cmd, func() bool { return ctx.Err() == nil })
+}
+
+func freshNoDuplicateJSON(d *json.Decoder, depth int) bool {
+	if depth > 64 {
+		return false
+	}
+	token, e := d.Token()
+	if e != nil {
+		return false
+	}
+	delimiter, container := token.(json.Delim)
+	if !container {
+		return true
+	}
+	if delimiter != '{' && delimiter != '[' {
+		return false
+	}
+	keys := map[string]bool{}
+	for d.More() {
+		if delimiter == '{' {
+			key, e := d.Token()
+			if e != nil {
+				return false
+			}
+			name, ok := key.(string)
+			if !ok || keys[name] {
+				return false
+			}
+			keys[name] = true
+		}
+		if !freshNoDuplicateJSON(d, depth+1) {
+			return false
+		}
+	}
+	last, e := d.Token()
+	if e != nil {
+		return false
+	}
+	if delimiter == '{' {
+		return last == json.Delim('}')
+	}
+	return last == json.Delim(']')
+}
+func freshParseRegistration(raw []byte, exited, stderrEmpty bool) freshRecoverySnapshot {
+	if !exited || !stderrEmpty {
+		return freshRecoverySnapshot{}
+	}
+	check := json.NewDecoder(bytes.NewReader(raw))
+	if !freshNoDuplicateJSON(check, 0) {
+		return freshRecoverySnapshot{}
+	}
+	if _, e := check.Token(); e != io.EOF {
+		return freshRecoverySnapshot{}
+	}
+	var rawRows []map[string]json.RawMessage
+	if json.Unmarshal(raw, &rawRows) != nil || len(rawRows) != 4 {
+		return freshRecoverySnapshot{}
+	}
+	for _, row := range rawRows {
+		if len(row) != 3 || row["id"] == nil || row["present"] == nil || row["tree"] == nil {
+			return freshRecoverySnapshot{}
+		}
+	}
+	var rows []struct {
+		ID      string          `json:"id"`
+		Present *bool           `json:"present"`
+		Tree    json.RawMessage `json:"tree"`
+	}
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	if decoder.Decode(&rows) != nil || len(rows) != 4 {
+		return freshRecoverySnapshot{}
+	}
+	expected := map[string]bool{"CurrentUser:Registry64": true, "CurrentUser:Registry32": true, "LocalMachine:Registry64": true, "LocalMachine:Registry32": true}
+	canonical := map[string]any{}
+	absent := true
+	for _, row := range rows {
+		if !expected[row.ID] || row.Present == nil || len(row.Tree) == 0 {
+			return freshRecoverySnapshot{}
+		}
+		delete(expected, row.ID)
+		if !*row.Present {
+			if !bytes.Equal(bytes.TrimSpace(row.Tree), []byte("null")) {
+				return freshRecoverySnapshot{}
+			}
+			canonical[row.ID] = nil
+		} else {
+			var tree map[string]any
+			rd := json.NewDecoder(bytes.NewReader(row.Tree))
+			rd.UseNumber()
+			if rd.Decode(&tree) != nil || !freshRegistryTreeKnown(tree, 0) {
+				return freshRecoverySnapshot{}
+			}
+			if _, ok := tree["values"].(map[string]any); !ok {
+				return freshRecoverySnapshot{}
+			}
+			if _, ok := tree["children"].(map[string]any); !ok {
+				return freshRecoverySnapshot{}
+			}
+			canonical[row.ID] = tree
+		}
+		absent = absent && !*row.Present
+	}
+	if len(expected) != 0 {
+		return freshRecoverySnapshot{}
+	}
+	normalized, e := json.Marshal(canonical)
+	if e != nil {
+		return freshRecoverySnapshot{}
+	}
+	return freshRecoverySnapshot{Known: true, Absent: absent, Identity: digest(normalized)}
+}
+
+// The expected bytes and absence proof are captured BEFORE the O_EXCL producer
+// writes. No post-install sampling can manufacture one of these receipts.
+type freshOwnedFixtureReceipt struct {
+	path     string
+	payload  []byte
+	expected string
+	before   freshRecoverySnapshot
+	created  bool
+	retired  bool
+}
+
+func freshPrepareFixture(p string, payload []byte) (*freshOwnedFixtureReceipt, error) {
+	before := freshObservePath(p)
+	if !before.Known || !before.Absent {
+		return nil, errors.New("FIXTURE_PRESTATE_UNKNOWN")
+	}
+	copyBytes := append([]byte(nil), payload...)
+	return &freshOwnedFixtureReceipt{path: p, payload: copyBytes, expected: digest(copyBytes), before: before}, nil
+}
+func (r *freshOwnedFixtureReceipt) create(writer func(*os.File, []byte) (int, error)) error {
+	if r == nil || !r.before.Known || !r.before.Absent || !noReparse(filepath.Dir(r.path)) {
+		return errors.New("FIXTURE_RECEIPT_INVALID")
+	}
+	f, e := os.OpenFile(r.path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if e != nil {
+		return e
+	}
+	if writer == nil {
+		writer = func(f *os.File, b []byte) (int, error) { return f.Write(b) }
+	}
+	n, e := writer(f, r.payload)
+	closeErr := f.Close()
+	if e != nil || closeErr != nil || n != len(r.payload) {
+		return errors.New("FIXTURE_CREATE_INCOMPLETE")
+	}
+	r.created = true
+	return nil
+}
+func (r *freshOwnedFixtureReceipt) cleanup() string {
+	if r != nil && r.retired {
+		if after := freshObservePath(r.path); after.Known && after.Absent {
+			return "OWNED_REMOVED"
+		}
+		return "OWNERSHIP_UNKNOWN"
+	}
+	if r == nil || !r.before.Known || !r.before.Absent || !validDigest(r.expected) {
+		return "OWNERSHIP_UNKNOWN"
+	}
+	after := freshObservePath(r.path)
+	if !after.Known {
+		return "OBSERVATION_FAILED"
+	}
+	if after.Absent {
+		return freshRecoveryStatus(r.before, after, false)
+	}
+	if !r.created {
+		return "OWNERSHIP_UNKNOWN"
+	}
+	if after.Identity != r.expected {
+		return "EXTERNAL_CHANGED"
+	}
+	if e := os.Remove(r.path); e != nil {
+		return "OWNED_PRESERVED"
+	}
+	state := freshRecoveryStatus(r.before, freshObservePath(r.path), true)
+	if state == "OWNED_REMOVED" {
+		r.retired = true
+	}
+	return state
+}
+func TestFreshInstallRecoveryReceipts(t *testing.T) {
+	for _, kind := range []string{"owned", "external-change", "creation-collision", "partial-write", "missing-receipt", "missing-prestate", "directory-change"} {
+		t.Run(kind, func(t *testing.T) {
+			dir := t.TempDir()
+			p := filepath.Join(dir, "owned-fixture.lnk")
+			r, e := freshPrepareFixture(p, []byte("EXPECTED_BEFORE_CREATION"))
+			if e != nil {
+				t.Fatal("PREPARE_FAILED")
+			}
+			switch kind {
+			case "creation-collision":
+				if os.WriteFile(p, []byte("FOREIGN"), 0600) != nil {
+					t.Fatal("COLLISION_FAILED")
+				}
+				if r.create(nil) == nil || r.cleanup() != "OWNERSHIP_UNKNOWN" {
+					t.Fatal("COLLISION_DELETED")
+				}
+				b, _ := os.ReadFile(p)
+				if string(b) != "FOREIGN" {
+					t.Fatal("FOREIGN_CHANGED")
+				}
+				return
+			case "partial-write":
+				if r.create(func(f *os.File, b []byte) (int, error) { n, _ := f.Write(b[:3]); return n, io.ErrShortWrite }) == nil || r.cleanup() != "OWNERSHIP_UNKNOWN" {
+					t.Fatal("PARTIAL_CLAIMED")
+				}
+				if _, e := os.Stat(p); e != nil {
+					t.Fatal("PARTIAL_REMOVED")
+				}
+				return
+			}
+			if r.create(nil) != nil {
+				t.Fatal("CREATE_FAILED")
+			}
+			want := "OWNED_REMOVED"
+			switch kind {
+			case "external-change":
+				if os.WriteFile(p, []byte("EXTERNAL"), 0600) != nil {
+					t.Fatal("CHANGE_FAILED")
+				}
+				want = "EXTERNAL_CHANGED"
+			case "missing-receipt":
+				r.expected = ""
+				want = "OWNERSHIP_UNKNOWN"
+			case "missing-prestate":
+				r.before.Known = false
+				want = "OWNERSHIP_UNKNOWN"
+			case "directory-change":
+				if os.Remove(p) != nil || os.Mkdir(p, 0700) != nil {
+					t.Fatal("DIRECTORY_FIXTURE_FAILED")
+				}
+				want = "EXTERNAL_CHANGED"
+			}
+			if r.cleanup() != want {
+				t.Fatal("WRONG_RESOURCE_DECISION")
+			}
+			_, e = os.Lstat(p)
+			if kind == "owned" {
+				if !os.IsNotExist(e) {
+					t.Fatal("OWNED_NOT_REMOVED")
+				}
+			} else if e != nil {
+				t.Fatal("UNKNOWN_RESOURCE_REMOVED")
+			}
+		})
+	}
+	t.Run("independent-observations", func(t *testing.T) {
+		before := freshRecoverySnapshot{Known: true, Absent: true}
+		if !freshRecoveryRestored(freshRecoveryStatus(before, before, false)) {
+			t.Fatal("NOT_CREATED_UNKNOWN")
+		}
+		if freshRecoveryRestored(freshRecoveryStatus(freshRecoverySnapshot{}, before, false)) {
+			t.Fatal("MISSING_PRESTATE_PASS")
+		}
+		if freshRecoveryRestored(freshRecoveryStatus(before, freshRecoverySnapshot{Known: true}, false)) {
+			t.Fatal("EARLY_INSTALL_SELF_CLAIM")
+		}
+	})
+}
+
+func freshCaptureRegistration(cmd *exec.Cmd, deadlineKnown func() bool) freshRecoverySnapshot {
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	e := cmd.Run()
+	return freshParseRegistration(stdout.Bytes(), e == nil && deadlineKnown(), stderr.Len() == 0)
+}
+func freshRegistryTreeKnown(value any, depth int) bool {
+	if depth > 16 {
+		return false
+	}
+	tree, ok := value.(map[string]any)
+	if !ok || len(tree) != 2 {
+		return false
+	}
+	values, ok := tree["values"].(map[string]any)
+	if !ok {
+		return false
+	}
+	children, ok := tree["children"].(map[string]any)
+	if !ok {
+		return false
+	}
+	for _, value := range values {
+		pair, ok := value.([]any)
+		if !ok || len(pair) != 2 {
+			return false
+		}
+		kind, ok := pair[0].(string)
+		if !ok {
+			return false
+		}
+		switch kind {
+		case "String", "ExpandString":
+			if _, ok := pair[1].(string); !ok {
+				return false
+			}
+		case "DWord", "QWord":
+			if _, ok := pair[1].(json.Number); !ok {
+				return false
+			}
+		case "MultiString":
+			array, ok := pair[1].([]any)
+			if !ok {
+				return false
+			}
+			for _, v := range array {
+				if _, ok := v.(string); !ok {
+					return false
+				}
+			}
+		case "Binary", "None":
+			array, ok := pair[1].([]any)
+			if !ok {
+				return false
+			}
+			for _, v := range array {
+				n, ok := v.(json.Number)
+				if !ok {
+					return false
+				}
+				number, e := n.Int64()
+				if e != nil || number < 0 || number > 255 {
+					return false
+				}
+			}
+		default:
+			return false
+		}
+	}
+	for _, child := range children {
+		if !freshRegistryTreeKnown(child, depth+1) {
+			return false
+		}
+	}
+	return true
+}
+func TestFreshInstallRecoveryRegistryCollector(t *testing.T) {
+	ids := []string{"CurrentUser:Registry64", "CurrentUser:Registry32", "LocalMachine:Registry64", "LocalMachine:Registry32"}
+	rows := []map[string]any{}
+	for _, id := range ids {
+		rows = append(rows, map[string]any{"id": id, "present": false, "tree": nil})
+	}
+	valid, _ := json.Marshal(rows)
+	if s := freshParseRegistration(valid, true, true); !s.Known || !s.Absent {
+		t.Fatal("VALID_REGISTRY_ABSENCE_REJECTED")
+	}
+	for _, kind := range []string{"missing-present", "mixed-case", "case-alias", "duplicate-view", "missing-tree", "extra", "present-null", "absent-tree", "malformed-tree"} {
+		t.Run(kind, func(t *testing.T) {
+			var clone []map[string]any
+			json.Unmarshal(valid, &clone)
+			switch kind {
+			case "missing-present":
+				delete(clone[0], "present")
+			case "mixed-case":
+				clone[0]["Present"] = clone[0]["present"]
+				delete(clone[0], "present")
+			case "case-alias":
+				clone[0]["Present"] = true
+			case "duplicate-view":
+				clone[0]["id"] = ids[1]
+			case "missing-tree":
+				delete(clone[0], "tree")
+			case "extra":
+				clone[0]["path"] = "FORBIDDEN"
+			case "present-null":
+				clone[0]["present"] = true
+			case "absent-tree":
+				clone[0]["tree"] = map[string]any{}
+			case "malformed-tree":
+				clone[0]["present"] = true
+				clone[0]["tree"] = map[string]any{"values": map[string]any{}, "children": map[string]any{"nested": false}}
+			}
+			raw, _ := json.Marshal(clone)
+			if freshParseRegistration(raw, true, true).Known {
+				t.Fatal("INVALID_REGISTRY_BECAME_KNOWN")
+			}
+		})
+	}
+	for _, raw := range [][]byte{[]byte(`[{}, {}, {}, {}]`), append(append([]byte(nil), valid...), []byte(` {}`)...), []byte(strings.Replace(string(valid), `"present":false`, `"present":true,"present":false`, 1))} {
+		if freshParseRegistration(raw, true, true).Known {
+			t.Fatal("AMBIGUOUS_REGISTRY_BECAME_KNOWN")
+		}
+	}
+	if freshParseRegistration(valid, true, false).Known || freshParseRegistration(valid, false, true).Known {
+		t.Fatal("FAILED_OR_STDERR_REGISTRY_PASS")
+	}
+	if freshRecoveryStatus(freshRecoverySnapshot{Known: true}, freshRecoverySnapshot{Known: true}, false) != "OBSERVATION_FAILED" {
+		t.Fatal("UNCOMPARABLE_DIRECTORY_CLAIMED_CHANGE")
+	}
+	for _, hasError := range []bool{false, true} {
+		t.Run(fmt.Sprintf("actual_pipe_stderr_%t", hasError), func(t *testing.T) {
+			ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+			text := strings.ReplaceAll(string(valid), "'", "''")
+			script := "[Console]::Write('" + text + "')"
+			if hasError {
+				script += ";[Console]::Error.Write('CONTROLLED_STDERR')"
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script)
+			cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+			observed := freshCaptureRegistration(cmd, func() bool { return ctx.Err() == nil })
+			if observed.Known == hasError {
+				t.Fatal("ACTUAL_STDERR_COLLECTOR_GATE_FAILED")
+			}
+		})
+	}
+}
+
+func freshObserveProgramFiles(root string) freshRecoverySnapshot {
+	start := freshObservePath(root)
+	if !start.Known || start.Absent {
+		return start
+	}
+	info, e := os.Lstat(root)
+	if e != nil || !info.IsDir() {
+		return freshRecoverySnapshot{}
+	}
+	rows := []string{}
+	var total int64
+	e = filepath.Walk(root, func(p string, info os.FileInfo, e error) error {
+		if e != nil || !noReparse(p) {
+			return errors.New("PROGRAM_OBSERVATION_UNKNOWN")
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if !info.Mode().IsRegular() || len(rows) >= 5000 {
+			return errors.New("PROGRAM_OBSERVATION_BOUND")
+		}
+		total += info.Size()
+		if total > 512*1024*1024 {
+			return errors.New("PROGRAM_OBSERVATION_BOUND")
+		}
+		h, e := hashFile(p)
+		if e != nil {
+			return e
+		}
+		rel, e := filepath.Rel(root, p)
+		if e != nil {
+			return e
+		}
+		rows = append(rows, rel+":"+h)
+		return nil
+	})
+	if e != nil {
+		return freshRecoverySnapshot{}
+	}
+	body, e := json.Marshal(rows)
+	if e != nil {
+		return freshRecoverySnapshot{}
+	}
+	return freshRecoverySnapshot{Known: true, Absent: len(rows) == 0, Identity: digest(body)}
+}
+
+func TestFreshInstallRecoveryRetiredReceipt(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "phase.lnk")
+	old, e := freshPrepareFixture(p, []byte("PHASE_ONE"))
+	if e != nil || old.create(nil) != nil || old.cleanup() != "OWNED_REMOVED" {
+		t.Fatal("PHASE_ONE_FAILED")
+	}
+	if os.WriteFile(p, []byte("NEW_FOREIGN_RESOURCE"), 0600) != nil {
+		t.Fatal("FOREIGN_CREATE_FAILED")
+	}
+	if old.cleanup() != "OWNERSHIP_UNKNOWN" {
+		t.Fatal("RETIRED_RECEIPT_RECLAIMED_NEW_RESOURCE")
+	}
+	body, _ := os.ReadFile(p)
+	if string(body) != "NEW_FOREIGN_RESOURCE" {
+		t.Fatal("RETIRED_RECEIPT_REMOVED_NEW_RESOURCE")
+	}
+	if freshRecoveryRestored(freshRecoveryStatus(old.before, freshObservePath(p), false)) {
+		t.Fatal("UNKNOWN_CURRENT_RESOURCE_RESTORED")
+	}
+	// This explicitly owned synthetic new phase is removed by its test producer,
+	// never by the stale receipt. A fresh O_EXCL receipt owns the next phase.
+	if os.Remove(p) != nil {
+		t.Fatal("OWNED_TEST_RESOURCE_CLEANUP_FAILED")
+	}
+	next, e := freshPrepareFixture(p, []byte("PHASE_TWO"))
+	if e != nil || next.create(nil) != nil {
+		t.Fatal("NEXT_PHASE_FAILED")
+	}
+	if old.cleanup() != "OWNERSHIP_UNKNOWN" || next.cleanup() != "OWNED_REMOVED" {
+		t.Fatal("PHASE_HANDOFF_FAILED")
+	}
+}
+
+func TestFreshInstallRecoverySystemObserver(t *testing.T) {
+	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	for _, key := range []string{`Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1`, `Software\KSESSION\Beta\InstallerBinding`} {
+		before := freshObserveRegistration(ps, key)
+		after := freshObserveRegistration(ps, key)
+		if !before.Known || !after.Known {
+			t.Fatal("SYSTEM_READONLY_REGISTRY_NOT_KNOWN")
+		}
+		if before.Absent != after.Absent || before.Identity != after.Identity {
+			t.Fatal("SYSTEM_READONLY_REGISTRY_CHANGED")
+		}
+	}
+}
+
+func freshReadStartupReceipt(ps, path string) (string, error) {
+	if !noReparse(path) {
+		return "", errors.New("PRODUCER_RECEIPT_UNPROVEN")
+	}
+	encoded, _ := json.Marshal(path)
+	script := fmt.Sprintf(`$ErrorActionPreference='Stop';$p=ConvertFrom-Json '%s';if([IO.FileInfo]::new($p).Length -gt 4096){exit 1};$found=@();$section=$false;foreach($line in [IO.File]::ReadAllLines($p)){if($line -ceq '[Startup]'){if($section -or $found.Count -ne 0){exit 1};$section=$true}elseif($line -cmatch '^Sha256=([a-f0-9]{64})$'){if(!$section){exit 1};$found+=@($Matches[1])}elseif($line -notmatch '^\s*$'){exit 1}};if(!$section -or $found.Count -ne 1){exit 1};[Console]::Write($found[0])`, strings.ReplaceAll(string(encoded), "'", "''"))
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	root := os.Getenv("SystemRoot")
+	cmd.Env = []string{"SystemRoot=" + root, "WINDIR=" + root, "PATH=" + filepath.Join(root, "System32"), "PSModulePath=" + filepath.Join(root, "System32", "WindowsPowerShell", "v1.0", "Modules"), "TEMP=" + os.Getenv("TEMP"), "TMP=" + os.Getenv("TMP")}
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	raw, e := cmd.Output()
+	if e != nil || ctx.Err() != nil || stderr.Len() != 0 || !validDigest(string(raw)) {
+		return "", errors.New("PRODUCER_RECEIPT_UNPROVEN")
+	}
+	return string(raw), nil
+}
+func TestFreshInstallRecoveryInnoReceipt(t *testing.T) {
+	root := os.Getenv("KSESSION_INSTALL_R2_LINK_ROOT")
+	if !regexp.MustCompile(`^E:\\CodexWorkspace\\outputs\\fresh-install-r2-link-[a-f0-9]{32}$`).MatchString(root) {
+		t.Fatal("OWNED_INNO_RECEIPT_ROOT_REQUIRED")
+	}
+	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	base := filepath.Join(root, "case-baseline 中文 with spaces")
+	hash, e := freshReadStartupReceipt(ps, filepath.Join(base, "app", "uninstall", "fresh-startup.ini"))
+	if e != nil {
+		t.Fatal("ACTUAL_INNO_INI_UNREADABLE")
+	}
+	actual, e := hashFile(filepath.Join(base, "startup", "K-SESSION Fresh Trial.lnk"))
+	if e != nil || actual != hash {
+		t.Fatal("ACTUAL_INNO_INI_HASH_MISMATCH")
+	}
+	for _, kind := range []string{"missing", "wrong-field", "duplicate", "oversize", "missing-section", "duplicate-section", "hash-before-section"} {
+		t.Run(kind, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "receipt.ini")
+			body := "[Startup]\r\nSha256=" + hash + "\r\n"
+			switch kind {
+			case "missing":
+				body = "[Startup]\r\n"
+			case "wrong-field":
+				body += "Unexpected=VALUE\r\n"
+			case "duplicate":
+				body += "Sha256=" + hash + "\r\n"
+			case "missing-section":
+				body = "Sha256=" + hash + "\r\n"
+			case "duplicate-section":
+				body += "[Startup]\r\n"
+			case "hash-before-section":
+				body = "Sha256=" + hash + "\r\n[Startup]\r\n"
+			case "oversize":
+				body += strings.Repeat("X", 5000)
+			}
+			if os.WriteFile(path, []byte(body), 0600) != nil {
+				t.Fatal("RECEIPT_FIXTURE_FAILED")
+			}
+			if _, e := freshReadStartupReceipt(ps, path); e == nil {
+				t.Fatal("INVALID_PRODUCER_RECEIPT_ACCEPTED")
+			}
+		})
+	}
+}

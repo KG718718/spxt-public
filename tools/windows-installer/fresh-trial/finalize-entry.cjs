@@ -6,8 +6,8 @@ const {finish}=require('../../tests/fresh-lan-trial/finalize.cjs');
 const {inspect,verify}=require('./verify-artifact.cjs');
 function main(){
  const [mode,work,publish,driveRestored,outerFailure='false']=process.argv.slice(2);assert.ok(['CHECK','FINAL'].includes(mode));assert.ok(['true','false'].includes(outerFailure));
- const context=JSON.parse(fs.readFileSync(path.join(work,'context.json'))),expected={sourceCommit:context.sourceCommit,controlCommit:context.controlCommit,run:context.run,mode:context.mode,...(context.mode==='QA'?{candidate:context.candidate}:{})};
- const r=validate(JSON.parse(fs.readFileSync(path.join(work,'fresh-report.json'))),expected);
+ const context=JSON.parse(fs.readFileSync(path.join(work,'context.json'))),expected={reportSchema:2,sourceCommit:context.sourceCommit,controlCommit:context.controlCommit,run:context.run,mode:context.mode,...(context.mode==='QA'?{candidate:context.candidate}:{})};
+ assert.equal(context.reportSchema,2);const r=validate(JSON.parse(fs.readFileSync(path.join(work,'fresh-report.json'))),expected);
  if(mode==='CHECK'){if(r.checks.length===9)inspect(path.join(work,'artifact'),context.sourceCommit,context.mode==='QA'?context.candidate.setupSha256:undefined);else safe(r,expected);return;}
  const completionFile=path.join(publish,'completion-private.json');
  const completion=fs.existsSync(completionFile)?JSON.parse(fs.readFileSync(completionFile)):{schema:1,sourceCommit:r.sourceCommit,controlCommit:r.controlCommit,run:r.run,mode:r.mode,checksComplete:false,actualFailure:true};

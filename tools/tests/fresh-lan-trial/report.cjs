@@ -16,12 +16,14 @@ const HUMAN=Object.freeze(['REAL_GUI_UAC','PHYSICAL_PRIVATE_ADAPTER','FIREWALL_A
 const METHODS=Object.freeze({F01:'ACTUAL_SETUP',F02:'INSTALLED_BYTES',F03:'ACTUAL_INSTALLED_LAUNCHER_AND_ISOLATED_REMOTE_HANDLER',F04:'ISOLATED_PRODUCTION_POLICY_TESTS_AND_SOCKET',F05:'INSTALLED_PAYLOAD_BROWSER_LOOPBACK',F06:'ACTUAL_RESTART_AND_STARTUP_WIRING',F07:'CONTROLLED_RULE_AND_POLICY_TESTS',F08:'FROZEN_REGRESSION',F09:'ARTIFACT_BYTES'});
 function exact(o,keys){assert.ok(o&&typeof o==='object'&&!Array.isArray(o));assert.deepEqual(Object.keys(o).sort(),[...keys].sort());}
 function validate(r,expected){
- exact(r,['schema','kind','sourceCommit','controlCommit','run','mode','status','stage','reason','setupSha256','candidate','checks','cleanup','humanPending','historical','setupDiagnostics','buildDiagnostic']);
+ if(expected.reportSchema!==undefined)assert.equal(r.schema,expected.reportSchema);
+ const extended=r?.schema===2;if(extended)require('./install-r2/recovery.cjs').validate(r.recovery);
+ exact(r,[...(extended?['recovery']:[]),'schema','kind','sourceCommit','controlCommit','run','mode','status','stage','reason','setupSha256','candidate','checks','cleanup','humanPending','historical','setupDiagnostics','buildDiagnostic']);
  require('./build-diagnostic.cjs').validate(r.buildDiagnostic);
  assert.match(r.controlCommit,/^[a-f0-9]{40}$/);if(expected.controlCommit)assert.equal(r.controlCommit,expected.controlCommit);
  exact(r.run,['id','attempt']);assert.match(r.run.id,/^[1-9][0-9]{0,19}$/);assert.equal(r.run.attempt,1);if(expected.run)assert.deepEqual(r.run,expected.run);
- assert.ok(Array.isArray(r.setupDiagnostics)&&r.setupDiagnostics.length<=7);for(const d of r.setupDiagnostics)require('./setup-diagnostic.cjs').validate(d);
- assert.equal(r.schema,1);assert.equal(r.kind,'KSESSION_FRESH_TRIAL');
+ assert.ok(Array.isArray(r.setupDiagnostics)&&r.setupDiagnostics.length<=7);for(const d of r.setupDiagnostics){require('./setup-diagnostic.cjs').validate(d);if(expected.reportSchema===2)assert.equal(d.schema,2);}
+ assert.ok(r.schema===1||r.schema===2);assert.equal(r.kind,'KSESSION_FRESH_TRIAL');
  assert.match(r.sourceCommit,/^[a-f0-9]{40}$/);assert.equal(r.sourceCommit,expected.sourceCommit);
  assert.ok(['CANDIDATE','QA'].includes(r.mode));assert.equal(r.mode,expected.mode);
  assert.ok(['FAIL','FRESH_TRIAL_AUTOMATION_PASS_HUMAN_PENDING'].includes(r.status));
@@ -39,6 +41,7 @@ function validate(r,expected){
  assert.deepEqual(r.humanPending,HUMAN);
  assert.deepEqual(r.historical,{upgrade:{result:'FAIL',workStatus:'DEFERRED'},uninstallReinstall:{result:'FAIL',workStatus:'DEFERRED'},LC01:{result:'FAIL',workStatus:'DEFERRED'},U27:{result:'FAIL',workStatus:'DEFERRED'}});
  if(r.status!=='FAIL'){
+  if(extended){assert.equal(require('./install-r2/recovery.cjs').restored(r.recovery),true);assert.ok(r.setupDiagnostics.every(d=>d.schema===2));}
   assert.equal(r.stage,'COMPLETE');assert.equal(r.reason,'PASS');assert.match(r.setupSha256,/^[a-f0-9]{64}$/);
   assert.equal(r.buildDiagnostic.stage,'COMPLETE');assert.equal(r.buildDiagnostic.classification,'PASS');
   assert.equal(r.checks.length,9);assert.ok(r.checks.every(c=>c.pass));assert.ok(Object.values(r.cleanup).every(v=>v===true));
@@ -47,7 +50,7 @@ function validate(r,expected){
  }else{assert.notEqual(r.reason,'PASS');assert.notEqual(r.stage,'COMPLETE');}
  return r;
 }
-function initial(sourceCommit,mode,candidate={runId:null,artifactId:null,sourceCommit:null,setupSha256:null},controlCommit=sourceCommit,run={id:'1',attempt:1}){
- return {schema:1,kind:'KSESSION_FRESH_TRIAL',sourceCommit,controlCommit,run,mode,status:'FAIL',stage:'ENV',reason:'DEPENDENCY_UNPROVEN',setupSha256:null,candidate,checks:[],setupDiagnostics:[],buildDiagnostic:{stage:'NOT_STARTED',classification:'NOT_STARTED',script:null,line:null},cleanup:{ownedLauncherExited:null,ownedNodeExited:null,handlesClosed:null,lockReleased:null,ownedRulesAbsent:null,ownedRegistrationAbsent:null,ownedShortcutsAbsent:null,ownedToolchainAbsent:null,ownedDriveRestored:null,environmentRestored:null},humanPending:[...HUMAN],historical:{upgrade:{result:'FAIL',workStatus:'DEFERRED'},uninstallReinstall:{result:'FAIL',workStatus:'DEFERRED'},LC01:{result:'FAIL',workStatus:'DEFERRED'},U27:{result:'FAIL',workStatus:'DEFERRED'}}};
+function initial(sourceCommit,mode,candidate={runId:null,artifactId:null,sourceCommit:null,setupSha256:null},controlCommit=sourceCommit,run={id:'1',attempt:1},schema=1){
+ assert.ok(schema===1||schema===2);const result={schema,kind:'KSESSION_FRESH_TRIAL',sourceCommit,controlCommit,run,mode,status:'FAIL',stage:'ENV',reason:'DEPENDENCY_UNPROVEN',setupSha256:null,candidate,checks:[],setupDiagnostics:[],buildDiagnostic:{stage:'NOT_STARTED',classification:'NOT_STARTED',script:null,line:null},cleanup:{ownedLauncherExited:null,ownedNodeExited:null,handlesClosed:null,lockReleased:null,ownedRulesAbsent:null,ownedRegistrationAbsent:null,ownedShortcutsAbsent:null,ownedToolchainAbsent:null,ownedDriveRestored:null,environmentRestored:null},humanPending:[...HUMAN],historical:{upgrade:{result:'FAIL',workStatus:'DEFERRED'},uninstallReinstall:{result:'FAIL',workStatus:'DEFERRED'},LC01:{result:'FAIL',workStatus:'DEFERRED'},U27:{result:'FAIL',workStatus:'DEFERRED'}}};if(schema===2)result.recovery=require('./install-r2/recovery.cjs').initial();return result;
 }
 module.exports={IDS,WITNESSES,HUMAN,METHODS,validate,initial};

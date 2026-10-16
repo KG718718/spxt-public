@@ -1,0 +1,105 @@
+function CaseName(I: Integer): String;
+begin
+ case I of
+  0: Result:='baseline'; 1:Result:='missing_hash';2:Result:='wrong_hash';3:Result:='missing_link';
+  4:Result:='directory_link';5:Result:='target_change';6:Result:='args_change';7:Result:='workdir_change';
+  8:Result:='preexisting_refused';9:Result:='ini_failure_cleanup';10:Result:='cleanup_matches';
+  11:Result:='cleanup_changed_preserved';12:Result:='move_no_overwrite';13:Result:='locked_cleanup_preserved';
+ else RaiseException('HARNESS_CASE_REJECTED'); end;
+end;
+function CreateFileW(Name: String; Access, Share, Security, Creation, Flags, Template: LongWord): LongWord;
+external 'CreateFileW@kernel32.dll stdcall';
+function CloseHandle(H: LongWord): Boolean;
+external 'CloseHandle@kernel32.dll stdcall';
+function InitializeSetup: Boolean;
+var I: Integer; Name, Rows, Row, OldHash, ChangedHash, P, Tmp, NativeMoveState: String;
+ Created, Matched, Expected, Passed, AllPassed, HashMatch, TargetMatch, ArgsMatch, WorkDirMatch, IniMatch, ComRead, Preserved, Removed, ReasonProven, NativeReason, Moved: Boolean;
+ Shell, Link: Variant; H, NativeError: LongWord;
+begin
+ Result:=False; Rows:='';AllPassed:=True;
+ for I:=0 to 13 do begin
+  Name:=CaseName(I);CaseRoot:='@OWNED_ROOT@\case-'+Name+' 中文 with spaces';BetaInstance:=CaseRoot+'\instance 中文 with spaces';
+  ForceDirectories(CaseRoot+'\startup');ForceDirectories(CaseRoot+'\temp');ForceDirectories(CaseRoot+'\app\program');ForceDirectories(CaseRoot+'\app\uninstall');ForceDirectories(BetaInstance);
+  if not FileCopy('@OWNED_ROOT@\trusted-launcher.exe',HarnessConstant('{app}\program\K-SESSION.exe'),True) then RaiseException('HARNESS_PE_COPY_FAILED');
+  FreshStartupCreated:=False;FreshInstallCompleted:=False;FreshStartupHash:='';FreshStartupContext:='';FreshStartupLastContext:='';FreshStartupLastStage:='';FreshStartupFirstFailureContext:='';FreshStartupFirstFailureStage:='';FreshStartupCleanupFailureStage:='';FreshStartupCleanupVerified:=False;NativeReason:=False;Created:=False;Passed:=False;Preserved:=False;Removed:=False;Matched:=False;
+  if I=8 then begin
+   P:=CreateShellLink(FreshStartupPath,'owned fixture',HarnessConstant('{app}\program\K-SESSION.exe'),'different fixture args',HarnessConstant('{app}\program'),'',0,SW_SHOWNORMAL);
+   OldHash:=GetSHA256OfFile(P);
+  end;
+  if I=9 then ForceDirectories(HarnessConstant('{app}\uninstall\fresh-startup.ini'));
+  try CreateFreshStartup;Created:=True;except end;
+  if I=8 then begin
+   Preserved:=GetSHA256OfFile(FreshStartupPath)=OldHash;Passed:=not Created and Preserved;
+  end else if I=9 then begin
+   HarnessCleanup;Removed:=FreshStartupAbsent;Passed:=not Created and FreshStartupCreated and Removed;
+  end else begin
+   if not Created then RaiseException('HARNESS_CREATE_FAILED');
+   OldHash:=FreshStartupHash;
+   if I=1 then FreshStartupHash:='';
+   if I=2 then begin if Copy(OldHash,1,1)='0' then FreshStartupHash:='1'+Copy(OldHash,2,63) else FreshStartupHash:='0'+Copy(OldHash,2,63); end;
+   if (I=3) or (I=4) then begin
+    if GetSHA256OfFile(FreshStartupPath)<>OldHash then RaiseException('HARNESS_OWNERSHIP_CHANGED');
+    if not DeleteFile(FreshStartupPath) then RaiseException('HARNESS_OWNED_DELETE_FAILED');
+    if I=4 then ForceDirectories(FreshStartupPath);
+   end;
+   if (I=5) or (I=6) or (I=7) or (I=11) then begin
+    Shell:=CreateOleObject('WScript.Shell');Link:=Shell.CreateShortcut(FreshStartupPath);
+    if I=5 then Link.TargetPath:=HarnessConstant('{app}\program')+'\different.exe';
+    if (I=6) or (I=11) then Link.Arguments:='--wrong-controlled-argument';
+    if I=7 then Link.WorkingDirectory:=CaseRoot+'\temp';
+    Link.Save;Link:=Null;Shell:=Null;ChangedHash:=GetSHA256OfFile(FreshStartupPath);
+    { Identity-negative cases use the exact hash of our own controlled modification,
+      so the COM-field rejection is exercised independently of hash mismatch. }
+    if I<>11 then FreshStartupHash:=ChangedHash;
+   end;
+   FreshStartupContext:='INSTALL_VERIFY'; Matched:=FreshStartupMatches(FreshStartupHash);
+   if I=0 then begin
+    HashMatch:=GetSHA256OfFile(FreshStartupPath)=FreshStartupHash;ComRead:=False;TargetMatch:=False;ArgsMatch:=False;WorkDirMatch:=False;
+    try Shell:=CreateOleObject('WScript.Shell');Link:=Shell.CreateShortcut(FreshStartupPath);ComRead:=True;
+     TargetMatch:=CompareText(String(Link.TargetPath),HarnessConstant('{app}\program\K-SESSION.exe'))=0;
+     ArgsMatch:=String(Link.Arguments)='--logon --instance "'+BetaInstance+'"';
+     WorkDirMatch:=CompareText(String(Link.WorkingDirectory),HarnessConstant('{app}\program'))=0;
+     Link:=Null;Shell:=Null;
+    except end;
+    IniMatch:=GetIniString('Startup','Sha256','',HarnessConstant('{app}\uninstall\fresh-startup.ini'))=FreshStartupHash;
+    Row:='{"schema":1,"kind":"OWNED_INNO_COM_BASELINE","created":'+B(Created)+',"productionMatches":'+B(Matched)+',"hashMatch":'+B(HashMatch)+',"comRead":'+B(ComRead)+',"targetMatch":'+B(TargetMatch)+',"argsMatch":'+B(ArgsMatch)+',"workDirMatch":'+B(WorkDirMatch)+',"iniMatch":'+B(IniMatch)+'}';
+    SaveStringToFile('@OWNED_ROOT@\baseline.json',Row,False);
+    Passed:=Created and Matched and HashMatch and ComRead and TargetMatch and ArgsMatch and WorkDirMatch and IniMatch;
+   end else if I=10 then begin HarnessCleanup;Removed:=FreshStartupAbsent;Passed:=Matched and Removed;end
+   else if I=11 then begin HarnessCleanup;Preserved:=GetSHA256OfFile(FreshStartupPath)=ChangedHash;Passed:=not Matched and Preserved;end
+   else if I=12 then begin
+    Tmp:=CreateShellLink(CaseRoot+'\temp\conflicting.lnk','owned conflict',HarnessConstant('{app}\program\K-SESSION.exe'),'fixture',HarnessConstant('{app}\program'),'',0,SW_SHOWNORMAL);
+    Moved:=MoveFileW(Tmp,FreshStartupPath);NativeError:=DLLGetLastError;NativeReason:=not Moved and ((NativeError=183) or (NativeError=80));
+    Passed:=NativeReason and (GetSHA256OfFile(FreshStartupPath)=OldHash) and FileExists(Tmp);
+    Preserved:=Passed;
+   end else if I=13 then begin
+    H:=CreateFileW(FreshStartupPath,$80000000,1,0,3,$80,0);
+    if H=$FFFFFFFF then RaiseException('HARNESS_OWNED_LOCK_FAILED');
+    try HarnessCleanup;Preserved:=FileExists(FreshStartupPath) and (GetSHA256OfFile(FreshStartupPath)=OldHash);Passed:=Matched and Preserved;
+    finally if not CloseHandle(H) then RaiseException('HARNESS_OWNED_HANDLE_CLOSE_FAILED'); end;
+   end else Passed:=not Matched;
+  end;
+  ReasonProven:=False;
+  case I of
+   0:ReasonProven:=(FreshStartupLastContext='INSTALL_VERIFY') and (FreshStartupLastStage='MATCHED') and (FreshStartupFirstFailureStage='');
+   1:ReasonProven:=(FreshStartupLastContext='INSTALL_VERIFY') and (FreshStartupLastStage='EXPECTED_HASH_MISSING');
+   2:ReasonProven:=(FreshStartupLastContext='INSTALL_VERIFY') and (FreshStartupLastStage='HASH_MISMATCH');
+   3,4:ReasonProven:=(FreshStartupLastContext='INSTALL_VERIFY') and (FreshStartupLastStage='ATTRIBUTES_REJECTED');
+   5:ReasonProven:=(FreshStartupLastContext='INSTALL_VERIFY') and (FreshStartupLastStage='TARGET_MISMATCH');
+   6:ReasonProven:=(FreshStartupLastContext='INSTALL_VERIFY') and (FreshStartupLastStage='ARGUMENTS_MISMATCH');
+   7:ReasonProven:=(FreshStartupLastContext='INSTALL_VERIFY') and (FreshStartupLastStage='WORKDIR_MISMATCH');
+   8:ReasonProven:=(FreshStartupLastContext='CREATE') and (FreshStartupLastStage='CREATE_PRECONDITION_REJECTED');
+   9:ReasonProven:=(FreshStartupFirstFailureContext='CREATE') and (FreshStartupFirstFailureStage='INI_WRITE_FAILED') and FreshStartupCleanupVerified and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_REMOVED');
+   10:ReasonProven:=FreshStartupCleanupVerified and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_REMOVED');
+   11:ReasonProven:=(not FreshStartupCleanupVerified) and (FreshStartupCleanupFailureStage='HASH_MISMATCH') and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_IDENTITY_UNKNOWN');
+   12:ReasonProven:=NativeReason;
+   13:ReasonProven:=FreshStartupCleanupVerified and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_DELETE_FAILED');
+  end;
+  Passed:=Passed and ReasonProven;NativeMoveState:='NOT_CALLED';if I=12 then begin NativeMoveState:='UNKNOWN';if NativeReason then NativeMoveState:='EXISTS_REJECTED';end;
+  if Rows<>'' then Rows:=Rows+',';
+  Rows:=Rows+'{"case":"'+Name+'","pass":'+B(Passed)+',"created":'+B(Created)+',"matched":'+B(Matched)+',"removed":'+B(Removed)+',"preserved":'+B(Preserved)+',"reasonProven":'+B(ReasonProven)+',"nativeMove":"'+NativeMoveState+'","lastContext":"'+FreshStartupLastContext+'","lastStage":"'+FreshStartupLastStage+'","firstFailureContext":"'+FreshStartupFirstFailureContext+'","firstFailureStage":"'+FreshStartupFirstFailureStage+'","cleanupFailureStage":"'+FreshStartupCleanupFailureStage+'"}';
+  AllPassed:=AllPassed and Passed;
+ end;
+ SaveStringToFile('@OWNED_ROOT@\matrix.json','{"schema":1,"kind":"OWNED_INNO_COM_MATRIX","allPassed":'+B(AllPassed)+',"cases":['+Rows+']}',False);
+ { Always stop before installation. This is not a product installation test. }
+end;

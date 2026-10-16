@@ -1,0 +1,2 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict'),validator=require('../setup-diagnostic.cjs');try{const d=JSON.parse(fs.readFileSync(0,'utf8'));assert.equal(d.schema,2);validator.validate(d);if(d.outcome!=='UNKNOWN')validator.expected(d);}catch{process.stderr.write('SETUP_DIAGNOSTIC_INVALID\n');process.exitCode=1;}
