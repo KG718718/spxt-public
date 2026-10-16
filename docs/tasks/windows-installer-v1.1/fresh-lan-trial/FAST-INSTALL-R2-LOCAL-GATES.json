@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "kind": "INSTALL_R2_LOCAL_GATES",
+  "sourceCommit": "4e7f58e8341bc69822570838a1716667fb8e654b",
+  "codeFingerprint": "5cbd9328c544deae26d2fa9016824db44bb915361968346a361f8af9dfeb6acb",
+  "sourceTree": "e85f572f2414222deb67dd15d4bb14a32df7cd14",
+  "status": "PASS",
+  "root": {
+    "schema": 1,
+    "kind": "FAST_ROOT_FRESH_GATE",
+    "sourceCommit": "4e7f58e8341bc69822570838a1716667fb8e654b",
+    "sourceBound": true,
+    "status": "PASS",
+    "tests": 134,
+    "pass": 134,
+    "fail": 0,
+    "skipped": 0,
+    "exitClass": "ZERO",
+    "failures": [],
+    "rawOutputStored": false
+  },
+  "cjs": {
+    "schema": 1,
+    "kind": "INSTALL_R2_CJS_TARGETS",
+    "status": "PASS",
+    "tests": 28,
+    "pass": 28,
+    "fail": 0,
+    "skipped": 0,
+    "failed": [],
+    "rawOutputStored": false
+  },
+  "go": {
+    "schema": 1,
+    "kind": "INSTALL_R2_LOCAL_GO",
+    "sourceCommit": "4e7f58e8341bc69822570838a1716667fb8e654b",
+    "sourceBound": true,
+    "status": "PASS",
+    "parents": 6,
+    "children": 26,
+    "fail": 0,
+    "skip": 0,
+    "failed": [],
+    "compile": [],
+    "rawOutputStored": false
+  },
+  "goScope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "powershell": {
+    "kind": "INSTALL_R2_PS_RECOVERY_COUNTERS",
+    "fail": 0,
+    "skipped": 0,
+    "realRegistryWritten": false,
+    "rawOutputStored": false,
+    "pass": 22,
+    "schema": 1,
+    "realRulesWritten": false
+  },
+  "ciFinally": {
+    "environmentRestored": true,
+    "realInstallation": false,
+    "skipped": 0,
+    "realRulesWritten": false,
+    "fail": 0,
+    "realRegistryWritten": false,
+    "schema": 1,
+    "pass": 7,
+    "kind": "INSTALL_R2_ACTUAL_CI_FINALLY_COUNTERS"
+  },
+  "lanPermission": {
+    "schema": 1,
+    "kind": "INSTALL_R2_LAN_PERMISSION",
+    "sourceCommit": "4e7f58e8341bc69822570838a1716667fb8e654b",
+    "status": "PASS",
+    "lan": {
+      "tests": 50,
+      "pass": 50,
+      "fail": 0,
+      "skipped": 0
+    },
+    "permission": {
+      "exitZero": true,
+      "pass": 47
+    },
+    "rawOutputStored": false
+  },
+  "rawOutputStored": false
+}

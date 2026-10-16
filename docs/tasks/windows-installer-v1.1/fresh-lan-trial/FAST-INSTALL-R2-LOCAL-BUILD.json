@@ -1,0 +1,17 @@
+{
+  "stage": "FINAL",
+  "sourceCommit": "4e7f58e8341bc69822570838a1716667fb8e654b",
+  "setupSha256": "1b4e7723d3f1b6d466bc78cdaed25d63a8eed9c87782efe64dcea41af7ac9111",
+  "kind": "FAST_P0_LOCAL_BUILD",
+  "schema": 1,
+  "productionExeRun": false,
+  "environmentRestored": true,
+  "status": "PASS",
+  "qualification": "BUILD_ONLY_NOT_INSTALLATION_ACCEPTANCE",
+  "forcedTermination": false,
+  "jobEmpty": true,
+  "productionInstalled": false,
+  "setupBytes": 33554844,
+  "naturalExit": true,
+  "stderrEmpty": true
+}

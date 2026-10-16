@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "kind": "INSTALL_R2_READONLY_RULES",
+  "status": "NOT_PROVEN",
+  "knownBefore": false,
+  "knownAfter": false,
+  "state": "OBSERVATION_FAILED",
+  "worldUnchanged": true,
+  "environmentRestored": true,
+  "mutationAttempted": false,
+  "collectorPhase": "QUERY_CIM_FAILED"
+}
