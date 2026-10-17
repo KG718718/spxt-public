@@ -1,0 +1,199 @@
+{
+  "schema": 1,
+  "kind": "FINAL_DELIVERY_CLOSURE_LOCAL_GATES",
+  "sourceCommit": "98f99aa1f33ad80b4459a23f2518a7fb773ce0a9",
+  "sourceTree": "09f0083e2f922fa76187050aca8cc0169b44d774",
+  "codeFingerprint": "e6f357c493399a4425091efeed3ff5c5680abb32260022ef3b3bd6a01314aa91",
+  "status": "PASS",
+  "physical": {
+    "schema": 1,
+    "kind": "CLOSURE_PHYSICAL_WORK",
+    "pass": 26,
+    "fail": 0,
+    "skipped": 0,
+    "mappingRestored": true,
+    "directoryRename": "RENAMED_AND_IDENTITY_REJECTED",
+    "permissionBoundary": "INJECTED_UNAUTHORIZED_ACCESS",
+    "sharingViolationRead": "ACTUAL_OBSERVED",
+    "productionInstalled": false,
+    "realRegistryWritten": false,
+    "realRulesWritten": false,
+    "rawOutputStored": false
+  },
+  "physicalScope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "go": {
+    "schema": 1,
+    "kind": "INSTALL_R2_LOCAL_GO",
+    "sourceCommit": "98f99aa1f33ad80b4459a23f2518a7fb773ce0a9",
+    "sourceBound": true,
+    "status": "PASS",
+    "parents": 7,
+    "children": 32,
+    "fail": 0,
+    "skip": 0,
+    "failed": [],
+    "compile": [],
+    "rawOutputStored": false
+  },
+  "goScope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "vet": {
+    "schema": 1,
+    "kind": "CLOSURE_GO_VET",
+    "sourceCommit": "98f99aa1f33ad80b4459a23f2518a7fb773ce0a9",
+    "status": "PASS",
+    "rawOutputStored": false
+  },
+  "vetScope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "root": {
+    "schema": 1,
+    "kind": "FAST_ROOT_FRESH_GATE",
+    "sourceCommit": "98f99aa1f33ad80b4459a23f2518a7fb773ce0a9",
+    "sourceBound": true,
+    "status": "PASS",
+    "tests": 134,
+    "pass": 134,
+    "fail": 0,
+    "skipped": 0,
+    "exitClass": "ZERO",
+    "failures": [],
+    "rawOutputStored": false
+  },
+  "candidateContract": {
+    "schema": 1,
+    "kind": "INSTALL_CANDIDATE_LOCAL_CONTRACTS",
+    "status": "PASS",
+    "tests": 17,
+    "pass": 17,
+    "fail": 0,
+    "skipped": 0,
+    "stderrEmpty": true,
+    "failures": [],
+    "rawOutputStored": false
+  },
+  "powershell": {
+    "fail": 0,
+    "rawOutputStored": false,
+    "skipped": 0,
+    "pass": 22,
+    "realRulesWritten": false,
+    "schema": 1,
+    "realRegistryWritten": false,
+    "kind": "INSTALL_R2_PS_RECOVERY_COUNTERS"
+  },
+  "ciFinally": {
+    "realInstallation": false,
+    "pass": 7,
+    "schema": 1,
+    "realRegistryWritten": false,
+    "environmentRestored": true,
+    "kind": "INSTALL_R2_ACTUAL_CI_FINALLY_COUNTERS",
+    "realRulesWritten": false,
+    "fail": 0,
+    "skipped": 0
+  },
+  "psScope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "lanPermission": {
+    "schema": 1,
+    "kind": "CLOSURE_LAN_PERMISSION",
+    "sourceCommit": "98f99aa1f33ad80b4459a23f2518a7fb773ce0a9",
+    "status": "PASS",
+    "lan": {
+      "tests": 50,
+      "pass": 50,
+      "fail": 0,
+      "skip": 0
+    },
+    "permission": {
+      "exitZero": true,
+      "pass": 47
+    },
+    "rawOutputStored": false
+  },
+  "lanScope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "masterReported": {
+    "sourceCommit": "98f99aa1f33ad80b4459a23f2518a7fb773ce0a9",
+    "cjsPass": 45,
+    "rootPass": 134,
+    "physicalPass": 26,
+    "goParents": 7,
+    "linkCases": 15,
+    "status": "PASS_REPORTED_IN_THREAD"
+  },
+  "developmentFailures": [
+    {
+      "classification": "DIRECTORY_RENAME_EXPECTATION",
+      "count": 2,
+      "status": "FAIL_PRESERVED",
+      "substCreated": false
+    },
+    {
+      "classification": "OWNED_GO_TEMP_MISSING",
+      "count": 1,
+      "status": "FAIL_PRESERVED",
+      "goTestsExecuted": false
+    }
+  ],
+  "productInstalled": false,
+  "rawOutputStored": false,
+  "hostedRuns": 0,
+  "actualInstall": "NOT_VERIFIED",
+  "earlyNativeRecovery": "NOT_VERIFIED",
+  "historicalF01Root": "UNKNOWN",
+  "rulesNativeRead": "NOT_RERUN_NOT_PROVEN",
+  "regression26_742": "NOT_VERIFIED_HOSTED_GUARD_PRESERVED"
+}

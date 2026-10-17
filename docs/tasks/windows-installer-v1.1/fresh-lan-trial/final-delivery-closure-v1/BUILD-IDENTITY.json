@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "kind": "CLOSURE_BUILD_IDENTITY",
+  "sourceCommit": "98f99aa1f33ad80b4459a23f2518a7fb773ce0a9",
+  "sourceTree": "09f0083e2f922fa76187050aca8cc0169b44d774",
+  "codeFingerprint": "e6f357c493399a4425091efeed3ff5c5680abb32260022ef3b3bd6a01314aa91",
+  "setupBytes": 33553047,
+  "setupSha256": "98849d369d37cf9a4e63764ac51e40c451cce942c34115f2778e34be7fe28597",
+  "programManifestHash": "b0afc65e8ad3d1d4815d8cec7b702f7acbd946ae6ced0454d981a6b91fd0ce50",
+  "payloadInventorySha256": "48a8a528875b0ab577d1210384250b1a0560589b2b28d08c7b24e15404000a08",
+  "installedProgramFileCount": 1049,
+  "dependencyCount": 20,
+  "localBuildReportSha256": "10530a6ff102ec0ff3119a91d3a96148639dbe166bb3e4010f68c423400a3128",
+  "qualification": "BUILD_ONLY_NOT_INSTALLATION_ACCEPTANCE",
+  "productInstalled": false,
+  "productExecuted": false
+}
