@@ -5,7 +5,7 @@ $deadline=[DateTime]::UtcNow.AddSeconds(30);if(!$env:KSESSION_FAST_JOB_GATE){thr
 . (Join-Path $PSScriptRoot 'hosted-recovery.ps1')
 . (Join-Path $PSScriptRoot 'physical-work.ps1')
 if(!(Test-Path -LiteralPath $Root) -or (Get-KSessionFirewallTestPathClass $Root) -ne 'CANONICAL'){throw 'OWNED_ROOT_REQUIRED'}
-$pass=0;$drive=$null;$activeTarget=$null;$binding=$null;$physicalBinding=$null;$restored=$false;$failed=$true
+$pass=0;$drive=$null;$activeTarget=$null;$binding=$null;$physicalBinding=$null;$restored=$false;$failed=$true;$renameBranch='NOT_REACHED'
 function Must([bool]$Value){if(!$Value){throw 'PHYSICAL_CONTRACT_FAILED'};$script:pass++}
 function Reject([scriptblock]$Action){$rejected=$false;try{& $Action|Out-Null}catch{$rejected=$true};Must $rejected}
 function Map-Owned([string]$Target){
@@ -37,11 +37,20 @@ try{
  # If rename succeeds, current-path identity must fail; restore only the exact owned object.
  $renamed=$false;try{Move-Item -LiteralPath $physical -Destination ($physical+'-foreign') -ErrorAction Stop;$renamed=$true}catch{}
  if($renamed){
+  $renameBranch='RENAMED_AND_IDENTITY_REJECTED'
   Must (!(Test-FreshPinnedWorkDirectory $physicalBinding))
   $h=[FreshWorkDirectoryNative]::Open($physical+'-foreign');try{if([FreshWorkDirectoryNative]::Identity($h) -cne $physicalBinding.identity -or (Test-Path -LiteralPath $physical)){throw 'OWNED_RENAME_IDENTITY_UNKNOWN'}}finally{$h.Dispose()}
   Move-Item -LiteralPath ($physical+'-foreign') -Destination $physical -ErrorAction Stop
- }
+ }else{$renameBranch='OS_REJECTED'}
  Must (Test-FreshPinnedWorkDirectory $physicalBinding)
+ $originalDevice=(Get-Item Function:Get-FreshNativeDevice).ScriptBlock
+ try{
+  Set-Item Function:Get-FreshNativeDevice {throw [UnauthorizedAccessException]::new('CONTROLLED_READ_DENIED')}
+  Must (!(Test-FreshPhysicalWorkBinding $physicalBinding))
+  Must (!(Get-FreshCompilerObservation $physicalBinding).known)
+  Reject {New-FreshPhysicalWorkBinding $physical $receipt 'OWNED_LOCAL' $Root}
+  Reject {Get-FreshPhysicalNode $physicalBinding (Join-Path $physical 'node.exe')}
+ }finally{Set-Item Function:Get-FreshNativeDevice $originalDevice}
  foreach($n in @('R:','S:','T:','U:','V:','W:','X:','Y:','Z:','Q:')){$b=[Text.StringBuilder]::new(32768);if([KSessionFirewallPathNative]::QueryDosDevice($n,$b,$b.Capacity) -eq 0 -and [Environment]::GetLogicalDrives() -inotcontains ($n+'\') -and !(Test-Path ($n+'\'))){$drive=$n;break}}
  if(!$drive){throw 'NO_SAFE_FREE_DRIVE'}
  $target=Join-Path $Root 'mapped';$other=Join-Path $Root 'other';foreach($p in @($target,$other)){New-Item -ItemType Directory -Path (Join-Path $p 'fresh-trial')|Out-Null}
@@ -74,7 +83,7 @@ try{
  if($null -ne $binding){Close-FreshPhysicalWorkBinding $binding}
  if($null -ne $physicalBinding){Close-FreshPhysicalWorkBinding $physicalBinding}
  if($activeTarget){Unmap-Owned;$restored=$true}
- $report=[ordered]@{schema=1;kind='CLOSURE_PHYSICAL_WORK';pass=$pass;fail=$(if($restored -and !$failed){0}else{1});skipped=0;mappingRestored=$restored;productionInstalled=$false;realRegistryWritten=$false;realRulesWritten=$false;rawOutputStored=$false}
+ $report=[ordered]@{schema=1;kind='CLOSURE_PHYSICAL_WORK';pass=$pass;fail=$(if($restored -and !$failed){0}else{1});skipped=0;mappingRestored=$restored;directoryRename=$renameBranch;permissionBoundary='INJECTED_UNAUTHORIZED_ACCESS';sharingViolationRead='ACTUAL_OBSERVED';productionInstalled=$false;realRegistryWritten=$false;realRulesWritten=$false;rawOutputStored=$false}
  [IO.File]::WriteAllText((Join-Path $Root 'physical-result.json'),($report|ConvertTo-Json -Compress))
 }
 $report|ConvertTo-Json -Compress
