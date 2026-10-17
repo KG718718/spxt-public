@@ -1,3 +1,7 @@
+## 当前Review PASS｜2026-10-17 FINAL INSTALL & LAN / FC1 RESERVED
+
+用户新增Final Candidate最多2次及原有同EXE独立QA1次已批准。原FRESH-T2正式RETURN53c68488/实现1a01f8d5并冻结，Master独立63/root134及完整EXE/1049文件20依赖逐字节核验PASS，Job/环境恢复PASS。新profile FC1/FC2/FQ1保留全部旧FAIL/预算、精确历史锚与原验收条件，生产零改。已预留FC1 1/2（尚未触发、runId待绑定），QA0/1仅完整Candidate PASS后同EXE可用；其余Hosted0。先三方HEAD/历史/来源前检再唯一trigger-only控制提交，不retry。真实安装/F01—F09/26-742尚待Candidate；历史F01首因UNKNOWN、物理项目HUMAN_PENDING。任何安全/隔离/恢复UNKNOWN或FC2/QA失败立即STOP，不main/tag/Release/内部SPXT/未知清理。详见fresh-lan-trial/final-install-lan/MASTER-REVIEW.md及FINAL-INSTALL-LAN-RUNS.json；下方旧停点保留历史。
+
 ## 当前授权｜2026-10-17 FINAL INSTALL & LAN ACCEPTANCE / PREPARATION
 
 用户已正式批准Final Candidate最多2次、独立QA最多1次（原未用唯一QA，非重复增加）；首次Candidate完整PASS即同EXE独立QA。原FRESH-T2/bea7、唯一Master继续，先必要独立额度/来源/失败恢复门禁接线、本地构建与Master Review后中央触发；首次FAIL仅充分根因+实际修复+本地/Review+可信完整收尾才C2。任意安全/隔离/所有权/恢复UNKNOWN即STOP，C2或QA失败即STOP，不重跑/追加/挪额度。复用现有完整Fresh验收及26/742，标准Hosted可销毁不代替恢复证明；不在日常Win10安装，不内部SPXT/main/tag/Release/未知清理/普通sub-agent。新账本0/2、QA0/1冻结，旧FAIL/预算保持。详见FINAL-INSTALL-LAN-AUTHORIZATION.md、FINAL-INSTALL-LAN-RUNS.json；下方停止为已获本次有限续行前历史。

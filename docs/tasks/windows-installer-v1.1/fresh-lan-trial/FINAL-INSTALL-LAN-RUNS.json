@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "authorization": "USER_FINAL_INSTALL_LAN_ACCEPTANCE_20261017",
-  "state": "APPROVED_LOCAL_PREPARATION",
+  "state": "FC1_RESERVED_NOT_YET_TRIGGERED",
   "candidateMax": 2,
-  "candidateUsed": 0,
+  "candidateUsed": 1,
   "qaMax": 1,
   "qaUsed": 0,
   "qaOrigin": "EXISTING_UNUSED_SINGLE_FINAL_QA_NOT_ADDITIONAL",
@@ -15,5 +15,17 @@
     "INSTALL-CANDIDATE-20261017-RUNS.json"
   ],
   "historicalResults": "PRESERVED_NOT_RESET",
-  "runs": []
+  "runs": [
+    {
+      "slot": "FC1",
+      "mode": "CANDIDATE",
+      "state": "RESERVED_NOT_YET_TRIGGERED",
+      "runId": null,
+      "attempt": 1,
+      "sourceCommit": null,
+      "controlCommit": null,
+      "localBuildSource": "1a01f8d51722d634431fdc330f5a084432be4d1e",
+      "masterReview": "final-install-lan/MASTER-REVIEW.md"
+    }
+  ]
 }
