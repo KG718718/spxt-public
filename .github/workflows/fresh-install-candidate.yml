@@ -107,21 +107,21 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: success() && steps.source.outputs.mode == 'CANDIDATE'
         with:
-          name: K-SESSION-install-20261017-candidate-${{ steps.source.outputs.source }}
+          name: ${{ steps.source.outputs.candidateArtifactName || format('K-SESSION-install-20261017-candidate-{0}', steps.source.outputs.source) }}
           path: ${{ steps.final.outputs.publish }}/artifact/
           if-no-files-found: error
           retention-days: 30
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: success() && steps.source.outputs.mode == 'QA'
         with:
-          name: K-SESSION-install-20261017-qa-${{ steps.source.outputs.source }}
+          name: ${{ steps.source.outputs.qaArtifactName || format('K-SESSION-install-20261017-qa-{0}', steps.source.outputs.source) }}
           path: ${{ steps.final.outputs.publish }}/fresh-report.json
           if-no-files-found: error
           retention-days: 30
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: failure() && steps.final.outputs.publish != ''
         with:
-          name: install-20261017-safe-failure-${{ github.run_id }}
+          name: ${{ steps.source.outputs.failureArtifactName || format('install-20261017-safe-failure-{0}', github.run_id) }}
           path: ${{ steps.final.outputs.publish }}/failure/
           if-no-files-found: error
           retention-days: 30
