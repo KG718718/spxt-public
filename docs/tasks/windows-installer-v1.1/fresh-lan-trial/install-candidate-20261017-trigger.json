@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "mode": "CANDIDATE",
+  "slot": "IC1",
+  "reviewedSource": "878d770be0cbf44e7e81f4707a340510c84f3693",
+  "testedSource": "878d770be0cbf44e7e81f4707a340510c84f3693",
+  "approvalMarker": "FRESH_INSTALL_20261017_MASTER_REVIEWED_IC1_878d770be0cbf44e7e81f4707a340510c84f3693",
+  "authorizationCommit": "627d871a4afedbd4b8403df78a7c79ad498c3a08",
+  "codeFingerprint": "43091f6233c1ca6ed093432591108fb9ac325e01d10c21c05630f4f7189d8f0a",
+  "localBuildSource": "849131c20282afcdc4d27fa5237fdf9b38865e8d",
+  "localBuildReportSha256": "58baf6635905b24d17fd891a539136a567743616ff1ad5a9b0f92c401c1c6b0e",
+  "localBuildSetupSha256": "d2f01a824b62e0f00a60026a2d1b01b7000d582e6b9d6031e2cb2b0643ce18eb",
+  "candidateRunId": "",
+  "candidateArtifactId": "",
+  "candidateSetupSha256": ""
+}
