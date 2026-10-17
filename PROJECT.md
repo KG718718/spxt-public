@@ -1,3 +1,7 @@
+## 最终STOP｜2026-10-17 IC1 ENV FAIL / COMPILER OBSERVATION UNPROVEN
+
+唯一Run39005740755/attempt1、source878d770b/control0e4e4624、Artifact12090752868已FAIL，严格来源/digest/单JSON/schema2白名单核验PASS。SOURCE预算绑定PASS；实际ENV/CLEANUP_UNPROVEN，BUILD NOT_STARTED、checks空/setupSha null，未构建或安装产品，未到F01。recovery仅compilerOwnedFiles=OBSERVATION_FAILED，其余9分项ABSENT/SNAPSHOT_UNCHANGED；cleanup工具链false/另9true，不能推断真实工具链残留或整体恢复PASS。源码存在compiler使用逻辑work、其他产品检查用physical work的不一致；SUBST下可被CANONICAL门禁拒绝，但本Run实际路径类别未记录，唯一底层根因仍未证。用户要求FAIL/UNKNOWN立即STOP：新Candidate1/1耗尽、原QA0/1未调度且冻结，不修复/探针/retry/追加；只治理同步/网页回单。原T2/QA/树/历史FAIL保留，本地P0/Review PASS不冒充Hosted安装，无用户包，不main/tag/Release/内部SPXT/未知清理。详见install-candidate-20261017/HOSTED-RESULT.md及固定证据；下方运行/授权均为历史。
+
 ## 唯一Candidate运行中｜2026-10-17 IC1 / 1 OF 1
 
 Run39005740755/attempt1，testedSource878d770be0cbf44e7e81f4707a340510c84f3693、control0e4e4624db12b2eea381bf893fde89bebb30ceb3已IN_PROGRESS。本次Candidate1/1已用，原QA0/1仍以完整PASS为条件，任何FAIL/UNKNOWN即STOP，不retry/追加。原T2正式RETURN/独立45+134与同源实构建Review PASS后ff整合，受审实现849131c2、代码指纹43091f...9d8f0a；只触发新独立workflow，旧历史FAIL/预算不变。真实Runner隔离/所有权/恢复前检和安装/F01-F09/26-742尚待Run结果，不提前称PASS；后续治理不改变本Run来源。T2冻结，未调度QA，不生产/内部SPXT/main/tag/Release/未知清理。见INSTALL-CANDIDATE-20261017-RUNS.json及install-candidate-20261017/MASTER-REVIEW.md。

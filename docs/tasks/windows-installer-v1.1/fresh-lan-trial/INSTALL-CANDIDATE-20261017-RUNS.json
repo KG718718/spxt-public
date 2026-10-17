@@ -7,7 +7,7 @@
   "qaMax": 1,
   "qaUsed": 0,
   "qaBudgetOrigin": "EXISTING_UNUSED_FINAL_QA_ONLY_NOT_ADDITIONAL",
-  "qaState": "CONDITIONAL_ON_COMPLETE_CANDIDATE_PASS",
+  "qaState": "UNUSED_FROZEN_CANDIDATE_FAILED",
   "historicalCandidateUsed": 2,
   "historicalCandidateMax": 2,
   "historicalCandidateResult": "FAIL_PRESERVED",
@@ -20,10 +20,16 @@
       "attempt": 1,
       "source": "878d770be0cbf44e7e81f4707a340510c84f3693",
       "control": "0e4e4624db12b2eea381bf893fde89bebb30ceb3",
-      "status": "IN_PROGRESS",
+      "status": "FAIL",
       "implementation": "849131c20282afcdc4d27fa5237fdf9b38865e8d",
-      "codeFingerprint": "43091f6233c1ca6ed093432591108fb9ac325e01d10c21c05630f4f7189d8f0a"
+      "codeFingerprint": "43091f6233c1ca6ed093432591108fb9ac325e01d10c21c05630f4f7189d8f0a",
+      "artifactId": "12090752868",
+      "classification": "CLEANUP_UNPROVEN",
+      "setupSha256": null,
+      "compilerOwnedFiles": "OBSERVATION_FAILED",
+      "stage": "ENV",
+      "cleanupVerified": false
     }
   ],
-  "state": "IC1_IN_PROGRESS"
+  "state": "STOP_IC1_ENV_COMPILER_OBSERVATION_UNPROVEN"
 }

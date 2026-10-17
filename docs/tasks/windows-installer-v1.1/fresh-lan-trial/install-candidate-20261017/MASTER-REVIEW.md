@@ -24,3 +24,6 @@ Master独立同源专项45/45（新17+R2兼容28）、root134/134，fail0skip0/s
 仅新增IC1一次；原QA一次条件保留。独立RUNS登记后核验local/origin/GitHub一致，Master才以trigger-only控制提交中央触发。任何必需门禁FAIL/UNKNOWN或收尾未证即停止，不重跑/追加，不用QA调试。IC1全部通过后才由原独立QA长期线程审查并使用同EXE的唯一IQ1。
 
 历史F01、Win10规则读取和完整失败恢复未证明的结论不改。实际Runner前检仍待IC1在产品执行前完成。无真实本机安装/规则/登记修改，无内部SPXT/真实业务/凭据/main/tag/Release/未知清理。所有历史失败、工作树及未跟踪现场保留。
+
+## Hosted后资格限定
+IC1 Run39005740755在ENV前检失败，compilerOwnedFiles观察未证明，未进入构建/安装。此前有限接线和物理路径本地验证PASS不能证明workflow支持的SUBST路径组合。后续如获新授权，应先补该差异反例；本轮不再实施或测试，所有历史结论保留。
