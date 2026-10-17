@@ -1,0 +1,183 @@
+{
+  "schema": 1,
+  "kind": "FINAL_INSTALL_LAN_LOCAL_PROOF",
+  "sourceCommit": "1a01f8d51722d634431fdc330f5a084432be4d1e",
+  "sourceTree": "79cee779f2d138fcb1d82bce1d97a9af46d70556",
+  "codeFingerprint": "de2b2778f0ddda661cf6238473e27ccdaaa4828ef56674d3178f4a32a0ec924f",
+  "status": "PASS",
+  "sourceGates": {
+    "schema": 1,
+    "kind": "FINAL_INSTALL_LAN_SOURCE_GATES",
+    "sourceCommit": "1a01f8d51722d634431fdc330f5a084432be4d1e",
+    "sourceBound": true,
+    "status": "PASS",
+    "results": [
+      {
+        "id": "NEW_CONTRACT_AND_WIRING",
+        "status": "PASS",
+        "exitClass": "ZERO",
+        "stderrEmpty": true
+      },
+      {
+        "id": "ROOT",
+        "status": "PASS",
+        "exitClass": "ZERO",
+        "stderrEmpty": true
+      },
+      {
+        "id": "GO_OVERLAY_COMPILE",
+        "status": "PASS",
+        "exitClass": "ZERO",
+        "stderrEmpty": true
+      },
+      {
+        "id": "GO_OVERLAY_VET",
+        "status": "PASS",
+        "exitClass": "ZERO",
+        "stderrEmpty": true
+      }
+    ],
+    "productExecuted": false,
+    "realCollectorsExecuted": false,
+    "rawOutputStored": false
+  },
+  "scope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "target": {
+    "schema": 1,
+    "kind": "FINAL_INSTALL_LAN_LOCAL_GATES",
+    "status": "PASS",
+    "tests": 63,
+    "pass": 63,
+    "fail": 0,
+    "skip": 0,
+    "failedIds": [],
+    "stderrEmpty": true,
+    "rawOutputStored": false
+  },
+  "root": {
+    "schema": 1,
+    "kind": "FAST_ROOT_FRESH_GATE",
+    "sourceCommit": "1a01f8d51722d634431fdc330f5a084432be4d1e",
+    "sourceBound": true,
+    "status": "PASS",
+    "tests": 134,
+    "pass": 134,
+    "fail": 0,
+    "skipped": 0,
+    "exitClass": "ZERO",
+    "failures": [],
+    "rawOutputStored": false
+  },
+  "compatibility": {
+    "executedSource": "862e347e258674b3f402d88bda222613449a7142",
+    "inputBlobsUnchanged": true,
+    "inputBlobIds": {
+      "PHYSICAL_WORK": "bfd38b461d5ad81a83a2c50cf79b57c47b77edfa",
+      "PHYSICAL_TEST": "f45e0c110a6d7beaacda7c513acef85cd0f7d56d",
+      "RECOVERY": "d4cdf07bba7367a2d6826ba752538fe9d218aaf2",
+      "PS_TEST": "973b1a6b334cccc30c84e6b7f4a82a1c30bf7a58",
+      "FINALLY_TEST": "292c8e176df8eb89d23a32bb00e70cd968afe570",
+      "CI": "7098f87d3c085ea671d9dd3f5c9a2f870cd81348",
+      "SUPERVISOR": "a2a5425929da529cafdf4a6f35f867c0b6e8e651"
+    },
+    "physical": {
+      "schema": 1,
+      "kind": "CLOSURE_PHYSICAL_WORK",
+      "pass": 26,
+      "fail": 0,
+      "skipped": 0,
+      "mappingRestored": true,
+      "directoryRename": "RENAMED_AND_IDENTITY_REJECTED",
+      "permissionBoundary": "INJECTED_UNAUTHORIZED_ACCESS",
+      "sharingViolationRead": "ACTUAL_OBSERVED",
+      "productionInstalled": false,
+      "realRegistryWritten": false,
+      "realRulesWritten": false,
+      "rawOutputStored": false
+    },
+    "physicalScope": {
+      "schema": 1,
+      "kind": "FAST_OWNED_PROCESS_SCOPE",
+      "assigned": true,
+      "naturalExit": true,
+      "stderrEmpty": true,
+      "pipesClosed": true,
+      "handlesClosed": true,
+      "jobEmpty": true,
+      "forcedTermination": false,
+      "status": "PASS"
+    },
+    "recovery": {
+      "rawOutputStored": false,
+      "fail": 0,
+      "kind": "INSTALL_R2_PS_RECOVERY_COUNTERS",
+      "realRegistryWritten": false,
+      "realRulesWritten": false,
+      "skipped": 0,
+      "pass": 22,
+      "schema": 1
+    },
+    "ciFinally": {
+      "skipped": 0,
+      "kind": "INSTALL_R2_ACTUAL_CI_FINALLY_COUNTERS",
+      "realRulesWritten": false,
+      "pass": 7,
+      "schema": 1,
+      "realInstallation": false,
+      "realRegistryWritten": false,
+      "environmentRestored": true,
+      "fail": 0
+    },
+    "scope": {
+      "schema": 1,
+      "kind": "FAST_OWNED_PROCESS_SCOPE",
+      "assigned": true,
+      "naturalExit": true,
+      "stderrEmpty": true,
+      "pipesClosed": true,
+      "handlesClosed": true,
+      "jobEmpty": true,
+      "forcedTermination": false,
+      "status": "PASS"
+    }
+  },
+  "masterReported": {
+    "sourceCommit": "1a01f8d51722d634431fdc330f5a084432be4d1e",
+    "targets": 63,
+    "root": 134,
+    "jobScope": "PASS",
+    "review": "NO_REWORK_REPORTED"
+  },
+  "missingLegacyCounter": {
+    "schema": 1,
+    "kind": "FINAL_LAN_MISSING_LEGACY_COUNTER",
+    "sourceCommit": "862e347e258674b3f402d88bda222613449a7142",
+    "knownLegacyRowsOmitted": 6,
+    "accepted": true,
+    "status": "GAP_CONFIRMED",
+    "hostedExecuted": false,
+    "rawOutputStored": false
+  },
+  "developmentFixtureParse": {
+    "status": "FAIL_PRESERVED_FIXED",
+    "failedTestContainers": 2,
+    "hostedExecuted": false
+  },
+  "actualProductInstall": "NOT_RUN",
+  "installedBusiness": "NOT_RUN",
+  "core26_742": "NOT_RUN_NO_HOSTED_SPOOF",
+  "physicalLan": "HUMAN_PENDING",
+  "hostedRuns": 0,
+  "rawOutputStored": false
+}

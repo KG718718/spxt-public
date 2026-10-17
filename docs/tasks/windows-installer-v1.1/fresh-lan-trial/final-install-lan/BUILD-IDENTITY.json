@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "kind": "FINAL_INSTALL_LAN_BUILD_IDENTITY",
+  "sourceCommit": "1a01f8d51722d634431fdc330f5a084432be4d1e",
+  "sourceTree": "79cee779f2d138fcb1d82bce1d97a9af46d70556",
+  "codeFingerprint": "de2b2778f0ddda661cf6238473e27ccdaaa4828ef56674d3178f4a32a0ec924f",
+  "localBuildReportSha256": "3349313d4f49ffc3f359b93eab511dcd2d1e0e5e4d8cbf4966127a626cebc739",
+  "setupBytes": 33555275,
+  "setupSha256": "3413db4a2cc2e34ce6e7eab761ea2e94ab0d5131fe21e8700c9761d71ec1881a",
+  "programManifestHash": "64f2d6dc6e7dbd5768cc3698df99eda43441c698732f411b210be00e43d268be",
+  "payloadInventorySha256": "b904fd6c930185087e9c3449c0c2faf160b6749d2e253844111f8d79ad7889b1",
+  "installedProgramFileCount": 1049,
+  "dependencyCount": 20,
+  "qualification": "BUILD_ONLY_NOT_INSTALLATION_ACCEPTANCE",
+  "productionInstalled": false,
+  "productionExeRun": false
+}

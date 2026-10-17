@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "kind": "SUPERSEDED_SOURCE_BUILD_HISTORY",
+  "eligibleForFinalSource": false,
+  "qualification": "HISTORICAL_ONLY_CODE_FINGERPRINT_CHANGED",
+  "originalProof": {
+    "environmentRestored": true,
+    "kind": "FAST_P0_LOCAL_BUILD",
+    "productionInstalled": false,
+    "setupBytes": 33550391,
+    "productionExeRun": false,
+    "qualification": "BUILD_ONLY_NOT_INSTALLATION_ACCEPTANCE",
+    "status": "PASS",
+    "stage": "FINAL",
+    "jobEmpty": true,
+    "naturalExit": true,
+    "setupSha256": "bfbd094a0c4a4879ddcd2d7368b14c52830f82c02a126bd924bb18c810a14919",
+    "schema": 1,
+    "sourceCommit": "862e347e258674b3f402d88bda222613449a7142",
+    "stderrEmpty": true,
+    "forcedTermination": false
+  }
+}
