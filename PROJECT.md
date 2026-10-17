@@ -1,3 +1,7 @@
+## 唯一Candidate运行中｜2026-10-17 IC1 / 1 OF 1
+
+Run39005740755/attempt1，testedSource878d770be0cbf44e7e81f4707a340510c84f3693、control0e4e4624db12b2eea381bf893fde89bebb30ceb3已IN_PROGRESS。本次Candidate1/1已用，原QA0/1仍以完整PASS为条件，任何FAIL/UNKNOWN即STOP，不retry/追加。原T2正式RETURN/独立45+134与同源实构建Review PASS后ff整合，受审实现849131c2、代码指纹43091f...9d8f0a；只触发新独立workflow，旧历史FAIL/预算不变。真实Runner隔离/所有权/恢复前检和安装/F01-F09/26-742尚待Run结果，不提前称PASS；后续治理不改变本Run来源。T2冻结，未调度QA，不生产/内部SPXT/main/tag/Release/未知清理。见INSTALL-CANDIDATE-20261017-RUNS.json及install-candidate-20261017/MASTER-REVIEW.md。
+
 ## 当前授权｜2026-10-17 FRESH CANDIDATE / 1 RUN + CONDITIONAL ORIGINAL QA
 
 用户明确新增最多1次Fresh Candidate，完整PASS后解冻原唯一QA（同一EXE，非新增QA预算）。基线8cf5de03三方HEAD一致、公开仓库/原T2/bea7核验；先必要独立预算/来源/同EXE接线、本地门禁及Master独立Review，再唯一Candidate。Hosted隔离/所有权/恢复前检FAIL或UNKNOWN不得开始安装；任一必需门禁FAIL/UNKNOWN立即STOP、不retry、不追加、不挪QA。旧Candidate2/2及全部历史FAIL不改，不用旧槽位或Smoke/诊断/Full。日常本机不实际安装、不改真实系统网络/登记；不生产安全/main/tag/Release/内部SPXT/未知清理，不普通sub-agent/后代。详见INSTALL-CANDIDATE-20261017-AUTHORIZATION.md及独立RUNS；下方冻结是本次有限授权前历史。

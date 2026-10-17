@@ -16,14 +16,14 @@
   "runs": [
     {
       "slot": "IC1",
-      "runId": null,
+      "runId": "39005740755",
       "attempt": 1,
-      "source": null,
-      "control": null,
-      "status": "RESERVED",
+      "source": "878d770be0cbf44e7e81f4707a340510c84f3693",
+      "control": "0e4e4624db12b2eea381bf893fde89bebb30ceb3",
+      "status": "IN_PROGRESS",
       "implementation": "849131c20282afcdc4d27fa5237fdf9b38865e8d",
       "codeFingerprint": "43091f6233c1ca6ed093432591108fb9ac325e01d10c21c05630f4f7189d8f0a"
     }
   ],
-  "state": "IC1_RESERVED_NOT_YET_TRIGGERED"
+  "state": "IC1_IN_PROGRESS"
 }
