@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-17 FINAL DELIVERY CLOSURE V1 / LOCAL LOOP ONLY
+
+用户完整续篇批准原FRESH-T2/bea7合并P0物理路径观察、P1自启精确身份及P2失败所有权恢复；本地自主修复/反例/真实完整构建/Master独立Review后统一返回，不建微型Batch。新增Hosted0、QA冻结、旧FAIL/预算不改；不得触发或修改实际trigger，不在日常业务机真实安装，不清理未知资源。无安全隔离环境时实际安装NOT VERIFIED，无法证明所有权/恢复等按止损返回。详见fresh-lan-trial/FINAL-DELIVERY-CLOSURE-V1.md；下方停止为本次有限本地授权前历史。
+
 ## 最终STOP｜2026-10-17 IC1 ENV FAIL / COMPILER OBSERVATION UNPROVEN
 
 唯一Run39005740755/attempt1、source878d770b/control0e4e4624、Artifact12090752868已FAIL，严格来源/digest/单JSON/schema2白名单核验PASS。SOURCE预算绑定PASS；实际ENV/CLEANUP_UNPROVEN，BUILD NOT_STARTED、checks空/setupSha null，未构建或安装产品，未到F01。recovery仅compilerOwnedFiles=OBSERVATION_FAILED，其余9分项ABSENT/SNAPSHOT_UNCHANGED；cleanup工具链false/另9true，不能推断真实工具链残留或整体恢复PASS。源码存在compiler使用逻辑work、其他产品检查用physical work的不一致；SUBST下可被CANONICAL门禁拒绝，但本Run实际路径类别未记录，唯一底层根因仍未证。用户要求FAIL/UNKNOWN立即STOP：新Candidate1/1耗尽、原QA0/1未调度且冻结，不修复/探针/retry/追加；只治理同步/网页回单。原T2/QA/树/历史FAIL保留，本地P0/Review PASS不冒充Hosted安装，无用户包，不main/tag/Release/内部SPXT/未知清理。详见install-candidate-20261017/HOSTED-RESULT.md及固定证据；下方运行/授权均为历史。
