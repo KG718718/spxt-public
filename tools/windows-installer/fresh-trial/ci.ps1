@@ -4,7 +4,13 @@ $ErrorActionPreference='Stop'
 $taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $taskWork=[IO.Path]::GetFullPath($Work)
 $taskContext=Get-Content -Raw -LiteralPath (Join-Path $taskWork 'context.json')|ConvertFrom-Json
-if($null -ne $taskContext.PSObject.Properties['r1'] -and $null -ne $taskContext.r1.PSObject.Properties['fastDelivery']){
+$taskInstallCandidate=$env:GITHUB_WORKFLOW_REF -ceq 'KG718718/spxt-public/.github/workflows/fresh-install-candidate.yml@refs/heads/codex/lan-fresh-trial-v1.1' -or $null -ne $taskContext.PSObject.Properties['installCandidate']
+if($taskInstallCandidate){
+  if($BuildOnly){throw 'Install candidate cannot use build-only smoke'}
+  $taskContextCheck=Invoke-KSessionMemoryNode (Get-Command node).Source @((Join-Path $PSScriptRoot 'install-candidate/context.cjs'),$taskWork)
+  if($taskContextCheck.ExitCode -ne 0 -or $taskContextCheck.TimedOut -or $taskContextCheck.ForcedTermination -or $taskContextCheck.Stderr.Length -ne 0){throw 'Install candidate context required'}
+}
+if($taskInstallCandidate -or ($null -ne $taskContext.PSObject.Properties['r1'] -and $null -ne $taskContext.r1.PSObject.Properties['fastDelivery'])){
   $taskGateDeadline=[DateTime]::UtcNow.AddSeconds(30)
   if(!$env:KSESSION_FAST_JOB_GATE){throw 'Fast complete-process supervision required'}
   while(!(Test-Path -LiteralPath $env:KSESSION_FAST_JOB_GATE)){if([DateTime]::UtcNow -gt $taskGateDeadline){throw 'Scope assignment unavailable'};Start-Sleep -Milliseconds 20}

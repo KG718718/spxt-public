@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$ControlRoot,[ValidateSet('success','failure','cancelled','skipped')][string]$SourceOutcome='failure',[ValidateSet('success','failure','cancelled','skipped')][string]$ExecutionOutcome='failure',[switch]$BuildSmoke)
+param([Parameter(Mandatory=$true)][string]$ControlRoot,[ValidateSet('success','failure','cancelled','skipped')][string]$SourceOutcome='failure',[ValidateSet('success','failure','cancelled','skipped')][string]$ExecutionOutcome='failure',[switch]$BuildSmoke,[switch]$InstallCandidate)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/memory-process.ps1')
 $taskControlNode=(Get-Command node).Source
@@ -19,7 +19,15 @@ if($taskState.created){
   $taskMayReadWork=$LASTEXITCODE -eq 0 -and $taskOwn.Count -eq 1 -and $taskState.target -ieq $taskExpected -and ($taskOwn[0] -replace '^E:\\: => ','').TrimEnd('\') -ieq $taskExpected.TrimEnd('\')
 }
 try{
-  if($taskMayReadWork){$taskControl=Invoke-KSessionMemoryNode $taskControlNode @($taskEntry,'CHECK',$taskWork,$taskPublish,'false');$taskValid=$taskControl.ExitCode -eq 0}
+  if($taskMayReadWork){
+    $taskNewContextValid=$true
+    if($InstallCandidate){
+      if($BuildSmoke){throw 'Install candidate cannot finalize smoke'}
+      $taskContextCheck=Invoke-KSessionMemoryNode $taskControlNode @((Join-Path $PSScriptRoot 'install-candidate/context.cjs'),$taskWork)
+      $taskNewContextValid=$taskContextCheck.ExitCode -eq 0 -and !$taskContextCheck.TimedOut -and !$taskContextCheck.ForcedTermination -and $taskContextCheck.Stderr.Length -eq 0
+    }
+    if($taskNewContextValid){$taskControl=Invoke-KSessionMemoryNode $taskControlNode @($taskEntry,'CHECK',$taskWork,$taskPublish,'false');$taskValid=$taskControl.ExitCode -eq 0}
+  }
   if($taskValid){
     Copy-Item -LiteralPath (Join-Path $taskWork 'context.json') -Destination (Join-Path $taskPublish 'context-private.json')
     Copy-Item -LiteralPath (Join-Path $taskWork 'fresh-report.json') -Destination (Join-Path $taskPublish 'report-private.json')
@@ -57,6 +65,10 @@ if(!$taskValid -or !(Test-Path -LiteralPath (Join-Path $taskPublish $taskFinalRe
   New-Item -ItemType Directory -Path (Join-Path $taskPublish 'failure') -Force|Out-Null
   # A newly constructed fixed early record, never an unchecked copy of failed JSON.
   $taskEarly=[ordered]@{schema=1;kind='FRESH_TRIAL_EARLY_FAILURE';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';reason='REPORT_INVALID';status='FAIL';cleanup='UNKNOWN'}
+  if($InstallCandidate){
+    $taskRecovery=[ordered]@{};foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules')){$taskRecovery[$taskKey]='NOT_OBSERVED'}
+    $taskEarly=[ordered]@{schema=1;kind='FRESH_INSTALL_CANDIDATE_EARLY_FAILURE';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';classification='REPORT_INVALID';status='FAIL';isolation=$(if($taskDriveRestored){'RESTORED'}else{'UNKNOWN'});recovery=$taskRecovery}
+  }
   [IO.File]::WriteAllText((Join-Path $taskPublish 'failure/early.json'),($taskEarly|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
 }
 ('publish='+$taskPublish)|Out-File -LiteralPath $env:GITHUB_OUTPUT -Append -Encoding utf8

@@ -10,7 +10,7 @@ function finish(input,context,evidence,buildDiagnostic){
  assert.deepEqual(Object.keys(evidence).sort(),['environmentRestored','productPhaseStarted','recovery']);
  assert.equal(context.reportSchema,2);assert.equal(typeof evidence.environmentRestored,'boolean');assert.equal(typeof evidence.productPhaseStarted,'boolean');recovery.validate(evidence.recovery);
  const expected={reportSchema:2,sourceCommit:context.sourceCommit,controlCommit:context.controlCommit,run:context.run,mode:context.mode,...(context.mode==='QA'?{candidate:context.candidate}:{})};
- let r;try{r=structuredClone(report.validate(input,expected));}catch{r=report.initial(context.sourceCommit,context.mode,context.candidate,context.controlCommit,context.run,2);r.reason='REPORT_INVALID';}
+ let r;try{r=structuredClone(report.validate(input,expected));}catch{r=Object.hasOwn(context,'installCandidate')?require('../../../windows-installer/fresh-trial/install-candidate/bootstrap.cjs').initialReport(context):report.initial(context.sourceCommit,context.mode,context.candidate,context.controlCommit,context.run,2);r.reason='REPORT_INVALID';}
  if(buildDiagnostic!==undefined){try{r.buildDiagnostic=require('../build-diagnostic.cjs').validate(buildDiagnostic);}catch{r.status='FAIL';r.reason='REPORT_INVALID';}}
  r.recovery=structuredClone(evidence.recovery);
  const restored=k=>recovery.RESTORED.includes(r.recovery[k]);

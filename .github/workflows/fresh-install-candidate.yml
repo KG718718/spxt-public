@@ -1,0 +1,127 @@
+name: Fresh Install Candidate 20261017
+run-name: ${{ github.event.head_commit.message }}
+on:
+  push:
+    branches: [codex/lan-fresh-trial-v1.1]
+    paths: [docs/tasks/windows-installer-v1.1/fresh-lan-trial/install-candidate-20261017-trigger.json]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: fresh-lan-trial-exclusive
+  cancel-in-progress: false
+jobs:
+  fresh:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-fresh-trial-v1.1' && github.run_attempt == 1
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - name: Initialize safe failure evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $taskControl=Join-Path $env:RUNNER_TEMP ('fresh-control-'+$env:GITHUB_RUN_ID+'-'+[guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Path $taskControl|Out-Null
+          ('FRESH_CONTROL_ROOT='+$taskControl)|Out-File -LiteralPath $env:GITHUB_ENV -Append -Encoding utf8
+          $taskRecovery=[ordered]@{};foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules')){$taskRecovery[$taskKey]='NOT_OBSERVED'}
+          $taskState=[ordered]@{schema=1;runId=$env:GITHUB_RUN_ID;drive='E:';created=$false;target=$null}
+          [IO.File]::WriteAllText((Join-Path $taskControl 'isolation-private.json'),($taskState|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+          if(!(Test-Path E:/)){
+            $taskOwnedDrive=Join-Path $env:RUNNER_TEMP ('fresh-drive-'+$env:GITHUB_RUN_ID)
+            if(Test-Path -LiteralPath $taskOwnedDrive){throw 'Fresh isolation unavailable'}
+            New-Item -ItemType Directory -Path $taskOwnedDrive|Out-Null
+            $taskPriorMappings=@(& (Join-Path $env:SystemRoot 'System32/subst.exe'))
+            if($LASTEXITCODE -ne 0 -or @($taskPriorMappings|Where-Object{$_ -match '^E:\\: => '}).Count -ne 0){throw 'Existing unknown E mapping'}
+            $taskState.created=$true;$taskState.target=$taskOwnedDrive
+            [IO.File]::WriteAllText((Join-Path $taskControl 'isolation-private.json'),($taskState|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+            & (Join-Path $env:SystemRoot 'System32/subst.exe') E: $taskOwnedDrive
+            if($LASTEXITCODE -ne 0){throw 'Fresh isolation unavailable'}
+          }
+          if(Test-Path E:/fresh-trial){throw 'Fresh isolation unavailable'}
+          New-Item -ItemType Directory -Path E:/fresh-trial|Out-Null
+          [IO.File]::WriteAllText('E:/fresh-trial/early.json',(@{schema=1;kind='FRESH_INSTALL_CANDIDATE_EARLY_FAILURE';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';classification='SOURCE_REJECTED';status='FAIL';isolation='NOT_STARTED';recovery=$taskRecovery}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reserve slot and bind exact reviewed source
+        id: source
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NODE_OPTIONS: ''
+          NODE_PATH: ''
+        run: |
+          $taskSourceOutput=@(node tools/windows-installer/fresh-trial/install-candidate/bootstrap.cjs $env:GITHUB_WORKSPACE E:/fresh-trial 2>&1)
+          if($LASTEXITCODE -ne 0){Write-Output 'FRESH_TRIAL_SOURCE_REJECTED';exit 1}
+      - name: Independent fresh build or same immutable candidate QA
+        id: execution
+        timeout-minutes: 35
+        shell: pwsh
+        run: |
+          try {
+            & ./tools/windows-installer/fresh-trial/hosted-supervisor.ps1 -Work E:/fresh-trial
+            if($LASTEXITCODE -ne 0){throw 'Fresh trial gate failed'}
+          } catch {Write-Output 'FRESH_TRIAL_GATE_FAILED';exit 1}
+      - name: Always owned finalization and physical publication
+        if: always()
+        id: final
+        shell: pwsh
+        env:
+          FRESH_SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          FRESH_EXECUTION_OUTCOME: ${{ steps.execution.outcome }}
+        run: |
+          if(Test-Path ./tools/windows-installer/fresh-trial/finalize.ps1){
+            try {& ./tools/windows-installer/fresh-trial/finalize.ps1 -ControlRoot $env:FRESH_CONTROL_ROOT -SourceOutcome $env:FRESH_SOURCE_OUTCOME -ExecutionOutcome $env:FRESH_EXECUTION_OUTCOME -InstallCandidate; if($LASTEXITCODE -ne 0){exit 1}}
+            catch {
+              $taskRecovery=[ordered]@{};foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules')){$taskRecovery[$taskKey]='NOT_OBSERVED'}
+              $taskPublish=Join-Path $env:FRESH_CONTROL_ROOT ('publish-failure-'+[guid]::NewGuid().ToString('N'))
+              New-Item -ItemType Directory -Path (Join-Path $taskPublish 'failure')|Out-Null
+              [IO.File]::WriteAllText((Join-Path $taskPublish 'failure/early.json'),(@{schema=1;kind='FRESH_INSTALL_CANDIDATE_EARLY_FAILURE';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';classification='ISOLATION_UNPROVEN';status='FAIL';isolation='UNKNOWN';recovery=$taskRecovery}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+              ('publish='+$taskPublish)|Out-File -LiteralPath $env:GITHUB_OUTPUT -Append -Encoding utf8
+              Write-Output 'FRESH_TRIAL_FINALIZATION_UNPROVEN';exit 1
+            }
+          }else{
+            $taskRecovery=[ordered]@{};foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules')){$taskRecovery[$taskKey]='NOT_OBSERVED'}
+            $taskState=Get-Content -Raw -LiteralPath (Join-Path $env:FRESH_CONTROL_ROOT 'isolation-private.json')|ConvertFrom-Json
+            $taskRestored=$false
+            if(!$taskState.created){$taskRestored=$true}else{
+              $taskExpected=Join-Path $env:RUNNER_TEMP ('fresh-drive-'+$env:GITHUB_RUN_ID)
+              $taskRows=@(& (Join-Path $env:SystemRoot 'System32/subst.exe'))
+              $taskOwn=@($taskRows|Where-Object{$_ -match '^E:\\: => '})
+              if($taskState.target -ieq $taskExpected -and $taskOwn.Count -eq 1 -and ($taskOwn[0] -replace '^E:\\: => ','').TrimEnd('\') -ieq $taskExpected.TrimEnd('\')){
+                & (Join-Path $env:SystemRoot 'System32/subst.exe') E: /D|Out-Null
+                $taskAfter=@(& (Join-Path $env:SystemRoot 'System32/subst.exe'));$taskRestored=$LASTEXITCODE -eq 0 -and @($taskAfter|Where-Object{$_ -match '^E:\\: => '}).Count -eq 0
+              }
+            }
+            $taskPublish=Join-Path $env:FRESH_CONTROL_ROOT 'publish';New-Item -ItemType Directory -Path (Join-Path $taskPublish 'failure')|Out-Null
+            $taskCleanup=if($taskRestored){'RESTORED'}else{'UNKNOWN'}
+            [IO.File]::WriteAllText((Join-Path $taskPublish 'failure/early.json'),(@{schema=1;kind='FRESH_INSTALL_CANDIDATE_EARLY_FAILURE';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';classification='SOURCE_REJECTED';status='FAIL';isolation=$taskCleanup;recovery=$taskRecovery}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+            ('publish='+$taskPublish)|Out-File -LiteralPath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            exit 1
+          }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: success() && steps.source.outputs.mode == 'CANDIDATE'
+        with:
+          name: K-SESSION-install-20261017-candidate-${{ steps.source.outputs.source }}
+          path: ${{ steps.final.outputs.publish }}/artifact/
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: success() && steps.source.outputs.mode == 'QA'
+        with:
+          name: K-SESSION-install-20261017-qa-${{ steps.source.outputs.source }}
+          path: ${{ steps.final.outputs.publish }}/fresh-report.json
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure() && steps.final.outputs.publish != ''
+        with:
+          name: install-20261017-safe-failure-${{ github.run_id }}
+          path: ${{ steps.final.outputs.publish }}/failure/
+          if-no-files-found: error
+          retention-days: 30

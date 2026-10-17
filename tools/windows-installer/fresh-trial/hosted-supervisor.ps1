@@ -2,9 +2,13 @@ param([Parameter(Mandatory=$true)][string]$Work)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/fast-delivery/job-scope.ps1')
 . (Join-Path $PSScriptRoot '../../tests/lan-host/node-test-environment.ps1')
+. (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/memory-process.ps1')
 if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public'){throw 'Hosted scope required'}
 $taskContext=Get-Content -Raw -LiteralPath (Join-Path $Work 'context.json')|ConvertFrom-Json
-if($taskContext.r1.fastDelivery.schema -ne 1 -or $taskContext.controlCommit -cne $env:GITHUB_SHA -or $taskContext.run.id -cne $env:GITHUB_RUN_ID -or $env:GITHUB_RUN_ATTEMPT -cne '1'){throw 'Fast source context required'}
+if($env:GITHUB_WORKFLOW_REF -ceq 'KG718718/spxt-public/.github/workflows/fresh-install-candidate.yml@refs/heads/codex/lan-fresh-trial-v1.1' -or $null -ne $taskContext.PSObject.Properties['installCandidate']){
+  $taskContextCheck=Invoke-KSessionMemoryNode (Get-Command node).Source @((Join-Path $PSScriptRoot 'install-candidate/context.cjs'),$Work)
+  if($taskContextCheck.ExitCode -ne 0 -or $taskContextCheck.TimedOut -or $taskContextCheck.ForcedTermination -or $taskContextCheck.Stderr.Length -ne 0){throw 'Install candidate context required'}
+}elseif($taskContext.r1.fastDelivery.schema -ne 1 -or $taskContext.controlCommit -cne $env:GITHUB_SHA -or $taskContext.run.id -cne $env:GITHUB_RUN_ID -or $env:GITHUB_RUN_ATTEMPT -cne '1'){throw 'Fast source context required'}
 $taskPhysical=Resolve-KSessionFirewallPhysicalPath $Work
 $taskScope=Invoke-FastOwnedProcess (Get-Command pwsh).Source @('-NoProfile','-File',(Join-Path $PSScriptRoot 'ci.ps1'),'-Work',$Work) (Join-Path $taskPhysical 'scope-job-ready')
 [IO.File]::WriteAllText((Join-Path $taskPhysical 'scope-job-proof.json'),($taskScope|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))

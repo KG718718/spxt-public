@@ -1,0 +1,5 @@
+'use strict';
+const assert=require('node:assert/strict'),{exact}=require('../recovery-r1/contract.cjs'),recovery=require('../install-r2/recovery.cjs');
+function initial(controlCommit,runId,classification='SOURCE_REJECTED',isolation='UNKNOWN'){return validate({schema:1,kind:'FRESH_INSTALL_CANDIDATE_EARLY_FAILURE',controlCommit,runId,runAttempt:1,stage:'SOURCE',classification,status:'FAIL',isolation,recovery:recovery.initial()});}
+function validate(r){exact(r,['schema','kind','controlCommit','runId','runAttempt','stage','classification','status','isolation','recovery']);assert.equal(r.schema,1);assert.equal(r.kind,'FRESH_INSTALL_CANDIDATE_EARLY_FAILURE');assert.match(r.controlCommit,/^[a-f0-9]{40}$/);assert.match(r.runId,/^[1-9][0-9]{0,19}$/);assert.equal(r.runAttempt,1);assert.equal(r.stage,'SOURCE');assert.ok(['SOURCE_REJECTED','ISOLATION_UNPROVEN','REPORT_INVALID'].includes(r.classification));assert.equal(r.status,'FAIL');assert.ok(['NOT_STARTED','RESTORED','UNKNOWN'].includes(r.isolation));recovery.validate(r.recovery);assert.ok(Object.values(r.recovery).every(v=>v==='NOT_OBSERVED'));return r;}
+module.exports={initial,validate};
