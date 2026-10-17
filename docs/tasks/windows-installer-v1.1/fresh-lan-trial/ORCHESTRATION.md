@@ -1,3 +1,7 @@
+## 唯一FC1运行中｜2026-10-17 FINAL INSTALL & LAN
+
+Run39011056474/attempt1，source63e91f986e969b12f0faf5a4fc974f39dc91dcc0、trigger-only控制9fef45f81af4f5d58a3b45fb2ff8da7f25d40076已唯一触发。Candidate1/2已用，结果IN_PROGRESS不称安装或业务PASS；QA0/1继续冻结，仅完整Candidate PASS才同EXE独立验证。任何安全/隔离/收尾UNKNOWN立即STOP；无修改retry/其他Hosted/main/tag/Release/内部SPXT禁止。原Execution已正式RETURN并冻结，现场/历史FAIL保留。后续治理提交不改变本Run受测来源。
+
 ## 当前Review PASS｜2026-10-17 FINAL INSTALL & LAN / FC1 RESERVED
 
 用户新增Final Candidate最多2次及原有同EXE独立QA1次已批准。原FRESH-T2正式RETURN53c68488/实现1a01f8d5并冻结，Master独立63/root134及完整EXE/1049文件20依赖逐字节核验PASS，Job/环境恢复PASS。新profile FC1/FC2/FQ1保留全部旧FAIL/预算、精确历史锚与原验收条件，生产零改。已预留FC1 1/2（尚未触发、runId待绑定），QA0/1仅完整Candidate PASS后同EXE可用；其余Hosted0。先三方HEAD/历史/来源前检再唯一trigger-only控制提交，不retry。真实安装/F01—F09/26-742尚待Candidate；历史F01首因UNKNOWN、物理项目HUMAN_PENDING。任何安全/隔离/恢复UNKNOWN或FC2/QA失败立即STOP，不main/tag/Release/内部SPXT/未知清理。详见fresh-lan-trial/final-install-lan/MASTER-REVIEW.md及FINAL-INSTALL-LAN-RUNS.json；下方旧停点保留历史。
