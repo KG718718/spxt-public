@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "authorization": "USER_FINAL_INSTALL_LAN_ACCEPTANCE_20261017",
-  "state": "FC1_IN_PROGRESS",
+  "state": "BLOCKED_FC1_SOURCE_CLEANUP_UNPROVEN",
   "candidateMax": 2,
   "candidateUsed": 1,
   "qaMax": 1,
   "qaUsed": 0,
   "qaOrigin": "EXISTING_UNUSED_SINGLE_FINAL_QA_NOT_ADDITIONAL",
-  "qaState": "FROZEN_UNTIL_COMPLETE_CANDIDATE_PASS",
+  "qaState": "UNUSED_FROZEN_SAFETY_RECOVERY_STOP",
   "diagnosticMax": 0,
   "rerunAllowed": false,
   "historicalLedgers": [
@@ -19,13 +19,19 @@
     {
       "slot": "FC1",
       "mode": "CANDIDATE",
-      "state": "IN_PROGRESS",
+      "state": "FAIL",
       "runId": "39011056474",
       "attempt": 1,
       "sourceCommit": "63e91f986e969b12f0faf5a4fc974f39dc91dcc0",
       "controlCommit": "9fef45f81af4f5d58a3b45fb2ff8da7f25d40076",
       "localBuildSource": "1a01f8d51722d634431fdc330f5a084432be4d1e",
-      "masterReview": "final-install-lan/MASTER-REVIEW.md"
+      "masterReview": "final-install-lan/MASTER-REVIEW.md",
+      "conclusion": "failure",
+      "stage": "SOURCE",
+      "reason": "CLEANUP_UNPROVEN",
+      "artifactId": "12092841661",
+      "reportSha256": "c7459ae5e175f6dc478d3982e2bad7f8888c47515b208657bd1809f62aca9896"
     }
-  ]
+  ],
+  "candidateRemainingState": "UNUSED_FROZEN_SAFETY_RECOVERY_STOP"
 }

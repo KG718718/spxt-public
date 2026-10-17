@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "kind": "FINAL_FC1_STEP_OBSERVATION",
+  "runId": "39011056474",
+  "status": "completed",
+  "conclusion": "failure",
+  "sourceBootstrap": "success",
+  "execution": "failure",
+  "finalization": "failure",
+  "rawOutputStored": false
+}

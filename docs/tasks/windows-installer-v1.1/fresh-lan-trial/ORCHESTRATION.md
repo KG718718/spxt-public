@@ -1,3 +1,7 @@
+## 最终STOP｜2026-10-17 FINAL INSTALL & LAN / FC1 SOURCE FAIL
+
+Run39011056474/attempt1，受测source63e91f986e969b12f0faf5a4fc974f39dc91dcc0、控制9fef45f81af4f5d58a3b45fb2ff8da7f25d40076已FAIL。安全Artifact12092841661单JSON/schema2/source/API digest核验PASS；SOURCE/CLEANUP_UNPROVEN，BUILD NOT_STARTED、setupSha null、checks空。仅drive恢复true，其余9项cleanup null、10项recovery NOT_OBSERVED，不证明真实残留，也不能证明完整恢复；具体监督器首因UNKNOWN。按用户强制停点停止全部工程/Hosted：Candidate1/2已用，剩1次UNUSED—FROZEN；原QA0/1 UNUSED—FROZEN，其余0，不retry/挪QA。原T2正式RETURN且冻结，真实安装/F01—F09/26-742/QA未到达，无合格EXE用户包。本地构建/Review PASS不冒充安装；原树/历史FAIL/未跟踪现场保留，无内部SPXT/main/tag/Release/未知清理。只治理非force同步及网页版交接后STOP，详见fresh-lan-trial/final-install-lan/FC1-HOSTED-RESULT.md与CHATGPT-HANDOFF.md。下方运行/待触发/Review均保留历史。
+
 ## 唯一FC1运行中｜2026-10-17 FINAL INSTALL & LAN
 
 Run39011056474/attempt1，source63e91f986e969b12f0faf5a4fc974f39dc91dcc0、trigger-only控制9fef45f81af4f5d58a3b45fb2ff8da7f25d40076已唯一触发。Candidate1/2已用，结果IN_PROGRESS不称安装或业务PASS；QA0/1继续冻结，仅完整Candidate PASS才同EXE独立验证。任何安全/隔离/收尾UNKNOWN立即STOP；无修改retry/其他Hosted/main/tag/Release/内部SPXT禁止。原Execution已正式RETURN并冻结，现场/历史FAIL保留。后续治理提交不改变本Run受测来源。
