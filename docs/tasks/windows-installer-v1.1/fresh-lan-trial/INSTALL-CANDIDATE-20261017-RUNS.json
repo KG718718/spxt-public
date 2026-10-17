@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "authorization": "USER_FRESH_CANDIDATE_20261017",
+  "date": "2026-10-17",
+  "candidateMax": 1,
+  "candidateUsed": 0,
+  "qaMax": 1,
+  "qaUsed": 0,
+  "qaBudgetOrigin": "EXISTING_UNUSED_FINAL_QA_ONLY_NOT_ADDITIONAL",
+  "qaState": "CONDITIONAL_ON_COMPLETE_CANDIDATE_PASS",
+  "historicalCandidateUsed": 2,
+  "historicalCandidateMax": 2,
+  "historicalCandidateResult": "FAIL_PRESERVED",
+  "diagnosticAllowed": 0,
+  "retryAllowed": false,
+  "runs": [],
+  "state": "LOCAL_WIRING_AND_REVIEW_PENDING"
+}

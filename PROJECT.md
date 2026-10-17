@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-17 FRESH CANDIDATE / 1 RUN + CONDITIONAL ORIGINAL QA
+
+用户明确新增最多1次Fresh Candidate，完整PASS后解冻原唯一QA（同一EXE，非新增QA预算）。基线8cf5de03三方HEAD一致、公开仓库/原T2/bea7核验；先必要独立预算/来源/同EXE接线、本地门禁及Master独立Review，再唯一Candidate。Hosted隔离/所有权/恢复前检FAIL或UNKNOWN不得开始安装；任一必需门禁FAIL/UNKNOWN立即STOP、不retry、不追加、不挪QA。旧Candidate2/2及全部历史FAIL不改，不用旧槽位或Smoke/诊断/Full。日常本机不实际安装、不改真实系统网络/登记；不生产安全/main/tag/Release/内部SPXT/未知清理，不普通sub-agent/后代。详见INSTALL-CANDIDATE-20261017-AUTHORIZATION.md及独立RUNS；下方冻结是本次有限授权前历史。
+
 ## 当前结论｜2026-10-16 FAST INSTALL R2 / LOCAL BUILD & REVIEW PASS / INSTALL NOT PROVEN
 
 原FRESH-T2正式RETURN并冻结：实现4e7f58e8341bc69822570838a1716667fb8e654b、报告b748b359，Master独立Review及ff-only整合。真实完整Payload/Helper/Launcher/ISCC构建PASS，EXE33554844字节/SHA1b4e7723...f7ac9111，1049文件/20依赖逐字节身份核验；Master独立CJS28/root134/Windows Recovery5/PS22/finally7均fail0skip0、来源绑定与环境/Job恢复通过。生产仅Fresh固定诊断，安全谓词不放宽，旧FAIL不改。原函数本机可通过，历史Run38767500533 F01首因仍UNKNOWN；无安全隔离产品安装环境，实际安装/业务/26-742 NOT_RUN；早期无receipt资源保留UNKNOWN，真实rules QUERY_CIM_FAILED/NOT_PROVEN，不能宣称整体恢复或交付PASS。本轮Hosted0，Candidate2/2耗尽、QA0/1继续冻结，禁止触发/重跑/挪额度。只治理非force同步及网页版交接后STOP，保留原现场，无内部SPXT/main/tag/Release/未知清理。详见fresh-lan-trial/fast-install-r2/RESULT.md、MASTER-REVIEW.md与专属固定证据；下方授权/停点均为历史。
