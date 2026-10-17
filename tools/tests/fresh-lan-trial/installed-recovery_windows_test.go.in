@@ -22,6 +22,45 @@ type freshRecoverySnapshot struct {
 	Identity      string
 }
 
+// These are owned FILE surrogates, never real product registry/known folders.
+// An interrupted native installation has no such fixture receipt. Sampling its
+// bytes afterwards must not grant cleanup authority or manufacture restoration.
+func TestFreshInstallRecoveryEarlyFailure(t *testing.T) {
+	for _, resource := range []string{"productRegistration", "binding", "startup", "desktop", "programs", "programFiles"} {
+		t.Run(resource, func(t *testing.T) {
+			root := t.TempDir()
+			owned := filepath.Join(root, "owned")
+			foreign := filepath.Join(root, "unreceipted")
+			r, e := freshPrepareFixture(owned, []byte("producer expected bytes"))
+			if e != nil || r.create(nil) != nil {
+				t.Fatal("OWNED_PRODUCER_FAILED")
+			}
+			before := freshObservePath(foreign)
+			if os.WriteFile(foreign, []byte("interrupted native output"), 0600) != nil {
+				t.Fatal("CONTROLLED_WRITE_FAILED")
+			}
+			after := freshObservePath(foreign)
+			selfSample := after.Identity
+			if selfSample == "" || freshRecoveryStatus(before, after, false) != "OWNERSHIP_UNKNOWN" {
+				t.Fatal("POSTSAMPLE_ADOPTED")
+			}
+			var noReceipt *freshOwnedFixtureReceipt
+			if noReceipt.cleanup() != "OWNERSHIP_UNKNOWN" || freshObservePath(foreign).Identity != selfSample {
+				t.Fatal("UNKNOWN_RESOURCE_CHANGED")
+			}
+			if r.cleanup() != "OWNED_REMOVED" || !freshObservePath(owned).Absent {
+				t.Fatal("INDEPENDENT_OWNED_RECOVERY_FAILED")
+			}
+			if freshRecoveryRestored(freshRecoveryStatus(before, freshObservePath(foreign), false)) {
+				t.Fatal("PARTIAL_RECOVERY_UPGRADED")
+			}
+			if freshRecoveryStatus(freshRecoverySnapshot{}, freshObservePath(foreign), false) != "OBSERVATION_FAILED" {
+				t.Fatal("MISSING_PRESTATE_MASKED")
+			}
+		})
+	}
+}
+
 func freshObservePath(p string) freshRecoverySnapshot {
 	if p == "" || !filepath.IsAbs(p) || !noReparse(p) {
 		return freshRecoverySnapshot{}

@@ -6,6 +6,7 @@ function proof(c){
  const last=(context,stage)=>c.lastContext===context&&c.lastStage===stage,first=(context,stage)=>c.firstFailureContext===context&&c.firstFailureStage===stage;
  if(Object.hasOwn(NEGATIVE,c.case))return last('INSTALL_VERIFY',NEGATIVE[c.case])&&first('INSTALL_VERIFY',NEGATIVE[c.case])&&c.cleanupFailureStage==='';
  switch(c.case){
+ case'locked_verify_exception':return last('INSTALL_VERIFY','VERIFY_EXCEPTION')&&first('INSTALL_VERIFY','VERIFY_EXCEPTION')&&c.cleanupFailureStage==='';
  case'baseline':case'move_no_overwrite':return last('INSTALL_VERIFY','MATCHED')&&first('','')&&c.cleanupFailureStage===''&&(c.case!=='move_no_overwrite'||c.nativeMove==='EXISTS_REJECTED');
  case'preexisting_refused':return last('CREATE','CREATE_PRECONDITION_REJECTED')&&first('CREATE','CREATE_PRECONDITION_REJECTED')&&c.cleanupFailureStage==='';
  case'ini_failure_cleanup':return last('CLEANUP','CLEANUP_REMOVED')&&first('CREATE','INI_WRITE_FAILED')&&c.cleanupFailureStage==='';
@@ -15,9 +16,9 @@ function proof(c){
  default:return false;
  }
 }
-function facts(c){const expected={created:c.case!=='preexisting_refused'&&c.case!=='ini_failure_cleanup',matched:['baseline','cleanup_matches','move_no_overwrite','locked_cleanup_preserved'].includes(c.case),removed:['ini_failure_cleanup','cleanup_matches'].includes(c.case),preserved:['preexisting_refused','cleanup_changed_preserved','move_no_overwrite','locked_cleanup_preserved'].includes(c.case)};return Object.entries(expected).every(([k,v])=>c[k]===v);}
+function facts(c){const expected={created:c.case!=='preexisting_refused'&&c.case!=='ini_failure_cleanup',matched:['baseline','cleanup_matches','move_no_overwrite','locked_cleanup_preserved'].includes(c.case),removed:['ini_failure_cleanup','cleanup_matches'].includes(c.case),preserved:['preexisting_refused','cleanup_changed_preserved','move_no_overwrite','locked_cleanup_preserved','locked_verify_exception'].includes(c.case)};return Object.entries(expected).every(([k,v])=>c[k]===v);}
 function validate(r){
- assert.deepEqual(Object.keys(r).sort(),['allPassed','cases','kind','schema']);assert.equal(r.schema,1);assert.equal(r.kind,'OWNED_INNO_COM_MATRIX');assert.equal(typeof r.allPassed,'boolean');assert.deepEqual(r.cases.map(c=>c.case),NAMES);
+ assert.deepEqual(Object.keys(r).sort(),['allPassed','cases','kind','schema']);assert.ok(r.schema===1||r.schema===2);assert.equal(r.kind,'OWNED_INNO_COM_MATRIX');assert.equal(typeof r.allPassed,'boolean');assert.deepEqual(r.cases.map(c=>c.case),r.schema===2?[...NAMES,'locked_verify_exception']:NAMES);
  for(const c of r.cases){assert.deepEqual(Object.keys(c).sort(),['case','pass','created','matched','removed','preserved','reasonProven','nativeMove','lastContext','lastStage','firstFailureContext','firstFailureStage','cleanupFailureStage'].sort());for(const k of ['pass','created','matched','removed','preserved','reasonProven'])assert.equal(typeof c[k],'boolean');for(const k of ['lastContext','firstFailureContext'])assert.ok(c[k]===''||contexts.includes(c[k]));for(const k of ['lastStage','firstFailureStage','cleanupFailureStage'])assert.ok(c[k]===''||stages.includes(c[k]));assert.ok(['NOT_CALLED','EXISTS_REJECTED','UNKNOWN'].includes(c.nativeMove));if(c.case!=='move_no_overwrite')assert.equal(c.nativeMove,'NOT_CALLED');assert.equal(c.reasonProven,proof(c));assert.equal(c.pass,proof(c)&&facts(c));}
  assert.equal(r.allPassed,r.cases.every(c=>c.pass));return r;
 }

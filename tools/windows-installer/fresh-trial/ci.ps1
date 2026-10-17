@@ -24,6 +24,7 @@ $taskReportPath=Join-Path $taskWork 'fresh-report.json'
 $taskReport=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
 if($taskContext.reportSchema -ne 2 -or $taskReport.schema -ne 2){throw 'Current schema2 report context required'}
 . (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/hosted-recovery.ps1')
+. (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/physical-work.ps1')
 . (Join-Path $taskRepo 'tools/tests/lan-host/node-test-environment.ps1')
 $taskVariables=@('TEMP','TMP','GOCACHE','GOTMPDIR','GOOS','GOARCH','CGO_ENABLED','GOTOOLCHAIN','GOPROXY','GOSUMDB','GOENV','GOWORK','GOFLAGS','GOEXPERIMENT','NODE_PATH','NODE_OPTIONS','PLAYWRIGHT_BROWSERS_PATH','KSESSION_FRESH_TESTED_SOURCE','KSESSION_FRESH_BUILD_NODE','KSESSION_FRESH_PHYSICAL_WORK','PSModulePath')
 $taskPrevious=Save-KSessionProcessEnvironment $taskVariables
@@ -31,6 +32,7 @@ $taskFinalStarted=$false
 $script:taskFailed=$false
 $taskToolchainStarted=$false;$taskToolchainOwned=$false;$taskToolchainRestored=$true
 $taskProductBefore=@{};$taskRegistryBefore=$null;$taskRulesBefore=$null;$taskCompilerFilesBefore=$null;$taskSettingsBefore=$null
+$taskPhysicalBinding=$null
 $taskBuildDiagnostic=Join-Path $taskWork 'build-diagnostic.json'
 function Stage([string]$Reason){
   $taskReport.stage='BUILD';$taskReport.reason=$Reason
@@ -89,12 +91,13 @@ try {
   if($taskEnter.ExitCode -ne 0 -or $taskEnter.TimedOut -or $taskEnter.ForcedTermination -or $taskEnter.Stderr.Length -ne 0){throw 'Fresh ENV report entry unproven'}
   $taskReport=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
   $env:NODE_OPTIONS='';$env:GOWORK='off';$env:KSESSION_FRESH_TESTED_SOURCE=$taskContext.sourceCommit
-  $env:KSESSION_FRESH_PHYSICAL_WORK=Resolve-KSessionFirewallPhysicalPath $taskWork
+  $taskPhysicalBinding=Read-FreshPhysicalWorkBinding $taskWork
+  $env:KSESSION_FRESH_PHYSICAL_WORK=$taskPhysicalBinding.physical
   $env:PSModulePath=Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/Modules'
   $taskProductBefore=Get-FreshProductObservations $env:KSESSION_FRESH_PHYSICAL_WORK
   $taskRegistryBefore=Get-FreshRegistryObservation @('Software\Microsoft\Windows\CurrentVersion\Uninstall','Software\KSESSION\Beta\InstallerBinding')
   $taskRulesBefore=Get-FreshRulesObservation
-  $taskCompilerFilesBefore=Get-FreshPathObservation (Join-Path $taskWork 'inno/compiler')
+  $taskCompilerFilesBefore=Get-FreshCompilerObservation $taskPhysicalBinding
   $taskInnoBefore=Inno-Environment-Snapshot
   $taskSettingsBefore=New-FreshObservation $true $false ($taskInnoBefore|ConvertTo-Json -Depth 60 -Compress)
   if(!$taskRegistryBefore.known -or !$taskRulesBefore.known -or !$taskCompilerFilesBefore.known -or !$taskCompilerFilesBefore.absent -or @($taskProductBefore.Values|Where-Object{!$_.known}).Count){throw 'Fresh recovery prestate unproven'}
@@ -112,7 +115,8 @@ try {
     if($LASTEXITCODE -ne 0){throw 'Fresh compiler toolchain failed'}
     $taskUserAfter=User-Uninstall-Snapshot
     if(($taskUserAfter|ConvertTo-Json -Depth 8 -Compress) -cne ($taskUserBefore|ConvertTo-Json -Depth 8 -Compress) -or ((Inno-Environment-Snapshot)|ConvertTo-Json -Depth 60 -Compress) -cne ($taskInnoBefore|ConvertTo-Json -Depth 60 -Compress)){throw 'Portable compiler changed existing environment'}
-    Checked $taskNode @((Join-Path $PSScriptRoot 'owned-tool-files.cjs'),'snapshot',$taskWork)
+    if(!(Test-FreshPhysicalWorkBinding $taskPhysicalBinding)){throw 'Compiler mapping changed'}
+    Checked (Get-FreshPhysicalNode $taskPhysicalBinding $taskNode) @((Join-Path $PSScriptRoot 'owned-tool-files.cjs'),'snapshot',$taskPhysicalBinding.physical)
     $taskToolchainOwned=$true
     Stage 'BUILD_COMPILER_FAILED'
     Checked $taskNode @((Join-Path $PSScriptRoot 'build.cjs'),$taskPortable,(Join-Path $taskWork 'inno/compiler'),(Join-Path $taskWork 'setup'),$taskContext.sourceCommit)
@@ -164,14 +168,15 @@ try {
   if($taskToolchainStarted){
     try{
       if(!$taskToolchainOwned){throw 'Compiler cleanup unproven'}
-      Checked $taskNode @((Join-Path $PSScriptRoot 'owned-tool-files.cjs'),'remove',$taskWork)
+      if(!(Test-FreshPhysicalWorkBinding $taskPhysicalBinding)){throw 'Compiler cleanup mapping changed'}
+      Checked (Get-FreshPhysicalNode $taskPhysicalBinding $taskNode) @((Join-Path $PSScriptRoot 'owned-tool-files.cjs'),'remove',$taskPhysicalBinding.physical)
       $taskToolchainRestored=$true
     }catch{$taskToolchainRestored=$false;$script:taskFailed=$true}
   }
   try{$taskProductAfter=Get-FreshProductObservations $env:KSESSION_FRESH_PHYSICAL_WORK}catch{$taskProductAfter=@{}}
   if($null -eq $taskProductBefore){$taskProductBefore=@{}};if($null -eq $taskProductAfter){$taskProductAfter=@{}}
   foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles')){$taskRecovery[$taskKey]=Get-FreshRecoveryState $taskProductBefore[$taskKey] $taskProductAfter[$taskKey]}
-  $taskCompilerFilesAfter=Invoke-FreshObservation {Get-FreshPathObservation (Join-Path $taskWork 'inno/compiler')}
+  $taskCompilerFilesAfter=Invoke-FreshObservation {Get-FreshCompilerObservation $taskPhysicalBinding}
   $taskRecovery.compilerOwnedFiles=Get-FreshRecoveryState $taskCompilerFilesBefore $taskCompilerFilesAfter ($taskToolchainStarted -and $taskToolchainRestored)
   try{$taskSettingsAfter=New-FreshObservation $true $false ((Inno-Environment-Snapshot)|ConvertTo-Json -Depth 60 -Compress)}catch{$taskSettingsAfter=New-FreshObservation $false $false}
   $taskRecovery.compilerSettings=Get-FreshRecoveryState $taskSettingsBefore $taskSettingsAfter
@@ -181,8 +186,11 @@ try {
   $taskEnvironmentRestored=$false;try{Restore-KSessionProcessEnvironment $taskPrevious;$taskEnvironmentRestored=Test-KSessionProcessEnvironmentRestored $taskPrevious}catch{$script:taskFailed=$true}
   $taskEvidence=[ordered]@{recovery=$taskRecovery;environmentRestored=$taskEnvironmentRestored;productPhaseStarted=$taskFinalStarted}
   $taskFinalNode=(Get-Command node).Source
-  $taskFinalWrite=Invoke-KSessionMemoryNode $taskFinalNode @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/final-ci-report.cjs'),$taskWork) ($taskEvidence|ConvertTo-Json -Depth 8 -Compress)
-  if($taskFinalWrite.ExitCode -ne 0 -or $taskFinalWrite.TimedOut -or $taskFinalWrite.ForcedTermination -or $taskFinalWrite.Stderr.Length -ne 0){$script:taskFailed=$true}
+  try{
+    if(!(Test-FreshPinnedWorkDirectory $taskPhysicalBinding)){throw 'WORK_FINAL_ROOT_UNKNOWN'}
+    $taskFinalWrite=Invoke-KSessionMemoryNode $taskFinalNode @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/final-ci-report.cjs'),$taskPhysicalBinding.physical) ($taskEvidence|ConvertTo-Json -Depth 8 -Compress)
+    if($taskFinalWrite.ExitCode -ne 0 -or $taskFinalWrite.TimedOut -or $taskFinalWrite.ForcedTermination -or $taskFinalWrite.Stderr.Length -ne 0){$script:taskFailed=$true}
+  }catch{$script:taskFailed=$true}finally{Close-FreshPhysicalWorkBinding $taskPhysicalBinding}
   }
 }
 if($script:taskFailed){exit 1}

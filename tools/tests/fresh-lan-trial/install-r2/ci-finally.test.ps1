@@ -8,6 +8,11 @@ $taskNames=@('productRegistration','binding','startup','desktop','programs','pro
 function Checked {param($Exe,$Arguments)if($script:taskFault -eq 'compiler'){throw 'CONTROLLED'}}
 function Get-FreshProductObservations {param($Work)if($script:taskFault -eq 'products'){throw 'CONTROLLED'};return @{productRegistration=(New-FreshObservation $true $true);binding=(New-FreshObservation $true $true);startup=(New-FreshObservation $true $true);desktop=(New-FreshObservation $true $true);programs=(New-FreshObservation $true $true);programFiles=(New-FreshObservation $true $true)}}
 function Get-FreshPathObservation {param($Path)if($script:taskFault -eq 'files'){throw 'CONTROLLED'};return (New-FreshObservation $true $true)}
+function Get-FreshCompilerObservation {param($Binding)return (Get-FreshPathObservation 'CONTROLLED')}
+function Test-FreshPhysicalWorkBinding {param($Binding)return $true}
+function Test-FreshPinnedWorkDirectory {param($Binding)return $true}
+function Get-FreshPhysicalNode {param($Binding,$Node)return $Node}
+function Close-FreshPhysicalWorkBinding {param($Binding)}
 function Inno-Environment-Snapshot {if($script:taskFault -eq 'settings'){throw 'CONTROLLED'};return @{fixed='same'}}
 function Get-FreshRegistryObservation {param($Paths)if($script:taskFault -eq 'registry'){throw 'CONTROLLED'};return (New-FreshObservation $true $false 'same')}
 function Get-FreshRulesObservation {if($script:taskFault -eq 'rules'){throw 'CONTROLLED'};return (New-FreshObservation $true $false 'same')}
@@ -15,7 +20,7 @@ function Invoke-KSessionMemoryNode {param($Node,$Arguments,$InputText)$script:ta
 foreach($script:taskFault in @('none','products','files','settings','registry','rules','compiler')){
  $taskProductBefore=@{};foreach($taskName in $taskNames){$taskProductBefore[$taskName]=New-FreshObservation $true $true}
  $taskCompilerFilesBefore=New-FreshObservation $true $true;$taskRegistryBefore=New-FreshObservation $true $false 'same';$taskRulesBefore=New-FreshObservation $true $false 'same';$taskSettingsBefore=New-FreshObservation $true $false (@{fixed='same'}|ConvertTo-Json -Depth 60 -Compress)
- $taskWork=$Root;$taskNode=(Get-Command node).Source;$taskToolchainStarted=$true;$taskToolchainOwned=$true;$taskToolchainRestored=$false;$taskFinalStarted=$false;$script:taskFailed=$false;$script:taskCaptured=$null
+ $taskWork=$Root;$taskPhysicalBinding=[pscustomobject]@{physical=$Root};$taskNode=Join-Path $Root 'node.exe';$taskToolchainStarted=$true;$taskToolchainOwned=$true;$taskToolchainRestored=$false;$taskFinalStarted=$false;$script:taskFailed=$false;$script:taskCaptured=$null
  $taskPrevious=Save-KSessionProcessEnvironment @('NODE_OPTIONS','NODE_PATH','KSESSION_FRESH_PHYSICAL_WORK');$env:KSESSION_FRESH_PHYSICAL_WORK=$Root;$env:NODE_OPTIONS='CONTROLLED_CHANGED';$env:NODE_PATH='CONTROLLED_CHANGED'
  & $taskFinally
  if(!(Test-KSessionProcessEnvironmentRestored $taskPrevious) -or !$script:taskCaptured -or !$script:taskCaptured.environmentRestored -or $script:taskCaptured.recovery.Count -ne 10){throw 'CI_FINALLY_DID_NOT_RESTORE_AND_REPORT'}

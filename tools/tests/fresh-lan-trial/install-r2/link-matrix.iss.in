@@ -4,7 +4,7 @@ begin
   0: Result:='baseline'; 1:Result:='missing_hash';2:Result:='wrong_hash';3:Result:='missing_link';
   4:Result:='directory_link';5:Result:='target_change';6:Result:='args_change';7:Result:='workdir_change';
   8:Result:='preexisting_refused';9:Result:='ini_failure_cleanup';10:Result:='cleanup_matches';
-  11:Result:='cleanup_changed_preserved';12:Result:='move_no_overwrite';13:Result:='locked_cleanup_preserved';
+  11:Result:='cleanup_changed_preserved';12:Result:='move_no_overwrite';13:Result:='locked_cleanup_preserved';14:Result:='locked_verify_exception';
  else RaiseException('HARNESS_CASE_REJECTED'); end;
 end;
 function CreateFileW(Name: String; Access, Share, Security, Creation, Flags, Template: LongWord): LongWord;
@@ -17,7 +17,7 @@ var I: Integer; Name, Rows, Row, OldHash, ChangedHash, P, Tmp, NativeMoveState: 
  Shell, Link: Variant; H, NativeError: LongWord;
 begin
  Result:=False; Rows:='';AllPassed:=True;
- for I:=0 to 13 do begin
+ for I:=0 to 14 do begin
   Name:=CaseName(I);CaseRoot:='@OWNED_ROOT@\case-'+Name+' 中文 with spaces';BetaInstance:=CaseRoot+'\instance 中文 with spaces';
   ForceDirectories(CaseRoot+'\startup');ForceDirectories(CaseRoot+'\temp');ForceDirectories(CaseRoot+'\app\program');ForceDirectories(CaseRoot+'\app\uninstall');ForceDirectories(BetaInstance);
   if not FileCopy('@OWNED_ROOT@\trusted-launcher.exe',HarnessConstant('{app}\program\K-SESSION.exe'),True) then RaiseException('HARNESS_PE_COPY_FAILED');
@@ -52,7 +52,14 @@ begin
       so the COM-field rejection is exercised independently of hash mismatch. }
     if I<>11 then FreshStartupHash:=ChangedHash;
    end;
-   FreshStartupContext:='INSTALL_VERIFY'; Matched:=FreshStartupMatches(FreshStartupHash);
+   FreshStartupContext:='INSTALL_VERIFY';
+   if I=14 then begin
+    H:=CreateFileW(FreshStartupPath,$80000000,0,0,3,$80,0);
+    if H=$FFFFFFFF then RaiseException('HARNESS_OWNED_LOCK_FAILED');
+    try Matched:=FreshStartupMatches(FreshStartupHash);
+    finally if not CloseHandle(H) then RaiseException('HARNESS_OWNED_HANDLE_CLOSE_FAILED'); end;
+    Preserved:=GetSHA256OfFile(FreshStartupPath)=OldHash;
+   end else Matched:=FreshStartupMatches(FreshStartupHash);
    if I=0 then begin
     HashMatch:=GetSHA256OfFile(FreshStartupPath)=FreshStartupHash;ComRead:=False;TargetMatch:=False;ArgsMatch:=False;WorkDirMatch:=False;
     try Shell:=CreateOleObject('WScript.Shell');Link:=Shell.CreateShortcut(FreshStartupPath);ComRead:=True;
@@ -94,12 +101,13 @@ begin
    11:ReasonProven:=(not FreshStartupCleanupVerified) and (FreshStartupCleanupFailureStage='HASH_MISMATCH') and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_IDENTITY_UNKNOWN');
    12:ReasonProven:=NativeReason;
    13:ReasonProven:=FreshStartupCleanupVerified and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_DELETE_FAILED');
+   14:ReasonProven:=(FreshStartupLastContext='INSTALL_VERIFY') and (FreshStartupLastStage='VERIFY_EXCEPTION') and (FreshStartupFirstFailureStage='VERIFY_EXCEPTION') and Preserved;
   end;
   Passed:=Passed and ReasonProven;NativeMoveState:='NOT_CALLED';if I=12 then begin NativeMoveState:='UNKNOWN';if NativeReason then NativeMoveState:='EXISTS_REJECTED';end;
   if Rows<>'' then Rows:=Rows+',';
   Rows:=Rows+'{"case":"'+Name+'","pass":'+B(Passed)+',"created":'+B(Created)+',"matched":'+B(Matched)+',"removed":'+B(Removed)+',"preserved":'+B(Preserved)+',"reasonProven":'+B(ReasonProven)+',"nativeMove":"'+NativeMoveState+'","lastContext":"'+FreshStartupLastContext+'","lastStage":"'+FreshStartupLastStage+'","firstFailureContext":"'+FreshStartupFirstFailureContext+'","firstFailureStage":"'+FreshStartupFirstFailureStage+'","cleanupFailureStage":"'+FreshStartupCleanupFailureStage+'"}';
   AllPassed:=AllPassed and Passed;
  end;
- SaveStringToFile('@OWNED_ROOT@\matrix.json','{"schema":1,"kind":"OWNED_INNO_COM_MATRIX","allPassed":'+B(AllPassed)+',"cases":['+Rows+']}',False);
+ SaveStringToFile('@OWNED_ROOT@\matrix.json','{"schema":2,"kind":"OWNED_INNO_COM_MATRIX","allPassed":'+B(AllPassed)+',"cases":['+Rows+']}',False);
  { Always stop before installation. This is not a product installation test. }
 end;

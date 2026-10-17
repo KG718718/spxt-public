@@ -73,6 +73,7 @@ try{
  foreach($taskName in @('created','productionMatches','hashMatch','comRead','targetMatch','argsMatch','workDirMatch','iniMatch')){if($taskBaseline.$taskName -isnot [bool]){throw 'Owned observation type invalid'}}
  $taskResult.stage='MATRIX'
  $taskMatrix=Get-Content (Join-Path $Root 'matrix.json') -Raw|ConvertFrom-Json
+ if($taskMatrix.schema -ne 2 -or $taskMatrix.cases.Count -ne 15){throw 'Current owned matrix required'}
  $taskValidate=Invoke-KSessionMemoryNode $Node @((Join-Path $PSScriptRoot 'link-matrix.cjs'),(Join-Path $Root 'matrix.json'))
  if($taskValidate.ExitCode -ne 0 -or $taskValidate.TimedOut -or $taskValidate.ForcedTermination -or $taskValidate.Stderr.Length -ne 0){throw 'Owned matrix schema invalid'}
  $taskResult.matrixPassed=$taskMatrix.allPassed -eq $true
