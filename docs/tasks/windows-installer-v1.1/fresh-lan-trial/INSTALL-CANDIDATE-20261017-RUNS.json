@@ -3,7 +3,7 @@
   "authorization": "USER_FRESH_CANDIDATE_20261017",
   "date": "2026-10-17",
   "candidateMax": 1,
-  "candidateUsed": 0,
+  "candidateUsed": 1,
   "qaMax": 1,
   "qaUsed": 0,
   "qaBudgetOrigin": "EXISTING_UNUSED_FINAL_QA_ONLY_NOT_ADDITIONAL",
@@ -13,6 +13,17 @@
   "historicalCandidateResult": "FAIL_PRESERVED",
   "diagnosticAllowed": 0,
   "retryAllowed": false,
-  "runs": [],
-  "state": "LOCAL_WIRING_AND_REVIEW_PENDING"
+  "runs": [
+    {
+      "slot": "IC1",
+      "runId": null,
+      "attempt": 1,
+      "source": null,
+      "control": null,
+      "status": "RESERVED",
+      "implementation": "849131c20282afcdc4d27fa5237fdf9b38865e8d",
+      "codeFingerprint": "43091f6233c1ca6ed093432591108fb9ac325e01d10c21c05630f4f7189d8f0a"
+    }
+  ],
+  "state": "IC1_RESERVED_NOT_YET_TRIGGERED"
 }

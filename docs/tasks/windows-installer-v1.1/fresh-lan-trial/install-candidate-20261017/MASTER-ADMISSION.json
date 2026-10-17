@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "kind": "MASTER_INSTALL_CANDIDATE_ADMISSION",
+  "sourceCommit": "849131c20282afcdc4d27fa5237fdf9b38865e8d",
+  "review": "PASS",
+  "realRunnerPrecheck": "PENDING",
+  "cjs": {
+    "schema": 1,
+    "kind": "MASTER_INSTALL_CANDIDATE_CJS_REVIEW",
+    "sourceCommit": "849131c20282afcdc4d27fa5237fdf9b38865e8d",
+    "sourceBound": true,
+    "status": "PASS",
+    "targets": {
+      "tests": 45,
+      "pass": 45,
+      "fail": 0,
+      "skipped": 0,
+      "todo": 0,
+      "exitZero": true,
+      "stderrEmpty": true
+    },
+    "root": {
+      "schema": 1,
+      "kind": "FAST_ROOT_FRESH_GATE",
+      "sourceCommit": "849131c20282afcdc4d27fa5237fdf9b38865e8d",
+      "sourceBound": true,
+      "status": "PASS",
+      "tests": 134,
+      "pass": 134,
+      "fail": 0,
+      "skipped": 0,
+      "exitClass": "ZERO",
+      "failures": [],
+      "rawOutputStored": false
+    },
+    "rawOutputStored": false,
+    "productInstalled": false
+  },
+  "scope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "build": {
+    "schema": 1,
+    "kind": "MASTER_INSTALL_CANDIDATE_BUILD_REVIEW",
+    "status": "PASS",
+    "sourceCommit": "849131c20282afcdc4d27fa5237fdf9b38865e8d",
+    "sourceTree": "ed6d7a1b675200b4b5f0e6b3f44bd2d42570911d",
+    "setupSha256": "d2f01a824b62e0f00a60026a2d1b01b7000d582e6b9d6031e2cb2b0643ce18eb",
+    "setupBytes": 33557167,
+    "files": 1049,
+    "uncompressedBytes": 147923786,
+    "dependencyCount": 20,
+    "nodeVersion": "24.21.0",
+    "goVersion": "1.27.1",
+    "innoSetupVersion": "6.7.3",
+    "allPayloadBytesVerified": true,
+    "manifestMatches": true,
+    "productionInstalled": false,
+    "productExecuted": false,
+    "rawOutputStored": false
+  },
+  "rawOutputStored": false
+}
