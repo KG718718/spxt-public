@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-17 FINAL INSTALL & LAN ACCEPTANCE / PREPARATION
+
+用户已正式批准Final Candidate最多2次、独立QA最多1次（原未用唯一QA，非重复增加）；首次Candidate完整PASS即同EXE独立QA。原FRESH-T2/bea7、唯一Master继续，先必要独立额度/来源/失败恢复门禁接线、本地构建与Master Review后中央触发；首次FAIL仅充分根因+实际修复+本地/Review+可信完整收尾才C2。任意安全/隔离/所有权/恢复UNKNOWN即STOP，C2或QA失败即STOP，不重跑/追加/挪额度。复用现有完整Fresh验收及26/742，标准Hosted可销毁不代替恢复证明；不在日常Win10安装，不内部SPXT/main/tag/Release/未知清理/普通sub-agent。新账本0/2、QA0/1冻结，旧FAIL/预算保持。详见FINAL-INSTALL-LAN-AUTHORIZATION.md、FINAL-INSTALL-LAN-RUNS.json；下方停止为已获本次有限续行前历史。
+
 ## 当前停止｜2026-10-17 FINAL DELIVERY CLOSURE V1 / LOCAL REVIEW PASS / INSTALL NOT VERIFIED
 
 原FRESH-T2正式RETURN51b9d351并冻结，最终源码98f99aa1/实现283cfe6b，Master独立Review与ff-only整合。物理路径/设备/owner receipt/FileID修复，本地实际path26、CJS45/root134、Go7、link15源码/证据及完整EXE1049文件逐字节核验PASS；EXE33553047字节/SHA98849d36...fe28597，构建与受控环境/Job恢复已证。P1原生产函数未改、历史F01根因UNKNOWN；P2早期native无receipt完整恢复仍NOT VERIFIED，替身测试不冒充真实安装。无安全可销毁Windows安装环境，实际Setup/安装后业务/26-742/QA/物理LAN未验；本轮Hosted0、QA冻结、旧FAIL/预算保留。禁止新Actions/实验/真实本机产品安装，不交付本地EXE。仅治理非force同步/统一交接后STOP；无内部SPXT/main/tag/Release/未知清理。详见final-delivery-closure-v1/RESULT.md、MASTER-REVIEW.md及固定证据；下方授权/运行/停止均保留历史。

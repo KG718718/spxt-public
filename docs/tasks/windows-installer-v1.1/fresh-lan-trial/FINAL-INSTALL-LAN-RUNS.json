@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "authorization": "USER_FINAL_INSTALL_LAN_ACCEPTANCE_20261017",
+  "state": "APPROVED_LOCAL_PREPARATION",
+  "candidateMax": 2,
+  "candidateUsed": 0,
+  "qaMax": 1,
+  "qaUsed": 0,
+  "qaOrigin": "EXISTING_UNUSED_SINGLE_FINAL_QA_NOT_ADDITIONAL",
+  "qaState": "FROZEN_UNTIL_COMPLETE_CANDIDATE_PASS",
+  "diagnosticMax": 0,
+  "rerunAllowed": false,
+  "historicalLedgers": [
+    "FAST-RUNS.json",
+    "INSTALL-CANDIDATE-20261017-RUNS.json"
+  ],
+  "historicalResults": "PRESERVED_NOT_RESET",
+  "runs": []
+}
