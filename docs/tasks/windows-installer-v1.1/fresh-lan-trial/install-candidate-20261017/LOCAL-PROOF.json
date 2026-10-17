@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "kind": "INSTALL_CANDIDATE_20261017_LOCAL_PROOF",
+  "qualification": "WIRING_AND_BUILD_ONLY_NOT_INSTALLATION_ACCEPTANCE",
+  "sourceCommit": "849131c20282afcdc4d27fa5237fdf9b38865e8d",
+  "sourceTree": "ed6d7a1b675200b4b5f0e6b3f44bd2d42570911d",
+  "codeFingerprint": "43091f6233c1ca6ed093432591108fb9ac325e01d10c21c05630f4f7189d8f0a",
+  "status": "PASS",
+  "localBuildReportSha256": "58baf6635905b24d17fd891a539136a567743616ff1ad5a9b0f92c401c1c6b0e",
+  "localBuildSetupSha256": "d2f01a824b62e0f00a60026a2d1b01b7000d582e6b9d6031e2cb2b0643ce18eb",
+  "setupBytes": 33557167,
+  "programManifestHash": "ae815f69e059f0ead8769cda8f868245f1a7bf29cd11403430fb66594d845afe",
+  "payloadInventorySha256": "28d60eaef26702ee55646941dece1730392d7da305bec544fd91d3a0d6035705",
+  "installedProgramFileCount": 1049,
+  "dependencyCount": 20,
+  "gates": {
+    "schema": 1,
+    "kind": "INSTALL_CANDIDATE_SOURCE_GATES",
+    "sourceCommit": "849131c20282afcdc4d27fa5237fdf9b38865e8d",
+    "sourceBound": true,
+    "status": "PASS",
+    "results": [
+      {
+        "id": "NEW_CONTRACT_AND_WIRING",
+        "status": "PASS",
+        "exitClass": "ZERO",
+        "stderrEmpty": true
+      },
+      {
+        "id": "ROOT",
+        "status": "PASS",
+        "exitClass": "ZERO",
+        "stderrEmpty": true
+      },
+      {
+        "id": "GO_OVERLAY_COMPILE",
+        "status": "PASS",
+        "exitClass": "ZERO",
+        "stderrEmpty": true
+      },
+      {
+        "id": "GO_OVERLAY_VET",
+        "status": "PASS",
+        "exitClass": "ZERO",
+        "stderrEmpty": true
+      }
+    ],
+    "productExecuted": false,
+    "realCollectorsExecuted": false,
+    "rawOutputStored": false
+  },
+  "scope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "target": {
+    "schema": 1,
+    "kind": "INSTALL_CANDIDATE_LOCAL_CONTRACTS",
+    "status": "PASS",
+    "tests": 17,
+    "pass": 17,
+    "fail": 0,
+    "skipped": 0,
+    "stderrEmpty": true,
+    "failures": [],
+    "rawOutputStored": false
+  },
+  "root": {
+    "schema": 1,
+    "kind": "FAST_ROOT_FRESH_GATE",
+    "sourceCommit": "849131c20282afcdc4d27fa5237fdf9b38865e8d",
+    "sourceBound": true,
+    "status": "PASS",
+    "tests": 134,
+    "pass": 134,
+    "fail": 0,
+    "skipped": 0,
+    "exitClass": "ZERO",
+    "failures": [],
+    "rawOutputStored": false
+  },
+  "workflowStructure": "FIXED_STRUCTURE_ASSERTIONS_PASS",
+  "workflowInlinePsAndTouchedPs": "AST_PARSE_ERRORS_ZERO",
+  "genericYamlParser": "NOT_AVAILABLE_NOT_CLAIMED",
+  "rawOutputStored": false,
+  "productionInstalled": false,
+  "productionExeRun": false,
+  "realPrestateCollectorsRun": false,
+  "hostedRuns": 0,
+  "actualInstallation": "NOT_RUN",
+  "historicalF01Root": "UNKNOWN",
+  "realRules": "NOT_PROVEN",
+  "candidateBudget": {
+    "newMax": 1,
+    "newUsed": 0,
+    "qaMax": 1,
+    "qaUsed": 0,
+    "qaOrigin": "EXISTING_UNUSED_ONLY_CONDITIONAL_ON_COMPLETE_IC1_PASS"
+  },
+  "localArtifact": "E:\\CodexWorkspace\\outputs\\fresh-install-candidate-p0-a3e084ebc9d044a69a2bc32aebdda7b7\\setup\\artifact\\K-SESSION-Fresh-Trial-1.1.0-beta.4.exe",
+  "localBuildEvidenceRoot": "E:\\CodexWorkspace\\outputs\\fresh-install-candidate-p0-a3e084ebc9d044a69a2bc32aebdda7b7",
+  "localGateEvidenceRoot": "E:\\CodexWorkspace\\CodexWorktrees\\bea7\\public-source\\.test-work\\install-candidate-gates-d7f9452dfc454ab7ae2aa29be33eda01"
+}
