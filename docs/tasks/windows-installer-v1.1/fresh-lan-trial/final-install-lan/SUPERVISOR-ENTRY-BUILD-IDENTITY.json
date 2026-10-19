@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "kind": "SUPERVISOR_ENTRY_BUILD_IDENTITY",
+  "qualification": "BUILD_ONLY_NOT_INSTALLATION_ACCEPTANCE",
+  "sourceCommit": "cb2042de92cf4b578de73ee62863c62fbc04b26a",
+  "sourceTree": "8abede3a2e1cb1709ca385e7916599d7ce89bda4",
+  "codeFingerprint": "10788f0915a8dd798e0817010afd0210c75df9c593bf0a2764dbe95677aecedc",
+  "setupBytes": 33553062,
+  "setupSha256": "74e79060e2fdfbcffa1a748f73874fb8329593d496f0d93e22e18b63d162bdd0",
+  "localBuildReportSha256": "4765dca086e8a828b1c21052d1a0ea965d374a6de16055e963ba684dae109e84",
+  "payloadFileCount": 1049,
+  "payloadBytes": 147923786,
+  "dependencyCount": 20,
+  "programManifestHash": "8ceb1fb1ea09c820ee1acd4d5c6b3cf7a7d71ae02d7a4a5692976a0525a46829",
+  "payloadInventorySha256": "74280cedeba85768cc63dda958ee93d2b6d629b5ba8e43ebfceb7c7f9b414cb1",
+  "generatedScriptHashes": [
+    {
+      "path": "files.iss",
+      "bytes": 962592,
+      "sha256": "4fc5938a9b8b0115fb93e276ea520ae96df664543f8deccf823d13c423838bcb"
+    },
+    {
+      "path": "identity.iss",
+      "bytes": 572,
+      "sha256": "739505c3e0f8f49ac7381fd308ea517a4e8216c21aa731de2b12441b80f82949"
+    },
+    {
+      "path": "verify.iss",
+      "bytes": 269006,
+      "sha256": "924d44fa9c884afe616c7f5f5510efbb2e5e6ce1de247b8695df3d68a3d1cdbb"
+    }
+  ],
+  "actualPayloadBytesVerified": true,
+  "setupSidecarVerified": true,
+  "packageVerifierPassed": true,
+  "productInstalled": false,
+  "productExecuted": false
+}

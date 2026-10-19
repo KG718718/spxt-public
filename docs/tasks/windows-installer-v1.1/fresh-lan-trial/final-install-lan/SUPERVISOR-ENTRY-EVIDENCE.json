@@ -1,0 +1,662 @@
+{
+  "schema": 1,
+  "kind": "SUPERVISOR_ENTRY_LOCAL_EVIDENCE",
+  "status": "PASS_LOCAL_ONLY",
+  "sourceCommit": "cb2042de92cf4b578de73ee62863c62fbc04b26a",
+  "codeFingerprint": "10788f0915a8dd798e0817010afd0210c75df9c593bf0a2764dbe95677aecedc",
+  "root": {
+    "schema": 1,
+    "kind": "FAST_ROOT_FRESH_GATE",
+    "sourceCommit": "cb2042de92cf4b578de73ee62863c62fbc04b26a",
+    "sourceBound": true,
+    "status": "PASS",
+    "tests": 134,
+    "pass": 134,
+    "fail": 0,
+    "skipped": 0,
+    "exitClass": "ZERO",
+    "failures": [],
+    "rawOutputStored": false
+  },
+  "target": {
+    "schema": 1,
+    "kind": "FINAL_INSTALL_LAN_LOCAL_GATES",
+    "status": "PASS",
+    "tests": 68,
+    "pass": 68,
+    "fail": 0,
+    "skip": 0,
+    "failedIds": [],
+    "stderrEmpty": true,
+    "rawOutputStored": false
+  },
+  "entry": {
+    "schema": 1,
+    "productExecuted": false,
+    "skipped": 0,
+    "unrelatedHandleNotInherited": true,
+    "kind": "SUPERVISOR_ENTRY_ACTUAL_WINDOWS",
+    "handleGrowthWithinBound": true,
+    "cases": [
+      {
+        "classification": "PASS",
+        "resumed": true,
+        "proof": {
+          "schema": 1,
+          "kind": "FAST_OWNED_PROCESS_SCOPE",
+          "assigned": true,
+          "naturalExit": true,
+          "stderrEmpty": true,
+          "pipesClosed": true,
+          "handlesClosed": true,
+          "jobEmpty": true,
+          "forcedTermination": false,
+          "status": "PASS"
+        },
+        "name": "normal"
+      },
+      {
+        "classification": "JOB_ASSIGNMENT_FAILED",
+        "resumed": false,
+        "proof": {
+          "schema": 1,
+          "kind": "FAST_OWNED_PROCESS_SCOPE",
+          "assigned": false,
+          "naturalExit": null,
+          "stderrEmpty": true,
+          "pipesClosed": true,
+          "handlesClosed": true,
+          "jobEmpty": null,
+          "forcedTermination": true,
+          "status": "FAIL"
+        },
+        "name": "assign-noop"
+      },
+      {
+        "classification": "JOB_ASSIGNMENT_FAILED",
+        "resumed": false,
+        "proof": {
+          "schema": 1,
+          "kind": "FAST_OWNED_PROCESS_SCOPE",
+          "assigned": false,
+          "naturalExit": null,
+          "stderrEmpty": true,
+          "pipesClosed": true,
+          "handlesClosed": true,
+          "jobEmpty": null,
+          "forcedTermination": true,
+          "status": "FAIL"
+        },
+        "name": "assign-invalid"
+      },
+      {
+        "classification": "JOB_HANDSHAKE_FAILED",
+        "resumed": false,
+        "proof": {
+          "schema": 1,
+          "kind": "FAST_OWNED_PROCESS_SCOPE",
+          "assigned": true,
+          "naturalExit": null,
+          "stderrEmpty": true,
+          "pipesClosed": true,
+          "handlesClosed": true,
+          "jobEmpty": true,
+          "forcedTermination": true,
+          "status": "FAIL"
+        },
+        "name": "resume-fail"
+      },
+      {
+        "classification": "JOB_HANDSHAKE_FAILED",
+        "resumed": false,
+        "proof": {
+          "schema": 1,
+          "kind": "FAST_OWNED_PROCESS_SCOPE",
+          "assigned": true,
+          "naturalExit": null,
+          "stderrEmpty": true,
+          "pipesClosed": true,
+          "handlesClosed": true,
+          "jobEmpty": true,
+          "forcedTermination": true,
+          "status": "FAIL"
+        },
+        "name": "gate-race"
+      },
+      {
+        "classification": "CHILD_EXIT_FAILED",
+        "resumed": true,
+        "proof": {
+          "schema": 1,
+          "kind": "FAST_OWNED_PROCESS_SCOPE",
+          "assigned": true,
+          "naturalExit": true,
+          "stderrEmpty": false,
+          "pipesClosed": true,
+          "handlesClosed": true,
+          "jobEmpty": true,
+          "forcedTermination": false,
+          "status": "FAIL"
+        },
+        "name": "stderr"
+      },
+      {
+        "classification": "CHILD_EXIT_FAILED",
+        "resumed": true,
+        "proof": {
+          "schema": 1,
+          "kind": "FAST_OWNED_PROCESS_SCOPE",
+          "assigned": true,
+          "naturalExit": false,
+          "stderrEmpty": true,
+          "pipesClosed": true,
+          "handlesClosed": true,
+          "jobEmpty": true,
+          "forcedTermination": false,
+          "status": "FAIL"
+        },
+        "name": "exit"
+      },
+      {
+        "classification": "CI_ENTRY_REJECTED",
+        "resumed": true,
+        "proof": {
+          "schema": 1,
+          "kind": "FAST_OWNED_PROCESS_SCOPE",
+          "assigned": true,
+          "naturalExit": false,
+          "stderrEmpty": false,
+          "pipesClosed": true,
+          "handlesClosed": true,
+          "jobEmpty": true,
+          "forcedTermination": false,
+          "status": "FAIL"
+        },
+        "name": "ci"
+      },
+      {
+        "classification": "ENV_PRECHECK_FAILED",
+        "resumed": true,
+        "proof": {
+          "schema": 1,
+          "kind": "FAST_OWNED_PROCESS_SCOPE",
+          "assigned": true,
+          "naturalExit": false,
+          "stderrEmpty": false,
+          "pipesClosed": true,
+          "handlesClosed": true,
+          "jobEmpty": true,
+          "forcedTermination": false,
+          "status": "FAIL"
+        },
+        "name": "env"
+      },
+      {
+        "classification": "CHILD_EXIT_FAILED",
+        "resumed": true,
+        "proof": {
+          "schema": 1,
+          "kind": "FAST_OWNED_PROCESS_SCOPE",
+          "assigned": true,
+          "naturalExit": true,
+          "stderrEmpty": null,
+          "pipesClosed": false,
+          "handlesClosed": true,
+          "jobEmpty": true,
+          "forcedTermination": false,
+          "status": "FAIL"
+        },
+        "name": "utf8"
+      },
+      {
+        "classification": "SUPERVISOR_TIMEOUT",
+        "resumed": true,
+        "proof": {
+          "schema": 1,
+          "kind": "FAST_OWNED_PROCESS_SCOPE",
+          "assigned": true,
+          "naturalExit": null,
+          "stderrEmpty": true,
+          "pipesClosed": true,
+          "handlesClosed": true,
+          "jobEmpty": true,
+          "forcedTermination": true,
+          "status": "FAIL"
+        },
+        "name": "timeout"
+      }
+    ],
+    "handleRepeatCount": 20,
+    "fail": 0,
+    "rawOutputStored": false,
+    "pass": 64
+  },
+  "sharedCore": {
+    "schema": 1,
+    "productExecuted": false,
+    "contextAndCi": "CONTROLLED_FIXTURES_NOT_HOSTED_MAIN",
+    "pass": 28,
+    "cases": [
+      {
+        "workObserved": true,
+        "classification": "PASS",
+        "mode": "normal",
+        "workMatched": true
+      },
+      {
+        "workObserved": false,
+        "classification": "SUPERVISOR_CONTEXT_REJECTED",
+        "mode": "context",
+        "workMatched": false
+      },
+      {
+        "workObserved": false,
+        "classification": "WORK_BINDING_REJECTED",
+        "mode": "binding-denied",
+        "workMatched": false
+      },
+      {
+        "workObserved": true,
+        "classification": "ENV_PRECHECK_FAILED",
+        "mode": "env",
+        "workMatched": true
+      },
+      {
+        "workObserved": true,
+        "classification": "CI_ENTRY_REJECTED",
+        "mode": "ci",
+        "workMatched": true
+      },
+      {
+        "workObserved": true,
+        "classification": "REPORT_WRITE_FAILED",
+        "mode": "report-collision",
+        "workMatched": true
+      },
+      {
+        "workObserved": true,
+        "classification": "WORK_BINDING_REJECTED",
+        "mode": "mapping-invalid",
+        "workMatched": false
+      },
+      {
+        "workObserved": false,
+        "classification": "REPORT_WRITE_FAILED",
+        "mode": "sink-foreign",
+        "workMatched": false
+      }
+    ],
+    "rawOutputStored": false,
+    "kind": "SUPERVISOR_SHARED_CORE_ACTUAL",
+    "fail": 0,
+    "skipped": 0
+  },
+  "deepPreservation": {
+    "schema": 1,
+    "kind": "SUPERVISOR_DEEP_DIAGNOSTIC_PRESERVATION",
+    "sourceCommit": "cb2042de92cf4b578de73ee62863c62fbc04b26a",
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0,
+    "setupDiagnosticsPreserved": true,
+    "multipleSceneDiagnosticsPreserved": true,
+    "rawOutputStored": false
+  },
+  "preexistingEntryCounter": {
+    "schema": 1,
+    "handlesClosed": true,
+    "kind": "SUPERVISOR_ENTRY_PREEXISTING_COUNTER",
+    "contextNodeObservedBeforeAssignment": true,
+    "rawOutputStored": false,
+    "productExecuted": false,
+    "jobEmpty": true
+  },
+  "preFixContractCounter": {
+    "schema": 1,
+    "kind": "SUPERVISOR_CONTRACT_PRE_COUNTER",
+    "sourceCommit": "c708cf1567817cbc3cfd6c1d5dd1f5eefb015908",
+    "inconsistentPassRejected": false,
+    "productExecuted": false,
+    "rawOutputStored": false
+  },
+  "retainedUnchangedComponentEvidence": {
+    "sourceCommit": "c708cf1567817cbc3cfd6c1d5dd1f5eefb015908",
+    "finalDeltaFiles": [
+      "tools/tests/fresh-lan-trial/install-r2/supervisor-entry.test.cjs",
+      "tools/tests/fresh-lan-trial/supervisor-diagnostic.cjs",
+      "tools/tests/fresh-lan-trial/supervisor-entry.ps1",
+      "tools/tests/fresh-lan-trial/supervisor-entry.test.ps1"
+    ],
+    "pathAndRecovery": {
+      "status": "PASS",
+      "results": [
+        {
+          "mode": "physical-work",
+          "pass": 26,
+          "scope": {
+            "schema": 1,
+            "kind": "FAST_OWNED_PROCESS_SCOPE",
+            "assigned": true,
+            "naturalExit": true,
+            "stderrEmpty": true,
+            "pipesClosed": true,
+            "handlesClosed": true,
+            "jobEmpty": true,
+            "forcedTermination": false,
+            "status": "PASS"
+          }
+        },
+        {
+          "mode": "recovery",
+          "pass": 22,
+          "scope": {
+            "schema": 1,
+            "kind": "FAST_OWNED_PROCESS_SCOPE",
+            "assigned": true,
+            "naturalExit": true,
+            "stderrEmpty": true,
+            "pipesClosed": true,
+            "handlesClosed": true,
+            "jobEmpty": true,
+            "forcedTermination": false,
+            "status": "PASS"
+          }
+        },
+        {
+          "mode": "ci-finally",
+          "pass": 7,
+          "scope": {
+            "schema": 1,
+            "kind": "FAST_OWNED_PROCESS_SCOPE",
+            "assigned": true,
+            "naturalExit": true,
+            "stderrEmpty": true,
+            "pipesClosed": true,
+            "handlesClosed": true,
+            "jobEmpty": true,
+            "forcedTermination": false,
+            "status": "PASS"
+          }
+        }
+      ],
+      "rawOutputStored": false,
+      "schema": 1,
+      "kind": "SUPERVISOR_PS_COMPAT"
+    },
+    "go": {
+      "schema": 1,
+      "kind": "INSTALL_R2_LOCAL_GO",
+      "sourceCommit": "c708cf1567817cbc3cfd6c1d5dd1f5eefb015908",
+      "sourceBound": true,
+      "status": "PASS",
+      "parents": 7,
+      "children": 32,
+      "fail": 0,
+      "skip": 0,
+      "failed": [],
+      "compile": [],
+      "rawOutputStored": false
+    },
+    "vet": {
+      "schema": 1,
+      "kind": "CLOSURE_GO_VET",
+      "sourceCommit": "c708cf1567817cbc3cfd6c1d5dd1f5eefb015908",
+      "status": "PASS",
+      "rawOutputStored": false
+    },
+    "goScope": {
+      "schema": 1,
+      "kind": "FAST_OWNED_PROCESS_SCOPE",
+      "assigned": true,
+      "naturalExit": true,
+      "stderrEmpty": true,
+      "pipesClosed": true,
+      "handlesClosed": true,
+      "jobEmpty": true,
+      "forcedTermination": false,
+      "status": "PASS"
+    },
+    "vetScope": {
+      "schema": 1,
+      "kind": "FAST_OWNED_PROCESS_SCOPE",
+      "assigned": true,
+      "naturalExit": true,
+      "stderrEmpty": true,
+      "pipesClosed": true,
+      "handlesClosed": true,
+      "jobEmpty": true,
+      "forcedTermination": false,
+      "status": "PASS"
+    },
+    "link": {
+      "schema": 1,
+      "kind": "OWNED_INNO_LINK_DRIVER",
+      "qualification": "LINK_ONLY_NOT_INSTALLATION",
+      "status": "OBSERVED",
+      "compiled": true,
+      "matrixPassed": true,
+      "stage": "FINAL",
+      "driverExit": "CONTROLLED_INITIALIZE_STOP",
+      "stdioEmpty": true,
+      "worldUnchanged": true,
+      "environmentRestored": true,
+      "productInstalled": false,
+      "productExecuted": false
+    },
+    "linkCases": 15,
+    "linkAllPassed": true,
+    "linkScope": {
+      "schema": 1,
+      "kind": "FAST_OWNED_PROCESS_SCOPE",
+      "assigned": true,
+      "naturalExit": true,
+      "stderrEmpty": true,
+      "pipesClosed": true,
+      "handlesClosed": true,
+      "jobEmpty": true,
+      "forcedTermination": false,
+      "status": "PASS"
+    }
+  },
+  "build": {
+    "setupBytes": 33553062,
+    "sourceCommit": "cb2042de92cf4b578de73ee62863c62fbc04b26a",
+    "stderrEmpty": true,
+    "stage": "FINAL",
+    "productionInstalled": false,
+    "kind": "FAST_P0_LOCAL_BUILD",
+    "schema": 1,
+    "forcedTermination": false,
+    "productionExeRun": false,
+    "naturalExit": true,
+    "environmentRestored": true,
+    "setupSha256": "74e79060e2fdfbcffa1a748f73874fb8329593d496f0d93e22e18b63d162bdd0",
+    "qualification": "BUILD_ONLY_NOT_INSTALLATION_ACCEPTANCE",
+    "jobEmpty": true,
+    "status": "PASS"
+  },
+  "outerBuildScope": {
+    "schema": 1,
+    "kind": "FAST_OWNED_PROCESS_SCOPE",
+    "assigned": true,
+    "naturalExit": true,
+    "stderrEmpty": true,
+    "pipesClosed": true,
+    "handlesClosed": true,
+    "jobEmpty": true,
+    "forcedTermination": false,
+    "status": "PASS"
+  },
+  "payloadTests": {
+    "schema": 1,
+    "kind": "FRESH_PAYLOAD_IDENTITY",
+    "qualification": "BUILD_AND_PURE_TESTS_ONLY",
+    "status": "PASS",
+    "sourceCommit": "cb2042de92cf4b578de73ee62863c62fbc04b26a",
+    "identity": {
+      "status": "PASS",
+      "sourceCommit": "cb2042de92cf4b578de73ee62863c62fbc04b26a",
+      "manifestSha256": "d2e9a2b516f0ce38e778280b0a45c968e255a91f0b5236e399fd7679daf1e653",
+      "launcherSha256": "b465ef28de75ceb4f86a80cd6d98d8df43ee0bcb77fa1ef34fe850be437213c3",
+      "firewallHelperSha256": "a5d5bf665af79d471821d8b5cb5512ca902c7b6970c3d5397b36d9ea48f2ca45",
+      "files": 1049,
+      "uncompressedBytes": 147923786,
+      "dependencyCount": 20
+    },
+    "productionExeRun": false,
+    "firewallBuild": {
+      "schema": 1,
+      "kind": "k-session-firewall-build-diagnostic",
+      "qualification": "TEST_BUILD_ONLY",
+      "status": "PASS",
+      "stage": "COMPLETE",
+      "reason": "PASS",
+      "sourceCommit": "cb2042de92cf4b578de73ee62863c62fbc04b26a",
+      "inputTempClass": "CANONICAL",
+      "inputTmpClass": "CANONICAL",
+      "inputGoTmpClass": "NONLOCAL",
+      "fixtureRootSource": "OWNED_PHYSICAL",
+      "testsPass": 13,
+      "testsFail": 0,
+      "testsSkipped": 0,
+      "packagePass": true,
+      "compileReached": true
+    },
+    "firewallUnit": {
+      "schema": 1,
+      "status": "PASS",
+      "suite": "FIREWALL",
+      "expectedTests": [
+        "TestRequestWhitelistAndInterfaceName",
+        "TestStrictDeploymentConfig",
+        "TestStrictDeploymentConfigExactKeyCorpus",
+        "TestInstallIdentityAndTampering",
+        "TestReparseResolutionMismatchIsRejected",
+        "TestCleanPathComparisonRejectsLexicalAliases",
+        "TestBoundConfigMustMatchRequest",
+        "TestRegistrationAndINIContracts",
+        "TestRuleOwnershipAndIdempotencyPolicy",
+        "TestEmbeddedFirewallScriptIsClosed",
+        "TestEmbeddedFirewallScriptParses",
+        "TestStatusOutputAllowlist",
+        "TestFirewallScriptBehaviorWithIsolatedCmdletHarness"
+      ],
+      "pass": 13,
+      "fail": 0,
+      "skipped": 0,
+      "packagePass": true
+    },
+    "launcherUnit": {
+      "schema": 1,
+      "status": "PASS",
+      "suite": "LAUNCHER",
+      "expectedTests": [
+        "TestRelativePathSafety",
+        "TestEnvironmentAllowlist",
+        "TestInstanceOutsidePackage",
+        "TestRuntimeMissing",
+        "TestJobOwnsOnlyChild",
+        "TestInstallDataSafety",
+        "TestLANReadyRequiresEveryGate",
+        "TestFixedServerStatusesMapToProductStates",
+        "TestCandidateAndJSONAreStrict",
+        "TestEnvironmentLANModeIsExplicitAndAllowlisted",
+        "TestExactListenerOwnershipRejectsWildcardThirdNICPortAndPIDImpersonationRows",
+        "TestCopyURLSourceIsOnlyCurrentPrivateEndpoint",
+        "TestPersistedPortNeverSilentlyFallsThroughRange",
+        "TestFirewallHelperFixedHashBeforeElevation",
+        "TestFirewallHelperAbsentHashKeepsHistoricalLocalMode",
+        "TestFirewallEnvironmentFailureIsFailClosed",
+        "TestFirewallInterfaceNameArgumentIsQuoted",
+        "TestEnableRejectionRestoresDisabledPreferenceAndLocalChild",
+        "TestLANSettingsTransitionDoesNotBlockUIThread",
+        "TestTransitionStartFailureRestoresOldConfigAndService",
+        "TestFirstTransitionStartFailureKeepsDeterminedPort",
+        "TestTransitionRejectsUnexpectedFallbackPort",
+        "TestFailedRefreshRevokesStaleCopyURL",
+        "TestFreshDiscoveryMismatchRevokesCopyURL",
+        "TestFreshDiscoveryMatchPublishesURLWhenFirewallBlocked",
+        "TestStopDispatchRetriesBusyOwnedWindow",
+        "TestStopDispatchKeepsStrictOverallTimeout",
+        "TestStrictLocalStatusAndActualPIDSocketOwnership"
+      ],
+      "pass": 28,
+      "fail": 0,
+      "skipped": 0,
+      "packagePass": true
+    },
+    "nodeTestEnvironment": {
+      "schema": 1,
+      "kind": "k-session-lan-node-test-environment",
+      "qualification": "TEST_ONLY",
+      "status": "PASS",
+      "stage": "COMPLETE",
+      "reason": "PASS",
+      "inputTempClass": "CANONICAL",
+      "selectedRootClass": "CANONICAL",
+      "tests": 44,
+      "pass": 44,
+      "fail": 0,
+      "skipped": 0,
+      "environmentRestored": true
+    },
+    "firewallFreshPolicy": {
+      "schema": 1,
+      "kind": "FRESH_FIREWALL_POLICY",
+      "sourceCommit": "cb2042de92cf4b578de73ee62863c62fbc04b26a",
+      "status": "PASS",
+      "expectedTests": [
+        "TestFreshStrictBindingAndStandardSchemaIsolation",
+        "TestFreshFirewallBindingBeforeAnyMutation"
+      ],
+      "pass": 2,
+      "fail": 0,
+      "skipped": 0
+    },
+    "launcherFreshPolicy": {
+      "schema": 1,
+      "kind": "FRESH_LAUNCHER_POLICY",
+      "sourceCommit": "cb2042de92cf4b578de73ee62863c62fbc04b26a",
+      "status": "PASS",
+      "expectedTests": [
+        "TestFreshLogonPlanIsCurrentUserInstalledOnly",
+        "TestFreshEnvironmentAndNetworkBindingFailClosed"
+      ],
+      "pass": 2,
+      "fail": 0,
+      "skipped": 0
+    }
+  },
+  "masterReported": {
+    "sourceCommit": "cb2042de92cf4b578de73ee62863c62fbc04b26a",
+    "status": "SOURCE_INTERFACE_AND_COMPLETE_BUILD_REVIEW_PASS_REPORTED_IN_MASTER_THREAD",
+    "targetPass": 68,
+    "rootPass": 134,
+    "entryPass": 64,
+    "sharedCorePass": 28,
+    "actualCiInvalidEntryRejected": true,
+    "completeBuildByteReview": "PASS_REPORTED_IN_MASTER_THREAD",
+    "setupBytes": 33553062,
+    "setupSha256": "74e79060e2fdfbcffa1a748f73874fb8329593d496f0d93e22e18b63d162bdd0"
+  },
+  "developmentIssuesPreserved": [
+    "ASYNC_PIPE_DISPOSAL_RACE_FIXED",
+    "OWNED_CWD_RECORD_REDACTED_TO_FIXED_BOOLEANS",
+    "MASTER_EXPECTED_STDERR_HARNESS_FAILURE_RETAINED",
+    "MASTER_LONG_NESTED_ROOT_NATIVE_READ_REJECTION_RETAINED"
+  ],
+  "hostedRuns": 0,
+  "candidateUsed": 1,
+  "candidateMax": 2,
+  "qaUsed": 0,
+  "qaMax": 1,
+  "remainingHostedState": "UNUSED_FROZEN_SAFETY_RECOVERY_STOP",
+  "historicalFc1Root": "UNKNOWN",
+  "historicalFc1Recovery": "NOT_VERIFIED_NOT_BACKFILLED",
+  "actualInstall": "NOT_VERIFIED",
+  "regression26_742": "NOT_VERIFIED_HOSTED_GUARD_PRESERVED",
+  "physicalLan": "HUMAN_PENDING",
+  "productInstalled": false,
+  "productExecuted": false,
+  "rawOutputStored": false
+}
