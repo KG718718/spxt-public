@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-19 FC2 CONDITIONAL UNFREEZE
+
+用户批准仅指定FC1 Run39011056474历史准入特例；原SOURCE/CLEANUP_UNPROVEN永久保留。原FRESH-T2实施精确合同/来源/新独立Hosted VM门禁与反例，同源实构建及Master独立Review后唯一FC2；完整PASS后原唯一QA同EXE。现Candidate1/2、QA0/1，未触发；当前Runner必需FAIL/UNKNOWN即STOP，不retry/额外Hosted/main/tag/Release/内部SPXT/未知清理。见final-install-lan/FC2-FINAL-AUTHORIZATION.md。下方历史停点保留。
+
 ## 本地闭环PASS｜2026-10-19 FC1 Supervisor Entry / HOSTED FROZEN
 
 原FRESH-T2正式RETURN e37374f6并冻结，最终修复source cb2042de/FP10788f09...aecedc；Master独立68/root134、实际Win10 PS7入口64/core28及实际CI非法入口拒绝PASS，路径26/恢复22/finally7、Go7父32子/vet/link15兼容证据保留原来源。同源完整Runtime/Helper/Launcher/ISCC真实构建PASS，EXE33553062字节/SHA74e79060...162bdd0，1049文件20依赖逐字节独立核验及内外Job/环境恢复通过。只改测试Supervisor/进程/路径/固定诊断，产品/授权/身份/业务/安装接受条件/实际trigger/FC2契约不改。历史FC1具体首因与恢复仍UNKNOWN，不回填、不以本地PASS冒充安装或LAN。新增Hosted0；FC2剩1次、QA剩1次继续冻结，既有firstFailure仍拒绝历史恢复未证，不自动准入。只治理非force同步及六项交接后停止，无内部SPXT/main/tag/Release/未知清理/普通sub-agent。详见final-install-lan/SUPERVISOR-ENTRY-RESULT.md与SUPERVISOR-ENTRY-MASTER-REVIEW.md；下方旧STOP/授权保留历史。
