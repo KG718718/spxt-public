@@ -7,7 +7,7 @@
 - 已确认原 `E:/fresh-trial` 与物理绑定要求的 `E:\fresh-trial` 存在词法不一致；仅归一化原固定根，不接纳其他盘符、别名或子路径。
 - 已实际重放原 CI context 入口，观察到 Node 可在 Job 分配前执行。原 Process.Start→Assign 封装也存在这一顺序窗口。
 - 开发反例实际暴露 Resume 失败后的异步管道释放竞态，已增加有界 drain 和各 reader/SafeHandle 独立关闭；没有把强制终止改记为自然 PASS。
-- 已确认原诊断校验会接纳 PASS 分类与 FAIL scope 的矛盾组合。JS/PS 均已拒绝，PASS 必须具备 PASS scope 和实际已观察、匹配的工作目录证明。
+- 本轮中间实现 c708 的新增诊断校验曾接纳 PASS 分类与 FAIL scope 的矛盾组合；不是历史 FC1 原报告已存在该字段。最终 cb2042de 的 JS/PS 均已拒绝，PASS 必须具备 PASS scope 和实际已观察、匹配的工作目录证明。
 - 上述事实不能反推历史 FC1 Run39011056474 的唯一首因。历史 SOURCE/CLEANUP_UNPROVEN、全部 NOT_OBSERVED/其余收尾 null 仍原样保留，恢复未证。
 
 ## 修复边界

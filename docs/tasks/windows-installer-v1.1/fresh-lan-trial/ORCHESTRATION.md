@@ -1,3 +1,7 @@
+## 本地闭环PASS｜2026-10-19 FC1 Supervisor Entry / HOSTED FROZEN
+
+原FRESH-T2正式RETURN e37374f6并冻结，最终修复source cb2042de/FP10788f09...aecedc；Master独立68/root134、实际Win10 PS7入口64/core28及实际CI非法入口拒绝PASS，路径26/恢复22/finally7、Go7父32子/vet/link15兼容证据保留原来源。同源完整Runtime/Helper/Launcher/ISCC真实构建PASS，EXE33553062字节/SHA74e79060...162bdd0，1049文件20依赖逐字节独立核验及内外Job/环境恢复通过。只改测试Supervisor/进程/路径/固定诊断，产品/授权/身份/业务/安装接受条件/实际trigger/FC2契约不改。历史FC1具体首因与恢复仍UNKNOWN，不回填、不以本地PASS冒充安装或LAN。新增Hosted0；FC2剩1次、QA剩1次继续冻结，既有firstFailure仍拒绝历史恢复未证，不自动准入。只治理非force同步及六项交接后停止，无内部SPXT/main/tag/Release/未知清理/普通sub-agent。详见final-install-lan/SUPERVISOR-ENTRY-RESULT.md与SUPERVISOR-ENTRY-MASTER-REVIEW.md；下方旧STOP/授权保留历史。
+
 ## 当前授权｜2026-10-19 FC1 Supervisor Entry Closure / LOCAL ONLY
 
 用户批准原Master/原FRESH-T2/bea7对bootstrap→Supervisor→物理绑定→Job握手→CI ENV入口进行本地自主修复、真实Windows反例及独立Review。基线796a5f76三方核验，历史FC1 FAIL不改。仅测试封装/路径/环境/固定诊断，生产及安全接受条件保持；新增Hosted0，FC2剩1次及QA剩1次继续冻结，不修改实际trigger/不运行Actions。合理本地Loop后一次回单；真实安全/未知所有权/恢复不可证按止损，不内部SPXT/main/tag/Release/未知清理/普通sub-agent。详见final-install-lan/SUPERVISOR-ENTRY-AUTHORIZATION.md；下方STOP是本轮有限本地授权前历史，Hosted冻结继续有效。
