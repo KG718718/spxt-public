@@ -1,3 +1,7 @@
+## 最终STOP｜2026-10-19 FC2 F01 TARGET_MISMATCH / CLEANUP_UNPROVEN
+
+唯一Run39215154383/attempt1，sourceb6f44a09/control29e04039已FAIL；安全Artifact12169532445单JSON/source/schema/digest核验PASS。Source精确历史准入及标准新Hosted Job绑定通过，BUILD COMPLETE/PASS且真实安装到F01；INSTALL_VERIFY TARGET_MISMATCH首个明确失败，CLEANUP_VERIFY同拒绝，TargetPath具体为何不一致仍UNKNOWN。cleanup8true、登记/快捷方式false；6类OWNERSHIP_UNKNOWN及globalRegistry STATE_CHANGED，整体恢复未证，不推断每项真实残留或放宽删除。F01未PASS/checks空，后续F02—F09/业务26-742/QA未到达，无合格用户包。Candidate2/2耗尽、原QA0/1 UNUSED—FROZEN，停止工程/全部Hosted，不retry/追加/挪QA。原T2/工作树/未跟踪现场与全部历史FAIL保留；不main/tag/Release/内部SPXT/未知清理。仅结果治理非force同步及网页交接后STOP。详见final-install-lan/FC2-HOSTED-RESULT.md；下方运行/Review/授权保留历史。
+
 ## 唯一FC2运行中｜2026-10-19 / Run39215154383
 
 source b6f44a09f2e54e39b1a55fd1dcf474ff19f6912d、trigger-only控制29e040394159d3bb0fff7a04406b3ea7ea3b2ac8、attempt1，唯一FC2已触发，Candidate2/2已用。来源/精确历史特例与标准新Hosted Runner绑定步骤已成功；执行阶段进行中，ENV/BUILD/安装/F01—F09/业务26-742/收尾仍待本Run，不提前PASS。原QA0/1仅完整PASS及产物/恢复合格后同EXE启用；任何必需FAIL/UNKNOWN即STOP、不retry/追加。T2已正式RETURN并冻结。后续治理不改变本Run来源；不main/tag/Release/内部SPXT/未知清理。
