@@ -11,6 +11,7 @@ public static class FreshWorkDirectoryNative {
  [DllImport("kernel32.dll",SetLastError=true)] static extern bool GetFileInformationByHandle(SafeFileHandle h,out Info info);
  public static SafeFileHandle Open(string path) { var h=CreateFile(path,0x80,3,IntPtr.Zero,3,0x02200000,IntPtr.Zero); if(h.IsInvalid){h.Dispose();throw new InvalidOperationException("WORK_HANDLE_UNKNOWN");}return h; }
  public static string Identity(SafeFileHandle h) { Info i;if(h.IsClosed||!GetFileInformationByHandle(h,out i)||(i.Attr&0x400)!=0||(i.Attr&0x10)==0)throw new InvalidOperationException("WORK_IDENTITY_UNKNOWN");return i.Volume.ToString("X8")+i.IndexHigh.ToString("X8")+i.IndexLow.ToString("X8"); }
+ public static string ReadFixedFile(string path) { using(var h=CreateFile(path,0x80000000,1,IntPtr.Zero,3,0x00200000,IntPtr.Zero)){Info i;if(h.IsInvalid||!GetFileInformationByHandle(h,out i)||(i.Attr&0x410)!=0)throw new InvalidOperationException("DIAGNOSTIC_FILE_UNKNOWN");using(var f=new System.IO.FileStream(h,System.IO.FileAccess.Read)){if(f.Length<1||f.Length>16384)throw new InvalidOperationException("DIAGNOSTIC_FILE_BOUND");var b=new byte[(int)f.Length];int at=0;while(at<b.Length){int n=f.Read(b,at,b.Length-at);if(n==0)throw new InvalidOperationException("DIAGNOSTIC_FILE_SHORT");at+=n;}return new System.Text.UTF8Encoding(false,true).GetString(b);}} }
 }
 '@
 }

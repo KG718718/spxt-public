@@ -43,7 +43,7 @@ function validate(r,expected){
  if(r.status!=='FAIL'){
   if(extended){assert.equal(require('./install-r2/recovery.cjs').restored(r.recovery),true);assert.ok(r.setupDiagnostics.every(d=>d.schema===2));}
   assert.equal(r.stage,'COMPLETE');assert.equal(r.reason,'PASS');assert.match(r.setupSha256,/^[a-f0-9]{64}$/);
-  assert.equal(r.buildDiagnostic.stage,'COMPLETE');assert.equal(r.buildDiagnostic.classification,'PASS');
+  assert.equal(r.buildDiagnostic.stage,'COMPLETE');assert.equal(r.buildDiagnostic.classification,'PASS');assert.equal(Object.hasOwn(r.buildDiagnostic,'supervisor'),false);
   assert.equal(r.checks.length,9);assert.ok(r.checks.every(c=>c.pass));assert.ok(Object.values(r.cleanup).every(v=>v===true));
   assert.deepEqual(r.setupDiagnostics.map(d=>d.call),['NONEMPTY_TARGET','EXISTING_INSTANCE','DESKTOP_SHORTCUT','STARTUP_SHORTCUT','OLD_BINDING','FRESH_ACCEPT','REGISTERED_REJECT']);for(const d of r.setupDiagnostics)require('./setup-diagnostic.cjs').expected(d);
   if(r.mode==='QA'){assert.match(r.candidate.runId,/^[1-9][0-9]*$/);assert.match(r.candidate.artifactId,/^[1-9][0-9]*$/);assert.equal(r.candidate.sourceCommit,r.sourceCommit);assert.equal(r.candidate.setupSha256,r.setupSha256);assert.deepEqual(r.candidate,expected.candidate);}

@@ -1,20 +1,21 @@
 param([Parameter(Mandatory=$true)][string]$Work,[switch]$BuildOnly)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/memory-process.ps1')
+. (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/supervisor-entry.ps1')
+try{
+$taskGateAlreadyChecked=$false
+if($env:GITHUB_WORKFLOW_REF -ceq 'KG718718/spxt-public/.github/workflows/fresh-install-candidate.yml@refs/heads/codex/lan-fresh-trial-v1.1' -or $env:KSESSION_FAST_JOB_GATE){Wait-FreshCiAssignment $env:KSESSION_FAST_JOB_GATE;$taskGateAlreadyChecked=$true}
 $taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $taskWork=[IO.Path]::GetFullPath($Work)
 $taskContext=Get-Content -Raw -LiteralPath (Join-Path $taskWork 'context.json')|ConvertFrom-Json
 $taskInstallCandidate=$env:GITHUB_WORKFLOW_REF -ceq 'KG718718/spxt-public/.github/workflows/fresh-install-candidate.yml@refs/heads/codex/lan-fresh-trial-v1.1' -or $null -ne $taskContext.PSObject.Properties['installCandidate']
+if($taskInstallCandidate -or ($null -ne $taskContext.PSObject.Properties['r1'] -and $null -ne $taskContext.r1.PSObject.Properties['fastDelivery'])){
+ if(!$taskGateAlreadyChecked){Wait-FreshCiAssignment $env:KSESSION_FAST_JOB_GATE}
+}
 if($taskInstallCandidate){
   if($BuildOnly){throw 'Install candidate cannot use build-only smoke'}
   $taskContextCheck=Invoke-KSessionMemoryNode (Get-Command node).Source @((Join-Path $PSScriptRoot 'install-candidate/context.cjs'),$taskWork)
   if($taskContextCheck.ExitCode -ne 0 -or $taskContextCheck.TimedOut -or $taskContextCheck.ForcedTermination -or $taskContextCheck.Stderr.Length -ne 0){throw 'Install candidate context required'}
-}
-if($taskInstallCandidate -or ($null -ne $taskContext.PSObject.Properties['r1'] -and $null -ne $taskContext.r1.PSObject.Properties['fastDelivery'])){
-  $taskGateDeadline=[DateTime]::UtcNow.AddSeconds(30)
-  if(!$env:KSESSION_FAST_JOB_GATE){throw 'Fast complete-process supervision required'}
-  while(!(Test-Path -LiteralPath $env:KSESSION_FAST_JOB_GATE)){if([DateTime]::UtcNow -gt $taskGateDeadline){throw 'Scope assignment unavailable'};Start-Sleep -Milliseconds 20}
-  if((Get-Content -Raw -LiteralPath $env:KSESSION_FAST_JOB_GATE) -cne 'ASSIGNED'){throw 'Scope assignment rejected'}
 }
 if($BuildOnly -and ($taskContext.r1.schema -ne 1 -or $taskContext.r1.mode -ne 'SMOKE' -or $taskContext.r1.slot -ne 'R1S1' -or $taskContext.mode -ne 'CANDIDATE')){throw 'Build-only R1 smoke context required'}
 if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public' -or
@@ -23,6 +24,7 @@ if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted
 $taskReportPath=Join-Path $taskWork 'fresh-report.json'
 $taskReport=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
 if($taskContext.reportSchema -ne 2 -or $taskReport.schema -ne 2){throw 'Current schema2 report context required'}
+}catch{[Console]::Error.WriteLine('FRESH_CI_ENTRY_REJECTED');exit 1}
 . (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/hosted-recovery.ps1')
 . (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/physical-work.ps1')
 . (Join-Path $taskRepo 'tools/tests/lan-host/node-test-environment.ps1')
@@ -86,10 +88,12 @@ function Inno-Environment-Snapshot {
 }
 function Checked([string]$Exe,[string[]]$Arguments){$taskChecked=Invoke-KSessionMemoryProcess $Exe $Arguments;if($taskChecked.ExitCode -ne 0){throw 'Fresh checked command failed'}}
 function Pinned([string]$Uri,[string]$Hash,[string]$Zip,[string]$Output){Invoke-WebRequest -Uri $Uri -OutFile $Zip -TimeoutSec 240;if((Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash.ToLowerInvariant() -cne $Hash){throw 'Pinned tool identity rejected'};Expand-Archive -LiteralPath $Zip -DestinationPath $Output}
+$taskEnvPhase='CI_ENTRY'
 try {
   $taskEnter=Invoke-KSessionMemoryNode (Get-Command node).Source @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/final-ci-report.cjs'),'ENV',$taskWork)
   if($taskEnter.ExitCode -ne 0 -or $taskEnter.TimedOut -or $taskEnter.ForcedTermination -or $taskEnter.Stderr.Length -ne 0){throw 'Fresh ENV report entry unproven'}
   $taskReport=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
+  $taskEnvPhase='ENV_PRECHECK'
   $env:NODE_OPTIONS='';$env:GOWORK='off';$env:KSESSION_FRESH_TESTED_SOURCE=$taskContext.sourceCommit
   $taskPhysicalBinding=Read-FreshPhysicalWorkBinding $taskWork
   $env:KSESSION_FRESH_PHYSICAL_WORK=$taskPhysicalBinding.physical
@@ -100,7 +104,8 @@ try {
   $taskCompilerFilesBefore=Get-FreshCompilerObservation $taskPhysicalBinding
   $taskInnoBefore=Inno-Environment-Snapshot
   $taskSettingsBefore=New-FreshObservation $true $false ($taskInnoBefore|ConvertTo-Json -Depth 60 -Compress)
-  if(!$taskRegistryBefore.known -or !$taskRulesBefore.known -or !$taskCompilerFilesBefore.known -or !$taskCompilerFilesBefore.absent -or @($taskProductBefore.Values|Where-Object{!$_.known}).Count){throw 'Fresh recovery prestate unproven'}
+  Assert-FreshEnvPrecheck $taskRegistryBefore $taskRulesBefore $taskCompilerFilesBefore $taskProductBefore
+  $taskEnvPhase='BUILD'
   if($taskContext.mode -eq 'CANDIDATE'){
     Stage 'BUILD_PORTABLE_FAILED'
     $taskPortable=Join-Path $taskWork 'portable'
@@ -160,6 +165,7 @@ try {
   Checked $taskNode @((Join-Path $PSScriptRoot 'hosted-run.cjs'),$taskRepo,$taskWork,$taskNode,$taskGo)
   }
 }catch{
+  if($taskEnvPhase -eq 'CI_ENTRY'){[Console]::Error.WriteLine('FRESH_CI_ENTRY_REJECTED')}elseif($taskEnvPhase -eq 'ENV_PRECHECK'){[Console]::Error.WriteLine('FRESH_ENV_PRECHECK_FAILED')}
   if(!$taskFinalStarted){$taskReport.status='FAIL';[IO.File]::WriteAllText($taskReportPath,($taskReport|ConvertTo-Json -Depth 12 -Compress)+"`n",[Text.UTF8Encoding]::new($false))}
   $script:taskFailed=$true
 }finally{

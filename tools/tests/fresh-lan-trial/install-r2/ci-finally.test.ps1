@@ -2,7 +2,7 @@ param([Parameter(Mandatory=$true)][string]$Root)
 $ErrorActionPreference='Stop';. (Join-Path $PSScriptRoot '../../lan-host/node-test-environment.ps1');. (Join-Path $PSScriptRoot 'hosted-recovery.ps1')
 $taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../../../..')).Path
 $taskTokens=$null;$taskErrors=$null;$taskAST=[Management.Automation.Language.Parser]::ParseFile((Join-Path $taskRepo 'tools/windows-installer/fresh-trial/ci.ps1'),[ref]$taskTokens,[ref]$taskErrors)
-$taskTry=@($taskAST.EndBlock.Statements|Where-Object{$_ -is [Management.Automation.Language.TryStatementAst]});if($taskErrors.Count -ne 0 -or $taskTry.Count -ne 1){throw 'ACTUAL_CI_FINALLY_REQUIRED'}
+$taskTry=@($taskAST.EndBlock.Statements|Where-Object{$_ -is [Management.Automation.Language.TryStatementAst] -and $null -ne $_.Finally});if($taskErrors.Count -ne 0 -or $taskTry.Count -ne 1){throw 'ACTUAL_CI_FINALLY_REQUIRED'}
 $taskBody=$taskTry[0].Finally.Extent.Text;$taskFinally=[ScriptBlock]::Create($taskBody.Substring(1,$taskBody.Length-2))
 $taskNames=@('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules');$taskPass=0
 function Checked {param($Exe,$Arguments)if($script:taskFault -eq 'compiler'){throw 'CONTROLLED'}}

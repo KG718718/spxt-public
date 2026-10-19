@@ -12,7 +12,9 @@ function main(){
  const completionFile=path.join(publish,'completion-private.json');
  const completion=fs.existsSync(completionFile)?JSON.parse(fs.readFileSync(completionFile)):{schema:1,sourceCommit:r.sourceCommit,controlCommit:r.controlCommit,run:r.run,mode:r.mode,checksComplete:false,actualFailure:true};
  const cleanup={...r.cleanup,ownedDriveRestored:driveRestored==='true'};
- const final=finish(r,completion,cleanup,expected,outerFailure==='true');
+ let supervisorFailure=false;const supervisorFile=path.join(publish,'supervisor-entry-private.json');
+ if(fs.existsSync(supervisorFile)){assert.ok(fs.statSync(supervisorFile).size<=16384);const e=JSON.parse(fs.readFileSync(supervisorFile));const merged=require('../../tests/fresh-lan-trial/supervisor-diagnostic.cjs').merge(r,e,expected);supervisorFailure=merged.failure;Object.assign(cleanup,r.cleanup);cleanup.ownedDriveRestored=driveRestored==='true';}
+ const final=finish(r,completion,cleanup,expected,outerFailure==='true'||supervisorFailure);
  fs.writeFileSync(path.join(publish,'fresh-report.json'),JSON.stringify(final)+'\n');
  if(final.status==='FRESH_TRIAL_AUTOMATION_PASS_HUMAN_PENDING'){
   fs.writeFileSync(path.join(publish,'artifact/fresh-report.json'),JSON.stringify(final)+'\n');verify(path.join(publish,'artifact'),expected);

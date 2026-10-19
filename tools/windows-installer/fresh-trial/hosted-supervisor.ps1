@@ -3,28 +3,25 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/fast-delivery/job-scope.ps1')
 . (Join-Path $PSScriptRoot '../../tests/lan-host/node-test-environment.ps1')
 . (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/memory-process.ps1')
-if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public'){throw 'Hosted scope required'}
-$taskContext=Get-Content -Raw -LiteralPath (Join-Path $Work 'context.json')|ConvertFrom-Json
-if($env:GITHUB_WORKFLOW_REF -ceq 'KG718718/spxt-public/.github/workflows/fresh-install-candidate.yml@refs/heads/codex/lan-fresh-trial-v1.1' -or $null -ne $taskContext.PSObject.Properties['installCandidate']){
-  $taskContextCheck=Invoke-KSessionMemoryNode (Get-Command node).Source @((Join-Path $PSScriptRoot 'install-candidate/context.cjs'),$Work)
-  if($taskContextCheck.ExitCode -ne 0 -or $taskContextCheck.TimedOut -or $taskContextCheck.ForcedTermination -or $taskContextCheck.Stderr.Length -ne 0){throw 'Install candidate context required'}
-}elseif($taskContext.r1.fastDelivery.schema -ne 1 -or $taskContext.controlCommit -cne $env:GITHUB_SHA -or $taskContext.run.id -cne $env:GITHUB_RUN_ID -or $env:GITHUB_RUN_ATTEMPT -cne '1'){throw 'Fast source context required'}
 . (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/install-r2/physical-work.ps1')
-$taskBinding=Read-FreshPhysicalWorkBinding $Work
-$taskPhysical=$taskBinding.physical
+. (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/supervisor-entry.ps1')
+if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public'){throw 'Hosted scope required'}
+$taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
+$taskHead=Invoke-KSessionMemoryProcess (Get-Command git).Source @('-C',$taskRepo,'rev-parse','HEAD') 15
+if($taskHead.ExitCode -ne 0 -or $taskHead.Stderr.Length -ne 0 -or $taskHead.Stdout.Trim() -cnotmatch '^[a-f0-9]{40}$'){throw 'Supervisor source unknown'}
+$taskIdentity=@{sourceCommit=$taskHead.Stdout.Trim();controlCommit=$env:GITHUB_SHA;run=@{id=$env:GITHUB_RUN_ID;attempt=1}}
+$taskSink=New-FreshSupervisorSink $env:FRESH_CONTROL_ROOT $taskIdentity
 try{
-$taskScope=Invoke-FastOwnedProcess (Get-Command pwsh).Source @('-NoProfile','-File',(Join-Path $PSScriptRoot 'ci.ps1'),'-Work',$Work) (Join-Path $taskPhysical 'scope-job-ready')
-if(!(Test-FreshPinnedWorkDirectory $taskBinding)){throw 'WORK_REPORT_ROOT_UNKNOWN'}
-[IO.File]::WriteAllText((Join-Path $taskPhysical 'scope-job-proof.json'),($taskScope|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
-$taskReport=Get-Content -Raw -LiteralPath (Join-Path $taskPhysical 'fresh-report.json')|ConvertFrom-Json
-# handlesClosed now also requires the actual complete CI Job/process/pipe scope.
-if($taskScope.jobEmpty -ne $true -or !$taskScope.pipesClosed -or !$taskScope.handlesClosed -or $taskScope.forcedTermination){$taskReport.cleanup.handlesClosed=$null}
-$taskBindingValid=Test-FreshPhysicalWorkBinding $taskBinding
-if(!$taskBindingValid){$taskReport.recovery.compilerOwnedFiles='OBSERVATION_FAILED';$taskReport.cleanup.ownedToolchainAbsent=$false;$taskReport.status='FAIL';$taskReport.reason='CLEANUP_UNPROVEN';if($taskReport.stage -eq 'COMPLETE'){$taskReport.stage='F09'}}
-if($taskScope.status -ne 'PASS'){
-  $taskReport.status='FAIL';if($taskReport.stage -eq 'COMPLETE'){$taskReport.stage='F09'}
-  if($taskReport.cleanup.handlesClosed -ne $true){$taskReport.reason='CLEANUP_UNPROVEN'}elseif($taskReport.reason -eq 'PASS'){$taskReport.reason='GATE_FAILED'}
-}
-[IO.File]::WriteAllText((Join-Path $taskPhysical 'fresh-report.json'),($taskReport|ConvertTo-Json -Depth 12 -Compress),[Text.UTF8Encoding]::new($false))
-if($taskScope.status -ne 'PASS' -or !$taskBindingValid){exit 1}
-}finally{Close-FreshPhysicalWorkBinding $taskBinding}
+ $taskVerify={param($NormalizedWork)
+  $taskContext=Get-Content -Raw -LiteralPath (Join-Path $NormalizedWork 'context.json')|ConvertFrom-Json
+  if($env:GITHUB_WORKFLOW_REF -ceq 'KG718718/spxt-public/.github/workflows/fresh-install-candidate.yml@refs/heads/codex/lan-fresh-trial-v1.1' -or $null -ne $taskContext.PSObject.Properties['installCandidate']){
+   $taskContextCheck=Invoke-FastOwnedProcess (Get-Command node).Source @((Join-Path $PSScriptRoot 'install-candidate/context.cjs'),$NormalizedWork) (Join-Path $taskSink.root 'context-job-ready') 120 -Detail
+   return [pscustomobject]@{scope=$taskContextCheck.scope}
+  }elseif($taskContext.r1.fastDelivery.schema -ne 1 -or $taskContext.controlCommit -cne $env:GITHUB_SHA -or $taskContext.run.id -cne $env:GITHUB_RUN_ID -or $env:GITHUB_RUN_ATTEMPT -cne '1'){throw 'Fast source context required'}
+ }
+ $taskOpen={param($NormalizedWork)Read-FreshPhysicalWorkBinding $NormalizedWork}
+ $taskExecute={param($NormalizedWork,$Physical)
+  Invoke-FastOwnedProcess (Get-Command pwsh).Source @('-NoProfile','-File',(Join-Path $PSScriptRoot 'ci.ps1'),'-Work',$NormalizedWork) (Join-Path $Physical 'scope-job-ready') 1800 -Detail
+ }
+ if(!(Invoke-FreshSupervisorCore $Work $taskSink $taskVerify $taskOpen $taskExecute)){exit 1}
+}finally{Close-FreshSupervisorSink $taskSink}
