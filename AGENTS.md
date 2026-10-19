@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-19 FC1 Supervisor Entry Closure / LOCAL ONLY
+
+用户批准原Master/原FRESH-T2/bea7对bootstrap→Supervisor→物理绑定→Job握手→CI ENV入口进行本地自主修复、真实Windows反例及独立Review。基线796a5f76三方核验，历史FC1 FAIL不改。仅测试封装/路径/环境/固定诊断，生产及安全接受条件保持；新增Hosted0，FC2剩1次及QA剩1次继续冻结，不修改实际trigger/不运行Actions。合理本地Loop后一次回单；真实安全/未知所有权/恢复不可证按止损，不内部SPXT/main/tag/Release/未知清理/普通sub-agent。详见final-install-lan/SUPERVISOR-ENTRY-AUTHORIZATION.md；下方STOP是本轮有限本地授权前历史，Hosted冻结继续有效。
+
 ## 最终STOP｜2026-10-17 FINAL INSTALL & LAN / FC1 SOURCE FAIL
 
 Run39011056474/attempt1，受测source63e91f986e969b12f0faf5a4fc974f39dc91dcc0、控制9fef45f81af4f5d58a3b45fb2ff8da7f25d40076已FAIL。安全Artifact12092841661单JSON/schema2/source/API digest核验PASS；SOURCE/CLEANUP_UNPROVEN，BUILD NOT_STARTED、setupSha null、checks空。仅drive恢复true，其余9项cleanup null、10项recovery NOT_OBSERVED，不证明真实残留，也不能证明完整恢复；具体监督器首因UNKNOWN。按用户强制停点停止全部工程/Hosted：Candidate1/2已用，剩1次UNUSED—FROZEN；原QA0/1 UNUSED—FROZEN，其余0，不retry/挪QA。原T2正式RETURN且冻结，真实安装/F01—F09/26-742/QA未到达，无合格EXE用户包。本地构建/Review PASS不冒充安装；原树/历史FAIL/未跟踪现场保留，无内部SPXT/main/tag/Release/未知清理。只治理非force同步及网页版交接后STOP，详见fresh-lan-trial/final-install-lan/FC1-HOSTED-RESULT.md与CHATGPT-HANDOFF.md。下方运行/待触发/Review均保留历史。
