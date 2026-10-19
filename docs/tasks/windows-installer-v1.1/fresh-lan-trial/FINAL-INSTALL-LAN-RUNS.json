@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "authorization": "USER_FINAL_INSTALL_LAN_ACCEPTANCE_20261017",
-  "state": "FC2_RESERVED_LOCAL_REVIEW_PASS_NOT_YET_TRIGGERED",
+  "state": "FC2_IN_PROGRESS",
   "candidateMax": 2,
   "candidateUsed": 2,
   "qaMax": 1,
@@ -35,17 +35,17 @@
     {
       "implementationSource": "2fb10516d65b6be07425c63ed796c6a2146b4665",
       "slot": "FC2",
-      "runId": null,
+      "runId": "39215154383",
       "localBuildSource": "2fb10516d65b6be07425c63ed796c6a2146b4665",
-      "controlCommit": null,
+      "controlCommit": "29e040394159d3bb0fff7a04406b3ea7ea3b2ac8",
       "attempt": 1,
       "mode": "CANDIDATE",
-      "sourceCommit": null,
+      "sourceCommit": "b6f44a09f2e54e39b1a55fd1dcf474ff19f6912d",
       "localBuildReportSha256": "1bf12d62db06f2f18a5f663483e3f561470e8a27a77117c6d03c0db59e4da6b3",
       "masterReview": "final-install-lan/FC2-MASTER-REVIEW.md",
-      "state": "RESERVED_NOT_YET_TRIGGERED"
+      "state": "IN_PROGRESS"
     }
   ],
-  "candidateRemainingState": "FC2_RESERVED_NOT_YET_TRIGGERED",
+  "candidateRemainingState": "FC2_IN_PROGRESS_NO_RETRY",
   "fc2AuthorizationCommit": "18d408fcf5f72420fd209fc5b569e5af7f7e22a2"
 }
