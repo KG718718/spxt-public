@@ -20,6 +20,13 @@ const request=x=>gate.request(x.env,x.input,x.history,x.facts,x.bytes);
 test('exact historical FC1 exception uses original archive/report bytes and leaves UNKNOWN history immutable',()=>{
  const x=fixture(),before=Buffer.from(x.facts.firstFailure.reportBytes);assert.equal(archive.length,843);assert.equal(fc2.sha(archive),fc2.FC1.archiveSha256);assert.equal(request(x).slot,'FC2');assert.deepEqual(x.facts.firstFailure.reportBytes,before);assert.equal(JSON.parse(before).stage,'SOURCE');assert.ok(Object.values(JSON.parse(before).recovery).every(v=>v==='NOT_OBSERVED'));assert.equal(Object.values(JSON.parse(before).cleanup).filter(v=>v===null).length,9);
 });
+test('current Runner facts cannot move to another self-consistent run outside this request',()=>{
+ const x=fixture();x.facts.runner.currentRun.id=901;x.facts.runner.environment.GITHUB_RUN_ID='901';x.facts.runner.currentJobs.jobs[0].run_id=901;assert.throws(()=>request(x));
+ for(const change of [r=>r.head_sha='e'.repeat(40),r=>r.display_title='other']){const y=fixture();change(y.facts.runner.currentRun);assert.throws(()=>request(y));}
+});
+test('historical Runner reference cannot contradict the firstFailure API run',()=>{
+ const x=fixture();x.facts.runner.referenceRun=structuredClone(x.facts.runner.referenceRun);x.facts.runner.referenceRun.conclusion='success';x.facts.runner.referenceJobs.jobs[0].conclusion='success';assert.throws(()=>request(x));
+});
 test('every exception identifier digest byte and metadata anchor rejects mutation rather than qualifying other UNKNOWN',()=>{
  const changes=[x=>x.input.firstCandidateRunId='39011056475',x=>x.input.firstCandidateArtifactId='12092841662',x=>x.input.firstCandidateReportSha256='0'.repeat(64),x=>x.facts.firstFailure.sourceCommit='e'.repeat(40),x=>x.facts.firstFailure.run.head_sha='e'.repeat(40),x=>x.facts.firstFailure.run.run_attempt=2,x=>x.facts.fc2Reference.metadata.id++,x=>x.facts.fc2Reference.metadata.expired=true,x=>x.facts.fc2Reference.metadata.name='other',x=>x.facts.fc2Reference.metadata.size_in_bytes++,x=>x.facts.fc2Reference.metadata.workflow_run.id++,x=>x.facts.fc2Reference.metadata.workflow_run.head_sha='e'.repeat(40),x=>x.facts.fc2Reference.metadata.workflow_run.head_branch='main',x=>x.facts.fc2Reference.metadata.digest='sha256:'+'0'.repeat(64),x=>{x.facts.fc2Reference.archiveBytes[20]^=1;x.facts.fc2Reference.metadata.digest='sha256:'+fc2.sha(x.facts.fc2Reference.archiveBytes)},x=>delete x.facts.fc2Reference,x=>delete x.facts.runner];
  for(const change of changes){const x=fixture();change(x);assert.throws(()=>request(x));}
