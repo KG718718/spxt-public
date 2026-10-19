@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-19 FC2 INSTALL TARGET REPAIR / LOCAL ONLY
+
+用户批准仅原FRESH-T2/bea7自主修复登录自启TargetPath可信文件身份与失败安装所有权恢复；真实受控Windows路径/快捷方式反例、完整同源EXE与Master独立Review。原FC1/FC2全部FAIL不改，Candidate2/2耗尽、QA0/1冻结，本轮Hosted0，严禁trigger/Actions/QA。不得在日常电脑真实安装/碰真实Startup/产品登记/业务，不清未知资源、不扩大业务/LAN/安全权限；仅明确owned合成fixture。详见final-install-lan/INSTALL-TARGET-REPAIR-AUTHORIZATION.md；下方STOP只在此次明确本地范围内有限续行。
+
 ## 最终STOP｜2026-10-19 FC2 F01 TARGET_MISMATCH / CLEANUP_UNPROVEN
 
 唯一Run39215154383/attempt1，sourceb6f44a09/control29e04039已FAIL；安全Artifact12169532445单JSON/source/schema/digest核验PASS。Source精确历史准入及标准新Hosted Job绑定通过，BUILD COMPLETE/PASS且真实安装到F01；INSTALL_VERIFY TARGET_MISMATCH首个明确失败，CLEANUP_VERIFY同拒绝，TargetPath具体为何不一致仍UNKNOWN。cleanup8true、登记/快捷方式false；6类OWNERSHIP_UNKNOWN及globalRegistry STATE_CHANGED，整体恢复未证，不推断每项真实残留或放宽删除。F01未PASS/checks空，后续F02—F09/业务26-742/QA未到达，无合格用户包。Candidate2/2耗尽、原QA0/1 UNUSED—FROZEN，停止工程/全部Hosted，不retry/追加/挪QA。原T2/工作树/未跟踪现场与全部历史FAIL保留；不main/tag/Release/内部SPXT/未知清理。仅结果治理非force同步及网页交接后STOP。详见final-install-lan/FC2-HOSTED-RESULT.md；下方运行/Review/授权保留历史。
