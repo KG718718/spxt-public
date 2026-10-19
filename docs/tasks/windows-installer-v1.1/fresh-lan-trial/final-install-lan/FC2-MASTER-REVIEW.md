@@ -1,0 +1,16 @@
+# FC2 — Master独立Review
+2026-10-19。授权18d408fc，最终实现2fb10516d65b6be07425c63ed796c6a2146b4665，指纹78faea128b1f6104e0f01e32513166f7f11f1c8cb1da6301aefabff2592714a6。仅现有合同/来源/bootstrap/反例接线；生产、workflow、预算上限、旧report/P0原字节不改。
+
+指定FC1 Run39011056474/Artifact12092841661/source63e91f98/control9fef45f8的API元数据、原843字节ZIP SHA4bcf...eab662、report SHA c745...9896由Master重新下载独立核验。例外仅此Run，stage SOURCE、CLEANUP_UNPROVEN、9cleanup null及全部NOT_OBSERVED保留，其他UNKNOWN不接纳。新授权祖先、cb2042de Supervisor修复19文件与标准Windows workflow逐Git blob绑定，不能用调用者布尔冒充。
+
+独立性依赖标准GitHub-hosted每job新VM的平台契约（https://docs.github.com/en/actions/concepts/runners/github-hosted-runners）以及受审固定windows-2025 workflow、可信运行环境、当前/参考API唯一job/head/attempt/branch/repo/group/label绑定和不同job/run；不以可复用runner_id判断。真实Runner证据仍必须运行时通过，任何必需UNKNOWN不进入安装。本地合成job只测试协议，不证明真实Runner。当前所有权、前态、路径、Job与恢复实现未改，无旧资源继承/未知清理。
+
+Master源码复审及实际独立最终CJS77/77、root134/134、sourceBound2fb全部PASS/fail0skip0；实际Windows入口64/shared core28/prestate12在a810执行，2fb仅三文件收紧Run事实桥接，19固定实现及三份PS输入逐blob不变，明确按原来源复用不冒称2fb全部重跑。外层native Job assigned/natural/管道句柄关闭/job空全真、forcefalse。CORE有精确sink-foreign固定拒绝marker的预期负例，不放宽其他stderr。
+
+a810复核暴露纯合同接受自洽的另一currentRun或矛盾referenceRun；bootstrap原本使用同对象，未证明生产可利用。2fb增加id/head/title与reference深等号及2类负例，严格拒绝。另开发隐私固定键误判与旧Buffer接线静态预期错误已记录并最小修正，旧失败不改。没有删用例、改旧PASS条件或忽略异常。
+
+FC2专属P0 proof独立文件；旧FC1与旧FQ1仍选旧PROOF，新FC2及其同EXE QA选新PROOF。QA仍仅完整Candidate PASS后可运行且不重编译EXE。完整构建/字节身份另见FC2-MASTER-BUILD.json；本地BUILD不代表安装验收。FC2最多一次，任何当前必需FAIL/UNKNOWN或QA失败即停止，不retry/新增诊断/main/tag/Release/内部SPXT。实体Win10/UAC/物理Private LAN/第二设备/登录自启/实际第二Launcher HUMAN_PENDING。
+
+完整同源本地P0已自然PASS：EXE33553638字节，SHA256 0228745a837f9db25238a679df39b033b80b64ad9ae71dd05a8440ac4ed516b5；原P0报告SHA1bf12d62db06f2f18a5f663483e3f561470e8a27a77117c6d03c0db59e4da6b3。Master独立实际核验全部1049文件/147923786字节/20依赖，EXE、sidecar、Manifest、generatedISS、license、sourceTree及环境恢复均PASS。源码树4dacabb5cf911bb132c7eddcf16d2683f6735758；未安装或执行产品。正式RETURN98b9ff305912b184ec95d61fc0fad82868e0ca6d已ff-only整合。
+
+结论：LOCAL ADMISSION / CODE / BUILD REVIEW PASS，满足唯一FC2中央触发的本地条件；真实新Runner前态、安装、F01—F09、26/742及QA尚未验证。账本预留FC2后总Candidate2/2（本槽尚未触发，runId待绑定），原QA0/1仅完整FC2 PASS后同EXE可用。中央触发前仍须三方HEAD、完整历史/预算/Artifact原字节与source/proof合同核验；不使用本地合成当前Job冒充真实VM运行证据。
