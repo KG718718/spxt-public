@@ -37,6 +37,7 @@ function Set-FreshSupervisorDiagnostic($Sink,[string]$Stage,[string]$Classificat
  if($null -ne $Scope){Assert-FreshSupervisorScope $Scope}
  if($null -ne $Sink.last -and $Sink.last.diagnostic.classification -cnotin @('PASS','NOT_STARTED')){$Stage=$Sink.last.diagnostic.stage;$Classification=$Sink.last.diagnostic.classification}
  if($null -eq $Scope -and $null -ne $Sink.last){$Scope=$Sink.last.scope}
+ if($Classification -ceq 'PASS' -and ($null -eq $Scope -or $Scope.status -cne 'PASS' -or !$Sink.workObserved -or !$Sink.workMatched)){throw 'DIAGNOSTIC_PASS_UNPROVEN'}
  $taskRecord=[ordered]@{schema=1;kind='FRESH_SUPERVISOR_ENTRY';sourceCommit=$Sink.source.sourceCommit;controlCommit=$Sink.source.controlCommit;run=$Sink.source.run;diagnostic=[ordered]@{stage=$Stage;classification=$Classification;script=$null;line=$null};scope=$Scope;workObserved=$Sink.workObserved;workMatched=$Sink.workMatched}
  $taskBytes=[Text.UTF8Encoding]::new($false).GetBytes(($taskRecord|ConvertTo-Json -Depth 10 -Compress))
  if($Sink.writeFailed){throw 'DIAGNOSTIC_WRITE_REJECTED'}
@@ -87,8 +88,9 @@ function Invoke-FreshSupervisorCore([string]$Work,$Sink,[scriptblock]$VerifyCont
   if(!(Test-FreshPhysicalWorkBinding $binding)){$phase='SUPERVISOR_BINDING';$classification='WORK_BINDING_REJECTED';throw 'WORK_BINDING_REJECTED'}
   $phase=switch($processClass){'CI_ENTRY_REJECTED'{'CI_ENTRY'}'ENV_PRECHECK_FAILED'{'ENV_PRECHECK'}default{'SUPERVISOR_JOB'}}
   $classification=$processClass;Set-FreshSupervisorDiagnostic $Sink $phase $classification $scope
-  return ($scope.status -ceq 'PASS')
+  return ($scope.status -ceq 'PASS' -and $classification -ceq 'PASS')
  }catch{
+  if($classification -ceq 'WORK_BINDING_REJECTED'){$Sink.workMatched=$false}
   try{Set-FreshSupervisorDiagnostic $Sink $phase $classification $scope}catch{try{Write-FreshSupervisorEmergency $Sink}catch{};[Console]::Error.WriteLine('FRESH_SUPERVISOR_REPORT_WRITE_FAILED')}
   return $false
  }finally{if($null -ne $binding){Close-FreshPhysicalWorkBinding $binding}}

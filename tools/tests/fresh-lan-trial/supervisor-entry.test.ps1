@@ -48,7 +48,12 @@ try{
  $sinkRoot=Join-Path $Root 'sink';New-Item -ItemType Directory $sinkRoot|Out-Null
  [IO.File]::WriteAllText((Join-Path $sinkRoot 'isolation-private.json'),'{"schema":1,"runId":"123","drive":"E:","created":false,"target":null}')
  $sink=New-FreshSupervisorSink $sinkRoot $id
- try{Set-FreshSupervisorDiagnostic $sink 'SUPERVISOR_CONTEXT' 'NOT_STARTED';Reject {[IO.File]::WriteAllText((Join-Path $sinkRoot 'supervisor-entry-private.json'),'foreign')};Set-FreshSupervisorDiagnostic $sink 'CI_ENTRY' 'CI_ENTRY_REJECTED';Set-FreshSupervisorDiagnostic $sink 'SUPERVISOR_JOB' 'PASS';Must ($sink.last.diagnostic.classification -ceq 'CI_ENTRY_REJECTED')}finally{Close-FreshSupervisorSink $sink}
+ try{
+  Reject {Set-FreshSupervisorDiagnostic $sink 'SUPERVISOR_JOB' 'PASS'}
+  $badScope=[pscustomobject]@{schema=1;kind='FAST_OWNED_PROCESS_SCOPE';assigned=$true;naturalExit=$false;stderrEmpty=$true;pipesClosed=$true;handlesClosed=$true;jobEmpty=$true;forcedTermination=$false;status='FAIL'}
+  $sink.workObserved=$true;$sink.workMatched=$true;Reject {Set-FreshSupervisorDiagnostic $sink 'SUPERVISOR_JOB' 'PASS' $badScope};$sink.workObserved=$false;$sink.workMatched=$false
+  Set-FreshSupervisorDiagnostic $sink 'SUPERVISOR_CONTEXT' 'NOT_STARTED';Reject {[IO.File]::WriteAllText((Join-Path $sinkRoot 'supervisor-entry-private.json'),'foreign')};Set-FreshSupervisorDiagnostic $sink 'CI_ENTRY' 'CI_ENTRY_REJECTED';Set-FreshSupervisorDiagnostic $sink 'SUPERVISOR_JOB' 'PASS';Must ($sink.last.diagnostic.classification -ceq 'CI_ENTRY_REJECTED')
+ }finally{Close-FreshSupervisorSink $sink}
  $raw=Read-FreshSupervisorDiagnostic $sinkRoot $id;Must (($raw|ConvertFrom-Json).diagnostic.classification -ceq 'CI_ENTRY_REJECTED')
  $sink=New-FreshSupervisorSink $sinkRoot $id;try{Reject {Set-FreshSupervisorDiagnostic $sink 'SUPERVISOR_CONTEXT' 'NOT_STARTED'};Must ((Read-FreshSupervisorDiagnostic $sinkRoot $id) -ceq $raw)}finally{Close-FreshSupervisorSink $sink}
  $large=Join-Path $Root 'large.json';[IO.File]::WriteAllText($large,('x'*16385));Reject {[FreshWorkDirectoryNative]::ReadFixedFile($large)}

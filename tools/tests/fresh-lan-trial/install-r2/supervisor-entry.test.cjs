@@ -12,6 +12,12 @@ test('private work owner never becomes a diagnostic field and rejects stale sour
  const o={schema:1,kind:'FRESH_SUPERVISOR_WORK_OWNER',sourceCommit:expected.sourceCommit,controlCommit:expected.controlCommit,run:expected.run,identity:'A'.repeat(24)};diag.owner(o,expected);
  for(const v of [{...o,identity:'unknown'},{...o,sourceCommit:'c'.repeat(40)},{...o,extra:true},{...o,run:{id:'124',attempt:1}}])assert.throws(()=>diag.owner(v,expected));
 });
+test('PASS entry requires actual PASS scope and observed matching work ownership',()=>{
+ const e=envelope('PASS');assert.throws(()=>diag.validate(e,expected));
+ e.scope={schema:1,kind:'FAST_OWNED_PROCESS_SCOPE',assigned:true,naturalExit:false,stderrEmpty:true,pipesClosed:true,handlesClosed:true,jobEmpty:true,forcedTermination:false,status:'FAIL'};assert.throws(()=>diag.validate(e,expected));
+ e.scope.naturalExit=true;e.scope.status='PASS';diag.validate(e,expected);
+ assert.throws(()=>diag.validate({...e,workMatched:false},expected));assert.throws(()=>diag.validate({...e,workObserved:false,workMatched:false},expected));
+});
 test('entry failures preserve original deep build classification and invalidate binding recovery',()=>{
  const r=initial();r.stage='BUILD';r.buildDiagnostic={stage:'HELPER',classification:'COMMAND_FAILED',script:null,line:null};const before=structuredClone(r.buildDiagnostic);
  diag.merge(r,envelope('CHILD_EXIT_FAILED'),expected);assert.deepEqual(r.buildDiagnostic,{...before,supervisor:envelope('CHILD_EXIT_FAILED').diagnostic});report.validate(r,expected);
