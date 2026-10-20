@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const NAMES=['exact','com_normalization','same_bytes_copy','same_file_wrong_leaf','same_file_wrong_parent','empty','missing','raw_dot','unreadable','bound_write_denied','same_id_changed_bytes','same_bytes_new_id','invalid_target_owned_cleanup','occupied_temp','unowned_link_preserved','subst_to_physical','unapproved_alias','directory_reparse','embedded_nul','damaged_link_current_hash'];
+const TRUE={accepted:['exact','com_normalization','bound_write_denied','subst_to_physical'],removed:['invalid_target_owned_cleanup'],preserved:['occupied_temp','unowned_link_preserved','damaged_link_current_hash']};
+const ID={same_bytes_copy:'DIFFERENT',same_file_wrong_leaf:'SAME',same_file_wrong_parent:'SAME',same_id_changed_bytes:'SAME',same_bytes_new_id:'DIFFERENT',subst_to_physical:'SAME',unapproved_alias:'SAME'};
+const BYTES={same_bytes_copy:'MATCH',same_id_changed_bytes:'MISMATCH',same_bytes_new_id:'MATCH'};
+const LAST={invalid_target_owned_cleanup:'CLEANUP_REMOVED',occupied_temp:'CREATE_PRECONDITION_REJECTED',damaged_link_current_hash:'TARGET_MISMATCH'};
+const FIRST={invalid_target_owned_cleanup:'TARGET_MISMATCH',occupied_temp:'CREATE_PRECONDITION_REJECTED',damaged_link_current_hash:'TARGET_MISMATCH'};
+function validate(r){
+ assert.deepEqual(Object.keys(r).sort(),['allPassed','cases','kind','schema']);assert.equal(r.schema,1);assert.equal(r.kind,'OWNED_TARGET_PRODUCER_MATRIX');assert.equal(typeof r.allPassed,'boolean');assert.deepEqual(r.cases.map(c=>c.case),NAMES);
+ for(const c of r.cases){assert.deepEqual(Object.keys(c).sort(),['case','pass','accepted','expectedAccepted','preconditionProven','sameFile128','bytesMatch','writeAccess','removed','preserved','handlesClosed','lastStage','firstFailureStage'].sort());for(const k of ['pass','accepted','expectedAccepted','preconditionProven','removed','preserved','handlesClosed'])assert.equal(typeof c[k],'boolean');assert.ok(['SAME','DIFFERENT','NOT_OBSERVED'].includes(c.sameFile128));assert.ok(['MATCH','MISMATCH','NOT_OBSERVED'].includes(c.bytesMatch));assert.ok(['DENIED','UNPROVEN','NOT_OBSERVED'].includes(c.writeAccess));assert.equal(c.expectedAccepted,TRUE.accepted.includes(c.case));const facts=Object.entries(TRUE).every(([k,names])=>c[k]===names.includes(c.case))&&c.sameFile128===(ID[c.case]??'NOT_OBSERVED')&&c.bytesMatch===(BYTES[c.case]??'NOT_OBSERVED')&&c.writeAccess===(c.case==='bound_write_denied'?'DENIED':'NOT_OBSERVED')&&c.lastStage===(LAST[c.case]??'')&&c.firstFailureStage===(FIRST[c.case]??'');assert.equal(c.pass,c.preconditionProven&&c.handlesClosed&&facts);}
+ assert.equal(r.allPassed,r.cases.every(c=>c.pass));return r;
+}
+module.exports={NAMES,TRUE,ID,BYTES,validate};if(require.main===module){try{validate(JSON.parse(fs.readFileSync(process.argv[2])))}catch{process.stderr.write('OWNED_TARGET_MATRIX_INVALID\n');process.exitCode=1;}}

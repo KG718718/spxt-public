@@ -45,6 +45,7 @@ assert.equal(sha(fs.readFileSync(zip)),zi.zipSha256);assert.equal(zi.sourceCommi
 }else{zi={zipSha256:sha(JSON.stringify(inventory(root))),sourceCommit:payloadCommit};}
 const files=inventory(root),gen=path.join(out,'generated'),artifact=path.join(out,'artifact');
 fs.mkdirSync(gen,{recursive:true});fs.mkdirSync(artifact);
+if(freshTrial)writeNew(path.join(gen,'fresh-startup-identity.iss'),fs.readFileSync(path.join(__dirname,'fresh-startup-identity.iss')));
 const pkg=JSON.parse(fs.readFileSync(path.join(root,'app/package.json')));
 assert.equal(pin.installerVersion,'1.1.0-beta.4');assert.equal(pin.appId,'KSESSION-Beta-Installer-v1');assert.equal(pkg.version,'1.0.0');
 assert.match(build.firewallHelperSha256,/^[a-f0-9]{64}$/);assert.equal(sha(fs.readFileSync(path.join(root,'K-SESSION-Firewall.exe'))),build.firewallHelperSha256);

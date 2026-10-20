@@ -3,6 +3,19 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const event=(context,stages)=>stages.map(stage=>({context,stage}));
 const prefix=()=>[...event('CREATE',e.CREATE.slice(0,6)),...event('INSTALL_VERIFY',e.VERIFY)];
 const positive=()=>e.fromEvents([...prefix(),...event('CREATE',e.CREATE.slice(6))]);
+test('fixed target detail preserves TARGET_MISMATCH and cannot lead to success',()=>{
+ const p=[...event('CREATE',e.CREATE.slice(0,6)),...event('INSTALL_VERIFY',e.VERIFY.slice(0,7))];
+ for(const detail of e.TARGET_DETAILS){const failed=[...p,...event('INSTALL_VERIFY',[detail,'TARGET_MISMATCH'])];assert.deepEqual(e.analyze(failed).firstFailure,{context:'INSTALL_VERIFY',stage:'TARGET_MISMATCH'});assert.throws(()=>e.analyze([...p,...event('INSTALL_VERIFY',[detail,'TARGET_MATCH'])]));assert.throws(()=>e.analyze([...p,...event('INSTALL_VERIFY',[detail,detail,'TARGET_MISMATCH'])]));}
+});
+test('producer ownership cleanup is distinct from runtime target acceptance',()=>{
+ const failed=[...event('CREATE',e.CREATE.slice(0,6)),...event('INSTALL_VERIFY',e.VERIFY.slice(0,7)),...event('INSTALL_VERIFY',['TARGET_MISMATCH']),...event('CLEANUP',['CLEANUP_ENTER']),...event('CLEANUP_VERIFY',['OWNER_VERIFY_ENTER','OWNER_VERIFIED']),...event('CLEANUP',['CLEANUP_REMOVED'])];
+ const result=e.analyze(failed);assert.deepEqual(result.firstFailure,{context:'INSTALL_VERIFY',stage:'TARGET_MISMATCH'});assert.equal(result.cleanupRemoved,true);assert.equal(result.installMatched,false);
+ assert.throws(()=>e.analyze(failed.filter(x=>x.stage!=='OWNER_VERIFY_ENTER')));
+ assert.throws(()=>e.analyze(failed.map(x=>x.stage==='OWNER_VERIFIED'?{context:'INSTALL_VERIFY',stage:'OWNER_VERIFIED'}:x)));
+ const move=[...event('CREATE',e.CREATE.slice(0,6)),...event('CREATE',['MOVE_PROOF_FAILED']),...event('CLEANUP',['CLEANUP_ENTER']),...event('CLEANUP_VERIFY',['OWNER_VERIFY_ENTER','OWNER_REJECTED']),...event('CLEANUP',['CLEANUP_IDENTITY_UNKNOWN'])];
+ assert.deepEqual(e.analyze(move).firstFailure,{context:'CREATE',stage:'MOVE_PROOF_FAILED'});assert.equal(e.analyze(move).cleanupRemoved,false);
+ assert.throws(()=>e.analyze(move.filter(x=>x.stage!=='LINK_MOVED')));
+});
 function diag(startup=positive()){return{schema:2,call:'FRESH_ACCEPT',exitStatus:'INNO_EXIT_SUCCESS',logState:'OBSERVED',markerState:'VALID',markers:['KSESSION_PREINSTALL_READY','KSESSION_FRESH_STARTUP_VERIFIED','KSESSION_INSTALLED_PAYLOAD_VERIFIED'],preInstall:'OBSERVED',copy:'VERIFIED',postInstall:'VERIFIED',outcome:'ACCEPTED',startup};}
 test('strict ordered creation and COM diagnosis accepts only complete proof',()=>{d.expected(diag());for(const mutate of [x=>x.startup.events.reverse(),x=>x.startup.events.push(x.startup.events.at(-1)),x=>x.startup.events[6].context='CLEANUP_VERIFY',x=>x.startup.events[7].stage='UNKNOWN',x=>x.startup.events.splice(6,1),x=>x.startup.firstFailure={context:'CREATE',stage:'INI_WRITE_FAILED'},x=>x.logState='MISSING']){const x=diag();mutate(x);assert.throws(()=>d.validate(x));}});
 test('first install failure survives matched cleanup and cannot become acceptance',()=>{const events=[...prefix(),...event('CREATE',['INI_WRITE','INI_WRITE_FAILED']),...event('CLEANUP',['CLEANUP_ENTER']),...event('CLEANUP_VERIFY',e.VERIFY),...event('CLEANUP',['CLEANUP_REMOVED'])],startup=e.fromEvents(events);assert.deepEqual(startup.firstFailure,{context:'CREATE',stage:'INI_WRITE_FAILED'});assert.equal(e.validate(startup).cleanupRemoved,true);assert.equal(e.validate(startup).installMatched,false);assert.throws(()=>d.validate(diag(startup)));const failed=diag(startup);failed.outcome='UNKNOWN';d.validate(failed);assert.throws(()=>e.fromEvents([...events,...event('INSTALL_VERIFY',e.VERIFY)]));});

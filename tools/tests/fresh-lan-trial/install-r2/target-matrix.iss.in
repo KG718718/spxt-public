@@ -1,0 +1,117 @@
+function FixtureHardLink(NewName, Existing: String; Security: LongWord): Boolean;
+external 'CreateHardLinkW@kernel32.dll stdcall';
+function TargetCaseName(I: Integer): String;
+begin
+ case I of
+  0:Result:='exact';1:Result:='com_normalization';2:Result:='same_bytes_copy';
+  3:Result:='same_file_wrong_leaf';4:Result:='same_file_wrong_parent';
+  5:Result:='empty';6:Result:='missing';7:Result:='raw_dot';8:Result:='unreadable';
+  9:Result:='bound_write_denied';10:Result:='same_id_changed_bytes';
+  11:Result:='same_bytes_new_id';12:Result:='invalid_target_owned_cleanup';
+  13:Result:='occupied_temp';14:Result:='unowned_link_preserved';
+  15:Result:='subst_to_physical';16:Result:='unapproved_alias';
+  17:Result:='directory_reparse';18:Result:='embedded_nul';19:Result:='damaged_link_current_hash';
+ else RaiseException('TARGET_CASE_UNKNOWN');end;
+end;
+function RunTargetMatrix: Boolean;
+var I:Integer; P,A,Old,P2,Name,Rows,Row,Tmp,Hash,IdState,ByteState,WriteState:String; H:LongWord;
+ BeforeId,AfterId:TFreshFileId128; Shell,Link:Variant;
+ Accepted,Want,Precondition,SameId,BytesMatch,WriteDenied,Removed,Preserved,Closed,Passed,All,Created:Boolean;
+begin
+ Result:=False;Rows:='';All:=True;
+ for I:=0 to 19 do begin
+  if not FreshReleaseStartupOwner or not FreshReleaseTrustedStartupTarget then RaiseException('TARGET_PREVIOUS_CLOSE_FAILED');
+  Name:=TargetCaseName(I);CaseRoot:='@OWNED_ROOT@\target-'+Name+' 中文 with spaces';BetaInstance:=CaseRoot+'\instance';
+  SaveStringToFile('@OWNED_ROOT@\target-progress.json','{"case":"'+Name+'","stage":"START"}',False);
+  if I=15 then CaseRoot:='@ALIAS@\target-'+Name+' 中文 with spaces';
+  ForceDirectories(CaseRoot+'\startup');ForceDirectories(CaseRoot+'\temp');ForceDirectories(CaseRoot+'\app\program');ForceDirectories(CaseRoot+'\app\uninstall');
+  P:=HarnessConstant('{app}\program\K-SESSION.exe');
+  if not FileCopy('@OWNED_ROOT@\trusted-launcher.exe',P,True) then RaiseException('TARGET_PE_COPY_FAILED');
+  SaveStringToFile('@OWNED_ROOT@\target-progress.json','{"case":"'+Name+'","stage":"COPIED"}',False);
+  FreshStartupCreated:=False;FreshInstallCompleted:=False;FreshStartupHash:='';FreshStartupContext:='';FreshStartupLastContext:='';FreshStartupLastStage:='';FreshStartupFirstFailureContext:='';FreshStartupFirstFailureStage:='';FreshStartupCleanupFailureStage:='';FreshStartupCleanupVerified:=False;
+  A:=P;H:=0;Precondition:=True;SameId:=False;BytesMatch:=False;WriteDenied:=False;Removed:=False;Preserved:=False;Closed:=True;Want:=(I=0) or (I=1) or (I=9) or (I=15);Accepted:=False;
+  if I=15 then A:='@OWNED_ROOT@\target-'+Name+' 中文 with spaces\app\program\K-SESSION.exe';
+  if I=16 then A:='@OTHER_ALIAS@\target-'+Name+' 中文 with spaces\app\program\K-SESSION.exe';
+  if I=17 then begin
+   A:='@OWNED_ROOT@\owned-junction\K-SESSION.exe';
+   H:=GetFileAttributesW('@OWNED_ROOT@\owned-junction');
+   Precondition:=(H<>$FFFFFFFF) and ((H and $400)<>0);H:=0;
+  end;
+  if I=18 then A:=P+#0+'ignored';
+  if I=1 then begin
+   Tmp:=CaseRoot+'\temp\normalization.lnk';
+   CreateShellLink(Tmp,'owned normalization',CaseRoot+'\app\.\program\K-SESSION.exe','fixture',HarnessConstant('{app}\program'),'',0,SW_SHOWNORMAL);
+   Shell:=CreateOleObject('WScript.Shell');Link:=Shell.CreateShortcut(Tmp);A:=String(Link.TargetPath);Link:=Null;Shell:=Null;
+   Precondition:=CompareText(A,P)=0;
+  end;
+  if I=2 then begin A:=CaseRoot+'\temp\K-SESSION.exe';Precondition:=FileCopy(P,A,True);BytesMatch:=GetSHA256OfFile(A)=GetSHA256OfFile(P);end;
+  if (I=3) or (I=4) then begin
+   if I=3 then A:=CaseRoot+'\app\program\different.exe' else begin ForceDirectories(CaseRoot+'\other');A:=CaseRoot+'\other\K-SESSION.exe';end;
+   Precondition:=FixtureHardLink(A,P,0);
+  end;
+  if (I=2) or (I=3) or (I=4) or (I=15) or (I=16) then begin
+   SaveStringToFile('@OWNED_ROOT@\target-progress.json','{"case":"'+Name+'","stage":"EXPECTED_OPEN"}',False);
+   H:=CreateFileW(P,$80000000,1,0,3,$00200000,0);if H=$FFFFFFFF then RaiseException('TARGET_FIXTURE_OPEN_FAILED');
+   Precondition:=Precondition and FreshReadId(H,False,BeforeId);Closed:=CloseHandle(H) and Closed;
+   SaveStringToFile('@OWNED_ROOT@\target-progress.json','{"case":"'+Name+'","stage":"ACTUAL_OPEN"}',False);
+   H:=CreateFileW(A,$80000000,1,0,3,$00200000,0);if H=$FFFFFFFF then RaiseException('TARGET_FIXTURE_OPEN_FAILED');
+   Precondition:=Precondition and FreshReadId(H,False,AfterId);Closed:=CloseHandle(H) and Closed;H:=0;
+   SameId:=FreshSameId(BeforeId,AfterId);if I=2 then Precondition:=Precondition and not SameId and BytesMatch else Precondition:=Precondition and SameId;
+  end;
+  if I=5 then A:='';if I=6 then A:=CaseRoot+'\missing\K-SESSION.exe';if I=7 then A:=CaseRoot+'\app\.\program\K-SESSION.exe';
+  SaveStringToFile('@OWNED_ROOT@\target-progress.json','{"case":"'+Name+'","stage":"IDS_READ"}',False);
+  if I=8 then begin H:=CreateFileW(P,$80000000,0,0,3,$00200000,0);Precondition:=H<>$FFFFFFFF;end;
+  if (I=9) or (I=10) or (I=11) then begin
+   Precondition:=FreshBindTrustedStartupTarget;BeforeId:=FreshTargetId;
+   if I=9 then begin H:=CreateFileW(P,$40000000,7,0,3,$00200000,0);WriteDenied:=(H=$FFFFFFFF) and (DLLGetLastError=32);if H<>$FFFFFFFF then Closed:=CloseHandle(H) and Closed;H:=0;Precondition:=Precondition and WriteDenied;end;
+   if I=10 then begin
+    Precondition:=FreshReleaseTrustedStartupTarget and Precondition;
+    Precondition:=SaveStringToFile(P,'owned modified fixture bytes',False) and Precondition;
+    H:=CreateFileW(P,$80000000,1,0,3,$00200000,0);if H=$FFFFFFFF then RaiseException('TARGET_FIXTURE_OPEN_FAILED');
+    Precondition:=FreshReadId(H,False,AfterId) and Precondition;Closed:=CloseHandle(H) and Closed;H:=0;
+    SameId:=FreshSameId(BeforeId,AfterId);BytesMatch:=GetSHA256OfFile(P)='{#LauncherSha256}';Precondition:=Precondition and SameId and not BytesMatch;
+   end;
+   if I=11 then begin
+    Old:=CaseRoot+'\app\program\original-held.exe';Precondition:=MoveFileW(P,Old) and Precondition;
+    Precondition:=FileCopy('@OWNED_ROOT@\trusted-launcher.exe',P,True) and Precondition;
+    H:=CreateFileW(P,$80000000,1,0,3,$00200000,0);if H=$FFFFFFFF then RaiseException('TARGET_FIXTURE_OPEN_FAILED');
+    Precondition:=FreshReadId(H,False,AfterId) and Precondition;Closed:=CloseHandle(H) and Closed;H:=0;
+    SameId:=FreshSameId(BeforeId,AfterId);BytesMatch:=GetSHA256OfFile(P)='{#LauncherSha256}';Precondition:=Precondition and not SameId and BytesMatch;
+   end;
+  end;
+  if I=12 then begin
+   CreateFreshStartup;
+   Old:=CaseRoot+'\app\program\original-held.exe';Precondition:=MoveFileW(P,Old);
+   Precondition:=FileCopy('@OWNED_ROOT@\trusted-launcher.exe',P,True) and Precondition;
+   FreshStartupContext:='INSTALL_VERIFY';Accepted:=FreshStartupMatches(FreshStartupHash);
+   Precondition:=Precondition and not Accepted and (FreshStartupFirstFailureStage='TARGET_MISMATCH');
+   HarnessCleanup;Removed:=FreshStartupAbsent;
+   Precondition:=Precondition and Removed and FreshStartupCleanupVerified and (FreshStartupFirstFailureStage='TARGET_MISMATCH') and (FreshStartupLastStage='CLEANUP_REMOVED');
+  end else if I=13 then begin
+   Tmp:=HarnessConstant('{tmp}\ksession-fresh-startup.lnk');Precondition:=SaveStringToFile(Tmp,'owned preexisting temp',False);Hash:=GetSHA256OfFile(Tmp);
+   Created:=False;try CreateFreshStartup;Created:=True;except end;
+   Preserved:=GetSHA256OfFile(Tmp)=Hash;Precondition:=Precondition and not Created and Preserved and FreshStartupAbsent;
+  end else if I=14 then begin
+   CreateShellLink(FreshStartupPath,'owned external fixture',P,'fixture',HarnessConstant('{app}\program'),'',0,SW_SHOWNORMAL);Hash:=GetSHA256OfFile(FreshStartupPath);
+   Accepted:=FreshRemoveOwnedStartup;Preserved:=GetSHA256OfFile(FreshStartupPath)=Hash;Precondition:=not Accepted and Preserved;
+  end else if I=19 then begin
+   CreateFreshStartup;if not FreshReleaseStartupOwner then RaiseException('TARGET_OWNER_CLOSE_FAILED');
+   Precondition:=SaveStringToFile(FreshStartupPath,'owned damaged shortcut fixture',False);
+   FreshStartupHash:=GetSHA256OfFile(FreshStartupPath);FreshStartupContext:='INSTALL_VERIFY';
+   Accepted:=FreshStartupMatches(FreshStartupHash);Preserved:=FileExists(FreshStartupPath);
+   Precondition:=Precondition and not Accepted and (FreshStartupFirstFailureStage='TARGET_MISMATCH') and (FreshTargetFailureStage='PATH_CHECK') and Preserved;
+  end else Accepted:=FreshTrustedStartupTarget(A);
+  if I=8 then begin if H<>$FFFFFFFF then Closed:=CloseHandle(H) and Closed;H:=0;end;
+  SaveStringToFile('@OWNED_ROOT@\target-progress.json','{"case":"'+Name+'","stage":"PREDICATE_RETURNED"}',False);
+  Closed:=FreshReleaseStartupOwner and Closed;Closed:=FreshReleaseTrustedStartupTarget and Closed;
+  Passed:=Precondition and Closed and (Accepted=Want);All:=All and Passed;
+  IdState:='NOT_OBSERVED';ByteState:='NOT_OBSERVED';WriteState:='NOT_OBSERVED';
+  if (I=2) or (I=3) or (I=4) or (I=10) or (I=11) or (I=15) or (I=16) then begin if SameId then IdState:='SAME' else IdState:='DIFFERENT';end;
+  if (I=2) or (I=10) or (I=11) then begin if BytesMatch then ByteState:='MATCH' else ByteState:='MISMATCH';end;
+  if I=9 then begin if WriteDenied then WriteState:='DENIED' else WriteState:='UNPROVEN';end;
+  Row:='{"case":"'+Name+'","pass":'+HarnessBoolean(Passed)+',"accepted":'+HarnessBoolean(Accepted)+',"expectedAccepted":'+HarnessBoolean(Want)+',"preconditionProven":'+HarnessBoolean(Precondition)+',"sameFile128":"'+IdState+'","bytesMatch":"'+ByteState+'","writeAccess":"'+WriteState+'","removed":'+HarnessBoolean(Removed)+',"preserved":'+HarnessBoolean(Preserved)+',"handlesClosed":'+HarnessBoolean(Closed)+',"lastStage":"'+FreshStartupLastStage+'","firstFailureStage":"'+FreshStartupFirstFailureStage+'"}';
+  if Rows<>'' then Rows:=Rows+',';Rows:=Rows+Row;
+ end;
+ SaveStringToFile('@OWNED_ROOT@\target-matrix.json','{"schema":1,"kind":"OWNED_TARGET_PRODUCER_MATRIX","allPassed":'+HarnessBoolean(All)+',"cases":['+Rows+']}',False);
+ Result:=All;
+end;

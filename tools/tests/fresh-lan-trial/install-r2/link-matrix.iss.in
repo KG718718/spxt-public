@@ -18,6 +18,7 @@ var I: Integer; Name, Rows, Row, OldHash, ChangedHash, P, Tmp, NativeMoveState: 
 begin
  Result:=False; Rows:='';AllPassed:=True;
  for I:=0 to 14 do begin
+  if not FreshReleaseStartupOwner or not FreshReleaseTrustedStartupTarget then RaiseException('HARNESS_PREVIOUS_HANDLE_CLOSE_FAILED');
   Name:=CaseName(I);CaseRoot:='@OWNED_ROOT@\case-'+Name+' 中文 with spaces';BetaInstance:=CaseRoot+'\instance 中文 with spaces';
   ForceDirectories(CaseRoot+'\startup');ForceDirectories(CaseRoot+'\temp');ForceDirectories(CaseRoot+'\app\program');ForceDirectories(CaseRoot+'\app\uninstall');ForceDirectories(BetaInstance);
   if not FileCopy('@OWNED_ROOT@\trusted-launcher.exe',HarnessConstant('{app}\program\K-SESSION.exe'),True) then RaiseException('HARNESS_PE_COPY_FAILED');
@@ -38,11 +39,13 @@ begin
    if I=1 then FreshStartupHash:='';
    if I=2 then begin if Copy(OldHash,1,1)='0' then FreshStartupHash:='1'+Copy(OldHash,2,63) else FreshStartupHash:='0'+Copy(OldHash,2,63); end;
    if (I=3) or (I=4) then begin
+    if not FreshReleaseStartupOwner then RaiseException('HARNESS_OWNED_REFERENCE_CLOSE_FAILED');
     if GetSHA256OfFile(FreshStartupPath)<>OldHash then RaiseException('HARNESS_OWNERSHIP_CHANGED');
     if not DeleteFile(FreshStartupPath) then RaiseException('HARNESS_OWNED_DELETE_FAILED');
     if I=4 then ForceDirectories(FreshStartupPath);
    end;
    if (I=5) or (I=6) or (I=7) or (I=11) then begin
+    if not FreshReleaseStartupOwner then RaiseException('HARNESS_OWNED_REFERENCE_CLOSE_FAILED');
     Shell:=CreateOleObject('WScript.Shell');Link:=Shell.CreateShortcut(FreshStartupPath);
     if I=5 then Link.TargetPath:=HarnessConstant('{app}\program')+'\different.exe';
     if (I=6) or (I=11) then Link.Arguments:='--wrong-controlled-argument';
@@ -54,6 +57,7 @@ begin
    end;
    FreshStartupContext:='INSTALL_VERIFY';
    if I=14 then begin
+    if not FreshReleaseStartupOwner then RaiseException('HARNESS_OWNED_REFERENCE_CLOSE_FAILED');
     H:=CreateFileW(FreshStartupPath,$80000000,0,0,3,$80,0);
     if H=$FFFFFFFF then RaiseException('HARNESS_OWNED_LOCK_FAILED');
     try Matched:=FreshStartupMatches(FreshStartupHash);
@@ -98,16 +102,18 @@ begin
    8:ReasonProven:=(FreshStartupLastContext='CREATE') and (FreshStartupLastStage='CREATE_PRECONDITION_REJECTED');
    9:ReasonProven:=(FreshStartupFirstFailureContext='CREATE') and (FreshStartupFirstFailureStage='INI_WRITE_FAILED') and FreshStartupCleanupVerified and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_REMOVED');
    10:ReasonProven:=FreshStartupCleanupVerified and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_REMOVED');
-   11:ReasonProven:=(not FreshStartupCleanupVerified) and (FreshStartupCleanupFailureStage='HASH_MISMATCH') and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_IDENTITY_UNKNOWN');
+   11:ReasonProven:=(not FreshStartupCleanupVerified) and (FreshStartupCleanupFailureStage='OWNER_REJECTED') and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_IDENTITY_UNKNOWN');
    12:ReasonProven:=NativeReason;
-   13:ReasonProven:=FreshStartupCleanupVerified and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_DELETE_FAILED');
-   14:ReasonProven:=(FreshStartupLastContext='INSTALL_VERIFY') and (FreshStartupLastStage='VERIFY_EXCEPTION') and (FreshStartupFirstFailureStage='VERIFY_EXCEPTION') and Preserved;
+   13:ReasonProven:=(not FreshStartupCleanupVerified) and (FreshStartupCleanupFailureStage='OWNER_REJECTED') and (FreshStartupLastContext='CLEANUP') and (FreshStartupLastStage='CLEANUP_IDENTITY_UNKNOWN') and Preserved;
+   14:ReasonProven:=(FreshStartupLastContext='INSTALL_VERIFY') and (FreshStartupLastStage='ATTRIBUTES_REJECTED') and (FreshStartupFirstFailureStage='ATTRIBUTES_REJECTED') and Preserved;
   end;
   Passed:=Passed and ReasonProven;NativeMoveState:='NOT_CALLED';if I=12 then begin NativeMoveState:='UNKNOWN';if NativeReason then NativeMoveState:='EXISTS_REJECTED';end;
   if Rows<>'' then Rows:=Rows+',';
   Rows:=Rows+'{"case":"'+Name+'","pass":'+B(Passed)+',"created":'+B(Created)+',"matched":'+B(Matched)+',"removed":'+B(Removed)+',"preserved":'+B(Preserved)+',"reasonProven":'+B(ReasonProven)+',"nativeMove":"'+NativeMoveState+'","lastContext":"'+FreshStartupLastContext+'","lastStage":"'+FreshStartupLastStage+'","firstFailureContext":"'+FreshStartupFirstFailureContext+'","firstFailureStage":"'+FreshStartupFirstFailureStage+'","cleanupFailureStage":"'+FreshStartupCleanupFailureStage+'"}';
   AllPassed:=AllPassed and Passed;
  end;
- SaveStringToFile('@OWNED_ROOT@\matrix.json','{"schema":2,"kind":"OWNED_INNO_COM_MATRIX","allPassed":'+B(AllPassed)+',"cases":['+Rows+']}',False);
+ if not FreshReleaseStartupOwner or not FreshReleaseTrustedStartupTarget then RaiseException('HARNESS_FINAL_HANDLE_CLOSE_FAILED');
+ SaveStringToFile('@OWNED_ROOT@\matrix.json','{"schema":3,"kind":"OWNED_INNO_COM_MATRIX","allPassed":'+B(AllPassed)+',"cases":['+Rows+']}',False);
+ if not RunTargetMatrix then Log('OWNED_TARGET_MATRIX_FAILED');
  { Always stop before installation. This is not a product installation test. }
 end;

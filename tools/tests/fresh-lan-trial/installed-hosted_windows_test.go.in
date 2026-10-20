@@ -175,8 +175,9 @@ func TestFreshInstalledCore(t *testing.T) {
 		Source   string `json:"sourceCommit"`
 		Manifest string `json:"programManifestHash"`
 		Setup    string `json:"setupSha256"`
+		Launcher string `json:"launcherSha256"`
 	}
-	if json.Unmarshal(trustedBuild, &trustedInfo) != nil || trustedInfo.Source != commit || trustedInfo.Manifest != digest(trustedManifest) || trustedInfo.Setup != os.Getenv("KSESSION_FRESH_SETUP_SHA256") {
+	if json.Unmarshal(trustedBuild, &trustedInfo) != nil || trustedInfo.Source != commit || trustedInfo.Manifest != digest(trustedManifest) || trustedInfo.Setup != os.Getenv("KSESSION_FRESH_SETUP_SHA256") || !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(trustedInfo.Launcher) {
 		t.Fatal("TRUSTED_ARTIFACT_METADATA_INVALID")
 	}
 	run := func(exe string, args ...string) ([]byte, error) {
@@ -538,6 +539,14 @@ func TestFreshInstalledCore(t *testing.T) {
 	if e != nil {
 		t.Fatal("OWNED_REGISTRATION_UNREADABLE")
 	}
+	shortcutOracle := filepath.Join(repo, "tools", "tests", "fresh-lan-trial", "install-r2", "shortcut-target.ps1")
+	// Capture only after the complete trusted installed payload proof above.
+	// This never supplies authority for an early failed installation.
+	launcherOriginal, identityErr := run(ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", shortcutOracle, "-Capture", "-ExpectedLauncher", launcher, "-LauncherSha256", trustedInfo.Launcher)
+	if identityErr != nil || !regexp.MustCompile(`^[a-f0-9]{48}:[a-f0-9]{48}$`).Match(launcherOriginal) {
+		t.Fatal("COMPLETE_LAUNCHER_ORIGINAL_IDENTITY_UNPROVEN")
+	}
+	launcherIdentities := strings.Split(string(launcherOriginal), ":")
 	verifyShortcutIdentities := func() bool {
 		rows := []map[string]string{}
 		for _, p := range []string{desktop, filepath.Join(dirs["programs"], "K⁺-SESSION.lnk"), startup} {
@@ -545,11 +554,10 @@ func TestFreshInstalledCore(t *testing.T) {
 			if p == startup {
 				args = "--logon " + args
 			}
-			rows = append(rows, map[string]string{"path": p, "target": launcher, "args": args, "workdir": filepath.Join(root, "program")})
+			rows = append(rows, map[string]string{"path": p, "target": launcher, "args": args, "workdir": filepath.Join(root, "program"), "fileId": launcherIdentities[0], "parentId": launcherIdentities[1]})
 		}
 		encoded, _ := json.Marshal(rows)
-		script := fmt.Sprintf(`$ErrorActionPreference='Stop';$rows=ConvertFrom-Json '%s';$w=New-Object -ComObject WScript.Shell;foreach($r in $rows){$l=$w.CreateShortcut($r.path);if($l.TargetPath -ine $r.target -or $l.Arguments -cne $r.args -or $l.WorkingDirectory -ine $r.workdir){exit 1}}`, strings.ReplaceAll(string(encoded), "'", "''"))
-		_, e := run(ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script)
+		_, e := run(ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", shortcutOracle, "-RowsJson", string(encoded), "-LauncherSha256", trustedInfo.Launcher)
 		return e == nil
 	}
 	if !verifyShortcutIdentities() {

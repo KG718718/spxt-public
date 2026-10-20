@@ -1,5 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$Root,[Parameter(Mandatory=$true)][string]$Node,[Parameter(Mandatory=$true)][string]$Compiler,[Parameter(Mandatory=$true)][string]$Launcher)
 $ErrorActionPreference='Stop'
+[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
+trap { [Console]::Error.WriteLine('OWNED_LINK_DRIVER_FAILED'); exit 1 }
 # The caller assigns this pwsh process to the real Job before releasing this gate.
 $taskDeadline=[DateTime]::UtcNow.AddSeconds(30)
 if(!$env:KSESSION_FAST_JOB_GATE){throw 'Owned Job gate required'}
@@ -51,10 +53,28 @@ function Read-DriverWorld {
 if((Get-FileHash -LiteralPath $Launcher -Algorithm SHA256).Hash.ToLowerInvariant() -cne '762ed3eafcb6bf5b3bb6b176094771c21e8308f9bd86476a9f395e006482c96c'){throw 'Trusted 57b7 Launcher PE required'}
 $taskWorldBefore=Read-DriverWorld
 $taskSaved=Save-KSessionProcessEnvironment @('TEMP','TMP','NODE_OPTIONS','NODE_PATH')
-$taskResult=[ordered]@{schema=1;kind='OWNED_INNO_LINK_DRIVER';qualification='LINK_ONLY_NOT_INSTALLATION';status='FAIL';compiled=$false;matrixPassed=$null;stage='GENERATE';driverExit='NOT_RUN';stdioEmpty=$false;worldUnchanged=$null;environmentRestored=$false;productInstalled=$false;productExecuted=$false}
+$taskResult=[ordered]@{schema=1;kind='OWNED_INNO_LINK_DRIVER';qualification='LINK_ONLY_NOT_INSTALLATION';status='FAIL';compiled=$false;matrixPassed=$null;stage='GENERATE';driverExit='NOT_RUN';stdioEmpty=$false;worldUnchanged=$null;environmentRestored=$false;mappingRestored=$null;productInstalled=$false;productExecuted=$false}
+if(-not ('FreshLinkMapNative' -as [type])){Add-Type -TypeDefinition 'using System;using System.Text;using System.Runtime.InteropServices;public static class FreshLinkMapNative{[DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)]public static extern uint QueryDosDevice(string name,StringBuilder value,int size);}' }
+$taskAliases=@();$taskMapped=@()
 New-Item -ItemType Directory -Path $Root|Out-Null
-[IO.File]::WriteAllText((Join-Path $Root '.owned-link-driver.json'),'{"kind":"OWNED_LINK_DRIVER"}',[Text.UTF8Encoding]::new($false))
 try{
+ foreach($taskCandidate in @('R:','S:','T:','U:','V:','W:','X:','Y:','Z:')){
+  $taskBuffer=[Text.StringBuilder]::new(32768);$taskCount=[FreshLinkMapNative]::QueryDosDevice($taskCandidate,$taskBuffer,$taskBuffer.Capacity);$taskError=[Runtime.InteropServices.Marshal]::GetLastWin32Error()
+  if($taskCount -eq 0 -and $taskError -eq 2 -and !(Test-Path ($taskCandidate+'\'))){$taskAliases+=,$taskCandidate;if($taskAliases.Count -eq 2){break}}
+ }
+ if($taskAliases.Count -ne 2){throw 'Two absent fixture mappings required'}
+ foreach($taskAlias in $taskAliases){
+  $taskMap=Invoke-KSessionMemoryProcess (Join-Path $env:SystemRoot 'System32/subst.exe') @($taskAlias,$Root) 10
+  if($taskMap.ExitCode -ne 0 -or $taskMap.TimedOut -or $taskMap.ForcedTermination){throw 'Fixture mapping creation failed'}
+  $taskMapped+=,$taskAlias
+  $taskBuffer=[Text.StringBuilder]::new(32768);$taskCount=[FreshLinkMapNative]::QueryDosDevice($taskAlias,$taskBuffer,$taskBuffer.Capacity)
+  if($taskCount -eq 0 -or $taskBuffer.ToString() -cne ('\??\'+$Root)){throw 'Fixture mapping identity unknown'}
+ }
+ [IO.File]::WriteAllText((Join-Path $Root '.owned-link-driver.json'),(@{kind='OWNED_LINK_DRIVER';aliases=$taskAliases}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+ $taskJunctionTarget=Join-Path $Root 'target-directory_reparse 中文 with spaces/app/program'
+ New-Item -ItemType Directory -Path $taskJunctionTarget|Out-Null
+ New-Item -ItemType Junction -Path (Join-Path $Root 'owned-junction') -Target $taskJunctionTarget|Out-Null
+ if(!((Get-Item -LiteralPath (Join-Path $Root 'owned-junction')).Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Owned junction required'}
  [IO.File]::Copy($Launcher,(Join-Path $Root 'trusted-launcher.exe'),$false)
  foreach($taskLeaf in @('environment','driver')){New-Item -ItemType Directory -Path (Join-Path $Root $taskLeaf)|Out-Null}
  $env:TEMP=Join-Path $Root 'environment';$env:TMP=$env:TEMP;$env:NODE_OPTIONS='';$env:NODE_PATH=''
@@ -73,17 +93,33 @@ try{
  foreach($taskName in @('created','productionMatches','hashMatch','comRead','targetMatch','argsMatch','workDirMatch','iniMatch')){if($taskBaseline.$taskName -isnot [bool]){throw 'Owned observation type invalid'}}
  $taskResult.stage='MATRIX'
  $taskMatrix=Get-Content (Join-Path $Root 'matrix.json') -Raw|ConvertFrom-Json
- if($taskMatrix.schema -ne 2 -or $taskMatrix.cases.Count -ne 15){throw 'Current owned matrix required'}
+ if($taskMatrix.schema -ne 3 -or $taskMatrix.cases.Count -ne 15){throw 'Current owned matrix required'}
  $taskValidate=Invoke-KSessionMemoryNode $Node @((Join-Path $PSScriptRoot 'link-matrix.cjs'),(Join-Path $Root 'matrix.json'))
  if($taskValidate.ExitCode -ne 0 -or $taskValidate.TimedOut -or $taskValidate.ForcedTermination -or $taskValidate.Stderr.Length -ne 0){throw 'Owned matrix schema invalid'}
  $taskResult.matrixPassed=$taskMatrix.allPassed -eq $true
+ $taskTargetMatrix=Get-Content (Join-Path $Root 'target-matrix.json') -Raw|ConvertFrom-Json
+ $taskTargetValidate=Invoke-KSessionMemoryNode $Node @((Join-Path $PSScriptRoot 'target-matrix.cjs'),(Join-Path $Root 'target-matrix.json'))
+ if($taskTargetValidate.ExitCode -ne 0 -or $taskTargetValidate.TimedOut -or $taskTargetValidate.ForcedTermination -or $taskTargetValidate.Stderr.Length -ne 0){throw 'Owned target matrix schema invalid'}
+ $taskResult.matrixPassed=$taskResult.matrixPassed -and $taskTargetMatrix.allPassed -eq $true
+ $taskOracle=Invoke-KSessionMemoryProcess (Get-Process -Id $PID).Path @('-NoProfile','-NonInteractive','-File',(Join-Path $PSScriptRoot 'shortcut-target.test.ps1'),'-Root',$Root,'-LauncherSha256','762ed3eafcb6bf5b3bb6b176094771c21e8308f9bd86476a9f395e006482c96c') 90
+ if($taskOracle.ExitCode -ne 0 -or $taskOracle.TimedOut -or $taskOracle.ForcedTermination -or $taskOracle.Stderr.Length -ne 0 -or $taskOracle.Stdout.Length -ne 0){throw 'Owned oracle matrix failed'}
  # A failing production comparison is evidence, not installation qualification.
  if($taskResult.driverExit -eq 'CONTROLLED_INITIALIZE_STOP' -and $taskResult.stdioEmpty -and $taskResult.matrixPassed -and !$taskRun.ForcedTermination){$taskResult.status='OBSERVED';$taskResult.stage='FINAL'}
 }finally{
+ $taskResult.mappingRestored=$true
+ foreach($taskAlias in $taskMapped){
+  try{
+   $taskBuffer=[Text.StringBuilder]::new(32768);$taskCount=[FreshLinkMapNative]::QueryDosDevice($taskAlias,$taskBuffer,$taskBuffer.Capacity)
+   if($taskCount -eq 0 -or $taskBuffer.ToString() -cne ('\??\'+$Root)){throw 'Unknown mapping cannot be removed'}
+   $taskUnmap=Invoke-KSessionMemoryProcess (Join-Path $env:SystemRoot 'System32/subst.exe') @($taskAlias,'/D') 10
+   $taskBuffer=[Text.StringBuilder]::new(32768);$taskCount=[FreshLinkMapNative]::QueryDosDevice($taskAlias,$taskBuffer,$taskBuffer.Capacity);$taskError=[Runtime.InteropServices.Marshal]::GetLastWin32Error()
+   if($taskUnmap.ExitCode -ne 0 -or $taskUnmap.TimedOut -or $taskUnmap.ForcedTermination -or $taskCount -ne 0 -or $taskError -ne 2 -or (Test-Path ($taskAlias+'\'))){throw 'Fixture mapping restoration unproven'}
+  }catch{$taskResult.mappingRestored=$false}
+ }
  try{$taskResult.worldUnchanged=(Read-DriverWorld) -ceq $taskWorldBefore}catch{$taskResult.worldUnchanged=$null}
  Restore-KSessionProcessEnvironment $taskSaved
  $taskResult.environmentRestored=Test-KSessionProcessEnvironmentRestored $taskSaved
- if($taskResult.worldUnchanged -ne $true -or !$taskResult.environmentRestored){$taskResult.status='FAIL'}
+ if($taskResult.worldUnchanged -ne $true -or !$taskResult.environmentRestored -or !$taskResult.mappingRestored){$taskResult.status='FAIL'}
  [IO.File]::WriteAllText((Join-Path $Root 'driver-result.json'),($taskResult|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
 }
 $taskResult|ConvertTo-Json -Compress
