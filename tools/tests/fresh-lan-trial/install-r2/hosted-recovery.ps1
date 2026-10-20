@@ -17,7 +17,7 @@ function Test-FreshObservationParent([string]$Path){
 function Get-FreshRecoveryState($Before,$After,[bool]$OwnedRemoved=$false){
  foreach($taskObservation in @($Before,$After)){
   if($null -eq $taskObservation -or $taskObservation -isnot [Collections.IDictionary]){return 'OBSERVATION_FAILED'}
-  if((($taskObservation.Keys|Sort-Object) -join ',') -cne 'absent,known,value' -or $taskObservation.known -isnot [bool] -or $taskObservation.absent -isnot [bool]){return 'OBSERVATION_FAILED'}
+  if((($taskObservation.get_Keys()|Sort-Object) -join ',') -cne 'absent,known,value' -or $taskObservation.known -isnot [bool] -or $taskObservation.absent -isnot [bool]){return 'OBSERVATION_FAILED'}
  }
  if(!$Before.known -or !$After.known){return 'OBSERVATION_FAILED'}
  if($Before.absent -and $After.absent){if($OwnedRemoved){return 'OWNED_REMOVED'};return 'ABSENT_UNCHANGED'}
@@ -47,28 +47,28 @@ function Get-FreshProgramObservation([string]$Path){
  }catch{return (New-FreshObservation $false $false)}
 }
 function Assert-FreshRegistryTree($Tree,[int]$Depth=0){
- if($Depth -gt 16 -or $Tree -isnot [Collections.IDictionary] -or (($Tree.Keys|Sort-Object) -join ',') -cne 'children,values' -or $Tree.values -isnot [Collections.IDictionary] -or $Tree.children -isnot [Collections.IDictionary]){throw 'Registry tree unknown'}
- foreach($taskEntry in $Tree.values.Values){
-  if($taskEntry -isnot [Collections.IDictionary] -or (($taskEntry.Keys|Sort-Object) -join ',') -cne 'kind,value' -or $null -eq $taskEntry.value){throw 'Registry value unknown'}
+ if($Depth -gt 16 -or $Tree -isnot [Collections.IDictionary] -or (($Tree.get_Keys()|Sort-Object) -join ',') -cne 'children,values' -or $Tree.values -isnot [Collections.IDictionary] -or $Tree.children -isnot [Collections.IDictionary]){throw 'Registry tree unknown'}
+ foreach($taskEntry in $Tree.values.get_Values()){
+  if($taskEntry -isnot [Collections.IDictionary] -or (($taskEntry.get_Keys()|Sort-Object) -join ',') -cne 'kind,value' -or $null -eq $taskEntry.value){throw 'Registry value unknown'}
   $taskValid=switch -CaseSensitive ($taskEntry.kind){
    'String'{$taskEntry.value -is [string]}
    'ExpandString'{$taskEntry.value -is [string]}
    'DWord'{$taskEntry.value -is [int]}
    'QWord'{$taskEntry.value -is [long]}
-   'MultiString'{$taskEntry.value -is [string[]] -and @($taskEntry.value|Where-Object{$null -eq $_}).Count -eq 0}
+   'MultiString'{$taskMulti=$taskEntry.value -is [string[]];if($taskMulti){foreach($taskString in $taskEntry.value){if($null -eq $taskString){$taskMulti=$false}}};$taskMulti}
    'Binary'{$taskEntry.value -is [byte[]]}
    'None'{$taskEntry.value -is [byte[]]}
    default{$false}
   }
   if(!$taskValid){throw 'Registry typed value unknown'}
  }
- foreach($taskChild in $Tree.children.Values){Assert-FreshRegistryTree $taskChild ($Depth+1)}
+ foreach($taskChild in $Tree.children.get_Values()){Assert-FreshRegistryTree $taskChild ($Depth+1)}
 }
 function ConvertTo-FreshRegistryCanonical($Value,[int]$Depth=0){
  if($Depth -gt 58){throw 'Registry canonical bound'}
  if($null -eq $Value){return $null}
  if($Value -is [Collections.IDictionary]){
-  $taskSorted=[ordered]@{};$taskNames=[string[]]@($Value.Keys);[Array]::Sort($taskNames,[StringComparer]::Ordinal)
+  $taskSorted=[ordered]@{};$taskNames=[string[]]@($Value.get_Keys());[Array]::Sort($taskNames,[StringComparer]::Ordinal)
   foreach($taskName in $taskNames){$taskSorted[$taskName]=ConvertTo-FreshRegistryCanonical $Value[$taskName] ($Depth+1)}
   return $taskSorted
  }

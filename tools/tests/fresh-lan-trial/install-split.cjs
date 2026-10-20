@@ -7,6 +7,7 @@ const HEX=/^[a-f0-9]{40}$/,SHA=/^[a-f0-9]{64}$/,ID=/^[1-9][0-9]{0,19}$/;
 const REJECT=Object.freeze(['NONEMPTY_TARGET','EXISTING_INSTANCE','DESKTOP_SHORTCUT','STARTUP_SHORTCUT','OLD_BINDING']);
 const STATES=Object.freeze(['NOT_STARTED','CREATED_NEW','UNCHANGED','OWNED_REMOVED','PRESTATE_UNKNOWN','PARENT_UNKNOWN','CREATE_COLLISION','CREATE_FAILED','WRITE_FAILED','WRITE_READBACK_UNKNOWN','WRITE_OBSERVATION_UNKNOWN','RECEIPT_UNKNOWN','HANDLE_CONTENT_CHANGED','HANDLE_CHANGED','OBSERVATION_FAILED','STRUCTURED_STATE_CHANGED','HANDLE_UNKNOWN','PARENT_CHANGED','DELETE_FAILED','CLOSE_FAILED','DELETE_OBSERVATION_FAILED','RETIRED_STATE_CHANGED']);
 function exact(o,keys){assert.ok(o&&typeof o==='object'&&!Array.isArray(o));assert.deepEqual(Object.keys(o).sort(),[...keys].sort());}
+function binding(value,role,source,setup){exact(value,['schema','role','sourceCommit','setupSha256']);assert.equal(value.schema,1);assert.ok(['A','B'].includes(role));assert.equal(value.role,role);assert.match(source,HEX);assert.equal(value.sourceCommit,source);assert.match(setup,SHA);assert.equal(value.setupSha256,setup);return true;}
 function registry(r,source,role){
  exact(r,['schema','kind','sourceCommit','role','create','compare','cleanup','firstFailure','handlesClosed']);
  assert.equal(r.schema,1);assert.equal(r.kind,'FRESH_REGISTRY_FIXTURE');assert.equal(r.sourceCommit,source);assert.equal(r.role,role);assert.ok(['','A','B'].includes(role));
@@ -85,4 +86,4 @@ function aggregate(a,b,outerA,outerB,api,workflow,expected){
  const checks={...a.checks,...b.checks};exact(checks,[...new Set(legacy.IDS.flatMap(id=>legacy.WITNESSES[id]))]);assert.ok(Object.values(checks).every(v=>v===true));
  return{schema:1,kind:'FRESH_SPLIT_AGGREGATE',sourceCommit:expected.sourceCommit,setupSha256:expected.setupSha256,status:'AUTOMATION_PASS_HUMAN_PENDING',checks:legacy.IDS.map(id=>({id,method:legacy.METHODS[id],pass:true,witnesses:Object.fromEntries(legacy.WITNESSES[id].map(k=>[k,true]))})),humanPending:[...legacy.HUMAN]};
 }
-module.exports={REJECT,STATES,registry,core,command,execute,jobs,aggregate};
+module.exports={REJECT,STATES,binding,registry,core,command,execute,jobs,aggregate};

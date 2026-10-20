@@ -25,6 +25,18 @@ $taskNested=ConvertFrom-Json -InputObject '[["x","y"],["z"],null,[]]' -NoEnumera
 Assert-Registry ((Canonical $taskNested) -ceq '[["x","y"],["z"],null,[]]')
 Assert-Registry ((Canonical @{value=@($null)}) -cne (Canonical @{value=@()}))
 Assert-Registry ((Canonical @{value=$null}) -cne (Canonical @{}))
+Assert-Registry ((Canonical ([ordered]@{Keys='controlled';Values='retained';Count=2;other='expected'})) -ceq '{"Count":2,"Keys":"controlled","Values":"retained","other":"expected"}')
+$taskFakeObservation=@{known=$true;absent=$false;value='controlled';Keys=@('absent','known','value')}
+Assert-Registry ((Get-FreshRecoveryState $taskFakeObservation $taskFakeObservation) -ceq 'OBSERVATION_FAILED')
+foreach($taskAlias in @('Keys','Values','Count')){
+ $taskAliasTree=@{values=[ordered]@{};children=[ordered]@{}}
+ $taskAliasTree.values[$taskAlias]=@{kind='String';value='controlled'}
+ $taskAliasTree.values.bad=@{kind='Unknown';value='bad'}
+ $taskRejected=$false;try{Assert-FreshRegistryTree $taskAliasTree}catch{$taskRejected=$true};Assert-Registry $taskRejected
+}
+$taskNullStrings=[string[]]::new(2);$taskNullStrings[0]='x'
+$taskAliasTree=@{values=@{sample=@{kind='MultiString';value=$taskNullStrings}};children=@{}}
+$taskRejected=$false;try{Assert-FreshRegistryTree $taskAliasTree}catch{$taskRejected=$true};Assert-Registry $taskRejected
 foreach($taskKind in @('missing','null','wrong-kind','wrong-type','extra-field')){
  $taskTyped=@{values=@{probe=@{kind='String';value='x'}};children=@{}}
  switch($taskKind){'missing'{$taskTyped.values.probe.Remove('value')};'null'{$taskTyped.values.probe.value=$null};'wrong-kind'{$taskTyped.values.probe.kind='Unknown'};'wrong-type'{$taskTyped.values.probe.value=123};'extra-field'{$taskTyped.values.probe.raw='FORBIDDEN'}}

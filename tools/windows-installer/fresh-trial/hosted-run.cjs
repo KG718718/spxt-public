@@ -13,6 +13,7 @@ async function main(){
  const context=JSON.parse(fs.readFileSync(path.join(work,'context.json')));const splitRole=process.env.KSESSION_FRESH_INSTALL_ROLE||'';assert.ok(['','A','B'].includes(splitRole));assert.equal(context.reportSchema,splitRole?3:2);if(splitRole){assert.equal(context.installSplit?.schema,1);assert.equal(context.installSplit.role,splitRole);}assert.equal(context.controlCommit,process.env.GITHUB_SHA);assert.equal(context.sourceCommit,process.env.KSESSION_FRESH_TESTED_SOURCE);
  const checked=cp.execFileSync('git',['-C',repo,'rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim();assert.equal(checked,context.sourceCommit);
  const artifact=path.join(work,'artifact'),setup=path.join(artifact,NAME),setupHash=sha(fs.readFileSync(setup));
+ if(splitRole)split.binding(context.installSplit,splitRole,context.sourceCommit,setupHash);
  if(context.mode==='QA'){
   const metadata=JSON.parse(fs.readFileSync(path.join(work,'candidate-metadata.json')));
   const original=JSON.parse(fs.readFileSync(path.join(artifact,'fresh-report.json')));
