@@ -757,14 +757,8 @@ func TestFreshInstalledCore(t *testing.T) {
 	browser("RESTART", port)
 	checks["restartPersistence"] = true
 	checks["configPersistence"] = true
-	args := "--logon --instance \"" + instance + "\""
-	// JSON quotes are only for safe literal construction; arguments are not shell-expanded.
-	pjson, _ := json.Marshal(startup)
-	targetJSON, _ := json.Marshal(launcher)
-	argsJSON, _ := json.Marshal(args)
-	wdJSON, _ := json.Marshal(filepath.Join(root, "program"))
-	script := fmt.Sprintf(`$ErrorActionPreference='Stop';$p=ConvertFrom-Json '%s';$w=New-Object -ComObject WScript.Shell;$l=$w.CreateShortcut($p);if($l.TargetPath -cne (ConvertFrom-Json '%s') -or $l.Arguments -cne (ConvertFrom-Json '%s') -or $l.WorkingDirectory -cne (ConvertFrom-Json '%s')){exit 1}`, strings.ReplaceAll(string(pjson), "'", "''"), strings.ReplaceAll(string(targetJSON), "'", "''"), strings.ReplaceAll(string(argsJSON), "'", "''"), strings.ReplaceAll(string(wdJSON), "'", "''"))
-	if _, e = run(ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script); e != nil {
+	// Reuse the original trusted F02 baseline after restart; never recapture it.
+	if !verifyShortcutIdentities() {
 		t.Fatal("STARTUP_WIRING_FAILED")
 	}
 	checks["loginStartupWiring"] = true

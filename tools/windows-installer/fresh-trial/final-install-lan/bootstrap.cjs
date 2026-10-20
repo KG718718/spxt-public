@@ -1,10 +1,11 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),crypto=require('node:crypto'),assert=require('node:assert/strict');
-const gate=require('../../../tests/fresh-lan-trial/final-install-lan/contract.cjs'),trial=require('../../../tests/fresh-lan-trial/report.cjs');
+const legacyGate=require('../../../tests/fresh-lan-trial/final-install-lan/contract.cjs'),trial=require('../../../tests/fresh-lan-trial/report.cjs');
 async function main(repo,work){
  assert.equal(process.platform,'win32');assert.equal(process.env.RUNNER_ENVIRONMENT,'github-hosted');
+ const rawInput=JSON.parse(fs.readFileSync(path.join(repo,legacyGate.TRIGGER))),gate=rawInput.schema===3?require('../../../tests/fresh-lan-trial/final-install-lan/fc3-contract.cjs'):legacyGate;
  const git=(...a)=>cp.execFileSync('git',['-C',repo,...a],{encoding:'utf8',windowsHide:true,timeout:15000,stdio:['ignore','pipe','pipe']}).trim(),control=process.env.GITHUB_SHA;assert.match(control,/^[a-f0-9]{40}$/);assert.equal(git('rev-parse','HEAD'),control);const parents=git('rev-list','--parents','-n','1',control).split(' ');assert.equal(parents.length,2);
- const input=gate.validateInput(JSON.parse(fs.readFileSync(path.join(repo,gate.TRIGGER)))),headers={Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},api=async route=>{const r=await fetch('https://api.github.com/repos/KG718718/spxt-public/'+route,{headers,signal:AbortSignal.timeout(60000)});assert.equal(r.status,200);return r.json();};
+ const input=gate.validateInput(rawInput),headers={Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},api=async route=>{const r=await fetch('https://api.github.com/repos/KG718718/spxt-public/'+route,{headers,signal:AbortSignal.timeout(60000)});assert.equal(r.status,200);return r.json();};
  const current=await api('actions/runs/'+process.env.GITHUB_RUN_ID);assert.equal(current.head_sha,control);assert.equal(current.path,gate.WORKFLOW);assert.ok(Number.isSafeInteger(current.workflow_id)&&current.workflow_id>0);
  const readHistory=require('../install-candidate/bootstrap.cjs').readHistory,history=await readHistory(api,current.workflow_id),legacy={};for(const file of gate.LEGACY)legacy[file]=await readHistory(api,file.split('/').at(-1));
  const ancestor=(a,b)=>{git('merge-base','--is-ancestor',a,b);return true;};
@@ -15,13 +16,14 @@ async function main(repo,work){
  }
  const facts={complete:true,authorizationAncestor:ancestor(gate.AUTHORIZATION,input.localBuildSource),testedAncestor:ancestor(input.testedSource,input.reviewedSource),buildAncestor:ancestor(input.localBuildSource,input.testedSource),buildTree:git('ls-tree','-r',input.localBuildSource),reviewTree:git('ls-tree','-r',input.reviewedSource),testedTree:git('ls-tree','-r',input.testedSource),legacy};
  let reference=null;
+ if(input.schema===3){facts.fc3SourceRepo=repo;facts.masterReviewBytes=cp.execFileSync('git',['-C',repo,'show',input.reviewedSource+':'+gate.REVIEW],{windowsHide:true,timeout:15000,stdio:['ignore','pipe','pipe']});if(input.mode==='CANDIDATE')reference={run:await api('actions/runs/'+gate.HISTORY[2].id)};}
  if(input.slot==='FC2'){const first=history.find(r=>String(r.id)===input.firstCandidateRunId);assert.ok(first);const source=first.display_title.split(' ')[2];assert.match(source,/^[a-f0-9]{40}$/);const e=await readReference(input.firstCandidateRunId,input.firstCandidateArtifactId,source,'FAILURE');facts.firstFailure={reportBytes:e.reportBytes,run:e.run,sourceCommit:e.sourceCommit};facts.fc2Reference={metadata:e.metadata,archiveBytes:e.archiveBytes};facts.fc2SourceRepo=repo;facts.previousAncestor=ancestor(source,input.testedSource);facts.previousTree=git('ls-tree','-r',source);reference=e;}
- if(input.mode==='QA'){reference=await readReference(input.candidateRunId,input.candidateArtifactId,input.testedSource,'TRIAL');gate.candidateEvidence(reference.report,input,reference.run.head_sha);}
+ if(input.mode==='QA'){reference=await readReference(input.candidateRunId,input.candidateArtifactId,input.testedSource,'TRIAL');gate.candidateEvidence(reference.report,input,reference.run.head_sha);if(input.schema===3)facts.candidateReport=reference.report;}
  if(reference){
   const fc2=require('../../../tests/fresh-lan-trial/final-install-lan/fc2-final.cjs'),[currentJobs,referenceJobs]=await Promise.all([api('actions/runs/'+current.id+'/attempts/1/jobs?per_page=100&page=1'),api('actions/runs/'+reference.run.id+'/attempts/1/jobs?per_page=100&page=1')]);
   facts.runner={environment:process.env,currentRun:current,currentJobs,referenceRun:reference.run,referenceJobs};
-  const workflow=gate.proofFor(input,history)===fc2.PROOF?fc2.source(repo,input):cp.execFileSync('git',['-C',repo,'show',input.reviewedSource+':'+gate.WORKFLOW],{encoding:'utf8',windowsHide:true,timeout:15000,stdio:['ignore','pipe','pipe']});
-  const runner=fc2.runner(facts.runner,workflow);fs.writeFileSync(path.join(work,'runner-independence-private.json'),JSON.stringify(runner)+'\n',{flag:'wx'});
+  const workflow=input.schema===3?gate.source(repo,input):gate.proofFor(input,history)===fc2.PROOF?fc2.source(repo,input):cp.execFileSync('git',['-C',repo,'show',input.reviewedSource+':'+gate.WORKFLOW],{encoding:'utf8',windowsHide:true,timeout:15000,stdio:['ignore','pipe','pipe']});
+  const runner=input.schema===3?gate.runner(facts.runner,workflow,input,{runId:process.env.GITHUB_RUN_ID,sha:control,title:current.display_title}):fc2.runner(facts.runner,workflow);fs.writeFileSync(path.join(work,'runner-independence-private.json'),JSON.stringify(runner)+'\n',{flag:'wx'});
  }
  const proof=cp.execFileSync('git',['-C',repo,'show',input.reviewedSource+':'+gate.proofFor(input,history)],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:15000});
  const context=gate.request({repository:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF,event:process.env.GITHUB_EVENT_NAME,attempt:process.env.GITHUB_RUN_ATTEMPT,sha:control,parent:parents[1],title:git('log','-1','--format=%B'),changedFiles:git('diff','--name-only',parents[1],control).split('\n'),runId:process.env.GITHUB_RUN_ID},input,history,facts,proof);
@@ -30,5 +32,5 @@ async function main(repo,work){
  git('-c','core.autocrlf=false','checkout','--detach',context.sourceCommit);assert.equal(git('rev-parse','HEAD'),context.sourceCommit);assert.equal(git('status','--porcelain','--untracked-files=no'),'');
  fs.appendFileSync(process.env.GITHUB_OUTPUT,'mode='+context.mode+'\nsource='+context.sourceCommit+'\ncandidateArtifactName='+gate.CANDIDATE_PREFIX+context.sourceCommit+'\nqaArtifactName='+gate.QA_PREFIX+context.sourceCommit+'\nfailureArtifactName='+gate.FAILURE_PREFIX+context.run.id+'\n');
 }
-function initialReport(c){gate.context(c);return require('../install-candidate/bootstrap.cjs').initialReport(c);}
+function initialReport(c){(c?.installCandidate?.schema===3?require('../../../tests/fresh-lan-trial/final-install-lan/fc3-contract.cjs'):legacyGate).context(c);return require('../install-candidate/bootstrap.cjs').initialReport(c);}
 module.exports={main,initialReport};

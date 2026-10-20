@@ -5,7 +5,7 @@ async function readHistory(api,workflow){const pages=[];for(let page=1;page<=100
 async function main(){
  const [repo,work]=process.argv.slice(2);assert.equal(process.argv.length,4);assert.equal(process.platform,'win32');assert.equal(process.env.RUNNER_ENVIRONMENT,'github-hosted');
  const git=(...a)=>cp.execFileSync('git',['-C',repo,...a],{encoding:'utf8',windowsHide:true,timeout:15000,stdio:['ignore','pipe','pipe']}).trim(),control=process.env.GITHUB_SHA;assert.match(control,/^[a-f0-9]{40}$/);assert.equal(git('rev-parse','HEAD'),control);const parents=git('rev-list','--parents','-n','1',control).split(' ');assert.equal(parents.length,2);
- const input=JSON.parse(fs.readFileSync(path.join(repo,gate.TRIGGER)));if(input.schema===2){return require('../final-install-lan/bootstrap.cjs').main(repo,work);}
+ const input=JSON.parse(fs.readFileSync(path.join(repo,gate.TRIGGER)));if(input.schema===2||input.schema===3){return require('../final-install-lan/bootstrap.cjs').main(repo,work);}
  const headers={Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},api=async route=>{const r=await fetch('https://api.github.com/repos/KG718718/spxt-public/'+route,{headers,signal:AbortSignal.timeout(60000)});assert.equal(r.status,200);return r.json();};
  const current=await api('actions/runs/'+process.env.GITHUB_RUN_ID);assert.equal(current.head_sha,control);assert.equal(current.path,gate.WORKFLOW);assert.ok(Number.isSafeInteger(current.workflow_id)&&current.workflow_id>0);
  const history=await readHistory(api,current.workflow_id),legacy={};for(const name of gate.LEGACY)legacy[name]=await readHistory(api,name.split('/').at(-1));
