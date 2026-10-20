@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "kind": "INSTALL_TARGET_REPAIR_EXECUTION_RETURN",
+  "date": "2026-10-20",
+  "status": "LOCAL_BUILD_AND_REVIEW_PASS_INSTALL_NOT_VERIFIED",
+  "qualification": "LOCAL_ONLY_NOT_USER_INSTALLATION_PACKAGE",
+  "sourceCommit": "04dd974c41063c5067cadd55d53071068ef9ba96",
+  "sourceTree": "81eafbdace9cd3b62dd816114bc5038bd772dab9",
+  "codeFingerprint": "35263c9484a79eb39144aa739a2cb4a3c34766e84900475f24e19ef192d20ab6",
+  "returnState": "FROZEN",
+  "historicalFc2": {
+    "runId": "39215154383",
+    "attempt": 1,
+    "status": "FAIL",
+    "firstFailure": "INSTALL_VERIFY_TARGET_MISMATCH",
+    "cleanup": "CLEANUP_UNPROVEN",
+    "actualTargetDifferenceCategory": "UNKNOWN",
+    "sixOwnershipUnknownStatesPreserved": true,
+    "globalRegistryStateChangedOrigin": "UNKNOWN"
+  },
+  "observedTargetCategories": {
+    "physical": "EXACT",
+    "controlledSubst": "EXACT",
+    "dotNormalization": "PHYSICAL_EXPRESSION_SAME_TRUSTED_OBJECT",
+    "genuineDistinct83Alias": "NOT_VERIFIED",
+    "earlyShortDistinctClaim": "WITHDRAWN_NUL_TRUNCATION_ERROR"
+  },
+  "trustedLauncherProof": "CONTROLLED_FIXTURES_ONLY",
+  "productionFiles": [
+    "tools/windows-installer/beta4-upgrade/setup-beta4.iss",
+    "tools/windows-installer/beta4-upgrade/fresh-startup-identity.iss",
+    "tools/windows-installer/beta4-upgrade/build-beta4.cjs"
+  ],
+  "tests": {
+    "executionFreshCjs": {
+      "pass": 251,
+      "fail": 0,
+      "skip": 0
+    },
+    "productionInnoCases": 15,
+    "targetAndProducerCases": 20,
+    "oraclePolicyCases": 14,
+    "oracleLifetimeChecks": 3,
+    "fullWindowsPS5Entry": true,
+    "fullPS7Entry": true,
+    "closeReturnInjectionCases": 2,
+    "closeInjectionIsRealOsFailure": false,
+    "go": {
+      "sourceCommit": "0eb79c504e74d20fe18441436cce8186150508ef",
+      "parents": 7,
+      "children": 32,
+      "fail": 0,
+      "skip": 0,
+      "vet": "PASS",
+      "templatesByteIdenticalToFinalSource": true
+    },
+    "masterReportedIndependent": {
+      "sourceReview": "PASS",
+      "cjs": 81,
+      "root": 134,
+      "reportMutationCases": 12,
+      "productionInnoCases": 15,
+      "targetCases": 20
+    }
+  },
+  "recovery": {
+    "controlledOwnedStartup": "EXACT_ORIGINAL_OBJECT_REMOVAL_PROVEN",
+    "unownedOrChangedOrLockedShortcut": "REFUSED_PRESERVED",
+    "controlledMappings": "RESTORED",
+    "observedWorld": "UNCHANGED",
+    "environment": "RESTORED",
+    "jobsAndHandles": "CLOSED_NO_FORCE",
+    "earlyNativeProductRegistration": "NOT_VERIFIED",
+    "earlyNativeBinding": "NOT_VERIFIED",
+    "earlyNativeDesktop": "NOT_VERIFIED",
+    "earlyNativePrograms": "NOT_VERIFIED",
+    "earlyNativeProgramFiles": "NOT_VERIFIED",
+    "historicalActualStartup": "UNKNOWN_NOT_RETROACTIVELY_CERTIFIED",
+    "wholeProductFailedInstallRecovery": "NOT_VERIFIED"
+  },
+  "build": {
+    "status": "PASS",
+    "setupBytes": 33558213,
+    "setupSha256": "e9c285c6c50b3ca784b1490229cacfddfdbae2c3fe42cb722ab6318c511c2a84",
+    "payloadFiles": 1049,
+    "payloadBytes": 147923786,
+    "dependencies": 20,
+    "masterIndependentByteReview": "PASS"
+  },
+  "actualVerification": {
+    "localProductSetup": "NOT_RUN",
+    "freshF01ThroughF09": "NOT_RUN",
+    "business26_742": "NOT_RUN",
+    "physicalLan": "HUMAN_PENDING",
+    "independentQa": "FROZEN"
+  },
+  "budget": {
+    "newHostedRuns": 0,
+    "finalCandidateUsed": 2,
+    "finalCandidateLimit": 2,
+    "qaUsed": 0,
+    "qaLimit": 1,
+    "qaState": "FROZEN",
+    "oldFailuresAndBudgetsUnchanged": true
+  },
+  "futureAdmission": {
+    "oldFc2SourceFenceRejectsRepairHead": true,
+    "newExplicitUserAuthorizationRequired": true,
+    "noAutomaticRetryOrBudgetReuse": true,
+    "sourceAndExeReviewRequired": true,
+    "safeIsolatedWindowsAndCompleteOwnershipRecoveryEvidenceRequired": true,
+    "mandatoryFailureOrUnknownStops": true
+  },
+  "rawOutputStored": false
+}
