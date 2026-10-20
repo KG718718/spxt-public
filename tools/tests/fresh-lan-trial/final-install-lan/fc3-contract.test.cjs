@@ -1,6 +1,11 @@
 'use strict';
 const test=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),cp=require('node:child_process'),g=require('./fc3-contract.cjs'),f=require('./fc3-fixtures.cjs');
 const request=x=>g.request(x.env,x.input,x.history,x.facts,x.bytes);
+test('new local recovery source remains ineligible for the exhausted historical FC3 slot',()=>{
+ const x=f.fixture(),head=f.git('rev-parse','HEAD');a.notEqual(head,x.input.testedSource);
+ for(const k of ['reviewedSource','testedSource','localBuildSource'])x.input[k]=head;
+ a.throws(()=>g.source(f.repo,x.input));
+});
 test('FC3 and conditional original FQ1 have versioned context through original entry and finalizer validators',()=>{
  for(const slot of ['FC3','FQ1']){const x=f.fixture(slot),c=request(x);a.equal(c.installCandidate.schema,3);a.equal(require('../install-candidate/contract.cjs').context(c),c);a.equal(require('../../../windows-installer/fresh-trial/final-install-lan/bootstrap.cjs').initialReport(c).schema,2);a.equal(require('../../../windows-installer/fresh-trial/install-candidate/context.cjs').check(c,x.facts.runner.environment,x.facts.testedTree),true);a.equal(g.proofFor(x.input),g.PROOF);}
 });

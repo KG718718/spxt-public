@@ -4,7 +4,9 @@
 const cp=require('node:child_process'),path=require('node:path'),g=require('./fc3-contract.cjs'),old=require('./fixtures.cjs'),r1=require('../recovery-r1/contract.cjs');
 const repo=path.resolve(__dirname,'../../../..'),git=(...a)=>cp.execFileSync('git',['-C',repo,...a],{encoding:'utf8',windowsHide:true}).trim();
 function fixture(slot='FC3'){
- const head=git('rev-parse','HEAD'),tree=git('ls-tree','-r',head),fp=r1.codeFingerprint(tree),x=old.fixture('FC1');
+ // Historical FC3 success fixtures must exercise the exact admitted source.
+ // Recovery engineering HEAD is deliberately ineligible for the exhausted slot.
+ const head='e7e381cdc6bcb5fd92cf8a5b03cd36940fff54b2',tree=git('ls-tree','-r',head),fp=r1.codeFingerprint(tree),x=old.fixture('FC1');
  Object.assign(x.input,{schema:3,slot,mode:g.SLOTS[slot],authorizationCommit:g.AUTHORIZATION,reviewedSource:head,testedSource:head,localBuildSource:head,codeFingerprint:fp,approvalMarker:'FINAL_FRESH_FC3_MASTER_REVIEWED_'+slot+'_'+head,candidateRunId:slot==='FQ1'?'501':'',candidateArtifactId:slot==='FQ1'?'601':'',candidateSetupSha256:slot==='FQ1'?old.setup:''});
  x.proof.sourceCommit=head;x.bytes=Buffer.from(JSON.stringify(x.proof)+'\n');x.input.localBuildReportSha256=require('./fc2-final.cjs').sha(x.bytes);
  Object.assign(x.env,{parent:head,title:g.PREFIX+slot+' '+head});

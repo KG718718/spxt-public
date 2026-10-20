@@ -7,9 +7,10 @@ const {prepare}=require('../../tests/fresh-lan-trial/prepare-overlay.cjs');
 const {prepare:policyOverlay}=require('../../tests/fresh-lan-trial/prepare-policy-overlay.cjs');
 const {run}=require('../../tests/fresh-lan-trial/pipeline.cjs');
 const {NAME,inspect,verify}=require('./verify-artifact.cjs');
+const split=require('../../tests/fresh-lan-trial/install-split.cjs');
 async function main(){
  const [repo,work,node,go]=process.argv.slice(2);assert.equal(process.argv.slice(2).length,4);assert.equal(process.platform,'win32');assert.equal(process.env.GITHUB_ACTIONS,'true');assert.equal(process.env.RUNNER_ENVIRONMENT,'github-hosted');assert.equal(process.env.GITHUB_REPOSITORY,'KG718718/spxt-public');
- const context=JSON.parse(fs.readFileSync(path.join(work,'context.json')));assert.equal(context.reportSchema,2);assert.equal(context.controlCommit,process.env.GITHUB_SHA);assert.equal(context.sourceCommit,process.env.KSESSION_FRESH_TESTED_SOURCE);
+ const context=JSON.parse(fs.readFileSync(path.join(work,'context.json')));const splitRole=process.env.KSESSION_FRESH_INSTALL_ROLE||'';assert.ok(['','A','B'].includes(splitRole));assert.equal(context.reportSchema,splitRole?3:2);if(splitRole){assert.equal(context.installSplit?.schema,1);assert.equal(context.installSplit.role,splitRole);}assert.equal(context.controlCommit,process.env.GITHUB_SHA);assert.equal(context.sourceCommit,process.env.KSESSION_FRESH_TESTED_SOURCE);
  const checked=cp.execFileSync('git',['-C',repo,'rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim();assert.equal(checked,context.sourceCommit);
  const artifact=path.join(work,'artifact'),setup=path.join(artifact,NAME),setupHash=sha(fs.readFileSync(setup));
  if(context.mode==='QA'){
@@ -27,7 +28,7 @@ async function main(){
  function coreWitness(id){const witnesses=Object.fromEntries(report.WITNESSES[id].map(k=>[k,core?.checks?.[k]===true]));if(Object.values(witnesses).some(v=>v!==true))fail();return witnesses;}
  function readCore(){
   const r=JSON.parse(fs.readFileSync(path.join(evidence,'installed-core.json')));
-  require('../../tests/fresh-lan-trial/observations.cjs').core(r,context.sourceCommit,2);
+  if(splitRole)split.core(r,context.sourceCommit,splitRole,setupHash);else require('../../tests/fresh-lan-trial/observations.cjs').core(r,context.sourceCommit,2);
   core=r;
  }
  const phases={
@@ -53,6 +54,16 @@ async function main(){
   },
   F09:async()=>{assert.equal(sha(fs.readFileSync(setup)),setupHash);const provisional=report.initial(context.sourceCommit,context.mode,context.candidate,context.controlCommit,context.run,2);fs.writeFileSync(path.join(artifact,'fresh-report.json'),JSON.stringify(provisional)+'\n');const v=inspect(artifact,context.sourceCommit,context.mode==='QA'?context.candidate.setupSha256:undefined);assert.equal(v.setupSha256,setupHash);return Object.fromEntries(report.WITNESSES.F09.map(k=>[k,true]));}
  };
+ if(splitRole){
+  const result=await split.execute({role:splitRole,sourceCommit:context.sourceCommit,setupSha256:setupHash,
+   launch:async role=>{const overlay=prepare(path.join(work,'installed-overlay'));const plan=split.command(role,go,overlay);const p=command(plan.exe,plan.args,path.join(repo,'tools/windows-launcher'),{...baseEnv,...plan.environment});coreExit=p.status;return p.status;},
+   readCore:async()=>{readCore();return core;},readRegistry:async()=>JSON.parse(fs.readFileSync(path.join(evidence,'registry-fixture.json'))),phases,
+   write:async r=>fs.writeFileSync(path.join(work,'split-inner.json'),JSON.stringify(r)+'\n')});
+  // A part never publishes a legacy PASS or borrows B's witnesses. B's native
+  // interrupted-install gate has no safe producer yet and remains NOT READY.
+  if(result.status!=='INNER_PASS_OUTER_PENDING')process.exitCode=1;
+  return;
+ }
  const r=await run({sourceCommit:context.sourceCommit,controlCommit:context.controlCommit,runIdentity:context.run,mode:context.mode,candidate:context.candidate,setupSha256:setupHash,buildDiagnostic:JSON.parse(fs.readFileSync(path.join(work,'build-diagnostic.json'))),pendingOuter:['ownedToolchainAbsent','ownedDriveRestored','environmentRestored','ownedRulesAbsent'],recovery:()=>({...require('../../tests/fresh-lan-trial/install-r2/recovery.cjs').initial(),...(core?.schema===2?core.recovery:{})}),completionWrite:async c=>fs.writeFileSync(path.join(work,'completion.json'),JSON.stringify(c)+'\n'),stages:phases,diagnostics:()=>core?.setupDiagnostics||[],write:writer,cleanup:async()=>({ownedLauncherExited:core?.cleanup.ownedLauncherExited??null,ownedNodeExited:core?.cleanup.ownedNodeExited??null,handlesClosed:core?.cleanup.handlesClosed??null,lockReleased:core?.cleanup.lockReleased??null,ownedRulesAbsent:null,ownedRegistrationAbsent:core?.cleanup.ownedRegistrationAbsent??null,ownedShortcutsAbsent:core?.cleanup.ownedShortcutsAbsent??null,ownedToolchainAbsent:null,ownedDriveRestored:null,environmentRestored:null})});
  // Outer PS + always finalizer must finish tool/environment/drive restoration.
  if(r.checks.length!==9||coreExit!==0)process.exitCode=1;

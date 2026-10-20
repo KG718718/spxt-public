@@ -1,0 +1,426 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+	"unicode/utf16"
+	"unsafe"
+)
+
+var freshRegistryAPI = syscall.NewLazyDLL("advapi32.dll")
+var freshRegCreate = freshRegistryAPI.NewProc("RegCreateKeyExW")
+var freshRegSet = freshRegistryAPI.NewProc("RegSetValueExW")
+var freshRegDelete = freshRegistryAPI.NewProc("RegDeleteKeyExW")
+
+type freshRegistryNode struct {
+	path   string
+	h      syscall.Handle
+	before freshRecoverySnapshot
+}
+
+// A receipt is issued only by the native exclusive creator, never by a sample
+// of an existing key. Handles stay open through validation and deletion.
+// The Win32 path delete is not an atomic compare-and-delete. This fixture is
+// suitable only for an exclusively controlled test environment; it does not
+// claim safety against a concurrent writer between the last check and delete.
+type freshOwnedRegistry struct {
+	ps, path       string
+	nodes          []freshRegistryNode
+	leaf           syscall.Handle
+	stamp          syscall.Filetime
+	expected       freshRecoverySnapshot
+	ready, retired bool
+	markerWritten  bool
+}
+
+func freshRegistryInfo(h syscall.Handle) (uint32, uint32, syscall.Filetime, error) {
+	var children, values uint32
+	var stamp syscall.Filetime
+	e := syscall.RegQueryInfoKey(h, nil, nil, nil, &children, nil, nil, &values, nil, nil, nil, &stamp)
+	return children, values, stamp, e
+}
+
+func freshRegistryMarker(h syscall.Handle) bool {
+	children, values, _, e := freshRegistryInfo(h)
+	if e != nil || children != 0 || values != 1 {
+		return false
+	}
+	var kind uint32
+	data := make([]byte, 128)
+	n := uint32(len(data))
+	if syscall.RegQueryValueEx(h, ptr("FreshTrialOwned"), nil, &kind, &data[0], &n) != nil || kind != 1 {
+		return false
+	}
+	want := utf16.Encode([]rune("FRESH_TRIAL_OWNED\x00"))
+	if n != uint32(len(want)*2) {
+		return false
+	}
+	for i, v := range want {
+		if data[2*i] != byte(v) || data[2*i+1] != byte(v>>8) {
+			return false
+		}
+	}
+	return true
+}
+
+func freshCreateOwnedRegistry(ps, key string) (*freshOwnedRegistry, string) {
+	r, state := freshPrepareOwnedRegistry(ps, key)
+	if state != "EMPTY_CREATED_NEW" {
+		return r, state
+	}
+	return r, r.writeMarker()
+}
+
+func freshPrepareOwnedRegistry(ps, key string) (*freshOwnedRegistry, string) {
+	r := &freshOwnedRegistry{ps: ps, path: key}
+	before := freshObserveRegistration(ps, key)
+	parts := strings.Split(key, `\`)
+	if !before.Known || !before.Absent || len(parts) < 2 || parts[0] != "Software" {
+		return r, "PRESTATE_UNKNOWN"
+	}
+	for _, p := range parts {
+		if p == "" || p == "." || p == ".." {
+			return r, "PRESTATE_UNKNOWN"
+		}
+	}
+	// Open Software, then create each missing component separately. A full-path
+	// RegCreateKeyEx would silently create unreceipted intermediate parents.
+	var parent syscall.Handle
+	if syscall.RegOpenKeyEx(syscall.HKEY_CURRENT_USER, ptr("Software"), 0, syscall.KEY_READ|syscall.KEY_WRITE|0x100, &parent) != nil {
+		return r, "PARENT_UNKNOWN"
+	}
+	defer func() {
+		if parent != 0 {
+			for _, n := range r.nodes {
+				if n.h == parent {
+					return
+				}
+			}
+			syscall.RegCloseKey(parent)
+		}
+	}()
+	for i := 1; i < len(parts); i++ {
+		var h syscall.Handle
+		e := syscall.RegOpenKeyEx(parent, ptr(parts[i]), 0, syscall.KEY_READ|syscall.KEY_WRITE|0x100, &h)
+		if e == nil {
+			if i == len(parts)-1 {
+				syscall.RegCloseKey(h)
+				return r, "CREATE_COLLISION"
+			}
+		} else {
+			if e != syscall.ERROR_FILE_NOT_FOUND && e != syscall.ERROR_PATH_NOT_FOUND {
+				return r, "PARENT_UNKNOWN"
+			}
+			var disposition uint32
+			nodePath := strings.Join(parts[:i+1], `\`)
+			nodeBefore := freshObserveRegistration(ps, nodePath)
+			if !nodeBefore.Known {
+				return r, "PARENT_UNKNOWN"
+			}
+			rc, _, _ := freshRegCreate.Call(uintptr(parent), uintptr(unsafe.Pointer(ptr(parts[i]))), 0, 0, 0, syscall.KEY_READ|syscall.KEY_WRITE|0x100, 0, uintptr(unsafe.Pointer(&h)), uintptr(unsafe.Pointer(&disposition)))
+			if rc != 0 {
+				return r, "CREATE_FAILED"
+			}
+			if disposition != 1 {
+				syscall.RegCloseKey(h)
+				return r, "CREATE_COLLISION"
+			}
+			r.nodes = append(r.nodes, freshRegistryNode{nodePath, h, nodeBefore})
+		}
+		// Existing intermediate handles carry no delete authority.
+		keep := false
+		for _, n := range r.nodes {
+			if n.h == parent {
+				keep = true
+			}
+		}
+		if !keep {
+			syscall.RegCloseKey(parent)
+		}
+		parent = h
+	}
+	r.leaf = parent
+	parent = 0
+	return r, "EMPTY_CREATED_NEW"
+}
+
+func (r *freshOwnedRegistry) writeMarker() string {
+	data := utf16.Encode([]rune("FRESH_TRIAL_OWNED\x00"))
+	rc, _, _ := freshRegSet.Call(uintptr(r.leaf), uintptr(unsafe.Pointer(ptr("FreshTrialOwned"))), 0, 1, uintptr(unsafe.Pointer(&data[0])), uintptr(len(data)*2))
+	if rc != 0 {
+		return "WRITE_FAILED"
+	}
+	r.markerWritten = true
+	if !freshRegistryMarker(r.leaf) {
+		return "WRITE_READBACK_UNKNOWN"
+	}
+	_, _, r.stamp, _ = freshRegistryInfo(r.leaf)
+	r.expected = freshObserveRegistration(r.ps, r.path)
+	if !r.expected.Known || r.expected.Absent || r.expected.Identity == "" {
+		return "WRITE_OBSERVATION_UNKNOWN"
+	}
+	r.ready = true
+	return "CREATED_NEW"
+}
+
+func (r *freshOwnedRegistry) unchanged() string {
+	if r == nil || !r.ready || r.retired || r.leaf == 0 {
+		return "RECEIPT_UNKNOWN"
+	}
+	if !freshRegistryMarker(r.leaf) {
+		return "HANDLE_CONTENT_CHANGED"
+	}
+	_, _, stamp, e := freshRegistryInfo(r.leaf)
+	if e != nil || stamp != r.stamp {
+		return "HANDLE_CHANGED"
+	}
+	after := freshObserveRegistration(r.ps, r.path)
+	if !after.Known {
+		return "OBSERVATION_FAILED"
+	}
+	if after.Absent || after.Identity != r.expected.Identity {
+		return "STRUCTURED_STATE_CHANGED"
+	}
+	return "UNCHANGED"
+}
+
+func (r *freshOwnedRegistry) close() bool {
+	if r == nil {
+		return true
+	}
+	ok := true
+	for i := range r.nodes {
+		if r.nodes[i].h != 0 {
+			ok = syscall.RegCloseKey(r.nodes[i].h) == nil && ok
+			r.nodes[i].h = 0
+		}
+	}
+	r.leaf = 0
+	return ok
+}
+
+func (r *freshOwnedRegistry) cleanup() string {
+	if r == nil {
+		return "RECEIPT_UNKNOWN"
+	}
+	if r.retired {
+		after := freshObserveRegistration(r.ps, r.path)
+		if !after.Known {
+			return "OBSERVATION_FAILED"
+		}
+		if !after.Absent {
+			return "RETIRED_STATE_CHANGED"
+		}
+		if !r.parentsRestored() {
+			return "RETIRED_STATE_CHANGED"
+		}
+		return "OWNED_REMOVED"
+	}
+	if r.ready {
+		if s := r.unchanged(); s != "UNCHANGED" {
+			return s
+		}
+	} else if len(r.nodes) == 0 {
+		return "RECEIPT_UNKNOWN"
+	}
+	// No fallback to recursively deleting, adopting replacement keys, ignoring
+	// extra values, or treating external disappearance as our successful action.
+	for i := len(r.nodes) - 1; i >= 0; i-- {
+		n := &r.nodes[i]
+		children, values, _, e := freshRegistryInfo(n.h)
+		if e != nil {
+			return "HANDLE_UNKNOWN"
+		}
+		if n.h == r.leaf && r.markerWritten {
+			if !freshRegistryMarker(n.h) {
+				return "HANDLE_CONTENT_CHANGED"
+			}
+		} else if children != 0 || values != 0 {
+			return "PARENT_CHANGED"
+		}
+		rc, _, _ := freshRegDelete.Call(uintptr(syscall.HKEY_CURRENT_USER), uintptr(unsafe.Pointer(ptr(n.path))), 0x100, 0)
+		if rc != 0 {
+			return "DELETE_FAILED"
+		}
+		if syscall.RegCloseKey(n.h) != nil {
+			n.h = 0
+			return "CLOSE_FAILED"
+		}
+		n.h = 0
+	}
+	r.leaf = 0
+	after := freshObserveRegistration(r.ps, r.path)
+	if !after.Known || !after.Absent {
+		return "DELETE_OBSERVATION_FAILED"
+	}
+	if !r.parentsRestored() {
+		return "DELETE_OBSERVATION_FAILED"
+	}
+	r.retired = true
+	return "OWNED_REMOVED"
+}
+
+func (r *freshOwnedRegistry) parentsRestored() bool {
+	for _, n := range r.nodes {
+		after := freshObserveRegistration(r.ps, n.path)
+		if !after.Known || !n.before.Known || after.Absent != n.before.Absent || after.Identity != n.before.Identity {
+			return false
+		}
+	}
+	return true
+}
+
+func TestFreshOwnedRegistryNative(t *testing.T) {
+	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	for _, scene := range []string{"normal", "partial-empty-chain", "partial-observation", "retired-recreated", "collision", "extra-value", "wrong-type", "child", "external-removal", "replacement", "restored-value-rewrite"} {
+		t.Run(scene, func(t *testing.T) {
+			// Flat GUID-like private leaf: never touch the real product path.
+			key := fmt.Sprintf(`Software\CodexFc3Receipt_%d_%s`, time.Now().UnixNano(), scene)
+			if scene == "partial-empty-chain" {
+				key += `\Parent\Leaf`
+				r, s := freshPrepareOwnedRegistry(ps, key)
+				defer r.close()
+				if s != "EMPTY_CREATED_NEW" || len(r.nodes) != 3 || r.cleanup() != "OWNED_REMOVED" {
+					t.Fatal("PARTIAL_CHAIN_RECOVERY_FAILED")
+				}
+				if after := freshObserveRegistration(ps, r.nodes[0].path); !after.Known || !after.Absent {
+					t.Fatal("PARTIAL_PARENT_REMAINS")
+				}
+				return
+			}
+			r, state := freshCreateOwnedRegistry(ps, key)
+			if state != "CREATED_NEW" {
+				t.Fatal("PRIVATE_EXCLUSIVE_CREATE_FAILED", state)
+			}
+			defer r.close()
+			// Independent native actor deliberately owns its mutations and reverses
+			// them before the original receipt may perform cleanup.
+			mutate := func(name string, kind uint32, data []uint16) {
+				rc, _, _ := freshRegSet.Call(uintptr(r.leaf), uintptr(unsafe.Pointer(ptr(name))), 0, uintptr(kind), uintptr(unsafe.Pointer(&data[0])), uintptr(len(data)*2))
+				if rc != 0 {
+					t.Fatal("PRIVATE_MUTATION_FAILED")
+				}
+			}
+			switch scene {
+			case "partial-observation":
+				// Simulate failure after the actual exclusive write/readback, before
+				// cross-view observation completes. Authority is still the creator.
+				r.ready = false
+				r.expected = freshRecoverySnapshot{}
+				if r.cleanup() != "OWNED_REMOVED" {
+					t.Fatal("PARTIAL_OBSERVATION_RECOVERY_FAILED")
+				}
+				return
+			case "retired-recreated":
+				if r.cleanup() != "OWNED_REMOVED" {
+					t.Fatal("RETIRE_FAILED")
+				}
+				other, s := freshCreateOwnedRegistry(ps, key)
+				defer other.close()
+				if s != "CREATED_NEW" || r.cleanup() != "RETIRED_STATE_CHANGED" || other.unchanged() != "UNCHANGED" || other.cleanup() != "OWNED_REMOVED" {
+					t.Fatal("RETIRED_REPLACEMENT_ADOPTED")
+				}
+				return
+			case "normal":
+				if r.unchanged() != "UNCHANGED" || r.cleanup() != "OWNED_REMOVED" || r.cleanup() != "OWNED_REMOVED" {
+					t.Fatal("NORMAL_RECOVERY_FAILED")
+				}
+				return
+			case "collision":
+				other, s := freshCreateOwnedRegistry(ps, key)
+				defer other.close()
+				if s != "PRESTATE_UNKNOWN" || other.cleanup() == "OWNED_REMOVED" || r.unchanged() != "UNCHANGED" {
+					t.Fatal("EXISTING_KEY_ADOPTED")
+				}
+			case "extra-value":
+				mutate("External", 1, []uint16{'x', 0})
+			case "wrong-type":
+				mutate("FreshTrialOwned", 2, utf16.Encode([]rune("FRESH_TRIAL_OWNED\x00")))
+			case "restored-value-rewrite":
+				mutate("FreshTrialOwned", 1, []uint16{'x', 0})
+				time.Sleep(20 * time.Millisecond)
+				mutate("FreshTrialOwned", 1, utf16.Encode([]rune("FRESH_TRIAL_OWNED\x00")))
+			case "child":
+				var h syscall.Handle
+				var d uint32
+				rc, _, _ := freshRegCreate.Call(uintptr(r.leaf), uintptr(unsafe.Pointer(ptr("External"))), 0, 0, 0, syscall.KEY_READ|syscall.KEY_WRITE, 0, uintptr(unsafe.Pointer(&h)), uintptr(unsafe.Pointer(&d)))
+				if rc != 0 || d != 1 {
+					t.Fatal("PRIVATE_CHILD_CREATE_FAILED")
+				}
+				syscall.RegCloseKey(h)
+			case "external-removal", "replacement":
+				rc, _, _ := freshRegDelete.Call(uintptr(syscall.HKEY_CURRENT_USER), uintptr(unsafe.Pointer(ptr(key))), 0x100, 0)
+				if rc != 0 {
+					t.Fatal("PRIVATE_ACTOR_DELETE_FAILED")
+				}
+				if scene == "replacement" { // Original handle must detect delete pending.
+					if r.cleanup() == "OWNED_REMOVED" {
+						t.Fatal("EXTERNAL_DELETE_ADOPTED")
+					}
+					r.close()
+					replacement, s := freshCreateOwnedRegistry(ps, key)
+					if s != "CREATED_NEW" {
+						t.Fatal("REPLACEMENT_CREATE_FAILED")
+					}
+					defer replacement.close()
+					if r.cleanup() == "OWNED_REMOVED" || replacement.unchanged() != "UNCHANGED" || replacement.cleanup() != "OWNED_REMOVED" {
+						t.Fatal("REPLACEMENT_ADOPTED")
+					}
+					return
+				}
+				if r.cleanup() == "OWNED_REMOVED" {
+					t.Fatal("EXTERNAL_DELETE_ADOPTED")
+				}
+				r.close()
+				if after := freshObserveRegistration(ps, key); !after.Known || !after.Absent {
+					t.Fatal("PRIVATE_DELETE_NOT_OBSERVED")
+				}
+				return
+			}
+			if scene != "collision" && r.cleanup() == "OWNED_REMOVED" {
+				t.Fatal("EXTERNAL_MUTATION_DELETED")
+			}
+			// The independent actor reverses only its own known mutations. No
+			// general cleanup or adoption of arbitrary contents is permitted.
+			if scene == "extra-value" {
+				p := freshRegistryAPI.NewProc("RegDeleteValueW")
+				rc, _, _ := p.Call(uintptr(r.leaf), uintptr(unsafe.Pointer(ptr("External"))))
+				if rc != 0 {
+					t.Fatal("ACTOR_RESTORE_FAILED")
+				}
+			}
+			if scene == "child" {
+				rc, _, _ := freshRegDelete.Call(uintptr(r.leaf), uintptr(unsafe.Pointer(ptr("External"))), 0, 0)
+				if rc != 0 {
+					t.Fatal("ACTOR_RESTORE_FAILED")
+				}
+			}
+			if scene == "wrong-type" {
+				mutate("FreshTrialOwned", 1, utf16.Encode([]rune("FRESH_TRIAL_OWNED\x00")))
+			}
+			if scene == "collision" {
+				if r.cleanup() != "OWNED_REMOVED" {
+					t.Fatal("PRIVATE_FINAL_RECOVERY_FAILED")
+				}
+			} else {
+				// The receipt remains changed. Only the independent test controller
+				// reverses its experiment on this continuously held private object.
+				if r.cleanup() == "OWNED_REMOVED" || !freshRegistryMarker(r.leaf) {
+					t.Fatal("MUTATION_HISTORY_LOST")
+				}
+				rc, _, _ := freshRegDelete.Call(uintptr(syscall.HKEY_CURRENT_USER), uintptr(unsafe.Pointer(ptr(key))), 0x100, 0)
+				if rc != 0 || !r.close() {
+					t.Fatal("CONTROLLER_RECOVERY_FAILED")
+				}
+			}
+			if after := freshObserveRegistration(ps, key); !after.Known || !after.Absent {
+				t.Fatal("PRIVATE_FINAL_ABSENCE_FAILED")
+			}
+		})
+	}
+}

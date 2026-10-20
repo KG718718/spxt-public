@@ -46,16 +46,46 @@ function Get-FreshProgramObservation([string]$Path){
   return (New-FreshObservation $true ($taskRows.Count -eq 0) (ConvertTo-Json -InputObject $taskRows -Depth 8 -Compress))
  }catch{return (New-FreshObservation $false $false)}
 }
+function Assert-FreshRegistryTree($Tree,[int]$Depth=0){
+ if($Depth -gt 16 -or $Tree -isnot [Collections.IDictionary] -or (($Tree.Keys|Sort-Object) -join ',') -cne 'children,values' -or $Tree.values -isnot [Collections.IDictionary] -or $Tree.children -isnot [Collections.IDictionary]){throw 'Registry tree unknown'}
+ foreach($taskEntry in $Tree.values.Values){
+  if($taskEntry -isnot [Collections.IDictionary] -or (($taskEntry.Keys|Sort-Object) -join ',') -cne 'kind,value' -or $null -eq $taskEntry.value){throw 'Registry value unknown'}
+  $taskValid=switch -CaseSensitive ($taskEntry.kind){
+   'String'{$taskEntry.value -is [string]}
+   'ExpandString'{$taskEntry.value -is [string]}
+   'DWord'{$taskEntry.value -is [int]}
+   'QWord'{$taskEntry.value -is [long]}
+   'MultiString'{$taskEntry.value -is [string[]] -and @($taskEntry.value|Where-Object{$null -eq $_}).Count -eq 0}
+   'Binary'{$taskEntry.value -is [byte[]]}
+   'None'{$taskEntry.value -is [byte[]]}
+   default{$false}
+  }
+  if(!$taskValid){throw 'Registry typed value unknown'}
+ }
+ foreach($taskChild in $Tree.children.Values){Assert-FreshRegistryTree $taskChild ($Depth+1)}
+}
+function ConvertTo-FreshRegistryCanonical($Value,[int]$Depth=0){
+ if($Depth -gt 58){throw 'Registry canonical bound'}
+ if($null -eq $Value){return $null}
+ if($Value -is [Collections.IDictionary]){
+  $taskSorted=[ordered]@{};$taskNames=[string[]]@($Value.Keys);[Array]::Sort($taskNames,[StringComparer]::Ordinal)
+  foreach($taskName in $taskNames){$taskSorted[$taskName]=ConvertTo-FreshRegistryCanonical $Value[$taskName] ($Depth+1)}
+  return $taskSorted
+ }
+ if($Value -is [Array]){$taskItems=[Collections.Generic.List[object]]::new();foreach($taskValue in $Value){$taskItems.Add((ConvertTo-FreshRegistryCanonical $taskValue ($Depth+1)))};return ,$taskItems.ToArray()}
+ if($Value -is [string] -or $Value -is [ValueType]){return $Value}
+ throw 'Registry canonical type unknown'
+}
 function Get-FreshRegistryObservation([string[]]$Paths){
  try{
   $taskTree=[ordered]@{};$taskAbsent=$true
   foreach($taskHiveName in @([Microsoft.Win32.RegistryHive]::CurrentUser,[Microsoft.Win32.RegistryHive]::LocalMachine)){
    foreach($taskView in @([Microsoft.Win32.RegistryView]::Registry64,[Microsoft.Win32.RegistryView]::Registry32)){
     $taskHive=[Microsoft.Win32.RegistryKey]::OpenBaseKey($taskHiveName,$taskView)
-    try{foreach($taskPath in $Paths){$taskKey=$taskHive.OpenSubKey($taskPath);$taskID=[string]$taskHiveName+':'+[string]$taskView+':'+$taskPath;if($null -eq $taskKey){$taskTree[$taskID]=$null}else{try{$taskTree[$taskID]=Registry-Tree $taskKey;$taskAbsent=$false}finally{$taskKey.Dispose()}}}}finally{$taskHive.Dispose()}
+    try{foreach($taskPath in $Paths){$taskKey=$taskHive.OpenSubKey($taskPath);$taskID=[string]$taskHiveName+':'+[string]$taskView+':'+$taskPath;if($null -eq $taskKey){$taskTree[$taskID]=$null}else{try{$taskTree[$taskID]=Registry-Tree $taskKey;Assert-FreshRegistryTree $taskTree[$taskID];$taskAbsent=$false}finally{$taskKey.Dispose()}}}}finally{$taskHive.Dispose()}
    }
   }
-  return (New-FreshObservation $true $taskAbsent ($taskTree|ConvertTo-Json -Depth 60 -Compress))
+  return (New-FreshObservation $true $taskAbsent (ConvertTo-Json -InputObject (ConvertTo-FreshRegistryCanonical $taskTree) -Depth 60 -Compress))
  }catch{return (New-FreshObservation $false $false)}
 }
 function Get-FreshProductObservations([string]$PhysicalWork){

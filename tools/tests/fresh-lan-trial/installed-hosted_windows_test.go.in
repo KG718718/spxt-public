@@ -26,6 +26,10 @@ func TestFreshInstalledCore(t *testing.T) {
 	if !filepath.IsAbs(base) || !filepath.IsAbs(setup) || !filepath.IsAbs(node) || !filepath.IsAbs(repo) || len(commit) != 40 {
 		t.Fatal("SOURCE_REJECTED")
 	}
+	role := os.Getenv("KSESSION_FRESH_INSTALL_ROLE")
+	if role != "" && role != "A" && role != "B" {
+		t.Fatal("INSTALL_ROLE_REJECTED")
+	}
 	if e := os.Mkdir(base, 0700); e != nil {
 		t.Fatal("FRESH_EVIDENCE_REQUIRED")
 	}
@@ -47,6 +51,14 @@ func TestFreshInstalledCore(t *testing.T) {
 	}
 	fixtureReceipts := []*freshOwnedFixtureReceipt{}
 	fixtureCallbacks := []func() bool{}
+	var bindingReceipt *freshOwnedRegistry
+	registryDiagnostic := map[string]any{"schema": 1, "kind": "FRESH_REGISTRY_FIXTURE", "sourceCommit": commit, "role": role, "create": "NOT_STARTED", "compare": "NOT_STARTED", "cleanup": "NOT_STARTED", "firstFailure": "NONE", "handlesClosed": false}
+	recordRegistry := func(phase, state string) {
+		registryDiagnostic[phase] = state
+		if state != "CREATED_NEW" && state != "UNCHANGED" && state != "OWNED_REMOVED" && registryDiagnostic["firstFailure"] == "NONE" {
+			registryDiagnostic["firstFailure"] = phase + ":" + state
+		}
+	}
 	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
 	product := `Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1`
 	binding := `Software\KSESSION\Beta\InstallerBinding`
@@ -142,6 +154,13 @@ func TestFreshInstalledCore(t *testing.T) {
 		cleanup["handlesClosed"] = stopped
 		cleanup["lockReleased"] = stopped
 		restored := cleanupInstallation(stopped)
+		registryHandlesClosed := bindingReceipt.close()
+		registryDiagnostic["handlesClosed"] = registryHandlesClosed
+		if !registryHandlesClosed {
+			recordRegistry("cleanup", "CLOSE_FAILED")
+		}
+		cleanup["handlesClosed"] = stopped && registryHandlesClosed
+		restored = restored && registryHandlesClosed
 		cleanup["ownedRegistrationAbsent"] = freshRecoveryRestored(recovery["productRegistration"])
 		cleanup["ownedShortcutsAbsent"] = freshRecoveryRestored(recovery["startup"]) && freshRecoveryRestored(recovery["desktop"]) && freshRecoveryRestored(recovery["programs"])
 		status := "PASS"
@@ -154,6 +173,16 @@ func TestFreshInstalledCore(t *testing.T) {
 			reason = "CLEANUP_UNPROVEN"
 		}
 		report := map[string]any{"schema": 2, "kind": "FRESH_INSTALLED_CORE", "sourceCommit": commit, "status": status, "stage": stage, "reason": reason, "checks": checks, "cleanup": cleanup, "fixturesClean": fixturesClean, "recovery": recovery, "setupDiagnostics": setupDiagnostics}
+		if role != "" {
+			report["schema"] = 3
+			report["kind"] = "FRESH_INSTALLED_SPLIT"
+			report["role"] = role
+			report["setupSha256"] = os.Getenv("KSESSION_FRESH_SETUP_SHA256")
+		}
+		diagnosticBytes, diagnosticErr := json.Marshal(registryDiagnostic)
+		if diagnosticErr != nil || os.WriteFile(filepath.Join(base, "registry-fixture.json"), append(diagnosticBytes, '\n'), 0600) != nil {
+			t.Error("REGISTRY_DIAGNOSTIC_WRITE_FAILED")
+		}
 		b, e := json.Marshal(report)
 		if e != nil {
 			t.Error("REPORT_INVALID")
@@ -362,108 +391,94 @@ func TestFreshInstalledCore(t *testing.T) {
 			t.Fatal("REJECT_SIDE_EFFECT")
 		}
 	}
-	fixture := filepath.Join(base, "nonempty-target")
-	if os.Mkdir(fixture, 0700) != nil {
-		t.Fatal("FIXTURE_FAILED")
-	}
-	sentinel := filepath.Join(fixture, "owned-sentinel.txt")
-	if os.WriteFile(sentinel, []byte("FRESH_TRIAL_OWNED"), 0600) != nil {
-		t.Fatal("FIXTURE_FAILED")
-	}
-	rejected("NONEMPTY_TARGET", fixture, instance)
-	b, e := os.ReadFile(sentinel)
-	if e != nil || string(b) != "FRESH_TRIAL_OWNED" {
-		t.Fatal("REJECT_CHANGED_TARGET")
-	}
-	dataFixture := filepath.Join(base, "existing-data")
-	if os.Mkdir(dataFixture, 0700) != nil {
-		t.Fatal("FIXTURE_FAILED")
-	}
-	if os.WriteFile(filepath.Join(dataFixture, "data.json"), []byte(`{"users":[]}`), 0600) != nil {
-		t.Fatal("FIXTURE_FAILED")
-	}
-	rejected("EXISTING_INSTANCE", root, dataFixture)
-	for _, p := range []string{desktop, startup} {
-		fixturesClean = false
-		receipt, prepareErr := freshPrepareFixture(p, []byte("FRESH_TRIAL_OWNED_SHORTCUT"))
-		if prepareErr != nil {
-			t.Fatal("FIXTURE_PRESTATE_UNKNOWN")
-		}
-		fixtureReceipts = append(fixtureReceipts, receipt)
-		if receipt.create(nil) != nil {
+	reg := filepath.Join(os.Getenv("SystemRoot"), "System32", "reg.exe")
+	if role != "A" {
+		fixture := filepath.Join(base, "nonempty-target")
+		if os.Mkdir(fixture, 0700) != nil {
 			t.Fatal("FIXTURE_FAILED")
 		}
-		label := "DESKTOP_SHORTCUT"
-		if p == startup {
-			label = "STARTUP_SHORTCUT"
+		sentinel := filepath.Join(fixture, "owned-sentinel.txt")
+		if os.WriteFile(sentinel, []byte("FRESH_TRIAL_OWNED"), 0600) != nil {
+			t.Fatal("FIXTURE_FAILED")
 		}
-		if install(label, root, instance, filepath.Join(base, label+".log")) {
-			t.Fatal("SHORTCUT_REJECTION_FAILED")
+		rejected("NONEMPTY_TARGET", fixture, instance)
+		b, e := os.ReadFile(sentinel)
+		if e != nil || string(b) != "FRESH_TRIAL_OWNED" {
+			t.Fatal("REJECT_CHANGED_TARGET")
 		}
-		bytes, e := os.ReadFile(p)
-		if e != nil || string(bytes) != "FRESH_TRIAL_OWNED_SHORTCUT" {
-			t.Fatal("SHORTCUT_CHANGED")
+		dataFixture := filepath.Join(base, "existing-data")
+		if os.Mkdir(dataFixture, 0700) != nil {
+			t.Fatal("FIXTURE_FAILED")
 		}
-		if receipt.cleanup() != "OWNED_REMOVED" {
-			t.Fatal("OWNED_FIXTURE_CLEANUP_FAILED")
+		if os.WriteFile(filepath.Join(dataFixture, "data.json"), []byte(`{"users":[]}`), 0600) != nil {
+			t.Fatal("FIXTURE_FAILED")
 		}
-		fixtureReceipts = fixtureReceipts[:len(fixtureReceipts)-1]
+		rejected("EXISTING_INSTANCE", root, dataFixture)
+		for _, p := range []string{desktop, startup} {
+			fixturesClean = false
+			receipt, prepareErr := freshPrepareFixture(p, []byte("FRESH_TRIAL_OWNED_SHORTCUT"))
+			if prepareErr != nil {
+				t.Fatal("FIXTURE_PRESTATE_UNKNOWN")
+			}
+			fixtureReceipts = append(fixtureReceipts, receipt)
+			if receipt.create(nil) != nil {
+				t.Fatal("FIXTURE_FAILED")
+			}
+			label := "DESKTOP_SHORTCUT"
+			if p == startup {
+				label = "STARTUP_SHORTCUT"
+			}
+			if install(label, root, instance, filepath.Join(base, label+".log")) {
+				t.Fatal("SHORTCUT_REJECTION_FAILED")
+			}
+			bytes, e := os.ReadFile(p)
+			if e != nil || string(bytes) != "FRESH_TRIAL_OWNED_SHORTCUT" {
+				t.Fatal("SHORTCUT_CHANGED")
+			}
+			if receipt.cleanup() != "OWNED_REMOVED" {
+				t.Fatal("OWNED_FIXTURE_CLEANUP_FAILED")
+			}
+			fixtureReceipts = fixtureReceipts[:len(fixtureReceipts)-1]
+			fixturesClean = true
+			if present(filepath.Join(root, "program")) {
+				t.Fatal("REJECT_SIDE_EFFECT")
+			}
+		}
+		fixturesClean = false
+		var bindingState string
+		bindingReceipt, bindingState = freshCreateOwnedRegistry(ps, binding)
+		recordRegistry("create", bindingState)
+		cleanupBindingFixture := func() bool {
+			state := bindingReceipt.cleanup()
+			recordRegistry("cleanup", state)
+			return state == "OWNED_REMOVED"
+		}
+		fixtureCallbacks = append(fixtureCallbacks, cleanupBindingFixture)
+		if bindingState != "CREATED_NEW" {
+			t.Fatal("BINDING_FIXTURE_" + bindingState)
+		}
+		if install("OLD_BINDING", root, instance, filepath.Join(base, "binding-reject.log")) {
+			t.Fatal("BINDING_REJECTION_FAILED")
+		}
+		state := bindingReceipt.unchanged()
+		recordRegistry("compare", state)
+		if state != "UNCHANGED" {
+			t.Fatal("BINDING_CHANGED_" + state)
+		}
+		state = bindingReceipt.cleanup()
+		recordRegistry("cleanup", state)
+		if state != "OWNED_REMOVED" {
+			t.Fatal("OWNED_BINDING_" + state)
+		}
+		fixtureCallbacks = nil
 		fixturesClean = true
-		if present(filepath.Join(root, "program")) {
-			t.Fatal("REJECT_SIDE_EFFECT")
-		}
+		checks["preexistingRejected"] = true
+		checks["rejectionsUnchanged"] = true
 	}
-	reg := filepath.Join(os.Getenv("SystemRoot"), "System32", "reg.exe")
-	bindingKey := `HKCU\` + binding
-	fixturesClean = false
-	bindingFixtureCreated, bindingFixtureRetired := false, false
-	cleanupBindingFixture := func() bool {
-		if bindingFixtureRetired {
-			return true
-		}
-		before := recoveryBefore["binding"]
-		if !before.Known || !before.Absent {
-			return false
-		}
-		after := freshObserveRegistration(ps, binding)
-		if after.Known && after.Absent {
-			return true
-		}
-		if !bindingFixtureCreated {
-			return false
-		}
-		script := `$ErrorActionPreference='Stop';$r=[Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser,[Microsoft.Win32.RegistryView]::Registry64);try{$p='Software\KSESSION\Beta\InstallerBinding';$k=$r.OpenSubKey($p);if(!$k){exit 1};try{if($k.GetSubKeyNames().Count -ne 0 -or $k.GetValueNames().Count -ne 1 -or $k.GetValueNames()[0] -cne 'FreshTrialOwned' -or [string]$k.GetValueKind('FreshTrialOwned') -cne 'String' -or $k.GetValue('FreshTrialOwned') -cne 'FRESH_TRIAL_OWNED'){exit 1}}finally{$k.Dispose()};$r.DeleteSubKey($p,$true)}finally{$r.Dispose()}`
-		if _, e := run(ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script); e != nil {
-			return false
-		}
-		after = freshObserveRegistration(ps, binding)
-		if !after.Known || !after.Absent {
-			return false
-		}
-		bindingFixtureRetired = true
-		return true
+	if role == "B" {
+		stage = "COMPLETE"
+		return
 	}
-	fixtureCallbacks = append(fixtureCallbacks, cleanupBindingFixture)
-	if _, e = run(reg, "add", bindingKey, "/v", "FreshTrialOwned", "/t", "REG_SZ", "/d", "FRESH_TRIAL_OWNED", "/reg:64"); e != nil {
-		t.Fatal("BINDING_FIXTURE_FAILED")
-	}
-	bindingFixtureCreated = true
-	owned, e := run(reg, "query", bindingKey, "/reg:64")
-	if e != nil {
-		t.Fatal("BINDING_FIXTURE_UNKNOWN")
-	}
-	if install("OLD_BINDING", root, instance, filepath.Join(base, "binding-reject.log")) {
-		t.Fatal("BINDING_REJECTION_FAILED")
-	}
-	after, e := run(reg, "query", bindingKey, "/reg:64")
-	if e != nil || digest(owned) != digest(after) {
-		t.Fatal("BINDING_CHANGED")
-	}
-	if !cleanupBindingFixture() {
-		t.Fatal("OWNED_BINDING_CLEANUP_FAILED")
-	}
-	fixtureCallbacks = nil
-	fixturesClean = true
 	if !install("FRESH_ACCEPT", root, instance, filepath.Join(base, "install.log")) {
 		t.Fatal("FRESH_SETUP_FAILED")
 	}
@@ -485,8 +500,6 @@ func TestFreshInstalledCore(t *testing.T) {
 	checks["actualSetup"] = true
 	checks["zeroExit"] = true
 	checks["freshMode"] = true
-	checks["preexistingRejected"] = true
-	checks["rejectionsUnchanged"] = true
 	stage = "F02"
 	identityScript := `require(process.argv[1]).installedIdentity(process.argv[2],process.argv[3])`
 	for name, want := range map[string]string{"build-info.json": digest(trustedBuild), "installer-manifest.json": digest(trustedManifest)} {
