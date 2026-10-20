@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-20 FC3 RECOVERY & INSTALL CLOSURE / LOCAL ONLY
+
+用户明确批准原 FRESH-T2/bea7 定位 OLD_BINDING 结构化登记/视图/精确 owned 恢复并实施正常安装优先的独立 A/B 验收接线，本地反例、完整构建与 Master 独立 Review。三方基线 acaf5629；历史 FC3 F01/CLEANUP_UNPROVEN 与全部 FAIL/UNKNOWN 不改。Hosted0、Candidate 耗尽、QA0/1 冻结；不触发/FC4/retry，不在日常机碰真实产品登记/Startup/业务，不清未知资源，不内部 SPXT/main/tag/Release/普通 sub-agent/后代。下方 STOP 仅在本次明确本地范围内有限续行。详见 final-install-lan/FC3-RECOVERY-AUTHORIZATION.md。
+
 ## 最终STOP｜2026-10-20 FC3 F01 FAIL / CLEANUP_UNPROVEN
 
 唯一Run39401060413/attempt1，source e7e381cd/control493e98c1已FAIL；Artifact12253909942单fresh-report.json/source/schema/API digest/白名单核验PASS。SOURCE与BUILD COMPLETE/PASS，F01记录止于OLD_BINDING预期拒绝之后、正常FRESH_ACCEPT之前；具体回读/owned fixture清理子因UNKNOWN，不称TargetPath修复实机失败。旧cleanup10true但Binding OWNERSHIP_UNKNOWN、GlobalRegistry STATE_CHANGED，整体恢复未证；不追认PASS/盲删。F01未PASS/checks空，F02—F09/安装后业务26-742/QA未到达，无合格用户包。新增FC3 1/1耗尽，原QA0/1 UNUSED—FROZEN，其他Hosted0；停止全部工程/Hosted，不retry/FC4/挪QA。原FRESH-T2/工作树/未跟踪/历史FAIL保留；失败后只治理非force同步及交接，不main/tag/Release/内部SPXT/未知清理。详见final-install-lan/FC3-HOSTED-RESULT.md与FC3-CHATGPT-HANDOFF.md。下方运行/授权均保留历史。
