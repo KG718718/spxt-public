@@ -1,3 +1,7 @@
+## 当前Review PASS｜2026-10-20 FC3 RESERVED / NOT YET TRIGGERED
+
+原FRESH-T2正式RETURN b6e443d3并冻结，d2c7da46/codeFP e959cece为实现及唯一P0 source。Master独立源码/CJS96+Root134/1049文件20依赖与完整EXE逐字节Review PASS；真实安装及F01—F09/26-742未验。新FC3 0/1（预留1，未触发），原QA0/1仅完整Candidate/恢复/Artifact PASS后同EXE；其他Hosted0。新schema3精确绑定04dd修复、实际MasterReview、来源/新标准HostedVM及当前安全/恢复，旧FC1/FC2 FAIL/UNKNOWN/账本不改。最后三方HEAD与触发前检后唯一中央trigger；必需FAIL/UNKNOWN即STOP，不retry/FC4/main/tag/Release/内部SPXT/未知清理/普通sub-agent。详见final-install-lan/FC3-MASTER-REVIEW.md与FC3-RUNS.json。下方保留历史。
+
 ## 当前授权｜2026-10-20 FINAL FRESH DELIVERY / FC3
 
 用户正式新增唯一 FC3 Candidate 1 次；原未用独立 QA 1 次仅完整 Candidate/安装/恢复/Artifact PASS 后同 EXE 启用，其他 Hosted0。先最新 HEAD/原 FRESH-T2 bea7/04dd 修复及 Review 核验，最小版本化来源接线、本地反例/真实构建/Master 独立 Review 后中央唯一触发；FC1/FC2 FAIL/UNKNOWN/旧账本永久保留。当前 Runner 来源/隔离/所有权/恢复门禁不放宽，必需 FAIL/UNKNOWN 或 FC3/QA FAIL 即 STOP，不 retry/FC4/额外预算。不内部 SPXT/main/tag/Release/未知清理/普通 sub-agent。见 final-install-lan/FC3-AUTHORIZATION.md 与 FC3-RUNS.json；下方旧 STOP 仅在本次明确授权内有限续行。
