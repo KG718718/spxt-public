@@ -1,0 +1,255 @@
+{
+  "schema": 1,
+  "kind": "MASTER_FC3_RECOVERY_LOCAL_REVIEW",
+  "qualification": "LOCAL_REPAIR_BUILD_ONLY_NOT_RUNTIME_ADMISSION",
+  "sourceCommit": "461c75886bc16bcc1c493e1678f32e90f5643bca",
+  "executionReturn": "54f4da7c40327fa05948acc6fcd6a34ef3cbe770",
+  "sourceTree": "b16c7b7ba586b74feb5c0a2500a4c7431660de64",
+  "codeFingerprint": "e02e66821e9a7833aaee98e841a67c2b62630077641896e791ea407a68f286d3",
+  "status": "PASS",
+  "candidateAdmission": "NOT_READY",
+  "sourceReview": {
+    "schema": 1,
+    "kind": "MASTER_FC3_RECOVERY_SOURCE_REVIEW",
+    "status": "PASS",
+    "sourceCommit": "461c75886bc16bcc1c493e1678f32e90f5643bca",
+    "sourceTree": "b16c7b7ba586b74feb5c0a2500a4c7431660de64",
+    "codeFingerprint": "e02e66821e9a7833aaee98e841a67c2b62630077641896e791ea407a68f286d3",
+    "changedFiles": [
+      "tools/tests/fresh-lan-trial/final-install-lan/fc3-contract.test.cjs",
+      "tools/tests/fresh-lan-trial/final-install-lan/fc3-fixtures.cjs",
+      "tools/tests/fresh-lan-trial/install-candidate/wiring.test.cjs",
+      "tools/tests/fresh-lan-trial/install-r2/hosted-recovery.ps1",
+      "tools/tests/fresh-lan-trial/install-r2/registry-canonical.test.ps1",
+      "tools/tests/fresh-lan-trial/install-split.cjs",
+      "tools/tests/fresh-lan-trial/install-split.test.cjs",
+      "tools/tests/fresh-lan-trial/installed-hosted_windows_test.go.in",
+      "tools/tests/fresh-lan-trial/owned-registry_windows_test.go.in",
+      "tools/tests/fresh-lan-trial/prepare-overlay.cjs",
+      "tools/windows-installer/fresh-trial/hosted-run.cjs"
+    ],
+    "productionRepairUnchanged": true,
+    "historicalReportsAndBudgetsUnchanged": true,
+    "actualWorkflowsAndTriggerUnchanged": true,
+    "hostedTriggered": false
+  },
+  "tests": {
+    "schema": 1,
+    "kind": "MASTER_FC3_RECOVERY_TARGETED_REVIEW",
+    "sourceCommit": "461c75886bc16bcc1c493e1678f32e90f5643bca",
+    "sourceBound": true,
+    "status": "PASS",
+    "targets": {
+      "tests": 177,
+      "pass": 177,
+      "fail": 0,
+      "skipped": 0,
+      "todo": 0,
+      "exitZero": true,
+      "stderrEmpty": true
+    },
+    "root": {
+      "schema": 1,
+      "kind": "FAST_ROOT_FRESH_GATE",
+      "sourceCommit": "461c75886bc16bcc1c493e1678f32e90f5643bca",
+      "sourceBound": true,
+      "status": "PASS",
+      "tests": 142,
+      "pass": 142,
+      "fail": 0,
+      "skipped": 0,
+      "exitClass": "ZERO",
+      "failures": [],
+      "rawOutputStored": false
+    },
+    "rawOutputStored": false,
+    "productInstalled": false
+  },
+  "ownedScope": {
+    "scope": {
+      "schema": 1,
+      "kind": "FAST_OWNED_PROCESS_SCOPE",
+      "assigned": true,
+      "naturalExit": true,
+      "stderrEmpty": true,
+      "pipesClosed": true,
+      "handlesClosed": true,
+      "jobEmpty": true,
+      "forcedTermination": false,
+      "status": "PASS"
+    },
+    "classification": "PASS",
+    "rootExited": true,
+    "startedSuspended": true,
+    "childResumed": true
+  },
+  "registry": {
+    "sourceBound": true,
+    "sourceCommit": "461c75886bc16bcc1c493e1678f32e90f5643bca",
+    "schema": 1,
+    "scope": {
+      "scope": {
+        "schema": 1,
+        "kind": "FAST_OWNED_PROCESS_SCOPE",
+        "assigned": true,
+        "naturalExit": true,
+        "stderrEmpty": true,
+        "pipesClosed": true,
+        "handlesClosed": true,
+        "jobEmpty": true,
+        "forcedTermination": false,
+        "status": "PASS"
+      },
+      "classification": "PASS",
+      "rootExited": true,
+      "startedSuspended": true,
+      "childResumed": true
+    },
+    "propertyCollisionPreserved": true,
+    "result": {
+      "privateRegistryWritten": true,
+      "schema": 1,
+      "productRegistrationTouched": false,
+      "fail": 0,
+      "pass": 32,
+      "privateGlobalRestored": true,
+      "kind": "FC3_REGISTRY_CANONICAL_COUNTERS",
+      "skip": 0,
+      "rawOutputStored": false
+    }
+  },
+  "aggregateCounterexamples": {
+    "schema": 1,
+    "kind": "MASTER_FC3_RECOVERY_AGGREGATE_COUNTEREXAMPLES",
+    "goodAccepted": true,
+    "negativeRejected": {
+      "crossRoleFalseOverride": true,
+      "missingARepairedByB": true,
+      "falseCoreDetached": true,
+      "unobservedRegistry": true,
+      "unknownInnerField": true
+    },
+    "status": "PASS",
+    "syntheticOnly": true,
+    "rawOutputStored": false
+  },
+  "build": {
+    "schema": 1,
+    "kind": "MASTER_FC3_BUILD_REVIEW",
+    "status": "PASS",
+    "sourceCommit": "461c75886bc16bcc1c493e1678f32e90f5643bca",
+    "sourceTree": "b16c7b7ba586b74feb5c0a2500a4c7431660de64",
+    "setupSha256": "5b035291510df36bfa489265a4fd7516a23353ea90cf4f9977e3671fbec21a9d",
+    "setupBytes": 33558037,
+    "files": 1049,
+    "uncompressedBytes": 147923786,
+    "dependencyCount": 20,
+    "nodeVersion": "24.21.0",
+    "goVersion": "1.27.1",
+    "innoSetupVersion": "6.7.3",
+    "allPayloadBytesVerified": true,
+    "manifestMatches": true,
+    "productionInstalled": false,
+    "productExecuted": false,
+    "rawOutputStored": false
+  },
+  "localBuildReportSha256": "a6719aac9648d80e49fb9264f1778c76de532cae3e5554b95c5cc87b6f618818",
+  "historical": {
+    "runId": "39401060413",
+    "result": "FAIL",
+    "exactCause": "UNKNOWN",
+    "binding": "OWNERSHIP_UNKNOWN",
+    "globalRegistry": "STATE_CHANGED",
+    "unchanged": true
+  },
+  "priorMasterCollection": {
+    "sourceCommit": "f1187e02e5d4457f2c0646c2c53978bac68ddb13",
+    "status": "FAIL",
+    "classification": "COLLECTION_NO_SUMMARY",
+    "qualification": "EXCLUDED_FROM_PASS_EVIDENCE",
+    "root": {
+      "schema": 1,
+      "kind": "FAST_ROOT_FRESH_GATE",
+      "sourceCommit": "f1187e02e5d4457f2c0646c2c53978bac68ddb13",
+      "sourceBound": true,
+      "status": "PASS",
+      "tests": 141,
+      "pass": 141,
+      "fail": 0,
+      "skipped": 0,
+      "exitClass": "ZERO",
+      "failures": [],
+      "rawOutputStored": false
+    },
+    "ownedScope": {
+      "scope": {
+        "schema": 1,
+        "kind": "FAST_OWNED_PROCESS_SCOPE",
+        "assigned": true,
+        "naturalExit": false,
+        "stderrEmpty": true,
+        "pipesClosed": true,
+        "handlesClosed": true,
+        "jobEmpty": true,
+        "forcedTermination": false,
+        "status": "FAIL"
+      },
+      "classification": "CHILD_EXIT_FAILED",
+      "rootExited": true,
+      "startedSuspended": true,
+      "childResumed": true
+    }
+  },
+  "originalCleanupReplay": {
+    "schema": 1,
+    "kind": "MASTER_OLD_BINDING_CLEANUP_REPLAY",
+    "status": "PASS",
+    "ownedCreated": true,
+    "oldScriptLoaded": true,
+    "oldScriptExitZero": true,
+    "oldScriptStderrEmpty": true,
+    "viewsSharedObserved": true,
+    "removedByOldScript": true,
+    "restored": true,
+    "rawOutputStored": false,
+    "productRegistrationTouched": false
+  },
+  "originalCollisionReplay": {
+    "schema": 1,
+    "kind": "MASTER_OLD_BINDING_COLLISION_REPLAY",
+    "status": "PASS",
+    "ownedCreated": true,
+    "oldScriptLoaded": true,
+    "oldScriptExitZero": true,
+    "oldScriptStderrEmpty": true,
+    "viewsSharedObserved": true,
+    "removedByOldScript": true,
+    "restored": true,
+    "rawOutputStored": false,
+    "productRegistrationTouched": false,
+    "oldRegAddAcceptedExisting": true
+  },
+  "propertyCollisionBefore": {
+    "syntheticOnly": true,
+    "schema": 1,
+    "preserved": false,
+    "rawOutputStored": false,
+    "kind": "MASTER_CANONICAL_PROPERTY_COLLISION"
+  },
+  "budget": {
+    "hostedUsedThisTask": 0,
+    "qaUsed": 0,
+    "qaFrozen": true,
+    "automaticRetry": false
+  },
+  "notVerified": [
+    "HISTORICAL_FC3_RESTORATION",
+    "REAL_FRESH_INSTALL",
+    "REAL_INTERRUPTED_INSTALL_RECOVERY",
+    "DUAL_VM_WORKFLOW_ADMISSION",
+    "INSTALLED_BROWSER_F01_F09_26_742",
+    "INDEPENDENT_QA",
+    "PHYSICAL_WIN10_LAN"
+  ],
+  "rawOutputStored": false
+}
