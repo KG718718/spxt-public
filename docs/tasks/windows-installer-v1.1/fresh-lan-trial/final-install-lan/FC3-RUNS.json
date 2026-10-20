@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "authorization": "USER_FINAL_FRESH_DELIVERY_FC3_20261020",
+  "state": "AUTHORIZED_LOCAL_PREPARATION_NOT_TRIGGERED",
+  "candidateMax": 1,
+  "candidateUsed": 0,
+  "candidateSlot": "FC3",
+  "qaMax": 1,
+  "qaUsed": 0,
+  "qaOrigin": "ORIGINAL_UNUSED_SINGLE_FINAL_QA_NOT_ADDITIONAL",
+  "qaState": "CONDITIONAL_ON_COMPLETE_FC3_PASS_SAME_EXE",
+  "otherHostedMax": 0,
+  "rerunAllowed": false,
+  "historicalLedger": "../FINAL-INSTALL-LAN-RUNS.json",
+  "historicalResults": "FAIL_AND_UNKNOWN_PRESERVED_NOT_RESET",
+  "reviewedRepairSource": "04dd974c41063c5067cadd55d53071068ef9ba96",
+  "runs": []
+}

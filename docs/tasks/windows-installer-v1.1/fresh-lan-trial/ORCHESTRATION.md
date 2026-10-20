@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-20 FINAL FRESH DELIVERY / FC3
+
+用户正式新增唯一 FC3 Candidate 1 次；原未用独立 QA 1 次仅完整 Candidate/安装/恢复/Artifact PASS 后同 EXE 启用，其他 Hosted0。先最新 HEAD/原 FRESH-T2 bea7/04dd 修复及 Review 核验，最小版本化来源接线、本地反例/真实构建/Master 独立 Review 后中央唯一触发；FC1/FC2 FAIL/UNKNOWN/旧账本永久保留。当前 Runner 来源/隔离/所有权/恢复门禁不放宽，必需 FAIL/UNKNOWN 或 FC3/QA FAIL 即 STOP，不 retry/FC4/额外预算。不内部 SPXT/main/tag/Release/未知清理/普通 sub-agent。见 final-install-lan/FC3-AUTHORIZATION.md 与 FC3-RUNS.json；下方旧 STOP 仅在本次明确授权内有限续行。
+
 ## 当前停止｜2026-10-20 INSTALL TARGET REPAIR / LOCAL REVIEW & BUILD PASS
 
 原 FRESH-T2 正式 RETURN4b4debce 并冻结，受审构建 source04dd974c/codeFP35263c94；Master 独立81+Root134、实际15+20/C#14+3/PS5+7/Close返回注入2/篡改12与完整P0全字节Review PASS，1049文件20依赖，EXE33558213/SHAe9c285c6...11c2a84。仅 Fresh 可信文件身份/精确 producer Startup 回收及对应测试；未知仍拒绝，非 Fresh/旧卸载源码/升级/LAN/Firewall保持，实际trigger/旧source fence未改。历史FC2实际差异/六类所有权与globalRegistry来源UNKNOWN、真实8.3/完整安装失败恢复NOT VERIFIED；本轮未实际安装/F01—F09/安装后业务26-742/QA，不能交付用户包。Hosted0，旧Candidate2/2 FAIL和QA0/1冻结，不retry/追加/借额度。新的实机验收须网页版新授权、预算、当前源码准入及完整隔离/恢复门禁。仅非force同步开发分支后STOP，保留原线程/树/未跟踪/失败现场；不main/tag/Release/内部SPXT/未知清理。详见 final-install-lan/install-target-repair/MASTER-REVIEW.md、CHATGPT-HANDOFF.md；下方授权/停止记录均为历史。
