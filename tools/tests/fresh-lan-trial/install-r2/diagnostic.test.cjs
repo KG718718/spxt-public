@@ -3,6 +3,14 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const event=(context,stages)=>stages.map(stage=>({context,stage}));
 const prefix=()=>[...event('CREATE',e.CREATE.slice(0,6)),...event('INSTALL_VERIFY',e.VERIFY)];
 const positive=()=>e.fromEvents([...prefix(),...event('CREATE',e.CREATE.slice(6))]);
+test('late native close failure is reported before MATCHED and never accepted',()=>{
+ const failure=[...event('CREATE',e.CREATE.slice(0,6)),...event('INSTALL_VERIFY',e.VERIFY.slice(0,-1)),...event('INSTALL_VERIFY',['VERIFY_EXCEPTION'])];
+ const result=e.fromEvents(failure);assert.deepEqual(result.firstFailure,{context:'INSTALL_VERIFY',stage:'VERIFY_EXCEPTION'});assert.equal(e.validate(result).installMatched,false);
+ assert.throws(()=>e.fromEvents([...prefix(),...event('INSTALL_VERIFY',['VERIFY_EXCEPTION'])]));
+ const prior=e.fromEvents([...event('CREATE',e.CREATE.slice(0,6)),...event('INSTALL_VERIFY',e.VERIFY.slice(0,4)),...event('INSTALL_VERIFY',['HASH_MISMATCH'])]);
+ assert.deepEqual(prior.firstFailure,{context:'INSTALL_VERIFY',stage:'HASH_MISMATCH'});assert.equal(e.validate(prior).installMatched,false);
+ assert.throws(()=>e.fromEvents([...prior.events,...event('INSTALL_VERIFY',['VERIFY_EXCEPTION'])]));
+});
 test('fixed target detail preserves TARGET_MISMATCH and cannot lead to success',()=>{
  const p=[...event('CREATE',e.CREATE.slice(0,6)),...event('INSTALL_VERIFY',e.VERIFY.slice(0,7))];
  for(const detail of e.TARGET_DETAILS){const failed=[...p,...event('INSTALL_VERIFY',[detail,'TARGET_MISMATCH'])];assert.deepEqual(e.analyze(failed).firstFailure,{context:'INSTALL_VERIFY',stage:'TARGET_MISMATCH'});assert.throws(()=>e.analyze([...p,...event('INSTALL_VERIFY',[detail,'TARGET_MATCH'])]));assert.throws(()=>e.analyze([...p,...event('INSTALL_VERIFY',[detail,detail,'TARGET_MISMATCH'])]));}

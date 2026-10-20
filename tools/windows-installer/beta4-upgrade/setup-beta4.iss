@@ -470,11 +470,16 @@ begin
     if not ExactArguments then begin FreshStartupStage('ARGUMENTS_MISMATCH'); exit; end;
     FreshStartupStage('ARGUMENTS_MATCH'); FreshStartupStage('WORKDIR_READ');
     if CompareText(Link.WorkingDirectory, ExpandConstant('{app}\program')) <> 0 then begin FreshStartupStage('WORKDIR_MISMATCH'); exit; end;
-    FreshStartupStage('WORKDIR_MATCH'); Result := True; FreshStartupStage('MATCHED');
+    FreshStartupStage('WORKDIR_MATCH'); Result := True;
    except FreshStartupStage('VERIFY_EXCEPTION'); Result := False; end;
   finally
-    if (Pin <> 0) and not CloseHandle(Pin) then begin FreshStartupStage('VERIFY_EXCEPTION'); Result := False; end;
+    if (Pin <> 0) and not CloseHandle(Pin) then begin
+      if Result then FreshStartupStage('VERIFY_EXCEPTION')
+      else Log('KSESSION_FRESH_STARTUP_CLEANUP_UNPROVEN');
+      Result := False;
+    end;
   end;
+  if Result then FreshStartupStage('MATCHED');
 end;
 
 procedure CreateFreshStartup;

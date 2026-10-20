@@ -103,6 +103,14 @@ try{
  $taskResult.matrixPassed=$taskResult.matrixPassed -and $taskTargetMatrix.allPassed -eq $true
  $taskOracle=Invoke-KSessionMemoryProcess (Get-Process -Id $PID).Path @('-NoProfile','-NonInteractive','-File',(Join-Path $PSScriptRoot 'shortcut-target.test.ps1'),'-Root',$Root,'-LauncherSha256','762ed3eafcb6bf5b3bb6b176094771c21e8308f9bd86476a9f395e006482c96c') 90
  if($taskOracle.ExitCode -ne 0 -or $taskOracle.TimedOut -or $taskOracle.ForcedTermination -or $taskOracle.Stderr.Length -ne 0 -or $taskOracle.Stdout.Length -ne 0){throw 'Owned oracle matrix failed'}
+ $taskCloseGenerate=Invoke-KSessionMemoryNode $Node @((Join-Path $PSScriptRoot 'close-counter.cjs'),$Root)
+ if($taskCloseGenerate.ExitCode -ne 0 -or $taskCloseGenerate.TimedOut -or $taskCloseGenerate.ForcedTermination -or $taskCloseGenerate.Stderr.Length -ne 0){throw 'Close counter generation failed'}
+ $taskCloseCompile=Invoke-KSessionMemoryProcess (Join-Path $Compiler 'ISCC.exe') @('/Qp',(Join-Path $Root 'close-counter.iss')) 120
+ if($taskCloseCompile.ExitCode -ne 0 -or $taskCloseCompile.TimedOut -or $taskCloseCompile.ForcedTermination -or $taskCloseCompile.Stderr.Length -ne 0){throw 'Close counter compile failed'}
+ $taskCloseRun=Invoke-KSessionMemoryProcess (Join-Path $Root 'driver/owned-close-counter.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/CURRENTUSER') 30
+ if($taskCloseRun.ExitCode -ne 1 -or $taskCloseRun.TimedOut -or $taskCloseRun.ForcedTermination -or $taskCloseRun.Stderr.Length -ne 0 -or $taskCloseRun.Stdout.Length -ne 0){throw 'Close counter execution failed'}
+ $taskCloseProof=Get-Content (Join-Path $Root 'close-counter.json') -Raw|ConvertFrom-Json
+ if($taskCloseProof.schema -ne 1 -or $taskCloseProof.kind -cne 'CONTROLLED_CLOSE_RETURN_INJECTION' -or $taskCloseProof.reportedCloseFailureInjected -ne $true -or $taskCloseProof.actualNativeCloseSucceeded -ne $true -or $taskCloseProof.accepted -ne $false -or $taskCloseProof.failureBeforeMatchedProven -ne $true -or $taskCloseProof.priorRejectionPreserved -ne $true -or $taskCloseProof.negativeAccepted -ne $false -or $taskCloseProof.remainingHandlesClosed -ne $true -or $taskCloseProof.allPassed -ne $true){throw 'Close counter proof invalid'}
  # A failing production comparison is evidence, not installation qualification.
  if($taskResult.driverExit -eq 'CONTROLLED_INITIALIZE_STOP' -and $taskResult.stdioEmpty -and $taskResult.matrixPassed -and !$taskRun.ForcedTermination){$taskResult.status='OBSERVED';$taskResult.stage='FINAL'}
 }finally{

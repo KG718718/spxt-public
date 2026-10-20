@@ -77,7 +77,7 @@ if($Capture){
  [Console]::Out.Write($taskIdentity);exit 0
 }
 if($ExpectedLauncher){exit 1}
-$taskRows=@(ConvertFrom-Json $RowsJson)
+$taskRows=ConvertFrom-Json $RowsJson
 if($taskRows.Count -ne 3){exit 1}
 $taskShell=New-Object -ComObject WScript.Shell
 foreach($taskRow in $taskRows){
