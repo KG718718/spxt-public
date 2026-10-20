@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "authorization": "USER_FINAL_FRESH_DELIVERY_FC3_20261020",
-  "state": "LOCAL_REVIEW_PASS_FC3_RESERVED_NOT_TRIGGERED",
+  "state": "FC3_IN_PROGRESS",
   "candidateMax": 1,
-  "candidateUsed": 0,
+  "candidateUsed": 1,
   "candidateSlot": "FC3",
   "qaMax": 1,
   "qaUsed": 0,
@@ -18,18 +18,20 @@
     {
       "slot": "FC3",
       "mode": "CANDIDATE",
-      "state": "RESERVED_NOT_YET_TRIGGERED",
-      "runId": null,
+      "state": "IN_PROGRESS",
+      "runId": "39401060413",
       "attempt": 1,
-      "sourceCommit": null,
-      "controlCommit": null,
+      "sourceCommit": "e7e381cdc6bcb5fd92cf8a5b03cd36940fff54b2",
+      "controlCommit": "493e98c10c9446587ceacef1a15b3795eb7f76aa",
       "implementationSource": "d2c7da4603054f45e6a97812b42f74a4119af21e",
       "localBuildSource": "d2c7da4603054f45e6a97812b42f74a4119af21e",
       "localBuildReportSha256": "679beade8467ad3f49446978590e784ae7af03de16fb76e25eb586dee66087ac",
       "localBuildSetupSha256": "c36f4f8a8cd56f4c4a9a4cacadf50616912ed54c02ccc7c9b56fab68b7054177",
       "codeFingerprint": "e959cece681e8187b42d5143e88a2f10c0cd5eeb02de44fc9458743c42f187d0",
-      "masterReview": "FC3-MASTER-REVIEW.md"
+      "masterReview": "FC3-MASTER-REVIEW.md",
+      "sourceAdmission": "PASS",
+      "artifactId": null
     }
   ],
-  "candidateReserved": 1
+  "candidateReserved": 0
 }

@@ -1,3 +1,7 @@
+## 唯一FC3已触发｜2026-10-20 / Run39401060413
+
+source e7e381cdc6bcb5fd92cf8a5b03cd36940fff54b2、trigger-only控制493e98c10c9446587ceacef1a15b3795eb7f76aa、attempt1，唯一新增Candidate1/1已用。SOURCE准入已通过；真实ENV/BUILD/安装/F01—F09/安装后业务26-742/收尾须以本Run最终安全证据为准，不提前PASS。原QA0/1仅完整Candidate/恢复/合格Artifact PASS后同一EXE启用；其他Hosted0，任何必需FAIL/UNKNOWN即STOP，不retry/FC4/挪QA。原T2正式RETURN并冻结，历史FC1/FC2 FAIL/UNKNOWN及原树保留；不main/tag/Release/内部SPXT/未知清理。后续治理不改变该Run source/control。详见final-install-lan/FC3-RUNS.json。
+
 ## 当前Review PASS｜2026-10-20 FC3 RESERVED / NOT YET TRIGGERED
 
 原FRESH-T2正式RETURN b6e443d3并冻结，d2c7da46/codeFP e959cece为实现及唯一P0 source。Master独立源码/CJS96+Root134/1049文件20依赖与完整EXE逐字节Review PASS；真实安装及F01—F09/26-742未验。新FC3 0/1（预留1，未触发），原QA0/1仅完整Candidate/恢复/Artifact PASS后同EXE；其他Hosted0。新schema3精确绑定04dd修复、实际MasterReview、来源/新标准HostedVM及当前安全/恢复，旧FC1/FC2 FAIL/UNKNOWN/账本不改。最后三方HEAD与触发前检后唯一中央trigger；必需FAIL/UNKNOWN即STOP，不retry/FC4/main/tag/Release/内部SPXT/未知清理/普通sub-agent。详见final-install-lan/FC3-MASTER-REVIEW.md与FC3-RUNS.json。下方保留历史。
