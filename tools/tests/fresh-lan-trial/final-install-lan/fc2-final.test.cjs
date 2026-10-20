@@ -1,7 +1,9 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process');
 const fc2=require('./fc2-final.cjs'),gate=require('./contract.cjs'),f=require('./fixtures.cjs'),repo=path.resolve(__dirname,'../../../..');
-const git=(...a)=>cp.execFileSync('git',['-C',repo,...a],{encoding:'utf8',windowsHide:true}).trim(),head=git('rev-parse','HEAD'),tree=git('ls-tree','-r',head),workflow=cp.execFileSync('git',['-C',repo,'show',fc2.FIX+':'+fc2.WORKFLOW],{encoding:'utf8',windowsHide:true});
+const git=(...a)=>cp.execFileSync('git',['-C',repo,...a],{encoding:'utf8',windowsHide:true}).trim(),head='b6f44a09f2e54e39b1a55fd1dcf474ff19f6912d',tree=git('ls-tree','-r',head),workflow=cp.execFileSync('git',['-C',repo,'show',fc2.FIX+':'+fc2.WORKFLOW],{encoding:'utf8',windowsHide:true});
+// Positive FC2 admission cases exercise the actual immutable tested source.
+// A later repair HEAD is not entitled to the historical reviewed-blob exception.
 const archive=Buffer.from(fs.readFileSync(path.join(__dirname,'fc2-reference.zip.base64'),'utf8').trim(),'base64');
 const temp=fs.mkdtempSync(path.join(repo,'.test-work/fc2-original-bytes-'));fs.writeFileSync(path.join(temp,'reference.zip'),archive);
 const extracted=cp.spawnSync('pwsh',['-NoProfile','-File',path.join(repo,'tools/windows-installer/fresh-trial/recovery-r1/read-report.ps1'),'-Zip',path.join(temp,'reference.zip'),'-Kind','FAILURE'],{windowsHide:true,timeout:15000,maxBuffer:512*1024});assert.equal(extracted.status,0);assert.equal(extracted.stderr.length,0);const original=extracted.stdout;assert.equal(fc2.sha(original),fc2.FC1.reportSha256);
@@ -17,6 +19,11 @@ function fixture(){
  return x;
 }
 const request=x=>gate.request(x.env,x.input,x.history,x.facts,x.bytes);
+test('later repair HEAD cannot inherit the immutable FC2 reviewed-blob exception',()=>{
+ const current=git('rev-parse','HEAD');assert.notEqual(current,head);
+ const x=fixture();Object.assign(x.input,{localBuildSource:current,testedSource:current,reviewedSource:current});
+ assert.throws(()=>fc2.source(repo,x.input));
+});
 test('exact historical FC1 exception uses original archive/report bytes and leaves UNKNOWN history immutable',()=>{
  const x=fixture(),before=Buffer.from(x.facts.firstFailure.reportBytes);assert.equal(archive.length,843);assert.equal(fc2.sha(archive),fc2.FC1.archiveSha256);assert.equal(request(x).slot,'FC2');assert.deepEqual(x.facts.firstFailure.reportBytes,before);assert.equal(JSON.parse(before).stage,'SOURCE');assert.ok(Object.values(JSON.parse(before).recovery).every(v=>v==='NOT_OBSERVED'));assert.equal(Object.values(JSON.parse(before).cleanup).filter(v=>v===null).length,9);
 });
