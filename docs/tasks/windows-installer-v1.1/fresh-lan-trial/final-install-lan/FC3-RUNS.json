@@ -1,14 +1,14 @@
 {
   "schema": 1,
   "authorization": "USER_FINAL_FRESH_DELIVERY_FC3_20261020",
-  "state": "FC3_IN_PROGRESS",
+  "state": "BLOCKED_FC3_F01_FAILED_CLEANUP_UNPROVEN",
   "candidateMax": 1,
   "candidateUsed": 1,
   "candidateSlot": "FC3",
   "qaMax": 1,
   "qaUsed": 0,
   "qaOrigin": "ORIGINAL_UNUSED_SINGLE_FINAL_QA_NOT_ADDITIONAL",
-  "qaState": "CONDITIONAL_ON_COMPLETE_FC3_PASS_SAME_EXE",
+  "qaState": "UNUSED_FROZEN_FC3_FAILED",
   "otherHostedMax": 0,
   "rerunAllowed": false,
   "historicalLedger": "../FINAL-INSTALL-LAN-RUNS.json",
@@ -18,7 +18,7 @@
     {
       "slot": "FC3",
       "mode": "CANDIDATE",
-      "state": "IN_PROGRESS",
+      "state": "FAIL",
       "runId": "39401060413",
       "attempt": 1,
       "sourceCommit": "e7e381cdc6bcb5fd92cf8a5b03cd36940fff54b2",
@@ -30,8 +30,22 @@
       "codeFingerprint": "e959cece681e8187b42d5143e88a2f10c0cd5eeb02de44fc9458743c42f187d0",
       "masterReview": "FC3-MASTER-REVIEW.md",
       "sourceAdmission": "PASS",
-      "artifactId": null
+      "artifactId": "12253909942",
+      "conclusion": "failure",
+      "stage": "F01",
+      "reason": "CLEANUP_UNPROVEN",
+      "reportSha256": "2e33e42535c1f9c3ef7d8d81f3158a61237476ef0290d55d31f2e7ef2f655d38",
+      "archiveSha256": "b988ceda27537e7f4c30b82021d1cc5ad05452955f3940ff7d4d4a7a95936d5b",
+      "setupSha256": "49c3b0388ec3cf805bc910b92e1a3d16629dafdf45c1b3fae62c75daa16c7c55",
+      "lastObservedSetupCall": "OLD_BINDING",
+      "freshAccept": "NOT_REACHED",
+      "specificUnderlyingFailure": "UNKNOWN",
+      "recoveryUnproven": [
+        "binding",
+        "globalRegistry"
+      ]
     }
   ],
-  "candidateReserved": 0
+  "candidateReserved": 0,
+  "candidateRemainingState": "EXHAUSTED_NO_RETRY"
 }

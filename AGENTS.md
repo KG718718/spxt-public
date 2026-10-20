@@ -1,3 +1,7 @@
+## 最终STOP｜2026-10-20 FC3 F01 FAIL / CLEANUP_UNPROVEN
+
+唯一Run39401060413/attempt1，source e7e381cd/control493e98c1已FAIL；Artifact12253909942单fresh-report.json/source/schema/API digest/白名单核验PASS。SOURCE与BUILD COMPLETE/PASS，F01记录止于OLD_BINDING预期拒绝之后、正常FRESH_ACCEPT之前；具体回读/owned fixture清理子因UNKNOWN，不称TargetPath修复实机失败。旧cleanup10true但Binding OWNERSHIP_UNKNOWN、GlobalRegistry STATE_CHANGED，整体恢复未证；不追认PASS/盲删。F01未PASS/checks空，F02—F09/安装后业务26-742/QA未到达，无合格用户包。新增FC3 1/1耗尽，原QA0/1 UNUSED—FROZEN，其他Hosted0；停止全部工程/Hosted，不retry/FC4/挪QA。原FRESH-T2/工作树/未跟踪/历史FAIL保留；失败后只治理非force同步及交接，不main/tag/Release/内部SPXT/未知清理。详见final-install-lan/FC3-HOSTED-RESULT.md与FC3-CHATGPT-HANDOFF.md。下方运行/授权均保留历史。
+
 ## 唯一FC3已触发｜2026-10-20 / Run39401060413
 
 source e7e381cdc6bcb5fd92cf8a5b03cd36940fff54b2、trigger-only控制493e98c10c9446587ceacef1a15b3795eb7f76aa、attempt1，唯一新增Candidate1/1已用。SOURCE准入已通过；真实ENV/BUILD/安装/F01—F09/安装后业务26-742/收尾须以本Run最终安全证据为准，不提前PASS。原QA0/1仅完整Candidate/恢复/合格Artifact PASS后同一EXE启用；其他Hosted0，任何必需FAIL/UNKNOWN即STOP，不retry/FC4/挪QA。原T2正式RETURN并冻结，历史FC1/FC2 FAIL/UNKNOWN及原树保留；不main/tag/Release/内部SPXT/未知清理。后续治理不改变该Run source/control。详见final-install-lan/FC3-RUNS.json。

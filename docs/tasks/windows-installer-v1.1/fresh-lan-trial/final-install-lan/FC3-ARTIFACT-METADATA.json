@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "slot": "FC3",
+  "runId": "39401060413",
+  "attempt": 1,
+  "sourceCommit": "e7e381cdc6bcb5fd92cf8a5b03cd36940fff54b2",
+  "controlCommit": "493e98c10c9446587ceacef1a15b3795eb7f76aa",
+  "conclusion": "failure",
+  "artifactId": "12253909942",
+  "artifactName": "final-install-lan-safe-failure-39401060413",
+  "archiveSha256": "b988ceda27537e7f4c30b82021d1cc5ad05452955f3940ff7d4d4a7a95936d5b",
+  "artifactNames": [
+    "fresh-report.json"
+  ],
+  "reportSha256": "2e33e42535c1f9c3ef7d8d81f3158a61237476ef0290d55d31f2e7ef2f655d38",
+  "reportStatus": "FAIL",
+  "stage": "F01",
+  "reason": "CLEANUP_UNPROVEN",
+  "setupSha256": "49c3b0388ec3cf805bc910b92e1a3d16629dafdf45c1b3fae62c75daa16c7c55",
+  "whitelistVerified": true,
+  "qualification": "SAFE_FAILURE_REPORT_ONLY_NO_EXE",
+  "fixedExistingLogReview": {
+    "rawOutputStored": false,
+    "knownBindingFailureCodesObserved": [],
+    "specificUnderlyingCause": "UNKNOWN"
+  },
+  "sourceAdmission": "PASS",
+  "qaStarted": false
+}
