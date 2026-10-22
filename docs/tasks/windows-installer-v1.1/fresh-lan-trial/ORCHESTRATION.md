@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-22 DUPLICATE RUN & SOURCE GATE CLOSURE / LOCAL ONLY
+
+用户批准原Master/原FRESH-T2在5c503807基线上只读取证两个同control Run，并最小修复来源/唯一Run授权/完整分页/固定分类及反例；本地独立Review后非force同步。旧Run/FAIL/UNKNOWN/账本/trigger不改，不忽略重复，不把concurrency当防重，根因无证UNKNOWN。Hosted0、旧Candidate已用、QA冻结，不触发/重跑/新真实Run授权/main/tag/Release/内部SPXT/未知清理/普通sub-agent/后代；本轮只本地闭环后统一返回。详见final-install-lan/AB-SOURCE-GATE-CLOSURE-AUTHORIZATION.md。下方STOP保留历史。
+
 ## 最终STOP｜2026-10-22 FINAL A/B / SOURCE CURRENT_API_REJECTED
 
 唯一trigger-only控制482144f2、固定source d8222780；一次触发push却观察到同workflow两个push Run39732016119/39732017789，均attempt1，已取消并终态completed/cancelled。首Run A已SOURCE失败CURRENT_API_REJECTED，BUILD/Setup/F01—F09/26-742未进入，B无步骤；次Run无Job。Artifact12405800885单JSON/digest/schema核验PASS，drive恢复true，其余10项NOT_OBSERVED，不追认恢复或安装PASS。历史数量2足以违反唯一Run合同，首个细断言及重复底层仍UNKNOWN。授权Candidate1/1已用、实际Run2异常保留，QA0/1 UNUSED—FROZEN，停止工程/Hosted，不retry/删除历史/FC4/借QA/main/tag/Release/内部SPXT/未知清理/sub-agent。原T2/树/旧FAIL均保留，只治理非force同步后STOP。详见final-install-lan/AB-HOSTED-RESULT.md与AB-RUNS.json。下方授权/本地PASS保留历史。
