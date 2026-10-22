@@ -1,3 +1,7 @@
+## 最终STOP｜2026-10-22 FINAL A/B / SOURCE CURRENT_API_REJECTED
+
+唯一trigger-only控制482144f2、固定source d8222780；一次触发push却观察到同workflow两个push Run39732016119/39732017789，均attempt1，已取消并终态completed/cancelled。首Run A已SOURCE失败CURRENT_API_REJECTED，BUILD/Setup/F01—F09/26-742未进入，B无步骤；次Run无Job。Artifact12405800885单JSON/digest/schema核验PASS，drive恢复true，其余10项NOT_OBSERVED，不追认恢复或安装PASS。历史数量2足以违反唯一Run合同，首个细断言及重复底层仍UNKNOWN。授权Candidate1/1已用、实际Run2异常保留，QA0/1 UNUSED—FROZEN，停止工程/Hosted，不retry/删除历史/FC4/借QA/main/tag/Release/内部SPXT/未知清理/sub-agent。原T2/树/旧FAIL均保留，只治理非force同步后STOP。详见final-install-lan/AB-HOSTED-RESULT.md与AB-RUNS.json。下方授权/本地PASS保留历史。
+
 ## 当前授权｜2026-10-22 FINAL A/B CANDIDATE / 唯一一次 Hosted
 
 用户正式批准1次完整A/B Candidate，固定source d8222780、Master Review及本地EXE c781aa27...4bc7ede；仅两个独立标准Windows Job，A正常安装优先、B同EXE五拒绝与原生失败恢复。当前0/1，尚未触发；Runner实际前检必须安装前PASS，任意FAIL/UNKNOWN即STOP、不retry/FC4/挪QA。仅完整Candidate/恢复/Artifact通过后原独立QA0/1同EXE启用；旧FAIL/UNKNOWN/账本不改，其他Hosted0，不main/tag/Release/内部SPXT/未知清理/sub-agent。详见final-install-lan/AB-HOSTED-AUTHORIZATION.md及AB-RUNS.json。下方冻结为本次有限授权前历史。

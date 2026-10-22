@@ -1,0 +1,204 @@
+{
+  "schema": 1,
+  "kind": "AB_TERMINAL_EXECUTION_FACTS",
+  "admission": {
+    "schema": 1,
+    "kind": "AB_FINAL_ADMISSION",
+    "status": "PASS",
+    "sourceCommit": "d8222780953bed685ccd0f4f5a3e82571b9e5bf2",
+    "authorizationCommit": "d55589e4ea2aef78b26f6fc91a666970024522f1",
+    "codeFingerprint": "c9694f15fa0821171fb1acd48fe0462bdcfe8969b62339c336798b93b362291a",
+    "localBuildSetupSha256": "c781aa2712ef749d4a4572581db52ddb4fba9825b7dc63365cbd8abd34bc7ede",
+    "masterReviewSha256": "a013c3d7a9d4753654fdca0f0c2b4eded8faa5cf570ca654fe5459f0e79d1c0d",
+    "workflowSha256": "b39321666dc0259e8675eea45f68f5c907d73e605a42f4f6e2ec881b9262e964",
+    "contractNegativesRejected": 9,
+    "sourceContract": true,
+    "exactlyTwoStandardJobs": true,
+    "sameExeTransferReview": true,
+    "nativeFailureProducerReady": true,
+    "notReadyGuardPreserved": true,
+    "runnerPreflight": "NOT_OBSERVED_PENDING_NEW_RUN",
+    "hostedTriggered": false
+  },
+  "terminal": {
+    "workflowHistoryCount": 2,
+    "runs": [
+      {
+        "id": 39732017789,
+        "head": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+        "event": "push",
+        "attempt": 1,
+        "status": "completed",
+        "conclusion": "cancelled",
+        "path": ".github/workflows/fresh-ab-acceptance.yml"
+      },
+      {
+        "id": 39732016119,
+        "head": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+        "event": "push",
+        "attempt": 1,
+        "status": "completed",
+        "conclusion": "cancelled",
+        "path": ".github/workflows/fresh-ab-acceptance.yml"
+      }
+    ],
+    "uniqueRunContractSatisfied": false,
+    "sourceApiRejectionSubcondition": "NOT_INDIVIDUALLY_OBSERVED",
+    "duplicateRunRootCause": "UNKNOWN",
+    "visibleMatchingPublicPushEvents": 1,
+    "publicEventFeedCompleteness": "NOT_PROVEN",
+    "triggerPushInvocationsInThisTask": 1
+  },
+  "observations": [
+    {
+      "id": 39732016119,
+      "path": ".github/workflows/fresh-ab-acceptance.yml",
+      "workflowId": 392530487,
+      "event": "push",
+      "runNumber": 1,
+      "status": "completed",
+      "conclusion": "cancelled",
+      "attempt": 1,
+      "sourceTitle": "FreshABAcceptance d8222780953bed685ccd0f4f5a3e82571b9e5bf2",
+      "head": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+      "createdAt": "2026-10-22T06:07:34Z",
+      "updatedAt": "2026-10-22T06:08:20Z",
+      "startedAt": "2026-10-22T06:07:34Z",
+      "jobsCount": 2,
+      "jobs": [
+        {
+          "id": 119668974441,
+          "name": "fresh-A",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "startedAt": "2026-10-22T06:07:53Z",
+          "completedAt": "2026-10-22T06:08:19Z",
+          "labels": [
+            "windows-2025"
+          ],
+          "steps": [
+            {
+              "number": 1,
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "startedAt": "2026-10-22T06:07:54Z",
+              "completedAt": "2026-10-22T06:07:55Z"
+            },
+            {
+              "number": 2,
+              "name": "Own isolated work and safe early evidence",
+              "status": "completed",
+              "conclusion": "success",
+              "startedAt": "2026-10-22T06:07:55Z",
+              "completedAt": "2026-10-22T06:07:56Z"
+            },
+            {
+              "number": 3,
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "startedAt": "2026-10-22T06:07:56Z",
+              "completedAt": "2026-10-22T06:08:04Z"
+            },
+            {
+              "number": 4,
+              "name": "Bind newly authorized reviewed source and current API Job",
+              "status": "completed",
+              "conclusion": "failure",
+              "startedAt": "2026-10-22T06:08:04Z",
+              "completedAt": "2026-10-22T06:08:09Z"
+            },
+            {
+              "number": 5,
+              "name": "Formal build and normal Fresh first under owned supervisor",
+              "status": "completed",
+              "conclusion": "skipped",
+              "startedAt": "2026-10-22T06:08:09Z",
+              "completedAt": "2026-10-22T06:08:09Z"
+            },
+            {
+              "number": 6,
+              "name": "Always verify complete recovery before unqualified transfer",
+              "status": "completed",
+              "conclusion": "failure",
+              "startedAt": "2026-10-22T06:08:09Z",
+              "completedAt": "2026-10-22T06:08:14Z"
+            },
+            {
+              "number": 7,
+              "name": "Safe A evidence only",
+              "status": "completed",
+              "conclusion": "success",
+              "startedAt": "2026-10-22T06:08:14Z",
+              "completedAt": "2026-10-22T06:08:15Z"
+            },
+            {
+              "number": 8,
+              "name": "Immutable same EXE build transfer; not a qualified Candidate",
+              "status": "completed",
+              "conclusion": "skipped",
+              "startedAt": "2026-10-22T06:08:15Z",
+              "completedAt": "2026-10-22T06:08:15Z"
+            },
+            {
+              "number": 16,
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "startedAt": "2026-10-22T06:08:15Z",
+              "completedAt": "2026-10-22T06:08:18Z"
+            },
+            {
+              "number": 17,
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "startedAt": "2026-10-22T06:08:18Z",
+              "completedAt": "2026-10-22T06:08:18Z"
+            }
+          ]
+        },
+        {
+          "id": 119669215940,
+          "name": "fresh-B",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "startedAt": "2026-10-22T06:08:20Z",
+          "completedAt": "2026-10-22T06:08:20Z",
+          "labels": [
+            "windows-2025"
+          ],
+          "steps": []
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 12405800885,
+          "name": "fresh-ab-evidence-A-482144f20c2720a351e65f5e7c23ddc3b12d610b-39732016119",
+          "size": 528,
+          "digest": "sha256:1f92708f1b4a661caac2e5387ccf6283ee4cec03f32968de0c474f40501a6878",
+          "expired": false
+        }
+      ]
+    },
+    {
+      "id": 39732017789,
+      "path": ".github/workflows/fresh-ab-acceptance.yml",
+      "workflowId": 392530487,
+      "event": "push",
+      "runNumber": 2,
+      "status": "completed",
+      "conclusion": "cancelled",
+      "attempt": 1,
+      "sourceTitle": "FreshABAcceptance d8222780953bed685ccd0f4f5a3e82571b9e5bf2",
+      "head": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+      "createdAt": "2026-10-22T06:07:34Z",
+      "updatedAt": "2026-10-22T06:08:02Z",
+      "startedAt": "2026-10-22T06:07:34Z",
+      "jobsCount": 0,
+      "jobs": [],
+      "artifacts": []
+    }
+  ]
+}

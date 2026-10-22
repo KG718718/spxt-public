@@ -2,7 +2,7 @@
   "schema": 1,
   "kind": "FINAL_AB_BUDGET_LEDGER",
   "authorizationDate": "2026-10-22",
-  "status": "AUTHORIZED_NOT_TRIGGERED",
+  "status": "STOP_SOURCE_CURRENT_API_REJECTED_DUPLICATE_RUNS",
   "sourceCommit": "d8222780953bed685ccd0f4f5a3e82571b9e5bf2",
   "localBuildSetupSha256": "c781aa2712ef749d4a4572581db52ddb4fba9825b7dc63365cbd8abd34bc7ede",
   "masterReviewSha256": "a013c3d7a9d4753654fdca0f0c2b4eded8faa5cf570ca654fe5459f0e79d1c0d",
@@ -10,16 +10,35 @@
     "maximumRuns": 1,
     "maximumWindowsJobs": 2,
     "maximumAttempts": 1,
-    "used": 0,
-    "runId": null,
-    "controlCommit": null
+    "used": 1,
+    "runId": "39732016119",
+    "controlCommit": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+    "triggerPushInvocations": 1,
+    "actualObservedWorkflowRuns": 2,
+    "unexpectedRunIds": [
+      "39732017789"
+    ],
+    "finalRunStates": [
+      {
+        "id": "39732017789",
+        "attempt": 1,
+        "conclusion": "cancelled"
+      },
+      {
+        "id": "39732016119",
+        "attempt": 1,
+        "conclusion": "cancelled"
+      }
+    ],
+    "retryAllowed": false
   },
   "qa": {
     "maximumRuns": 1,
     "used": 0,
-    "status": "FROZEN_UNTIL_COMPLETE_CANDIDATE_PASS_SAME_EXE"
+    "status": "UNUSED_FROZEN_CANDIDATE_NOT_PASS"
   },
   "otherHosted": 0,
-  "currentRunnerPreflight": "NOT_OBSERVED_RUNNER_NOT_CREATED",
-  "historicalFailuresPreserved": true
+  "currentRunnerPreflight": "SOURCE_REJECTED_ENV_NOT_STARTED",
+  "historicalFailuresPreserved": true,
+  "recovery": "DRIVE_RESTORED_OTHER_REQUIRED_SCOPES_NOT_OBSERVED"
 }

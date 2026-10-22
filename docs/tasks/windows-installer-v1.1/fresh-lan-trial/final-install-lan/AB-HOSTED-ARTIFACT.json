@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "repository": "KG718718/spxt-public",
+  "runId": "39732016119",
+  "artifactId": "12405800885",
+  "name": "fresh-ab-evidence-A-482144f20c2720a351e65f5e7c23ddc3b12d610b-39732016119",
+  "size": 528,
+  "digest": "sha256:1f92708f1b4a661caac2e5387ccf6283ee4cec03f32968de0c474f40501a6878",
+  "apiDigestVerified": true,
+  "archiveAllowlist": [
+    "fresh-report.json"
+  ],
+  "reportSchema": 3,
+  "controlCommit": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+  "sourceContract": "d8222780953bed685ccd0f4f5a3e82571b9e5bf2",
+  "sourceAdmission": "FAILED",
+  "containsExe": false
+}

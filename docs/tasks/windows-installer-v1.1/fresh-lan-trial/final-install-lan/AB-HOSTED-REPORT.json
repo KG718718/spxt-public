@@ -1,0 +1,36 @@
+{
+  "schema": 3,
+  "kind": "FRESH_AB_EARLY_FAILURE",
+  "role": "A",
+  "controlCommit": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+  "runId": "39732016119",
+  "runAttempt": 1,
+  "stage": "SOURCE",
+  "classification": "CURRENT_API_REJECTED",
+  "status": "FAIL",
+  "driveRestored": true,
+  "recovery": {
+    "productRegistration": "NOT_OBSERVED",
+    "binding": "NOT_OBSERVED",
+    "startup": "NOT_OBSERVED",
+    "desktop": "NOT_OBSERVED",
+    "programs": "NOT_OBSERVED",
+    "programFiles": "NOT_OBSERVED",
+    "compilerOwnedFiles": "NOT_OBSERVED",
+    "compilerSettings": "NOT_OBSERVED",
+    "globalRegistry": "NOT_OBSERVED",
+    "rules": "NOT_OBSERVED"
+  },
+  "supervisor": null,
+  "sourceDiagnostic": {
+    "schema": 1,
+    "kind": "FRESH_AB_SOURCE_DIAGNOSTIC",
+    "controlCommit": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+    "runId": "39732016119",
+    "role": "A",
+    "stage": "SOURCE",
+    "classification": "CURRENT_API_REJECTED",
+    "status": "FAIL"
+  },
+  "privateSetupLogsMayExist": true
+}
