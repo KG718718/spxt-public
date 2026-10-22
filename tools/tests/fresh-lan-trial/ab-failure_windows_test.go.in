@@ -1,0 +1,335 @@
+package main
+
+import (
+	"bufio"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"syscall"
+	"testing"
+	"time"
+)
+
+type freshAbController struct {
+	cmd            *exec.Cmd
+	input          io.WriteCloser
+	rows           chan map[string]any
+	readerDone     chan struct{}
+	protocolFailed bool
+	stderr         bytes.Buffer
+}
+
+func (c *freshAbController) line() map[string]any {
+	return c.lineWithin(20 * time.Second)
+}
+func (c *freshAbController) lineWithin(deadline time.Duration) map[string]any {
+	if c.protocolFailed {
+		return nil
+	}
+	select {
+	case value := <-c.rows:
+		if value == nil {
+			c.protocolFailed = true
+		}
+		return value
+	case <-time.After(deadline):
+		c.protocolFailed = true
+		return nil
+	}
+}
+func freshAbReady(value map[string]any) (bool, bool) {
+	if len(value) != 4 || value["schema"] != float64(1) || value["kind"] != "AB_FAILURE_DIRECTORY_READY" || value["createdNew"] != true {
+		return false, false
+	}
+	ready, known := value["ready"].(bool)
+	return known, ready
+}
+func freshAbRestored(value map[string]any, creationComplete bool) bool {
+	return len(value) == 4 && value["schema"] == float64(1) && value["kind"] == "AB_FAILURE_DIRECTORY_RESTORED" && value["state"] == "OWNED_REMOVED" && value["creationComplete"] == creationComplete
+}
+func (c *freshAbController) startReader(input io.Reader) {
+	c.rows = make(chan map[string]any, 3)
+	c.readerDone = make(chan struct{})
+	go func() {
+		defer close(c.readerDone)
+		defer close(c.rows)
+		reader := bufio.NewReaderSize(input, 4096)
+		for index := 0; index < 3; index++ {
+			line, e := reader.ReadSlice('\n')
+			if e == io.EOF && len(line) == 0 {
+				return
+			}
+			if e != nil || index == 2 || !freshNoDuplicateJSON(json.NewDecoder(bytes.NewReader(line)), 0) {
+				c.rows <- nil
+				return
+			}
+			var value map[string]any
+			if json.Unmarshal(line, &value) != nil {
+				c.rows <- nil
+				return
+			}
+			c.rows <- value
+		}
+	}()
+}
+func freshStartAbController(ps, repo, base, name string) (*freshAbController, map[string]any) {
+	c := &freshAbController{}
+	c.cmd = exec.Command(ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", filepath.Join(repo, "tools/tests/fresh-lan-trial/install-r2/owned-failure-directory.ps1"), "-Base", base, "-Name", name)
+	c.cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	c.cmd.Stderr = &c.stderr
+	var e error
+	c.input, e = c.cmd.StdinPipe()
+	if e != nil {
+		return nil, nil
+	}
+	out, e := c.cmd.StdoutPipe()
+	if e != nil {
+		c.input.Close()
+		return nil, nil
+	}
+	if c.cmd.Start() != nil {
+		c.input.Close()
+		return nil, nil
+	}
+	c.startReader(out)
+	return c, c.line()
+}
+func (c *freshAbController) end(restore bool) (map[string]any, bool) {
+	if c == nil {
+		return nil, false
+	}
+	var value map[string]any
+	if restore && !c.protocolFailed {
+		if _, e := io.WriteString(c.input, "RESTORE\n"); e == nil {
+			value = c.line()
+		}
+	}
+	c.input.Close()
+	select {
+	case <-c.readerDone:
+		if len(c.rows) != 0 {
+			c.protocolFailed = true
+		}
+	case <-time.After(20 * time.Second):
+		c.protocolFailed = true
+	}
+	done := make(chan error, 1)
+	go func() { done <- c.cmd.Wait() }()
+	select {
+	case e := <-done:
+		return value, e == nil && c.stderr.Len() == 0 && !c.protocolFailed
+	case <-time.After(20 * time.Second):
+		return value, false
+	}
+}
+
+func TestFreshAbControllerProtocol(t *testing.T) {
+	for _, text := range []string{"", "INVALID\n", "{\"schema\":1,\"schema\":1}\n", "{\"schema\":1}"} {
+		c := &freshAbController{}
+		c.startReader(bytes.NewBufferString(text))
+		if c.lineWithin(time.Second) != nil || !c.protocolFailed {
+			t.Fatal("PROTOCOL_INVALID_ACCEPTED")
+		}
+	}
+	reader, writer := io.Pipe()
+	c := &freshAbController{}
+	c.startReader(reader)
+	if c.lineWithin(time.Millisecond) != nil || !c.protocolFailed {
+		t.Fatal("READY_TIMEOUT_ACCEPTED")
+	}
+	writer.Close()
+	<-c.readerDone
+	if c.lineWithin(time.Second) != nil {
+		t.Fatal("TIMEOUT_READER_REUSED")
+	}
+	reader, writer = io.Pipe()
+	c = &freshAbController{}
+	c.startReader(reader)
+	go func() { io.WriteString(writer, "{\"schema\":1}\n") }()
+	if c.lineWithin(time.Second) == nil || c.lineWithin(time.Millisecond) != nil || !c.protocolFailed {
+		t.Fatal("RESTORE_TIMEOUT_ACCEPTED")
+	}
+	writer.Close()
+	<-c.readerDone
+	for _, extra := range []map[string]any{
+		{"schema": float64(1), "kind": "AB_FAILURE_DIRECTORY_RESTORED", "state": "OWNED_REMOVED", "creationComplete": false, "extra": true},
+		{"schema": float64(1), "kind": "AB_FAILURE_DIRECTORY_RESTORED", "state": "OWNED_REMOVED", "creationComplete": "false"},
+	} {
+		if freshAbRestored(extra, false) {
+			t.Fatal("UNKNOWN_RESTORE_FIELDS_ACCEPTED")
+		}
+	}
+	c = &freshAbController{}
+	c.startReader(bytes.NewBufferString("{\"schema\":1}\n"))
+	if c.lineWithin(time.Second) == nil || c.lineWithin(time.Second) != nil || !c.protocolFailed {
+		t.Fatal("RESTORE_EOF_ACCEPTED")
+	}
+	for _, value := range []map[string]any{{"schema": float64(1), "kind": "AB_FAILURE_DIRECTORY_READY", "createdNew": true, "ready": true, "extra": "FORBIDDEN"}, {"schema": float64(1), "kind": "AB_FAILURE_DIRECTORY_READY", "createdNew": true, "ready": "true"}} {
+		if known, _ := freshAbReady(value); known {
+			t.Fatal("UNKNOWN_READY_FIELDS_ACCEPTED")
+		}
+	}
+}
+
+// Called only by the real Hosted B core after all five rejection fixtures have
+// restored. Local tests never invoke the formal product Setup.
+func freshRunAbFailedInstall(ps, node, repo, base, setup, source, setupHash string, paths map[string]string, pre map[string]freshRecoverySnapshot, pending *bool) bool {
+	proof := map[string]bool{}
+	for _, k := range []string{"logKnown", "preInstallReady", "nativeInstallStarted", "controlledDirectoryAttempt", "accessDenied5", "fatalInstall4", "nativeRollback", "postInstallNotReached", "setupNaturalExit", "sameExe", "creatorReady", "aclRestored", "creatorHandlesClosed"} {
+		proof[k] = false
+	}
+	recovery := map[string]string{}
+	for _, k := range []string{"productRegistration", "binding", "startup", "desktop", "programs", "programFiles", "failedTarget", "failedInstance"} {
+		recovery[k] = "NOT_OBSERVED"
+	}
+	report := map[string]any{"schema": 1, "kind": "FRESH_AB_FAILED_NATIVE_INSTALL", "sourceCommit": source, "setupSha256": setupHash, "status": "FAIL", "mechanism": "OWNED_NONINHERITING_DENY_ADD_SUBDIRECTORY", "controllerState": "NOT_STARTED", "setupExitCode": -1, "proof": proof, "recovery": recovery}
+	write := func() {
+		b, e := json.Marshal(report)
+		if e == nil {
+			os.WriteFile(filepath.Join(base, "failed-install.json"), append(b, '\n'), 0600)
+		}
+	}
+	defer write()
+	product := `Software\Microsoft\Windows\CurrentVersion\Uninstall\KSESSION-Beta-Installer-v1_is1`
+	binding := `Software\KSESSION\Beta\InstallerBinding`
+	before := map[string]freshRecoverySnapshot{}
+	for _, key := range []string{"productRegistration", "binding", "startup", "desktop", "programs", "programFiles"} {
+		var state freshRecoverySnapshot
+		switch key {
+		case "productRegistration":
+			state = freshObserveRegistration(ps, product)
+		case "binding":
+			state = freshObserveRegistration(ps, binding)
+		default:
+			state = freshObservePath(paths[key])
+		}
+		if !pre[key].Known || !pre[key].Absent || !state.Known || !state.Absent {
+			return false
+		}
+		before[key] = state
+	}
+	name := fmt.Sprintf("ab-failure-%032x", time.Now().UnixNano())
+	target := filepath.Join(base, name)
+	instance := filepath.Join(base, name+"-instance")
+	targetBefore, instanceBefore := freshObservePath(target), freshObservePath(instance)
+	if !targetBefore.Known || !targetBefore.Absent || !instanceBefore.Known || !instanceBefore.Absent {
+		return false
+	}
+	if hash, e := hashFile(setup); e != nil || hash != setupHash {
+		return false
+	}
+	proof["sameExe"] = true
+	c, ready := freshStartAbController(ps, repo, base, name)
+	if c == nil {
+		return false
+	}
+	controllerEnded := false
+	defer func() {
+		if !controllerEnded {
+			_, proof["creatorHandlesClosed"] = c.end(false)
+		}
+	}()
+	creatorKnown, creatorReady := freshAbReady(ready)
+	proof["creatorReady"] = creatorKnown && creatorReady
+	if !proof["creatorReady"] {
+		report["controllerState"] = "READY_UNPROVEN"
+		if creatorKnown {
+			report["controllerState"] = "CREATION_INCOMPLETE"
+		}
+		partial, closed := c.end(creatorKnown)
+		proof["creatorHandlesClosed"] = closed
+		after := freshObservePath(target)
+		if creatorKnown && closed && freshAbRestored(partial, false) && after.Known && after.Absent {
+			recovery["failedTarget"] = "OWNED_REMOVED"
+		}
+		controllerEnded = true
+		return false
+	}
+	log := filepath.Join(base, "failed-native-install.log")
+	if s := freshObservePath(log); !s.Known || !s.Absent {
+		return false
+	}
+	cmd := exec.Command(setup, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/CURRENTUSER", "/DIR="+target, "/INSTANCE="+instance, "/LOG="+log)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	code := -1
+	natural := false
+	if cmd.Start() == nil {
+		*pending = true
+		done := make(chan error, 1)
+		go func() { done <- cmd.Wait() }()
+		select {
+		case <-done:
+			*pending = false
+			natural = true
+			code = cmd.ProcessState.ExitCode()
+		case <-time.After(5 * time.Minute):
+			return false
+		}
+	}
+	text, logError := os.ReadFile(log)
+	if code >= 0 && code <= 255 {
+		report["setupExitCode"] = code
+	}
+	if logError == nil && len(text) <= 4*1024*1024 {
+		input, _ := json.Marshal(map[string]any{"text": decodeInstallerLog(text), "target": target, "exitCode": code, "natural": natural})
+		observe := exec.Command(node, filepath.Join(repo, "tools/tests/fresh-lan-trial/ab-failure.cjs"))
+		observe.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		observe.Stdin = bytes.NewReader(input)
+		var out, errOut bytes.Buffer
+		observe.Stdout = &out
+		observe.Stderr = &errOut
+		if observe.Run() == nil && errOut.Len() == 0 {
+			var known map[string]bool
+			if json.Unmarshal(out.Bytes(), &known) == nil && len(known) == 9 {
+				for k, v := range known {
+					if _, ok := proof[k]; ok {
+						proof[k] = v
+					}
+				}
+			}
+		}
+	}
+	restored, closed := c.end(true)
+	controllerEnded = true
+	proof["creatorHandlesClosed"] = closed
+	proof["aclRestored"] = freshAbRestored(restored, true)
+	report["controllerState"] = "RESTORE_REPORT_INVALID"
+	if value, ok := restored["state"].(string); ok {
+		for _, known := range []string{"OWNED_REMOVED", "RETIRED_CHANGED", "OWNERSHIP_UNKNOWN", "ACL_CHANGED", "UNOWNED_CHILDREN_PRESENT", "ACL_RESTORE_UNPROVEN", "DELETE_FAILED", "POST_ABSENCE_UNPROVEN"} {
+			if value == known {
+				report["controllerState"] = known
+			}
+		}
+	}
+	afterTarget, afterInstance := freshObservePath(target), freshObservePath(instance)
+	recovery["failedTarget"] = freshRecoveryStatus(targetBefore, afterTarget, proof["aclRestored"] && closed)
+	recovery["failedInstance"] = freshRecoveryStatus(instanceBefore, afterInstance, false)
+	for key, beforeState := range before {
+		var after freshRecoverySnapshot
+		switch key {
+		case "productRegistration":
+			after = freshObserveRegistration(ps, product)
+		case "binding":
+			after = freshObserveRegistration(ps, binding)
+		default:
+			after = freshObservePath(paths[key])
+		}
+		recovery[key] = freshRecoveryStatus(beforeState, after, false)
+	}
+	for _, v := range proof {
+		if !v {
+			return false
+		}
+	}
+	for _, v := range recovery {
+		if !freshRecoveryRestored(v) {
+			return false
+		}
+	}
+	report["status"] = "PASS"
+	return true
+}

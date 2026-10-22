@@ -8,6 +8,7 @@ if($env:GITHUB_WORKFLOW_REF -ceq 'KG718718/spxt-public/.github/workflows/fresh-i
 $taskRepo=(Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $taskWork=[IO.Path]::GetFullPath($Work)
 $taskContext=Get-Content -Raw -LiteralPath (Join-Path $taskWork 'context.json')|ConvertFrom-Json
+$taskAb=$taskContext.kind -ceq 'FRESH_AB_CONTEXT' -and $taskContext.schema -eq 3
 $taskInstallCandidate=$env:GITHUB_WORKFLOW_REF -ceq 'KG718718/spxt-public/.github/workflows/fresh-install-candidate.yml@refs/heads/codex/lan-fresh-trial-v1.1' -or $null -ne $taskContext.PSObject.Properties['installCandidate']
 if($taskInstallCandidate -or ($null -ne $taskContext.PSObject.Properties['r1'] -and $null -ne $taskContext.r1.PSObject.Properties['fastDelivery'])){
  if(!$taskGateAlreadyChecked){Wait-FreshCiAssignment $env:KSESSION_FAST_JOB_GATE}
@@ -17,13 +18,19 @@ if($taskInstallCandidate){
   $taskContextCheck=Invoke-KSessionMemoryNode (Get-Command node).Source @((Join-Path $PSScriptRoot 'install-candidate/context.cjs'),$taskWork)
   if($taskContextCheck.ExitCode -ne 0 -or $taskContextCheck.TimedOut -or $taskContextCheck.ForcedTermination -or $taskContextCheck.Stderr.Length -ne 0){throw 'Install candidate context required'}
 }
+if($taskAb){
+ if($BuildOnly){throw 'A/B cannot use build-only smoke'}
+ if(!$taskGateAlreadyChecked){Wait-FreshCiAssignment $env:KSESSION_FAST_JOB_GATE}
+ $taskContextCheck=Invoke-KSessionMemoryNode (Get-Command node).Source @((Join-Path $PSScriptRoot 'ab/context.cjs'),$taskWork)
+ if($taskContextCheck.ExitCode -ne 0 -or $taskContextCheck.TimedOut -or $taskContextCheck.ForcedTermination -or $taskContextCheck.Stderr.Length -ne 0){throw 'A/B context required'}
+}
 if($BuildOnly -and ($taskContext.r1.schema -ne 1 -or $taskContext.r1.mode -ne 'SMOKE' -or $taskContext.r1.slot -ne 'R1S1' -or $taskContext.mode -ne 'CANDIDATE')){throw 'Build-only R1 smoke context required'}
 if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:GITHUB_REPOSITORY -ne 'KG718718/spxt-public' -or
    $taskContext.controlCommit -cne $env:GITHUB_SHA -or $env:GITHUB_RUN_ATTEMPT -ne '1' -or $taskContext.run.id -ne $env:GITHUB_RUN_ID -or
    $taskWork -notmatch '^E:\\' -or (git -C $taskRepo rev-parse HEAD).Trim() -cne $taskContext.sourceCommit){throw 'Fresh source context rejected'}
 $taskReportPath=Join-Path $taskWork 'fresh-report.json'
 $taskReport=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
-if($taskContext.reportSchema -ne 2 -or $taskReport.schema -ne 2){throw 'Current schema2 report context required'}
+if($taskAb){if($taskContext.reportSchema -ne 3 -or $taskReport.schema -ne 3){throw 'A/B schema3 context required'}}elseif($taskContext.reportSchema -ne 2 -or $taskReport.schema -ne 2){throw 'Current schema2 report context required'}
 }catch{[Console]::Error.WriteLine('FRESH_CI_ENTRY_REJECTED');exit 1}
 . (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/hosted-recovery.ps1')
 . (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/physical-work.ps1')
@@ -34,6 +41,7 @@ $taskFinalStarted=$false
 $script:taskFailed=$false
 $taskToolchainStarted=$false;$taskToolchainOwned=$false;$taskToolchainRestored=$true
 $taskProductBefore=@{};$taskRegistryBefore=$null;$taskRulesBefore=$null;$taskCompilerFilesBefore=$null;$taskSettingsBefore=$null
+$taskRegistryPaths=@('Software\Microsoft\Windows\CurrentVersion\Uninstall','Software\KSESSION\Beta\InstallerBinding');if($taskAb){$taskRegistryPaths+= 'Software\KSESSION'}
 $taskPhysicalBinding=$null
 $taskBuildDiagnostic=Join-Path $taskWork 'build-diagnostic.json'
 function Stage([string]$Reason){
@@ -90,7 +98,7 @@ function Checked([string]$Exe,[string[]]$Arguments){$taskChecked=Invoke-KSession
 function Pinned([string]$Uri,[string]$Hash,[string]$Zip,[string]$Output){Invoke-WebRequest -Uri $Uri -OutFile $Zip -TimeoutSec 240;if((Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash.ToLowerInvariant() -cne $Hash){throw 'Pinned tool identity rejected'};Expand-Archive -LiteralPath $Zip -DestinationPath $Output}
 $taskEnvPhase='CI_ENTRY'
 try {
-  $taskEnter=Invoke-KSessionMemoryNode (Get-Command node).Source @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/final-ci-report.cjs'),'ENV',$taskWork)
+  $taskEnter=if($taskAb){Invoke-KSessionMemoryNode (Get-Command node).Source @((Join-Path $PSScriptRoot 'ab/ci-entry.cjs'),'ENV',$taskRepo,$taskWork)}else{Invoke-KSessionMemoryNode (Get-Command node).Source @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/final-ci-report.cjs'),'ENV',$taskWork)}
   if($taskEnter.ExitCode -ne 0 -or $taskEnter.TimedOut -or $taskEnter.ForcedTermination -or $taskEnter.Stderr.Length -ne 0){throw 'Fresh ENV report entry unproven'}
   $taskReport=Get-Content -Raw -LiteralPath $taskReportPath|ConvertFrom-Json
   $taskEnvPhase='ENV_PRECHECK'
@@ -99,14 +107,23 @@ try {
   $env:KSESSION_FRESH_PHYSICAL_WORK=$taskPhysicalBinding.physical
   $env:PSModulePath=Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/Modules'
   $taskProductBefore=Get-FreshProductObservations $env:KSESSION_FRESH_PHYSICAL_WORK
-  $taskRegistryBefore=Get-FreshRegistryObservation @('Software\Microsoft\Windows\CurrentVersion\Uninstall','Software\KSESSION\Beta\InstallerBinding')
+  $taskRegistryBefore=Get-FreshRegistryObservation $taskRegistryPaths
   $taskRulesBefore=Get-FreshRulesObservation
   $taskCompilerFilesBefore=Get-FreshCompilerObservation $taskPhysicalBinding
   $taskInnoBefore=Inno-Environment-Snapshot
   $taskSettingsBefore=New-FreshObservation $true $false ($taskInnoBefore|ConvertTo-Json -Depth 60 -Compress)
   Assert-FreshEnvPrecheck $taskRegistryBefore $taskRulesBefore $taskCompilerFilesBefore $taskProductBefore
   $taskEnvPhase='BUILD'
-  if($taskContext.mode -eq 'CANDIDATE'){
+  if($taskAb -and $taskContext.installSplit.role -ceq 'B'){
+    Stage 'BUILD_TOOLCHAIN_FAILED'
+    $taskDistribution=Get-Content -Raw -LiteralPath (Join-Path $taskRepo 'tools/installer/distribution.json')|ConvertFrom-Json
+    $taskGoPin=Get-Content -Raw -LiteralPath (Join-Path $taskRepo 'tools/windows-launcher/toolchain.json')|ConvertFrom-Json
+    Pinned $taskDistribution.nodeUrl $taskDistribution.nodeArchiveSha256 (Join-Path $taskWork 'node.zip') (Join-Path $taskWork 'node-tool')
+    Pinned $taskGoPin.goWindowsZip $taskGoPin.sha256 (Join-Path $taskWork 'go.zip') (Join-Path $taskWork 'go-tool')
+    $taskNode=Join-Path $taskWork 'node-tool/node-v24.21.0-win-x64/node.exe';$taskGo=Join-Path $taskWork 'go-tool/go/bin/go.exe'
+    if((Get-FileHash -LiteralPath $taskNode -Algorithm SHA256).Hash.ToLowerInvariant() -cne $taskDistribution.nodeExeSha256){throw 'B test Node identity failed'}
+    # B has already received the exact immutable A artifact. No product build.
+  }elseif($taskContext.mode -eq 'CANDIDATE'){
     Stage 'BUILD_PORTABLE_FAILED'
     $taskPortable=Join-Path $taskWork 'portable'
     & (Join-Path $PSScriptRoot 'build-payload.ps1') -Work $taskPortable -Commit $taskContext.sourceCommit -BuildDiagnostic $taskBuildDiagnostic
@@ -145,11 +162,13 @@ try {
       foreach($taskEntry in $taskZip.Entries){[IO.Compression.ZipFileExtensions]::ExtractToFile($taskEntry,(Join-Path $taskWork "artifact/$($taskEntry.FullName)"),$false)}
     }finally{$taskZip.Dispose()}
   }else{throw 'Fresh mode rejected'}
+  if($taskAb){Checked $taskNode @((Join-Path $PSScriptRoot 'ab/ci-entry.cjs'),'BIND',$taskRepo,$taskWork)}
   if($BuildOnly){
     [IO.File]::WriteAllText($taskBuildDiagnostic,(@{stage='SMOKE_IDENTITY';classification='COMMAND_FAILED';script=$null;line=$null}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
     Checked $taskNode @((Join-Path $PSScriptRoot 'recovery-r1/smoke.cjs'),'READY',$taskRepo,$taskWork)
     [IO.File]::WriteAllText($taskBuildDiagnostic,(@{stage='COMPLETE';classification='PASS';script=$null;line=$null}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
   }else{
+  if(!$taskAb -or $taskContext.installSplit.role -cne 'B'){
   Stage 'BROWSER_TOOL_FAILED'
   $taskBrowser=Join-Path $taskWork 'browser-tool';Copy-Item -LiteralPath (Join-Path $taskRepo 'tools/tests/fresh-lan-trial/browser-tool') -Destination $taskBrowser -Recurse
   $taskNpm=Join-Path (Split-Path $taskNode) 'node_modules/npm/bin/npm-cli.js'
@@ -157,6 +176,7 @@ try {
   try{Checked $taskNode @($taskNpm,'ci','--logs-max=0','--loglevel=silent','--ignore-scripts','--omit=optional','--bin-links=false','--no-audit','--no-fund','--cache',(Join-Path $taskWork 'browser-cache'))}finally{Pop-Location}
   $env:PLAYWRIGHT_BROWSERS_PATH=Join-Path $taskWork 'browser-binaries';$env:NODE_PATH=Join-Path $taskBrowser 'node_modules'
   Checked $taskNode @((Join-Path $taskBrowser 'node_modules/playwright-core/cli.js'),'install','chromium')
+  }
   [IO.File]::WriteAllText($taskBuildDiagnostic,(@{stage='COMPLETE';classification='PASS';script=$null;line=$null}|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
   $env:GOTOOLCHAIN='local';$env:GOPROXY='off';$env:GOSUMDB='off';$env:GOENV='off';$env:GOWORK='off';$env:CGO_ENABLED='0';$env:GOOS='windows';$env:GOARCH='amd64';$env:GOFLAGS='';$env:GOEXPERIMENT=''
   $env:GOCACHE=Join-Path $taskWork 'test-go-cache';$env:GOTMPDIR=Join-Path $taskWork 'test-go-temp';New-Item -ItemType Directory -Force -Path $env:GOCACHE,$env:GOTMPDIR|Out-Null
@@ -186,15 +206,16 @@ try {
   $taskRecovery.compilerOwnedFiles=Get-FreshRecoveryState $taskCompilerFilesBefore $taskCompilerFilesAfter ($taskToolchainStarted -and $taskToolchainRestored)
   try{$taskSettingsAfter=New-FreshObservation $true $false ((Inno-Environment-Snapshot)|ConvertTo-Json -Depth 60 -Compress)}catch{$taskSettingsAfter=New-FreshObservation $false $false}
   $taskRecovery.compilerSettings=Get-FreshRecoveryState $taskSettingsBefore $taskSettingsAfter
-  $taskRecovery.globalRegistry=Get-FreshRecoveryState $taskRegistryBefore (Invoke-FreshObservation {Get-FreshRegistryObservation @('Software\Microsoft\Windows\CurrentVersion\Uninstall','Software\KSESSION\Beta\InstallerBinding')})
+  $taskRecovery.globalRegistry=Get-FreshRecoveryState $taskRegistryBefore (Invoke-FreshObservation {Get-FreshRegistryObservation $taskRegistryPaths})
   $taskRecovery.rules=Get-FreshRecoveryState $taskRulesBefore (Invoke-FreshObservation {Get-FreshRulesObservation})
   }catch{$script:taskFailed=$true}finally{
   $taskEnvironmentRestored=$false;try{Restore-KSessionProcessEnvironment $taskPrevious;$taskEnvironmentRestored=Test-KSessionProcessEnvironmentRestored $taskPrevious}catch{$script:taskFailed=$true}
   $taskEvidence=[ordered]@{recovery=$taskRecovery;environmentRestored=$taskEnvironmentRestored;productPhaseStarted=$taskFinalStarted}
+  if($taskAb){$taskEvidence.productPrestateAbsent=$null -ne $taskProductBefore -and @(@('productRegistration','binding','startup','desktop','programs','programFiles')|Where-Object{!$taskProductBefore[$_].known -or !$taskProductBefore[$_].absent}).Count -eq 0}
   $taskFinalNode=(Get-Command node).Source
   try{
     if(!(Test-FreshPinnedWorkDirectory $taskPhysicalBinding)){throw 'WORK_FINAL_ROOT_UNKNOWN'}
-    $taskFinalWrite=Invoke-KSessionMemoryNode $taskFinalNode @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/final-ci-report.cjs'),$taskPhysicalBinding.physical) ($taskEvidence|ConvertTo-Json -Depth 8 -Compress)
+    $taskFinalWrite=if($taskAb){Invoke-KSessionMemoryNode $taskFinalNode @((Join-Path $PSScriptRoot 'ab/ci-entry.cjs'),'FINISH',$taskRepo,$taskPhysicalBinding.physical) ($taskEvidence|ConvertTo-Json -Depth 8 -Compress)}else{Invoke-KSessionMemoryNode $taskFinalNode @((Join-Path $taskRepo 'tools/tests/fresh-lan-trial/install-r2/final-ci-report.cjs'),$taskPhysicalBinding.physical) ($taskEvidence|ConvertTo-Json -Depth 8 -Compress)}
     if($taskFinalWrite.ExitCode -ne 0 -or $taskFinalWrite.TimedOut -or $taskFinalWrite.ForcedTermination -or $taskFinalWrite.Stderr.Length -ne 0){$script:taskFailed=$true}
   }catch{$script:taskFailed=$true}finally{Close-FreshPhysicalWorkBinding $taskPhysicalBinding}
   }

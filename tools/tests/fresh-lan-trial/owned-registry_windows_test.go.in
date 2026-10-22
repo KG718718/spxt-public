@@ -16,6 +16,7 @@ var freshRegistryAPI = syscall.NewLazyDLL("advapi32.dll")
 var freshRegCreate = freshRegistryAPI.NewProc("RegCreateKeyExW")
 var freshRegSet = freshRegistryAPI.NewProc("RegSetValueExW")
 var freshRegDelete = freshRegistryAPI.NewProc("RegDeleteKeyExW")
+var freshRegNtDelete = syscall.NewLazyDLL("ntdll.dll").NewProc("NtDeleteKey")
 
 type freshRegistryNode struct {
 	path   string
@@ -25,9 +26,9 @@ type freshRegistryNode struct {
 
 // A receipt is issued only by the native exclusive creator, never by a sample
 // of an existing key. Handles stay open through validation and deletion.
-// The Win32 path delete is not an atomic compare-and-delete. This fixture is
-// suitable only for an exclusively controlled test environment; it does not
-// claim safety against a concurrent writer between the last check and delete.
+// Deletion targets the retained creator handle, never a reopened path. Content
+// comparison and deletion are still not atomic; this fixture requires stopped
+// owned writers in its isolated Job and does not claim malicious-writer safety.
 type freshOwnedRegistry struct {
 	ps, path       string
 	nodes          []freshRegistryNode
@@ -77,10 +78,13 @@ func freshCreateOwnedRegistry(ps, key string) (*freshOwnedRegistry, string) {
 }
 
 func freshPrepareOwnedRegistry(ps, key string) (*freshOwnedRegistry, string) {
+	return freshPrepareOwnedRegistryScope(ps, key, true)
+}
+func freshPrepareOwnedRegistryScope(ps, key string, allViewsAbsent bool) (*freshOwnedRegistry, string) {
 	r := &freshOwnedRegistry{ps: ps, path: key}
 	before := freshObserveRegistration(ps, key)
 	parts := strings.Split(key, `\`)
-	if !before.Known || !before.Absent || len(parts) < 2 || parts[0] != "Software" {
+	if !before.Known || (allViewsAbsent && !before.Absent) || len(parts) < 2 || parts[0] != "Software" {
 		return r, "PRESTATE_UNKNOWN"
 	}
 	for _, p := range parts {
@@ -122,7 +126,7 @@ func freshPrepareOwnedRegistry(ps, key string) (*freshOwnedRegistry, string) {
 			if !nodeBefore.Known {
 				return r, "PARENT_UNKNOWN"
 			}
-			rc, _, _ := freshRegCreate.Call(uintptr(parent), uintptr(unsafe.Pointer(ptr(parts[i]))), 0, 0, 0, syscall.KEY_READ|syscall.KEY_WRITE|0x100, 0, uintptr(unsafe.Pointer(&h)), uintptr(unsafe.Pointer(&disposition)))
+			rc, _, _ := freshRegCreate.Call(uintptr(parent), uintptr(unsafe.Pointer(ptr(parts[i]))), 0, 0, 0, syscall.KEY_READ|syscall.KEY_WRITE|0x100|0x10000, 0, uintptr(unsafe.Pointer(&h)), uintptr(unsafe.Pointer(&disposition)))
 			if rc != 0 {
 				return r, "CREATE_FAILED"
 			}
@@ -205,6 +209,9 @@ func (r *freshOwnedRegistry) close() bool {
 }
 
 func (r *freshOwnedRegistry) cleanup() string {
+	return r.cleanupBeforeDelete(nil)
+}
+func (r *freshOwnedRegistry) cleanupBeforeDelete(beforeDelete func()) string {
 	if r == nil {
 		return "RECEIPT_UNKNOWN"
 	}
@@ -243,7 +250,11 @@ func (r *freshOwnedRegistry) cleanup() string {
 		} else if children != 0 || values != 0 {
 			return "PARENT_CHANGED"
 		}
-		rc, _, _ := freshRegDelete.Call(uintptr(syscall.HKEY_CURRENT_USER), uintptr(unsafe.Pointer(ptr(n.path))), 0x100, 0)
+		if beforeDelete != nil {
+			beforeDelete()
+			beforeDelete = nil
+		}
+		rc, _, _ := freshRegNtDelete.Call(uintptr(n.h))
 		if rc != 0 {
 			return "DELETE_FAILED"
 		}

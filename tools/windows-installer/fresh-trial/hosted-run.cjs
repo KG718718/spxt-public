@@ -19,7 +19,7 @@ async function main(){
   const original=JSON.parse(fs.readFileSync(path.join(artifact,'fresh-report.json')));
   verify(artifact,{reportSchema:2,sourceCommit:context.sourceCommit,mode:'CANDIDATE',controlCommit:metadata.controlCommit,run:{id:context.candidate.runId,attempt:1}});assert.equal(setupHash,context.candidate.setupSha256);assert.equal(original.setupSha256,setupHash);
  }
- if(context.mode==='CANDIDATE'){fs.writeFileSync(path.join(artifact,'fresh-report.json'),JSON.stringify(report.initial(context.sourceCommit,context.mode,context.candidate,context.controlCommit,context.run,2))+'\n');inspect(artifact,context.sourceCommit,setupHash);}
+ if(context.mode==='CANDIDATE'){if(splitRole!=='B')fs.writeFileSync(path.join(artifact,'fresh-report.json'),JSON.stringify(report.initial(context.sourceCommit,context.mode,context.candidate,context.controlCommit,context.run,2))+'\n');inspect(artifact,context.sourceCommit,setupHash);}
  const writer=async r=>fs.writeFileSync(path.join(work,'fresh-report.json'),JSON.stringify(r)+'\n');
  const physical=process.env.KSESSION_FRESH_PHYSICAL_WORK;assert.ok(physical&&path.isAbsolute(physical));
  const evidence=path.join(physical,'installed-core');let core=null,socket=null,firewall=null,coreExit=null;
@@ -59,9 +59,10 @@ async function main(){
   const result=await split.execute({role:splitRole,sourceCommit:context.sourceCommit,setupSha256:setupHash,
    launch:async role=>{const overlay=prepare(path.join(work,'installed-overlay'));const plan=split.command(role,go,overlay);const p=command(plan.exe,plan.args,path.join(repo,'tools/windows-launcher'),{...baseEnv,...plan.environment});coreExit=p.status;return p.status;},
    readCore:async()=>{readCore();return core;},readRegistry:async()=>JSON.parse(fs.readFileSync(path.join(evidence,'registry-fixture.json'))),phases,
-   write:async r=>fs.writeFileSync(path.join(work,'split-inner.json'),JSON.stringify(r)+'\n')});
-  // A part never publishes a legacy PASS or borrows B's witnesses. B's native
-  // interrupted-install gate has no safe producer yet and remains NOT READY.
+   failedInstallRecovery:splitRole==='B'?async()=>JSON.parse(fs.readFileSync(path.join(evidence,'failed-install.json'))):undefined,
+   write:async r=>{if(splitRole==='B'){try{inspect(artifact,context.sourceCommit,context.installSplit.setupSha256);const envelope=JSON.parse(fs.readFileSync(path.join(work,'ab-transfer-extracted/ab-transfer.json')));for(const [file,record]of Object.entries(envelope.files))assert.equal(sha(fs.readFileSync(path.join(artifact,file))),record.sha256);}catch{r.status='FAIL';r.stage='F09';r.failure='TRANSFER_IDENTITY_CHANGED';}}fs.writeFileSync(path.join(work,'split-inner.json'),JSON.stringify(r)+'\n');}});
+  // A part never publishes a legacy PASS or borrows B's witnesses. B consumes
+  // the independent actual native-failure report even when Go exits nonzero.
   if(result.status!=='INNER_PASS_OUTER_PENDING')process.exitCode=1;
   return;
  }

@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$ControlRoot,[ValidateSet('success','failure','cancelled','skipped')][string]$SourceOutcome='failure',[ValidateSet('success','failure','cancelled','skipped')][string]$ExecutionOutcome='failure',[switch]$BuildSmoke,[switch]$InstallCandidate)
+param([Parameter(Mandatory=$true)][string]$ControlRoot,[ValidateSet('success','failure','cancelled','skipped')][string]$SourceOutcome='failure',[ValidateSet('success','failure','cancelled','skipped')][string]$ExecutionOutcome='failure',[switch]$BuildSmoke,[switch]$InstallCandidate,[switch]$FreshAb)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/memory-process.ps1')
 . (Join-Path $PSScriptRoot '../../tests/lan-host/node-test-environment.ps1')
@@ -6,7 +6,8 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/supervisor-entry.ps1')
 $taskControlNode=(Get-Command node).Source
 $taskRepo=$env:GITHUB_WORKSPACE
-$taskEntry=if($BuildSmoke){Join-Path $PSScriptRoot 'recovery-r1/smoke.cjs'}else{Join-Path $PSScriptRoot 'finalize-entry.cjs'}
+$taskEntry=if($FreshAb){Join-Path $PSScriptRoot 'ab/finalize-entry.cjs'}elseif($BuildSmoke){Join-Path $PSScriptRoot 'recovery-r1/smoke.cjs'}else{Join-Path $PSScriptRoot 'finalize-entry.cjs'}
+$taskStrictCandidate=$InstallCandidate -or $FreshAb
 $taskFinalReportName=if($BuildSmoke){'smoke-report.json'}else{'fresh-report.json'}
 $taskPublish=Join-Path $ControlRoot 'publish'
 if(Test-Path -LiteralPath $taskPublish){throw 'Unknown publish destination'}
@@ -22,7 +23,7 @@ if($taskState.created){
   $taskMayReadWork=$LASTEXITCODE -eq 0 -and $taskOwn.Count -eq 1 -and $taskState.target -ieq $taskExpected -and ($taskOwn[0] -replace '^E:\\: => ','').TrimEnd('\') -ieq $taskExpected.TrimEnd('\')
 }
 $taskIdentity=$null;$taskSupervisor=$null;$taskSupervisorClass='REPORT_INVALID';$taskWorkBinding=$null;$taskReadWork=$taskWork
-if($InstallCandidate){
+if($taskStrictCandidate){
  try{
   $taskGit=Invoke-KSessionMemoryProcess (Get-Command git).Source @('-C',$taskRepo,'rev-parse','HEAD') 15
   if($taskGit.ExitCode -ne 0 -or $taskGit.Stderr.Length -ne 0 -or $taskGit.Stdout.Trim() -cnotmatch '^[a-f0-9]{40}$'){throw 'DIAGNOSTIC_SOURCE_UNKNOWN'}
@@ -50,9 +51,10 @@ if($InstallCandidate){
 try{
   if($taskMayReadWork){
     $taskNewContextValid=$true
-    if($InstallCandidate){
+    if($taskStrictCandidate){
       if($BuildSmoke){throw 'Install candidate cannot finalize smoke'}
-      $taskContextCheck=Invoke-KSessionMemoryNode $taskControlNode @((Join-Path $PSScriptRoot 'install-candidate/context.cjs'),$taskReadWork)
+      $taskContextEntry=if($FreshAb){Join-Path $PSScriptRoot 'ab/context.cjs'}else{Join-Path $PSScriptRoot 'install-candidate/context.cjs'}
+      $taskContextCheck=Invoke-KSessionMemoryNode $taskControlNode @($taskContextEntry,$taskReadWork)
       $taskNewContextValid=$taskContextCheck.ExitCode -eq 0 -and !$taskContextCheck.TimedOut -and !$taskContextCheck.ForcedTermination -and $taskContextCheck.Stderr.Length -eq 0
     }
     if($taskNewContextValid){$taskControl=Invoke-KSessionMemoryNode $taskControlNode @($taskEntry,'CHECK',$taskReadWork,$taskPublish,'false');$taskValid=$taskControl.ExitCode -eq 0}
@@ -63,7 +65,7 @@ try{
     if(Test-Path -LiteralPath (Join-Path $taskReadWork 'completion.json')){Copy-Item -LiteralPath (Join-Path $taskReadWork 'completion.json') -Destination (Join-Path $taskPublish 'completion-private.json')}
     if($BuildSmoke -and (Test-Path -LiteralPath (Join-Path $taskReadWork 'smoke-ready-private.json'))){Copy-Item -LiteralPath (Join-Path $taskReadWork 'smoke-ready-private.json') -Destination (Join-Path $taskPublish 'smoke-ready-private.json')}
     $taskReport=Get-Content -Raw -LiteralPath (Join-Path $taskReadWork 'fresh-report.json')|ConvertFrom-Json
-    if($taskReport.checks.Count -eq 9){Copy-Item -LiteralPath (Join-Path $taskReadWork 'artifact') -Destination (Join-Path $taskPublish 'artifact') -Recurse}
+    if($taskReport.checks.Count -eq 9 -or ($FreshAb -and $taskReport.role -ceq 'A' -and $taskReport.status -ceq 'OUTER_PENDING')){Copy-Item -LiteralPath (Join-Path $taskReadWork 'artifact') -Destination (Join-Path $taskPublish 'artifact') -Recurse}
   }
 }finally{
   if($null -ne $taskWorkBinding){if(!(Test-FreshPinnedWorkDirectory $taskWorkBinding)){$taskValid=$false;$taskSupervisorClass='WORK_BINDING_REJECTED'};Close-FreshPhysicalWorkBinding $taskWorkBinding}
@@ -98,6 +100,19 @@ if(!$taskValid -or !(Test-Path -LiteralPath (Join-Path $taskPublish $taskFinalRe
   if($InstallCandidate){
     $taskRecovery=[ordered]@{};foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules')){$taskRecovery[$taskKey]='NOT_OBSERVED'}
     $taskEarly=[ordered]@{schema=1;kind='FRESH_INSTALL_CANDIDATE_EARLY_FAILURE';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';classification=$(if($taskSupervisorClass -cin @('PASS','NOT_STARTED')){'REPORT_INVALID'}else{$taskSupervisorClass});status='FAIL';isolation=$(if($taskDriveRestored){'RESTORED'}else{'UNKNOWN'});recovery=$taskRecovery}
+  }
+  if($FreshAb){
+    $taskRole=if($env:KSESSION_FRESH_INSTALL_ROLE -cin @('A','B')){$env:KSESSION_FRESH_INSTALL_ROLE}else{'UNKNOWN'}
+    $taskSourceDiagnostic=$null;try{$taskSourceDiagnostic=([FreshWorkDirectoryNative]::ReadFixedFile((Join-Path $ControlRoot 'ab-source-diagnostic.json'))|ConvertFrom-Json)}catch{}
+    try{$taskWorkflowSource=([FreshWorkDirectoryNative]::ReadFixedFile((Join-Path $ControlRoot 'workflow-source-diagnostic.json'))|ConvertFrom-Json);if($null -eq $taskSourceDiagnostic -or $taskSourceDiagnostic.status -ceq 'PASS'){$taskSourceDiagnostic=$taskWorkflowSource}}catch{}
+    $taskEarlyInput=@{classification=$taskSupervisorClass;supervisor=$taskSupervisor;sourceDiagnostic=$taskSourceDiagnostic}
+    $taskEarlyCheck=Invoke-KSessionMemoryNode $taskControlNode @((Join-Path $PSScriptRoot 'ab/early.cjs'),$env:GITHUB_SHA,$env:GITHUB_RUN_ID,$taskRole,$taskDriveRestored.ToString().ToLowerInvariant()) ($taskEarlyInput|ConvertTo-Json -Depth 12 -Compress)
+    New-Item -ItemType Directory -Path (Join-Path $taskPublish 'evidence') -Force|Out-Null
+    if($taskEarlyCheck.ExitCode -eq 0 -and $taskEarlyCheck.Stderr.Length -eq 0 -and !$taskEarlyCheck.TimedOut -and !$taskEarlyCheck.ForcedTermination){[IO.File]::WriteAllText((Join-Path $taskPublish 'evidence/fresh-report.json'),$taskEarlyCheck.Stdout,[Text.UTF8Encoding]::new($false))}else{
+      $taskRecovery=[ordered]@{};foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules')){$taskRecovery[$taskKey]='NOT_OBSERVED'}
+      $taskEarly=@{schema=3;kind='FRESH_AB_EARLY_FAILURE';role=$taskRole;controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';classification='REPORT_INVALID';status='FAIL';driveRestored=$taskDriveRestored;recovery=$taskRecovery;supervisor=$null;sourceDiagnostic=$null}
+      [IO.File]::WriteAllText((Join-Path $taskPublish 'evidence/fresh-report.json'),($taskEarly|ConvertTo-Json -Depth 8 -Compress),[Text.UTF8Encoding]::new($false))
+    }
   }
   [IO.File]::WriteAllText((Join-Path $taskPublish 'failure/early.json'),($taskEarly|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
 }

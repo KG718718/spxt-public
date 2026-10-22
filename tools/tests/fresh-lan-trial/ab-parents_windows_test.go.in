@@ -1,0 +1,149 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"syscall"
+	"testing"
+	"time"
+	"unsafe"
+)
+
+type freshAbParent struct {
+	key    string
+	before freshRecoverySnapshot
+	owned  *freshOwnedRegistry
+	known  bool
+}
+
+func TestFreshAbRegistryDeleteUsesCreatorHandle(t *testing.T) {
+	ps := filepath.Join(os.Getenv("SystemRoot"), "System32/WindowsPowerShell/v1.0/powershell.exe")
+	key := fmt.Sprintf(`Software\CodexAbDelete_%x`, time.Now().UnixNano())
+	owner, state := freshCreateOwnedRegistry(ps, key)
+	defer owner.close()
+	if state != "CREATED_NEW" {
+		t.Fatal("PRIVATE_OWNER_CREATE_FAILED")
+	}
+	var replacement syscall.Handle
+	var disposition uint32
+	blocked := false
+	result := owner.cleanupBeforeDelete(func() {
+		rc, _, _ := freshRegDelete.Call(uintptr(syscall.HKEY_CURRENT_USER), uintptr(unsafe.Pointer(ptr(key))), 0x100, 0)
+		if rc != 0 {
+			t.Fatal("PRIVATE_ACTOR_DELETE_FAILED")
+		}
+		rc, _, _ = freshRegCreate.Call(uintptr(syscall.HKEY_CURRENT_USER), uintptr(unsafe.Pointer(ptr(key))), 0, 0, 0, syscall.KEY_READ|syscall.KEY_WRITE|0x100|0x10000, 0, uintptr(unsafe.Pointer(&replacement)), uintptr(unsafe.Pointer(&disposition)))
+		if rc != 0 {
+			blocked = true
+			replacement = 0
+			return
+		}
+		if disposition != 1 {
+			t.Fatal("REPLACEMENT_NOT_CREATED_NEW")
+		}
+	})
+	if result == "OWNED_REMOVED" {
+		t.Fatal("EXTERNAL_DELETE_ADOPTED")
+	}
+	if !owner.close() {
+		t.Fatal("ORIGINAL_HANDLE_CLOSE_FAILED")
+	}
+	if blocked {
+		other, created := freshCreateOwnedRegistry(ps, key)
+		defer other.close()
+		if created != "CREATED_NEW" || owner.cleanup() == "OWNED_REMOVED" || other.unchanged() != "UNCHANGED" || other.cleanup() != "OWNED_REMOVED" {
+			t.Fatal("CLOSED_RECEIPT_DELETED_REPLACEMENT")
+		}
+	} else {
+		defer func() {
+			if replacement != 0 {
+				syscall.RegCloseKey(replacement)
+			}
+		}()
+		children, values, _, e := freshRegistryInfo(replacement)
+		if e != nil || children != 0 || values != 0 {
+			t.Fatal("NEW_OBJECT_CHANGED")
+		}
+		if owner.cleanup() == "OWNED_REMOVED" {
+			t.Fatal("PATH_FALLBACK_DELETED_REPLACEMENT")
+		}
+		rc, _, _ := freshRegNtDelete.Call(uintptr(replacement))
+		if rc != 0 {
+			t.Fatal("PRIVATE_REPLACEMENT_RESTORE_FAILED")
+		}
+		syscall.RegCloseKey(replacement)
+		replacement = 0
+	}
+	if after := freshObserveRegistration(ps, key); !after.Known || !after.Absent {
+		t.Fatal("PRIVATE_GLOBAL_RESTORE_UNPROVEN")
+	}
+}
+
+func freshPrepareAbParent(ps, key string) (*freshAbParent, string) {
+	r := &freshAbParent{key: key, before: freshObserveRegistration(ps, key)}
+	if !r.before.Known {
+		return r, "OBSERVATION_FAILED"
+	}
+	var h syscall.Handle
+	e := syscall.RegOpenKeyEx(syscall.HKEY_CURRENT_USER, ptr(key), 0, syscall.KEY_READ|0x100, &h)
+	if e == nil {
+		if syscall.RegCloseKey(h) != nil {
+			return r, "HANDLE_UNKNOWN"
+		}
+		r.known = true
+		return r, "PREEXISTING"
+	}
+	if e != syscall.ERROR_FILE_NOT_FOUND && e != syscall.ERROR_PATH_NOT_FOUND {
+		return r, "OBSERVATION_FAILED"
+	}
+	var state string
+	r.owned, state = freshPrepareOwnedRegistryScope(ps, key, false)
+	if state != "EMPTY_CREATED_NEW" {
+		return r, state
+	}
+	r.known = true
+	return r, "OWNED_EMPTY_PARENT"
+}
+func (r *freshAbParent) cleanup(ps string, allow bool) string {
+	if r == nil || !r.known || !allow {
+		return "OWNERSHIP_UNKNOWN"
+	}
+	if r.owned != nil {
+		state := r.owned.cleanup()
+		if state != "OWNED_REMOVED" {
+			return "OWNERSHIP_UNKNOWN"
+		}
+		return "OWNED_REMOVED"
+	}
+	return freshRecoveryStatus(r.before, freshObserveRegistration(ps, r.key), false)
+}
+func (r *freshAbParent) close() bool { return r == nil || r.owned == nil || r.owned.close() }
+func TestFreshAbParentReceiptPrivate(t *testing.T) {
+	ps := filepath.Join(os.Getenv("SystemRoot"), "System32/WindowsPowerShell/v1.0/powershell.exe")
+	key := fmt.Sprintf(`Software\CodexAbParent_%x\Beta`, time.Now().UnixNano())
+	parent, state := freshPrepareAbParent(ps, key)
+	defer parent.close()
+	if state != "OWNED_EMPTY_PARENT" {
+		t.Fatal("PRIVATE_PARENT_CREATE_FAILED")
+	}
+	existing, known := freshPrepareAbParent(ps, key)
+	defer existing.close()
+	if known != "PREEXISTING" || existing.owned != nil {
+		t.Fatal("EXISTING_PARENT_ADOPTED")
+	}
+	child, created := freshCreateOwnedRegistry(ps, key+`\Child`)
+	defer child.close()
+	if created != "CREATED_NEW" {
+		t.Fatal("PRIVATE_CHILD_CREATE_FAILED")
+	}
+	if parent.cleanup(ps, true) != "OWNERSHIP_UNKNOWN" {
+		t.Fatal("UNKNOWN_CHILD_DELETED")
+	}
+	if child.cleanup() != "OWNED_REMOVED" {
+		t.Fatal("PRIVATE_CHILD_RESTORE_FAILED")
+	}
+	if existing.cleanup(ps, true) != "SNAPSHOT_UNCHANGED" || parent.cleanup(ps, true) != "OWNED_REMOVED" {
+		t.Fatal("PRIVATE_PARENT_RESTORE_FAILED")
+	}
+}

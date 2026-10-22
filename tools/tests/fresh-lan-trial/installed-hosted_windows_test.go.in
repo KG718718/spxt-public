@@ -52,6 +52,8 @@ func TestFreshInstalledCore(t *testing.T) {
 	fixtureReceipts := []*freshOwnedFixtureReceipt{}
 	fixtureCallbacks := []func() bool{}
 	var bindingReceipt *freshOwnedRegistry
+	installationParents := map[string]*freshAbParent{}
+	parentRecovery := map[string]string{"uninstallParent": "NOT_APPLICABLE", "bindingParent": "NOT_APPLICABLE"}
 	registryDiagnostic := map[string]any{"schema": 1, "kind": "FRESH_REGISTRY_FIXTURE", "sourceCommit": commit, "role": role, "create": "NOT_STARTED", "compare": "NOT_STARTED", "cleanup": "NOT_STARTED", "firstFailure": "NONE", "handlesClosed": false}
 	recordRegistry := func(phase, state string) {
 		registryDiagnostic[phase] = state
@@ -80,6 +82,10 @@ func TestFreshInstalledCore(t *testing.T) {
 		completeRemoval := false
 		if allow && installationStarted && cleanupCompleteInstallation != nil {
 			completeRemoval = cleanupCompleteInstallation()
+		}
+		for key, parent := range installationParents {
+			parentRecovery[key] = parent.cleanup(ps, allow)
+			fixtureOK = fixtureOK && freshRecoveryRestored(parentRecovery[key])
 		}
 		for _, k := range []string{"productRegistration", "binding", "startup", "desktop", "programs", "programFiles"} {
 			var after freshRecoverySnapshot
@@ -155,6 +161,9 @@ func TestFreshInstalledCore(t *testing.T) {
 		cleanup["lockReleased"] = stopped
 		restored := cleanupInstallation(stopped)
 		registryHandlesClosed := bindingReceipt.close()
+		for _, parent := range installationParents {
+			registryHandlesClosed = parent.close() && registryHandlesClosed
+		}
 		registryDiagnostic["handlesClosed"] = registryHandlesClosed
 		if !registryHandlesClosed {
 			recordRegistry("cleanup", "CLOSE_FAILED")
@@ -178,6 +187,7 @@ func TestFreshInstalledCore(t *testing.T) {
 			report["kind"] = "FRESH_INSTALLED_SPLIT"
 			report["role"] = role
 			report["setupSha256"] = os.Getenv("KSESSION_FRESH_SETUP_SHA256")
+			report["installationParentRecovery"] = parentRecovery
 		}
 		diagnosticBytes, diagnosticErr := json.Marshal(registryDiagnostic)
 		if diagnosticErr != nil || os.WriteFile(filepath.Join(base, "registry-fixture.json"), append(diagnosticBytes, '\n'), 0600) != nil {
@@ -392,6 +402,16 @@ func TestFreshInstalledCore(t *testing.T) {
 		}
 	}
 	reg := filepath.Join(os.Getenv("SystemRoot"), "System32", "reg.exe")
+	if role == "A" {
+		for _, row := range [][2]string{{"uninstallParent", `Software\Microsoft\Windows\CurrentVersion\Uninstall`}, {"bindingParent", `Software\KSESSION\Beta`}} {
+			parent, state := freshPrepareAbParent(ps, row[1])
+			installationParents[row[0]] = parent
+			parentRecovery[row[0]] = "NOT_OBSERVED"
+			if state != "PREEXISTING" && state != "OWNED_EMPTY_PARENT" {
+				t.Fatal("AB_PARENT_PRESTATE_UNPROVEN")
+			}
+		}
+	}
 	if role != "A" {
 		fixture := filepath.Join(base, "nonempty-target")
 		if os.Mkdir(fixture, 0700) != nil {
@@ -476,6 +496,9 @@ func TestFreshInstalledCore(t *testing.T) {
 		checks["rejectionsUnchanged"] = true
 	}
 	if role == "B" {
+		if !freshRunAbFailedInstall(ps, node, repo, base, setup, commit, os.Getenv("KSESSION_FRESH_SETUP_SHA256"), recoveryPaths, recoveryBefore, &setupPending) {
+			t.Fatal("AB_FAILED_NATIVE_INSTALL_UNPROVEN")
+		}
 		stage = "COMPLETE"
 		return
 	}

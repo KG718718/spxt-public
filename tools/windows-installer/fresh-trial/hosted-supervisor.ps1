@@ -14,6 +14,10 @@ $taskSink=New-FreshSupervisorSink $env:FRESH_CONTROL_ROOT $taskIdentity
 try{
  $taskVerify={param($NormalizedWork)
   $taskContext=Get-Content -Raw -LiteralPath (Join-Path $NormalizedWork 'context.json')|ConvertFrom-Json
+  if($taskContext.kind -ceq 'FRESH_AB_CONTEXT' -and $taskContext.schema -eq 3){
+   $taskContextCheck=Invoke-FastOwnedProcess (Get-Command node).Source @((Join-Path $PSScriptRoot 'ab/context.cjs'),$NormalizedWork) (Join-Path $taskSink.root 'context-job-ready') 120 -Detail
+   return [pscustomobject]@{scope=$taskContextCheck.scope}
+  }
   if($env:GITHUB_WORKFLOW_REF -ceq 'KG718718/spxt-public/.github/workflows/fresh-install-candidate.yml@refs/heads/codex/lan-fresh-trial-v1.1' -or $null -ne $taskContext.PSObject.Properties['installCandidate']){
    $taskContextCheck=Invoke-FastOwnedProcess (Get-Command node).Source @((Join-Path $PSScriptRoot 'install-candidate/context.cjs'),$NormalizedWork) (Join-Path $taskSink.root 'context-job-ready') 120 -Detail
    return [pscustomobject]@{scope=$taskContextCheck.scope}

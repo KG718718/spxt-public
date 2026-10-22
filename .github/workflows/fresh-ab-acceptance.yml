@@ -1,0 +1,212 @@
+name: Final Fresh A B Acceptance
+run-name: ${{ github.event.head_commit.message }}
+on:
+  push:
+    branches: [codex/lan-fresh-trial-v1.1]
+    paths: [docs/tasks/windows-installer-v1.1/fresh-lan-trial/final-install-lan/ab-acceptance-trigger.json]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: fresh-lan-trial-exclusive
+  cancel-in-progress: false
+jobs:
+  fresh_A:
+    name: fresh-A
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-fresh-trial-v1.1' && github.run_attempt == 1
+    runs-on: windows-2025
+    timeout-minutes: 45
+    env:
+      KSESSION_FRESH_INSTALL_ROLE: A
+    outputs:
+      handoffArtifactId: ${{ steps.transfer.outputs.artifact-id }}
+      setupSha256: ${{ steps.final.outputs.setupSha256 }}
+      manifestSha256: ${{ steps.final.outputs.manifestSha256 }}
+    steps:
+      - name: Own isolated work and safe early evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          trap{[Console]::WriteLine('AB_ISOLATION_ENTRY_FAILED');exit 1}
+          $taskControl=Join-Path $env:RUNNER_TEMP ('fresh-control-'+$env:GITHUB_RUN_ID+'-A-'+[guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Path $taskControl|Out-Null
+          ('FRESH_CONTROL_ROOT='+$taskControl)|Out-File -LiteralPath $env:GITHUB_ENV -Append -Encoding utf8
+          New-Item -ItemType Directory -Path (Join-Path $taskControl 'fallback-evidence')|Out-Null
+          $taskRecovery=[ordered]@{};foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules')){$taskRecovery[$taskKey]='NOT_OBSERVED'}
+          [IO.File]::WriteAllText((Join-Path $taskControl 'fallback-evidence/fresh-report.json'),(@{schema=3;kind='FRESH_AB_EARLY_FAILURE';role='A';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';classification='SOURCE_NOT_ADMITTED';status='FAIL';driveRestored=$false;recovery=$taskRecovery;supervisor=$null;sourceDiagnostic=$null}|ConvertTo-Json -Depth 8 -Compress),[Text.UTF8Encoding]::new($false))
+          $taskState=[ordered]@{schema=1;runId=$env:GITHUB_RUN_ID;drive='E:';created=$false;target=$null}
+          [IO.File]::WriteAllText((Join-Path $taskControl 'isolation-private.json'),($taskState|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+          if(!(Test-Path E:/)){
+            $taskTarget=Join-Path $env:RUNNER_TEMP ('fresh-drive-'+$env:GITHUB_RUN_ID)
+            if(Test-Path -LiteralPath $taskTarget){throw 'Unknown isolation target'}
+            New-Item -ItemType Directory -Path $taskTarget|Out-Null
+            $taskMappings=@(& (Join-Path $env:SystemRoot 'System32/subst.exe') 2>&1)
+            if($LASTEXITCODE -ne 0 -or @($taskMappings|Where-Object{$_ -match '^E:\\: => '}).Count -ne 0){throw 'Unknown E mapping'}
+            $taskState.created=$true;$taskState.target=$taskTarget
+            [IO.File]::WriteAllText((Join-Path $taskControl 'isolation-private.json'),($taskState|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+            $taskMappingResult=@(& (Join-Path $env:SystemRoot 'System32/subst.exe') E: $taskTarget 2>&1)
+            if($LASTEXITCODE -ne 0){throw 'Isolation mapping failed'}
+          }
+          if(Test-Path E:/fresh-trial){throw 'Unknown work root'}
+          New-Item -ItemType Directory -Path E:/fresh-trial|Out-Null
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Bind newly authorized reviewed source and current API Job
+        id: source
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NODE_OPTIONS: ''
+          NODE_PATH: ''
+        run: |
+          $ErrorActionPreference='Stop'
+          try{
+            $taskCaptured=@(node tools/windows-installer/fresh-trial/ab/bootstrap.cjs $env:GITHUB_WORKSPACE E:/fresh-trial 2>&1)
+            if($LASTEXITCODE -ne 0 -or $taskCaptured.Count -ne 0){throw 'AB_SOURCE_FAILED'}
+          }catch{
+            try{$taskDiagnostic=@{schema=1;kind='FRESH_AB_SOURCE_DIAGNOSTIC';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;role=$env:KSESSION_FRESH_INSTALL_ROLE;stage='SOURCE';classification='SOURCE_PROCESS_FAILED';status='FAIL'};$taskBytes=[Text.Encoding]::UTF8.GetBytes(($taskDiagnostic|ConvertTo-Json -Compress));$taskFile=[IO.File]::Open((Join-Path $env:FRESH_CONTROL_ROOT 'workflow-source-diagnostic.json'),[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None);try{$taskFile.Write($taskBytes,0,$taskBytes.Length)}finally{$taskFile.Dispose()}}catch{}
+            [Console]::WriteLine('AB_SOURCE_FAILED');exit 1
+          }
+      - name: Formal build and normal Fresh first under owned supervisor
+        id: execution
+        shell: pwsh
+        timeout-minutes: 35
+        run: |
+          $ErrorActionPreference='Stop'
+          try{$taskCaptured=@(& ./tools/windows-installer/fresh-trial/hosted-supervisor.ps1 -Work E:/fresh-trial 2>&1);if($LASTEXITCODE -ne 0 -or $taskCaptured.Count -ne 0){throw 'AB_EXECUTION_FAILED'}}catch{[Console]::WriteLine('AB_EXECUTION_FAILED');exit 1}
+      - name: Always verify complete recovery before unqualified transfer
+        if: always()
+        id: final
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          try{
+            $taskCaptured=@(& ./tools/windows-installer/fresh-trial/finalize.ps1 -ControlRoot $env:FRESH_CONTROL_ROOT -SourceOutcome '${{ steps.source.outcome }}' -ExecutionOutcome '${{ steps.execution.outcome }}' -FreshAb 2>&1);$taskExit=$LASTEXITCODE
+            if($taskCaptured.Count -ne 0){throw 'AB_FINALIZATION_FAILED'}
+          }catch{
+            try{$taskRecovery=[ordered]@{};foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules')){$taskRecovery[$taskKey]='NOT_OBSERVED'};$taskEarly=@{schema=3;kind='FRESH_AB_EARLY_FAILURE';role=$env:KSESSION_FRESH_INSTALL_ROLE;controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='FINALIZATION';classification='AB_FINALIZATION_FAILED';status='FAIL';driveRestored=$false;recovery=$taskRecovery;supervisor=$null;sourceDiagnostic=$null;privateSetupLogsMayExist=$true};[IO.File]::WriteAllText((Join-Path $env:FRESH_CONTROL_ROOT 'fallback-evidence/fresh-report.json'),($taskEarly|ConvertTo-Json -Depth 8 -Compress),[Text.UTF8Encoding]::new($false));'evidenceFallback=true'|Out-File -LiteralPath $env:GITHUB_OUTPUT -Append -Encoding utf8}catch{}
+            [Console]::WriteLine('AB_FINALIZATION_FAILED');exit 1
+          }
+          if($taskExit -ne 0){exit 1}
+      - name: Safe A evidence only
+        if: always() && env.FRESH_CONTROL_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: fresh-ab-evidence-A-${{ steps.source.outputs.source || github.sha }}-${{ github.run_id }}
+          path: ${{ steps.final.outputs.evidenceFallback != 'true' && steps.final.outputs.publish && format('{0}/evidence/fresh-report.json', steps.final.outputs.publish) || format('{0}/fallback-evidence/fresh-report.json', env.FRESH_CONTROL_ROOT) }}
+          if-no-files-found: error
+          retention-days: 30
+      - name: Immutable same EXE build transfer; not a qualified Candidate
+        if: success() && steps.final.outputs.transferReady == 'true'
+        id: transfer
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: fresh-ab-build-transfer-${{ steps.source.outputs.source }}-${{ github.run_id }}
+          path: |
+            ${{ steps.final.outputs.publish }}/transfer/K-SESSION-Fresh-Trial-1.1.0-beta.4.exe
+            ${{ steps.final.outputs.publish }}/transfer/K-SESSION-Fresh-Trial-1.1.0-beta.4.exe.sha256
+            ${{ steps.final.outputs.publish }}/transfer/build-info.json
+            ${{ steps.final.outputs.publish }}/transfer/installer-manifest.json
+            ${{ steps.final.outputs.publish }}/transfer/LICENSE-Inno-Setup.txt
+            ${{ steps.final.outputs.publish }}/transfer/license-summary.json
+            ${{ steps.final.outputs.publish }}/transfer/fresh-report.json
+            ${{ steps.final.outputs.publish }}/transfer/ab-transfer.json
+          if-no-files-found: error
+          retention-days: 30
+  fresh_B:
+    name: fresh-B
+    needs: fresh_A
+    if: needs.fresh_A.result == 'success' && github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-fresh-trial-v1.1' && github.run_attempt == 1
+    runs-on: windows-2025
+    timeout-minutes: 45
+    env:
+      KSESSION_FRESH_INSTALL_ROLE: B
+    steps:
+      - name: Own another clean isolated work and early evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          trap{[Console]::WriteLine('AB_ISOLATION_ENTRY_FAILED');exit 1}
+          $taskControl=Join-Path $env:RUNNER_TEMP ('fresh-control-'+$env:GITHUB_RUN_ID+'-B-'+[guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Path $taskControl|Out-Null
+          ('FRESH_CONTROL_ROOT='+$taskControl)|Out-File -LiteralPath $env:GITHUB_ENV -Append -Encoding utf8
+          New-Item -ItemType Directory -Path (Join-Path $taskControl 'fallback-evidence')|Out-Null
+          $taskRecovery=[ordered]@{};foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules')){$taskRecovery[$taskKey]='NOT_OBSERVED'}
+          [IO.File]::WriteAllText((Join-Path $taskControl 'fallback-evidence/fresh-report.json'),(@{schema=3;kind='FRESH_AB_EARLY_FAILURE';role='B';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='SOURCE';classification='SOURCE_NOT_ADMITTED';status='FAIL';driveRestored=$false;recovery=$taskRecovery;supervisor=$null;sourceDiagnostic=$null}|ConvertTo-Json -Depth 8 -Compress),[Text.UTF8Encoding]::new($false))
+          $taskState=[ordered]@{schema=1;runId=$env:GITHUB_RUN_ID;drive='E:';created=$false;target=$null}
+          [IO.File]::WriteAllText((Join-Path $taskControl 'isolation-private.json'),($taskState|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+          if(!(Test-Path E:/)){
+            $taskTarget=Join-Path $env:RUNNER_TEMP ('fresh-drive-'+$env:GITHUB_RUN_ID)
+            if(Test-Path -LiteralPath $taskTarget){throw 'Unknown isolation target'}
+            New-Item -ItemType Directory -Path $taskTarget|Out-Null
+            $taskMappings=@(& (Join-Path $env:SystemRoot 'System32/subst.exe') 2>&1)
+            if($LASTEXITCODE -ne 0 -or @($taskMappings|Where-Object{$_ -match '^E:\\: => '}).Count -ne 0){throw 'Unknown E mapping'}
+            $taskState.created=$true;$taskState.target=$taskTarget
+            [IO.File]::WriteAllText((Join-Path $taskControl 'isolation-private.json'),($taskState|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+            $taskMappingResult=@(& (Join-Path $env:SystemRoot 'System32/subst.exe') E: $taskTarget 2>&1)
+            if($LASTEXITCODE -ne 0){throw 'Isolation mapping failed'}
+          }
+          if(Test-Path E:/fresh-trial){throw 'Unknown work root'}
+          New-Item -ItemType Directory -Path E:/fresh-trial|Out-Null
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Bind current B Job and download exact A artifact ID
+        id: source
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NODE_OPTIONS: ''
+          NODE_PATH: ''
+          AB_HANDOFF_ARTIFACT_ID: ${{ needs.fresh_A.outputs.handoffArtifactId }}
+          AB_SETUP_SHA256: ${{ needs.fresh_A.outputs.setupSha256 }}
+          AB_MANIFEST_SHA256: ${{ needs.fresh_A.outputs.manifestSha256 }}
+        run: |
+          $ErrorActionPreference='Stop'
+          try{
+            $taskCaptured=@(node tools/windows-installer/fresh-trial/ab/bootstrap.cjs $env:GITHUB_WORKSPACE E:/fresh-trial 2>&1)
+            if($LASTEXITCODE -ne 0 -or $taskCaptured.Count -ne 0){throw 'AB_SOURCE_FAILED'}
+          }catch{
+            try{$taskDiagnostic=@{schema=1;kind='FRESH_AB_SOURCE_DIAGNOSTIC';controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;role=$env:KSESSION_FRESH_INSTALL_ROLE;stage='SOURCE';classification='SOURCE_PROCESS_FAILED';status='FAIL'};$taskBytes=[Text.Encoding]::UTF8.GetBytes(($taskDiagnostic|ConvertTo-Json -Compress));$taskFile=[IO.File]::Open((Join-Path $env:FRESH_CONTROL_ROOT 'workflow-source-diagnostic.json'),[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None);try{$taskFile.Write($taskBytes,0,$taskBytes.Length)}finally{$taskFile.Dispose()}}catch{}
+            [Console]::WriteLine('AB_SOURCE_FAILED');exit 1
+          }
+      - name: Five rejects and native failed install recovery; never rebuild Setup
+        id: execution
+        shell: pwsh
+        timeout-minutes: 35
+        run: |
+          $ErrorActionPreference='Stop'
+          try{$taskCaptured=@(& ./tools/windows-installer/fresh-trial/hosted-supervisor.ps1 -Work E:/fresh-trial 2>&1);if($LASTEXITCODE -ne 0 -or $taskCaptured.Count -ne 0){throw 'AB_EXECUTION_FAILED'}}catch{[Console]::WriteLine('AB_EXECUTION_FAILED');exit 1}
+      - name: Always verify B complete recovery
+        if: always()
+        id: final
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          try{
+            $taskCaptured=@(& ./tools/windows-installer/fresh-trial/finalize.ps1 -ControlRoot $env:FRESH_CONTROL_ROOT -SourceOutcome '${{ steps.source.outcome }}' -ExecutionOutcome '${{ steps.execution.outcome }}' -FreshAb 2>&1);$taskExit=$LASTEXITCODE
+            if($taskCaptured.Count -ne 0){throw 'AB_FINALIZATION_FAILED'}
+          }catch{
+            try{$taskRecovery=[ordered]@{};foreach($taskKey in @('productRegistration','binding','startup','desktop','programs','programFiles','compilerOwnedFiles','compilerSettings','globalRegistry','rules')){$taskRecovery[$taskKey]='NOT_OBSERVED'};$taskEarly=@{schema=3;kind='FRESH_AB_EARLY_FAILURE';role=$env:KSESSION_FRESH_INSTALL_ROLE;controlCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=1;stage='FINALIZATION';classification='AB_FINALIZATION_FAILED';status='FAIL';driveRestored=$false;recovery=$taskRecovery;supervisor=$null;sourceDiagnostic=$null;privateSetupLogsMayExist=$true};[IO.File]::WriteAllText((Join-Path $env:FRESH_CONTROL_ROOT 'fallback-evidence/fresh-report.json'),($taskEarly|ConvertTo-Json -Depth 8 -Compress),[Text.UTF8Encoding]::new($false));'evidenceFallback=true'|Out-File -LiteralPath $env:GITHUB_OUTPUT -Append -Encoding utf8}catch{}
+            [Console]::WriteLine('AB_FINALIZATION_FAILED');exit 1
+          }
+          if($taskExit -ne 0){exit 1}
+      - name: Safe B evidence only; Master aggregates two completed API Jobs
+        if: always() && env.FRESH_CONTROL_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: fresh-ab-evidence-B-${{ steps.source.outputs.source || github.sha }}-${{ github.run_id }}
+          path: ${{ steps.final.outputs.evidenceFallback != 'true' && steps.final.outputs.publish && format('{0}/evidence/fresh-report.json', steps.final.outputs.publish) || format('{0}/fallback-evidence/fresh-report.json', env.FRESH_CONTROL_ROOT) }}
+          if-no-files-found: error
+          retention-days: 30
