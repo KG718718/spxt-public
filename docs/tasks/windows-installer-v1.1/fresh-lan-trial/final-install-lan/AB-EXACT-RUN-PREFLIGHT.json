@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "kind": "AB_EXACT_RUN_LIVE_PREFLIGHT",
+  "status": "PASS_BEFORE_TRIGGER",
+  "observedAt": "2026-10-22T08:19:23.199Z",
+  "sourceCommit": "3d256a019f99126ac25298955a7ef9bb229eeb07",
+  "priorGovernanceHead": "535d2a7d696e868ba99186a44def9a986c6e46bb",
+  "codeFingerprint": "7f6ee2332152b20b7163c6b0c74d002eb26af37540ec68812a9716a2477b8b97",
+  "environment": {
+    "id": "25002534760",
+    "name": "fresh-ab-exact-run-approval",
+    "canAdminsBypass": false,
+    "preventSelfReview": false,
+    "reviewerId": "268517677",
+    "reviewerLogin": "KG718718",
+    "branch": "codex/lan-fresh-trial-v1.1",
+    "branchType": "branch",
+    "ruleCount": 1,
+    "publicReadHttpStatus": 200
+  },
+  "master": {
+    "userMatchesReviewer": true,
+    "admin": true,
+    "push": true,
+    "liveApprovalWrite": "NOT_YET_EXECUTED",
+    "liveCancelWrite": "NOT_EXECUTED"
+  },
+  "historicalRuns": [
+    {
+      "id": "39732017789",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "cancelled",
+      "control": "482144f20c2720a351e65f5e7c23ddc3b12d610b"
+    },
+    {
+      "id": "39732016119",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "cancelled",
+      "control": "482144f20c2720a351e65f5e7c23ddc3b12d610b"
+    }
+  ],
+  "nativePendingApprovalMustConfirmCanApprove": true,
+  "approvalDeadlineSeconds": 600,
+  "cancelConfirmationSeconds": 120,
+  "approvalComment": "EXACT_JSON_FROM_REVIEWED_MASTER_BINDING",
+  "candidateBudget": {
+    "authorized": 1,
+    "used": 0,
+    "reserved": 1
+  },
+  "qa": {
+    "authorizedExisting": 1,
+    "used": 0,
+    "conditionalSameExe": true
+  },
+  "hostedTriggered": 0,
+  "remoteSettingsChanged": false,
+  "newProductCode": false
+}

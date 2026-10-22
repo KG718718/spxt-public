@@ -1,3 +1,7 @@
+## 当前准入｜2026-10-22 既有唯一A/B Candidate 预留 / REAL ENVIRONMENT PASS
+
+用户已配置真实fresh-ab-exact-run-approval/ID25002534760：唯一KG718718/id268517677、prevent-self-review=false、admin bypass=false、仅Branch codex/lan-fresh-trial-v1.1，实际认证与无认证读取均通过。新受审Source3d256a01/codeFP7f6ee233、完整本地EXE SHA86e88c25...783ecd及独立Review/1049文件20依赖/传递反例/Job环境恢复PASS。沿用已批准且未消耗的唯一A/B授权，0/1已预留尚未触发；原QA0/1只在完整Candidate/恢复/产物PASS后同EXE。最小schema2授权/Review使用现有合同，Master原生精确comment绑定唯一Run；600秒独立审批截止，重复/UNKNOWN拒绝并标准取消，不retry。旧两取消Run、FAIL/UNKNOWN/预算永久保留，不main/tag/Release/内部SPXT/未知清理/普通sub-agent。详见AB-EXACT-RUN-PREFLIGHT.json；真实Runner前态/安装/业务/恢复仍待当前Run，不提前PASS。
+
 ## 当前前检｜2026-10-22 既有A/B授权0/1保留 / BUILD REVIEW PASS / ENVIRONMENT REQUIRED
 
 用户明确澄清唯一A/B Candidate仍0/1、非新增预算；原QA0/1仅完整PASS同EXE，旧两Run及全部历史预算/FAIL/UNKNOWN保持。新同源实构建source3d256a01/codeFP7f6ee233、EXE33560012/SHA86e88c25...783ecd，原T2 RETURN99bb9302与Master全1049文件20依赖/同EXE传递五反例/Job环境恢复PASS。无产品源码变化，首份私有Review行尾误比FAIL保留并按实际编译checkout闭合。真实当前KG718718 admin及repo/workflow scope有效，但Environment0/命名环境404；唯一待用户配置fresh-ab-exact-run-approval、唯一reviewer KG718718、self-review允许而bypass禁用、仅开发分支。Master只读核验配置后沿用已批额度，600秒独立审批截止/标准取消，精确comment绑定唯一Run；无需重复申请预算。未触发Hosted/QA/安装，无实际LAN结论，不main/tag/Release/内部SPXT/未知清理。详见final-install-lan/AB-EXISTING-AUTHORIZATION-PREFLIGHT.md/json。下方全部历史保留。
