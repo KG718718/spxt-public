@@ -1,0 +1,273 @@
+{
+  "schema": 1,
+  "kind": "AB_EXISTING_AUTHORIZATION_FINAL_PREFLIGHT",
+  "status": "LOCAL_BUILD_REVIEW_PASS_ENVIRONMENT_CONFIGURATION_REQUIRED",
+  "sourceCommit": "3d256a019f99126ac25298955a7ef9bb229eeb07",
+  "executionReturnCommit": "99bb93020087091b3da67e1dca3e980f7831e6d6",
+  "codeFingerprint": "7f6ee2332152b20b7163c6b0c74d002eb26af37540ec68812a9716a2477b8b97",
+  "authorization": {
+    "candidateAuthorized": 1,
+    "candidateUsedByThisAuthorization": 0,
+    "qaExisting": 1,
+    "qaConditional": true,
+    "historicalTwoRunsUnchanged": true
+  },
+  "realCapability": {
+    "schema": 1,
+    "kind": "AB_EXISTING_AUTHORIZATION_REAL_PREFLIGHT",
+    "observedAt": "2026-10-22T07:45:43.055Z",
+    "sourceCommit": "3d256a019f99126ac25298955a7ef9bb229eeb07",
+    "budget": {
+      "candidateAuthorized": 1,
+      "candidateUsedByThisAuthorization": 0,
+      "qaExisting": 1,
+      "qaConditional": true,
+      "historicalTwoRunsUnchanged": true
+    },
+    "user": {
+      "login": "KG718718",
+      "id": "268517677",
+      "type": "User"
+    },
+    "repository": {
+      "public": true,
+      "admin": true,
+      "push": true,
+      "pull": true
+    },
+    "credential": {
+      "repoScope": true,
+      "workflowScope": true,
+      "permissionsExpanded": false,
+      "rawCredentialStored": false
+    },
+    "environment": {
+      "name": "fresh-ab-exact-run-approval",
+      "count": 0,
+      "namedHttpStatus": 404,
+      "exists": false,
+      "protectionRules": "NOT_CONFIGURED",
+      "requiredReviewer": "KG718718",
+      "requiredReviewerId": "268517677",
+      "preventSelfReviewRequired": false,
+      "actorReviewerConflictIfEnabled": true
+    },
+    "master": {
+      "reviewHistoryReadable": true,
+      "pendingDeploymentsReadable": true,
+      "approvalAndCancelDocumentedCapability": true,
+      "liveApproval": "NOT_EXECUTED_NO_PENDING_RUN",
+      "liveCancel": "NOT_EXECUTED_NO_ACTIVE_RUN"
+    },
+    "runner": {
+      "declaredActions": "read",
+      "declaredContents": "read",
+      "repositoryDefaultWorkflowPermissions": "read",
+      "realGithubToken": "NOT_AVAILABLE_WITHOUT_RUN",
+      "publicReadProof": [
+        {
+          "route": "environments",
+          "httpStatus": 200,
+          "jsonPresent": true,
+          "shapeValid": true
+        },
+        {
+          "route": "actions/runs/39732016119",
+          "httpStatus": 200,
+          "jsonPresent": true,
+          "shapeValid": true
+        },
+        {
+          "route": "actions/runs/39732016119/attempts/1/jobs?per_page=100",
+          "httpStatus": 200,
+          "jsonPresent": true,
+          "shapeValid": true
+        },
+        {
+          "route": "actions/runs/39732016119/approvals",
+          "httpStatus": 200,
+          "jsonPresent": true,
+          "shapeValid": true
+        }
+      ],
+      "namedProtectedEnvironmentRead": "NOT_VERIFIED_ENVIRONMENT_ABSENT",
+      "requiredPermissionsMatchOfficialApiDocumentation": true
+    },
+    "historicalRuns": [
+      {
+        "id": "39732017789",
+        "attempt": 1,
+        "status": "completed",
+        "conclusion": "cancelled",
+        "control": "482144f20c2720a351e65f5e7c23ddc3b12d610b"
+      },
+      {
+        "id": "39732016119",
+        "attempt": 1,
+        "status": "completed",
+        "conclusion": "cancelled",
+        "control": "482144f20c2720a351e65f5e7c23ddc3b12d610b"
+      }
+    ],
+    "approvalWait": {
+      "deadlineSeconds": 600,
+      "from": "TRIGGER_PUSH_COMPLETED",
+      "pollSeconds": 10,
+      "approvalDeadlineIsNotJobTimeout": true,
+      "cancelRoute": "POST /repos/KG718718/spxt-public/actions/runs/{exactRunId}/cancel",
+      "cancelConfirmationSeconds": 120,
+      "duplicateAction": "APPROVE_NONE_CANCEL_ALL_MATCHING_AUTHORIZATION_RUNS_STOP",
+      "unknownAction": "APPROVE_NONE_CANCEL_OBSERVED_EXACT_AUTHORIZATION_RUNS_STOP",
+      "automaticRetry": false,
+      "supervisionRequired": true
+    },
+    "status": "BLOCKED_ENVIRONMENT_CONFIGURATION",
+    "hostedTriggered": 0,
+    "remoteMutations": 0
+  },
+  "build": {
+    "setupBytes": 33560012,
+    "forcedTermination": false,
+    "stage": "FINAL",
+    "sourceCommit": "3d256a019f99126ac25298955a7ef9bb229eeb07",
+    "kind": "FAST_P0_LOCAL_BUILD",
+    "naturalExit": true,
+    "productionInstalled": false,
+    "setupSha256": "86e88c250ea9a63b9d8ba6a520d1945417aefcbed7784a80a01659ff65783ecd",
+    "productionExeRun": false,
+    "qualification": "BUILD_ONLY_NOT_INSTALLATION_ACCEPTANCE",
+    "jobEmpty": true,
+    "schema": 1,
+    "status": "PASS",
+    "environmentRestored": true,
+    "stderrEmpty": true
+  },
+  "master": {
+    "build": {
+      "schema": 1,
+      "kind": "MASTER_AB_COMPLETE_BUILD_REVIEW",
+      "status": "PASS",
+      "sourceCommit": "3d256a019f99126ac25298955a7ef9bb229eeb07",
+      "sourceTree": "1bddd0a7f1f89d8ac783bae81e9913e97a3d8a37",
+      "setupSha256": "86e88c250ea9a63b9d8ba6a520d1945417aefcbed7784a80a01659ff65783ecd",
+      "setupBytes": 33560012,
+      "files": 1049,
+      "uncompressedBytes": 147923786,
+      "dependencyCount": 20,
+      "nodeVersion": "24.21.0",
+      "goVersion": "1.27.1",
+      "innoSetupVersion": "6.7.3",
+      "allPayloadBytesVerified": true,
+      "manifestMatches": true,
+      "productionInstalled": false,
+      "productExecuted": false,
+      "rawOutputStored": false
+    },
+    "buildScope": {
+      "scope": {
+        "schema": 1,
+        "kind": "FAST_OWNED_PROCESS_SCOPE",
+        "assigned": true,
+        "naturalExit": true,
+        "stderrEmpty": true,
+        "pipesClosed": true,
+        "handlesClosed": true,
+        "jobEmpty": true,
+        "forcedTermination": false,
+        "status": "PASS"
+      },
+      "classification": "PASS",
+      "rootExited": true,
+      "startedSuspended": true,
+      "childResumed": true
+    },
+    "transfer": {
+      "schema": 1,
+      "kind": "MASTER_AB_COMPLETE_EXE_TRANSFER_PROOF",
+      "sourceCommit": "3d256a019f99126ac25298955a7ef9bb229eeb07",
+      "sourceTree": "1bddd0a7f1f89d8ac783bae81e9913e97a3d8a37",
+      "status": "PASS",
+      "setupSha256": "86e88c250ea9a63b9d8ba6a520d1945417aefcbed7784a80a01659ff65783ecd",
+      "manifestSha256": "2cfe20938848843472930aef61e1737755db768b579a4e66a072bced009e0d8c",
+      "sameExeBytes": true,
+      "sameSourceAndManifest": true,
+      "negativeRejected": {
+        "wrongSource": true,
+        "wrongAJob": true,
+        "wrongManifest": true,
+        "extraFile": true,
+        "changedExe": true
+      },
+      "originalBuildUnchanged": true,
+      "syntheticTransportMetadataOnly": true,
+      "actualHostedTransferObserved": false,
+      "productSetupExecuted": false,
+      "rawOutputStored": false
+    },
+    "transferScope": {
+      "scope": {
+        "schema": 1,
+        "kind": "FAST_OWNED_PROCESS_SCOPE",
+        "assigned": true,
+        "naturalExit": true,
+        "stderrEmpty": true,
+        "pipesClosed": true,
+        "handlesClosed": true,
+        "jobEmpty": true,
+        "forcedTermination": false,
+        "status": "PASS"
+      },
+      "classification": "PASS",
+      "rootExited": true,
+      "startedSuspended": true,
+      "childResumed": true
+    },
+    "schema": 1,
+    "kind": "AB_FINAL_PREFLIGHT_MASTER",
+    "status": "PASS",
+    "environmentRestored": true,
+    "rawEnvironmentStored": false,
+    "productInstalled": false,
+    "hostedTriggered": 0
+  },
+  "compilerCheckoutBinding": [
+    {
+      "file": "tools/windows-installer/beta4-upgrade/setup-beta4.iss",
+      "actualCompilerInputHashMatched": true,
+      "filteredGitBlobMatched": true,
+      "lineEndingOnlyDifference": true
+    },
+    {
+      "file": "tools/windows-installer/beta4-upgrade/fresh-startup-identity.iss",
+      "actualCompilerInputHashMatched": true,
+      "filteredGitBlobMatched": true,
+      "lineEndingOnlyDifference": true
+    }
+  ],
+  "retainedMasterDraftFailure": {
+    "schema": 1,
+    "kind": "MASTER_AB_COMPLETE_BUILD_REVIEW",
+    "status": "FAIL",
+    "phase": "PAYLOAD",
+    "rawOutputStored": false
+  },
+  "retainedPredicateEvidence": {
+    "schema": 1,
+    "kind": "MASTER_PAYLOAD_PREDICATES",
+    "source": "3d256a019f99126ac25298955a7ef9bb229eeb07",
+    "rawOutputStored": false,
+    "PAYLOAD_INVENTORY": true,
+    "FILE_COUNT": true,
+    "BYTES": true,
+    "PORTABLE_VERIFY": true,
+    "GENERATED_MANIFEST": true,
+    "SETUP_WORKTREE": false,
+    "SETUP_FROZEN_SOURCE": false,
+    "STARTUP_INCLUDE_WORKTREE": false,
+    "STARTUP_INCLUDE_FROZEN_SOURCE": true,
+    "LICENSE": true
+  },
+  "actualProductInstallation": "NOT_VERIFIED",
+  "liveNativeApproval": "NOT_VERIFIED_ENVIRONMENT_ABSENT",
+  "hostedTriggered": 0
+}

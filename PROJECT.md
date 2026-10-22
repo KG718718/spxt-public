@@ -1,3 +1,7 @@
+## 当前前检｜2026-10-22 既有A/B授权0/1保留 / BUILD REVIEW PASS / ENVIRONMENT REQUIRED
+
+用户明确澄清唯一A/B Candidate仍0/1、非新增预算；原QA0/1仅完整PASS同EXE，旧两Run及全部历史预算/FAIL/UNKNOWN保持。新同源实构建source3d256a01/codeFP7f6ee233、EXE33560012/SHA86e88c25...783ecd，原T2 RETURN99bb9302与Master全1049文件20依赖/同EXE传递五反例/Job环境恢复PASS。无产品源码变化，首份私有Review行尾误比FAIL保留并按实际编译checkout闭合。真实当前KG718718 admin及repo/workflow scope有效，但Environment0/命名环境404；唯一待用户配置fresh-ab-exact-run-approval、唯一reviewer KG718718、self-review允许而bypass禁用、仅开发分支。Master只读核验配置后沿用已批额度，600秒独立审批截止/标准取消，精确comment绑定唯一Run；无需重复申请预算。未触发Hosted/QA/安装，无实际LAN结论，不main/tag/Release/内部SPXT/未知清理。详见final-install-lan/AB-EXISTING-AUTHORIZATION-PREFLIGHT.md/json。下方全部历史保留。
+
 ## 当前停止｜2026-10-22 DUPLICATE RUN & SOURCE GATE / LOCAL REVIEW PASS
 
 原FRESH-T2本地修复4aaf0d1b及RETURNc70ac99a已独立Review。两Run为不同真实记录，公开push仅见一条但完整性不足，重复触发底层UNKNOWN。新来源采用精确历史保留+外部Master原生凭证+唯一Run/control/source/attempt/实际Job绑定，重复与UNKNOWN拒绝；独立22+8反例、目标127/根146及Job/环境恢复PASS。生产/旧FAIL/预算/trigger逐blob不改。本轮Hosted0、未配置Environment/未创建真实授权或trigger，QA冻结；新源码完整EXE/安装/LAN未验。未来需新预算、真实保护配置与同源构建Review，不直接准入。原Thread/工作树/证据保留，只非force同步后STOP。详见final-install-lan/AB-SOURCE-GATE-CLOSURE-RESULT.md及MASTER-REVIEW.json。下方历史不改。
