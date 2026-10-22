@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "kind": "USER_AUTHORIZED_FINAL_AB_HOSTED",
+  "localOnlyAuthorizationCommit": "4a1f6177925c0974d5f3996014c837cb7f22a266",
+  "approvedCodeSource": "d8222780953bed685ccd0f4f5a3e82571b9e5bf2",
+  "codeFingerprint": "c9694f15fa0821171fb1acd48fe0462bdcfe8969b62339c336798b93b362291a",
+  "masterReviewSha256": "a013c3d7a9d4753654fdca0f0c2b4eded8faa5cf570ca654fe5459f0e79d1c0d",
+  "workflowSha256": "b39321666dc0259e8675eea45f68f5c907d73e605a42f4f6e2ec881b9262e964",
+  "maxWorkflowRuns": 1,
+  "maxHostedWindowsJobs": 2,
+  "maxRunAttempts": 1,
+  "approvalMarker": "USER_APPROVED_FINAL_AB_HOSTED_d8222780953bed685ccd0f4f5a3e82571b9e5bf2"
+}

@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "kind": "FINAL_AB_BUDGET_LEDGER",
+  "authorizationDate": "2026-10-22",
+  "status": "AUTHORIZED_NOT_TRIGGERED",
+  "sourceCommit": "d8222780953bed685ccd0f4f5a3e82571b9e5bf2",
+  "localBuildSetupSha256": "c781aa2712ef749d4a4572581db52ddb4fba9825b7dc63365cbd8abd34bc7ede",
+  "masterReviewSha256": "a013c3d7a9d4753654fdca0f0c2b4eded8faa5cf570ca654fe5459f0e79d1c0d",
+  "candidate": {
+    "maximumRuns": 1,
+    "maximumWindowsJobs": 2,
+    "maximumAttempts": 1,
+    "used": 0,
+    "runId": null,
+    "controlCommit": null
+  },
+  "qa": {
+    "maximumRuns": 1,
+    "used": 0,
+    "status": "FROZEN_UNTIL_COMPLETE_CANDIDATE_PASS_SAME_EXE"
+  },
+  "otherHosted": 0,
+  "currentRunnerPreflight": "NOT_OBSERVED_RUNNER_NOT_CREATED",
+  "historicalFailuresPreserved": true
+}

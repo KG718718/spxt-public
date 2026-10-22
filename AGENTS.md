@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-22 FINAL A/B CANDIDATE / 唯一一次 Hosted
+
+用户正式批准1次完整A/B Candidate，固定source d8222780、Master Review及本地EXE c781aa27...4bc7ede；仅两个独立标准Windows Job，A正常安装优先、B同EXE五拒绝与原生失败恢复。当前0/1，尚未触发；Runner实际前检必须安装前PASS，任意FAIL/UNKNOWN即STOP、不retry/FC4/挪QA。仅完整Candidate/恢复/Artifact通过后原独立QA0/1同EXE启用；旧FAIL/UNKNOWN/账本不改，其他Hosted0，不main/tag/Release/内部SPXT/未知清理/sub-agent。详见final-install-lan/AB-HOSTED-AUTHORIZATION.md及AB-RUNS.json。下方冻结为本次有限授权前历史。
+
 ## 当前停止｜2026-10-22 FINAL A/B LOCAL COMPLETION / REVIEW & BUILD PASS — HOSTED FROZEN
 
 原FRESH-T2正式RETURN5983cf89并冻结，唯一受审/完整构建source d8222780/codeFP c9694f15；Master独立115/Root146、20聚合拒绝/9日志拒绝/10私有机制及完整1049文件20依赖和同EXE实际本地传递Review PASS，Job/环境恢复PASS。EXE33567058字节/SHA c781aa27...4bc7ede仅BUILD资格。A正常first/B五拒绝+同正式EXE原生mkdir失败恢复、双独立Windows Job/source/schema/CI/外层报告/不可变ID传递/两completed Job最终聚合均接齐；实际Setup/真实A-B/安装后26-742/QA/物理LAN未验，无合格用户包。父结构仅精确producer/空值回收，未知仍拒绝；旧301失败底层与旧Job未知、symlink EPERM、FC1/2/3 FAIL/UNKNOWN保留。本轮Hosted0，Candidate耗尽、QA0/1冻结；无trigger/Hosted授权/预留，不retry/FC4/借QA/普通sub-agent/main/tag/Release/内部SPXT/未知清理。仅本次非force开发分支同步后STOP，下一次完整A/B需用户新预算与来源绑定。详见final-install-lan/AB-MASTER-REVIEW.md及AB-EXECUTION-RETURN.md。下方授权/停止均保留历史。
