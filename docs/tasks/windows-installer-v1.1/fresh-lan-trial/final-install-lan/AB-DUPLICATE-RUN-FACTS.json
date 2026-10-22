@@ -1,0 +1,127 @@
+{
+  "schema": 1,
+  "kind": "DUPLICATE_RUN_READONLY_FACTS",
+  "status": "EVIDENCE_COLLECTED_ROOT_CAUSE_UNKNOWN",
+  "commit": {
+    "control": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+    "parents": [
+      "d55589e4ea2aef78b26f6fc91a666970024522f1"
+    ],
+    "subject": "FreshABAcceptance d8222780953bed685ccd0f4f5a3e82571b9e5bf2",
+    "changedFiles": [
+      "docs/tasks/windows-installer-v1.1/fresh-lan-trial/final-install-lan/ab-acceptance-trigger.json"
+    ]
+  },
+  "workflow": {
+    "id": 392530487,
+    "path": ".github/workflows/fresh-ab-acceptance.yml",
+    "pushOnly": true,
+    "standardWindowsJobCount": 2,
+    "concurrencyGroup": "fresh-lan-trial-exclusive",
+    "cancelInProgress": false,
+    "concurrencyPreventsDuplicateCreation": false
+  },
+  "workflowPages": [
+    {
+      "page": 1,
+      "total": 2,
+      "rows": [
+        {
+          "id": 39732017789,
+          "control": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+          "workflowId": 392530487,
+          "attempt": 1,
+          "event": "push",
+          "checkSuiteId": 107677988314
+        }
+      ]
+    },
+    {
+      "page": 2,
+      "total": 2,
+      "rows": [
+        {
+          "id": 39732016119,
+          "control": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+          "workflowId": 392530487,
+          "attempt": 1,
+          "event": "push",
+          "checkSuiteId": 107677983813
+        }
+      ]
+    },
+    {
+      "page": 3,
+      "total": 2,
+      "rows": []
+    }
+  ],
+  "independentRunDetails": [
+    {
+      "id": 39732016119,
+      "checkSuiteId": 107677983813,
+      "checkSuiteHeadMatches": true,
+      "runNumber": 1,
+      "event": "push",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "attempt": 1,
+      "createdAt": "2026-10-22T06:07:34Z",
+      "jobsCount": 2,
+      "startedJobs": 1
+    },
+    {
+      "id": 39732017789,
+      "checkSuiteId": 107677988314,
+      "checkSuiteHeadMatches": true,
+      "runNumber": 2,
+      "event": "push",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "attempt": 1,
+      "createdAt": "2026-10-22T06:07:34Z",
+      "jobsCount": 0,
+      "startedJobs": 0
+    }
+  ],
+  "distinctRunIds": 2,
+  "distinctCheckSuites": 2,
+  "listPaginationDuplicateIsCause": false,
+  "publicEvents": {
+    "pages": [
+      {
+        "page": 1,
+        "count": 100
+      },
+      {
+        "page": 2,
+        "count": 100
+      },
+      {
+        "page": 3,
+        "count": 100
+      }
+    ],
+    "matching": [
+      {
+        "eventId": "24780626601",
+        "pushId": 47351876442,
+        "before": "d55589e4ea2aef78b26f6fc91a666970024522f1",
+        "head": "482144f20c2720a351e65f5e7c23ddc3b12d610b",
+        "createdAt": "2026-10-22T06:07:34Z"
+      }
+    ],
+    "uniqueEventIds": 1,
+    "uniquePushIds": 1,
+    "exhaustiveness": "UNKNOWN_EVENT_TIMELINE_IS_NOT_AUDIT_LOG"
+  },
+  "conclusions": {
+    "distinctRuns": "CONFIRMED",
+    "oneVisibleMatchingPushEvent": true,
+    "exactOnePushGlobally": "UNKNOWN",
+    "multiplePushes": "NOT_PROVEN",
+    "gitHubInternalCause": "UNKNOWN",
+    "unexpectedTriggerPath": "UNKNOWN_BEYOND_RECORDED_PUSH_EVENT",
+    "historicalFirstRejectingAssertion": "UNKNOWN_CURRENT_API_REJECTED_ONLY"
+  }
+}

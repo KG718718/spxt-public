@@ -1,0 +1,347 @@
+{
+  "schema": 1,
+  "kind": "AB_SOURCE_GATE_MASTER_REVIEW",
+  "status": "LOCAL_REVIEW_PASS_HOSTED_FROZEN",
+  "sourceCommit": "4aaf0d1be81d9735abce62abc099660c03974829",
+  "executionReturnCommit": "c70ac99a92287ae6fa1488a0585846a9df1eae9c",
+  "codeFingerprint": "7f6ee2332152b20b7163c6b0c74d002eb26af37540ec68812a9716a2477b8b97",
+  "executionEvidence": {
+    "file": "docs/tasks/windows-installer-v1.1/fresh-lan-trial/final-install-lan/AB-SOURCE-GATE-LOCAL-EVIDENCE.json",
+    "sha256": "38cefa063496ad25c131e41d97303d006e16b4f93b9cf1e58d8000256dd29c2e"
+  },
+  "master": {
+    "binding": {
+      "schema": 1,
+      "kind": "MASTER_EXACT_RUN_INDEPENDENT_REVIEW",
+      "sourceCommit": "4aaf0d1be81d9735abce62abc099660c03974829",
+      "sourceBound": true,
+      "status": "PASS",
+      "tests": 22,
+      "pass": 22,
+      "fail": 0,
+      "skip": 0,
+      "cases": [
+        {
+          "id": "EXACT_AUTHORIZED_RUN",
+          "expected": "PASS",
+          "actual": "PASS",
+          "pass": true
+        },
+        {
+          "id": "SAME_CONTROL_EXTRA_RUN",
+          "expected": "HISTORY_SCOPE_REJECTED",
+          "actual": "HISTORY_SCOPE_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "REPLAY_OTHER_RUN",
+          "expected": "MASTER_APPROVAL_REJECTED",
+          "actual": "MASTER_APPROVAL_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "WRONG_SOURCE",
+          "expected": "AUTHORIZATION_REJECTED",
+          "actual": "AUTHORIZATION_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "WRONG_CONTROL",
+          "expected": "AUTHORIZATION_REJECTED",
+          "actual": "AUTHORIZATION_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "WRONG_ATTEMPT",
+          "expected": "AUTHORIZATION_REJECTED",
+          "actual": "AUTHORIZATION_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "HISTORICAL_STATE_REWRITTEN",
+          "expected": "HISTORY_SCOPE_REJECTED",
+          "actual": "HISTORY_SCOPE_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "HISTORY_NEW_AUTH_REPLAY",
+          "expected": "HISTORY_SCOPE_REJECTED",
+          "actual": "HISTORY_SCOPE_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "NATIVE_APPROVAL_ABSENT",
+          "expected": "MASTER_APPROVAL_MISSING",
+          "actual": "MASTER_APPROVAL_MISSING",
+          "pass": true
+        },
+        {
+          "id": "NATIVE_OTHER_REVIEWER",
+          "expected": "MASTER_APPROVAL_REJECTED",
+          "actual": "MASTER_APPROVAL_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "NO_REQUIRED_REVIEWER",
+          "expected": "ENVIRONMENT_PROTECTION_REJECTED",
+          "actual": "ENVIRONMENT_PROTECTION_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "ENTRY_A",
+          "expected": "PASS",
+          "actual": "PASS",
+          "pass": true
+        },
+        {
+          "id": "ENTRY_B",
+          "expected": "PASS",
+          "actual": "PASS",
+          "pass": true
+        },
+        {
+          "id": "MISSING_CURRENT_JOB",
+          "expected": "JOB_STATE_UNKNOWN",
+          "actual": "JOB_STATE_UNKNOWN",
+          "pass": true
+        },
+        {
+          "id": "AGGREGATE_JOBS_IN_PROGRESS",
+          "expected": "JOB_STATE_REJECTED",
+          "actual": "JOB_STATE_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "AGGREGATE_JOB_FAILED",
+          "expected": "JOB_STATE_REJECTED",
+          "actual": "JOB_STATE_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "AGGREGATE_BOTH_COMPLETED",
+          "expected": "PASS",
+          "actual": "PASS",
+          "pass": true
+        },
+        {
+          "id": "API_QUERY_FAILED",
+          "expected": "API_QUERY_UNKNOWN",
+          "actual": "API_QUERY_UNKNOWN",
+          "pass": true
+        },
+        {
+          "id": "PAGINATION_INCOMPLETE",
+          "expected": "HISTORY_SNAPSHOT_UNKNOWN",
+          "actual": "HISTORY_SNAPSHOT_UNKNOWN",
+          "pass": true
+        },
+        {
+          "id": "PAGINATION_DRIFT",
+          "expected": "HISTORY_SNAPSHOT_UNKNOWN",
+          "actual": "HISTORY_SNAPSHOT_UNKNOWN",
+          "pass": true
+        },
+        {
+          "id": "SAFE_REPORT_EXTRA_FIELD",
+          "expected": "AUTHORIZATION_REJECTED",
+          "actual": "AUTHORIZATION_REJECTED",
+          "pass": true
+        },
+        {
+          "id": "RUNTIME_ACTUAL_JOB_REPLACED",
+          "expected": "AUTHORIZATION_REJECTED",
+          "actual": "AUTHORIZATION_REJECTED",
+          "pass": true
+        }
+      ],
+      "rawOutputStored": false,
+      "hostedRuns": 0
+    },
+    "missing": {
+      "schema": 1,
+      "kind": "MASTER_MISSING_OBSERVATION_COUNTEREXAMPLES",
+      "sourceCommit": "4aaf0d1be81d9735abce62abc099660c03974829",
+      "sourceBound": true,
+      "status": "PASS",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "skip": 0,
+      "cases": [
+        {
+          "id": "HISTORY_NESTED_REPO_MISSING",
+          "observation": "UNKNOWN",
+          "pass": true
+        },
+        {
+          "id": "ENV_NULL_PROTECTION",
+          "observation": "UNKNOWN",
+          "pass": true
+        },
+        {
+          "id": "ENV_PROTECTION_TYPE_MISSING",
+          "observation": "UNKNOWN",
+          "pass": true
+        },
+        {
+          "id": "ENV_NULL_REVIEWERS",
+          "observation": "UNKNOWN",
+          "pass": true
+        },
+        {
+          "id": "APPROVAL_NULL_ENVIRONMENTS",
+          "observation": "UNKNOWN",
+          "pass": true
+        },
+        {
+          "id": "APPROVAL_NULL_USER",
+          "observation": "UNKNOWN",
+          "pass": true
+        },
+        {
+          "id": "JOB_NULL_STATUS",
+          "observation": "UNKNOWN",
+          "pass": true
+        },
+        {
+          "id": "RUN_NULL_SOURCE",
+          "observation": "UNKNOWN",
+          "pass": true
+        }
+      ],
+      "rawOutputStored": false,
+      "hostedRuns": 0
+    },
+    "targeted": {
+      "schema": 1,
+      "kind": "MASTER_SOURCE_GATE_TARGETED_REVIEW",
+      "sourceCommit": "c70ac99a92287ae6fa1488a0585846a9df1eae9c",
+      "sourceBound": true,
+      "status": "PASS",
+      "testFiles": [
+        "tools/tests/fresh-lan-trial/ab/aggregate.test.cjs",
+        "tools/tests/fresh-lan-trial/ab/bootstrap.test.cjs",
+        "tools/tests/fresh-lan-trial/ab/contract.test.cjs",
+        "tools/tests/fresh-lan-trial/ab/entry.test.cjs",
+        "tools/tests/fresh-lan-trial/ab/report.test.cjs",
+        "tools/tests/fresh-lan-trial/ab/source-gate.test.cjs",
+        "tools/tests/fresh-lan-trial/ab/transfer.test.cjs",
+        "tools/tests/fresh-lan-trial/ab-failure.test.cjs",
+        "tools/tests/fresh-lan-trial/install-split.test.cjs",
+        "tools/tests/fresh-lan-trial/registry-views.test.cjs",
+        "tools/tests/fresh-lan-trial/report.test.cjs",
+        "tools/tests/fresh-lan-trial/workflow-contract.test.cjs",
+        "tools/tests/fresh-lan-trial/install-candidate/wiring.test.cjs"
+      ],
+      "targets": {
+        "tests": 127,
+        "pass": 127,
+        "fail": 0,
+        "skipped": 0,
+        "todo": 0,
+        "exitZero": true,
+        "stderrEmpty": true
+      },
+      "root": {
+        "schema": 1,
+        "kind": "FAST_ROOT_FRESH_GATE",
+        "sourceCommit": "c70ac99a92287ae6fa1488a0585846a9df1eae9c",
+        "sourceBound": true,
+        "status": "PASS",
+        "tests": 146,
+        "pass": 146,
+        "fail": 0,
+        "skipped": 0,
+        "exitClass": "ZERO",
+        "failures": [],
+        "rawOutputStored": false
+      },
+      "rawOutputStored": false,
+      "productInstalled": false
+    },
+    "scope": {
+      "scope": {
+        "schema": 1,
+        "kind": "FAST_OWNED_PROCESS_SCOPE",
+        "assigned": true,
+        "naturalExit": true,
+        "stderrEmpty": true,
+        "pipesClosed": true,
+        "handlesClosed": true,
+        "jobEmpty": true,
+        "forcedTermination": false,
+        "status": "PASS"
+      },
+      "classification": "PASS",
+      "rootExited": true,
+      "startedSuspended": true,
+      "childResumed": true
+    },
+    "environment": {
+      "rawEnvironmentStored": false,
+      "schema": 1,
+      "environmentRestored": true
+    }
+  },
+  "draftCounterexamples": {
+    "schema": 1,
+    "kind": "MASTER_MISSING_OBSERVATION_COUNTEREXAMPLES",
+    "status": "FAIL",
+    "tests": 8,
+    "pass": 1,
+    "fail": 7,
+    "skip": 0,
+    "cases": [
+      {
+        "id": "HISTORY_NESTED_REPO_MISSING",
+        "observation": "REJECTED",
+        "pass": false
+      },
+      {
+        "id": "ENV_NULL_PROTECTION",
+        "observation": "REJECTED",
+        "pass": false
+      },
+      {
+        "id": "ENV_PROTECTION_TYPE_MISSING",
+        "observation": "REJECTED",
+        "pass": false
+      },
+      {
+        "id": "ENV_NULL_REVIEWERS",
+        "observation": "REJECTED",
+        "pass": false
+      },
+      {
+        "id": "APPROVAL_NULL_ENVIRONMENTS",
+        "observation": "REJECTED",
+        "pass": false
+      },
+      {
+        "id": "APPROVAL_NULL_USER",
+        "observation": "UNKNOWN",
+        "pass": true
+      },
+      {
+        "id": "JOB_NULL_STATUS",
+        "observation": "REJECTED",
+        "pass": false
+      },
+      {
+        "id": "RUN_NULL_SOURCE",
+        "observation": "REJECTED",
+        "pass": false
+      }
+    ],
+    "rawOutputStored": false,
+    "hostedRuns": 0
+  },
+  "historyPreserved": true,
+  "productionUnchanged": true,
+  "liveApprovalConfigured": false,
+  "liveApprovalEndToEnd": "NOT_VERIFIED",
+  "newSourceFullExeBuild": "NOT_RUN",
+  "actualProductInstall": "NOT_VERIFIED",
+  "hostedRuns": 0,
+  "qa": "UNUSED_FROZEN"
+}

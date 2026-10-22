@@ -1,3 +1,7 @@
+## 当前停止｜2026-10-22 DUPLICATE RUN & SOURCE GATE / LOCAL REVIEW PASS
+
+原FRESH-T2本地修复4aaf0d1b及RETURNc70ac99a已独立Review。两Run为不同真实记录，公开push仅见一条但完整性不足，重复触发底层UNKNOWN。新来源采用精确历史保留+外部Master原生凭证+唯一Run/control/source/attempt/实际Job绑定，重复与UNKNOWN拒绝；独立22+8反例、目标127/根146及Job/环境恢复PASS。生产/旧FAIL/预算/trigger逐blob不改。本轮Hosted0、未配置Environment/未创建真实授权或trigger，QA冻结；新源码完整EXE/安装/LAN未验。未来需新预算、真实保护配置与同源构建Review，不直接准入。原Thread/工作树/证据保留，只非force同步后STOP。详见final-install-lan/AB-SOURCE-GATE-CLOSURE-RESULT.md及MASTER-REVIEW.json。下方历史不改。
+
 ## 当前授权｜2026-10-22 DUPLICATE RUN & SOURCE GATE CLOSURE / LOCAL ONLY
 
 用户批准原Master/原FRESH-T2在5c503807基线上只读取证两个同control Run，并最小修复来源/唯一Run授权/完整分页/固定分类及反例；本地独立Review后非force同步。旧Run/FAIL/UNKNOWN/账本/trigger不改，不忽略重复，不把concurrency当防重，根因无证UNKNOWN。Hosted0、旧Candidate已用、QA冻结，不触发/重跑/新真实Run授权/main/tag/Release/内部SPXT/未知清理/普通sub-agent/后代；本轮只本地闭环后统一返回。详见final-install-lan/AB-SOURCE-GATE-CLOSURE-AUTHORIZATION.md。下方STOP保留历史。
