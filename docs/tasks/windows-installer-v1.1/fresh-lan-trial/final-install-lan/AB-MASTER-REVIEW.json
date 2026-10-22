@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "kind": "AB_LOCAL_MASTER_REVIEW",
+  "status": "PASS",
+  "sourceCommit": "d8222780953bed685ccd0f4f5a3e82571b9e5bf2",
+  "codeFingerprint": "c9694f15fa0821171fb1acd48fe0462bdcfe8969b62339c336798b93b362291a",
+  "localBuildReportSha256": "b536bc00c149432c2dd300ac85bd88a893e59057953d51700336a0e9db880ef6",
+  "localBuildSetupSha256": "c781aa2712ef749d4a4572581db52ddb4fba9825b7dc63365cbd8abd34bc7ede",
+  "workflowSha256": "b39321666dc0259e8675eea45f68f5c907d73e605a42f4f6e2ec881b9262e964",
+  "checks": {
+    "sourceFrozen": true,
+    "requiredLocalGatesPassed": true,
+    "buildBytesVerified": true,
+    "privateMechanismVerified": true,
+    "sameExeTransferPrepared": true,
+    "splitEntryPrepared": true,
+    "outerRecoveryPrepared": true
+  },
+  "actualProductInstall": "NOT_VERIFIED",
+  "hostedTriggered": false
+}

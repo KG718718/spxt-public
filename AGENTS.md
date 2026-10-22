@@ -1,3 +1,7 @@
+## 当前停止｜2026-10-22 FINAL A/B LOCAL COMPLETION / REVIEW & BUILD PASS — HOSTED FROZEN
+
+原FRESH-T2正式RETURN5983cf89并冻结，唯一受审/完整构建source d8222780/codeFP c9694f15；Master独立115/Root146、20聚合拒绝/9日志拒绝/10私有机制及完整1049文件20依赖和同EXE实际本地传递Review PASS，Job/环境恢复PASS。EXE33567058字节/SHA c781aa27...4bc7ede仅BUILD资格。A正常first/B五拒绝+同正式EXE原生mkdir失败恢复、双独立Windows Job/source/schema/CI/外层报告/不可变ID传递/两completed Job最终聚合均接齐；实际Setup/真实A-B/安装后26-742/QA/物理LAN未验，无合格用户包。父结构仅精确producer/空值回收，未知仍拒绝；旧301失败底层与旧Job未知、symlink EPERM、FC1/2/3 FAIL/UNKNOWN保留。本轮Hosted0，Candidate耗尽、QA0/1冻结；无trigger/Hosted授权/预留，不retry/FC4/借QA/普通sub-agent/main/tag/Release/内部SPXT/未知清理。仅本次非force开发分支同步后STOP，下一次完整A/B需用户新预算与来源绑定。详见final-install-lan/AB-MASTER-REVIEW.md及AB-EXECUTION-RETURN.md。下方授权/停止均保留历史。
+
 ## 当前授权｜2026-10-22 FINAL A/B ACCEPTANCE COMPLETION / LOCAL ONLY
 
 用户批准原Master/原FRESH-T2/bea7补齐A正常Fresh优先、B同正式EXE真实中途失败恢复、双独立标准Windows Job/不可变EXE传递/完整source-schema-外层恢复及completed后聚合；本地自主loop和Master独立Review。三方HEAD0a36894c、受审source461c7588保留；不重研FC3首因，不专门编译放宽条件EXE，不用五拒绝或FILE surrogate冒充中途恢复。新增Hosted0、原QA冻结，不触发/FC4/新预算；日常机仅owned私有fixture，不真实Setup/Startup/产品登记/业务/网络，不内部SPXT/main/tag/Release/未知清理/sub-agent。无法安全证明B时如实阻塞，不扩新框架。详见final-install-lan/AB-ACCEPTANCE-COMPLETION-AUTHORIZATION.md。下方STOP在本次明确本地范围内有限续行。
