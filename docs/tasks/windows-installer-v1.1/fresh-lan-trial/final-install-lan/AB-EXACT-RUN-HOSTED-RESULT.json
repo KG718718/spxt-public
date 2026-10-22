@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "kind": "AB_EXACT_RUN_MASTER_RESULT",
+  "status": "STOP_APPROVAL_PREFLIGHT_UNKNOWN_CANCELLED",
+  "observedAt": "2026-10-22T08:26:33.341Z",
+  "sourceCommit": "3d256a019f99126ac25298955a7ef9bb229eeb07",
+  "controlCommit": "7c9aa11cdc9205186b5321a31c487a0cb17f7401",
+  "authorizationCommit": "b9018c23b841bc38b8371634fcfd124e4d7075d3",
+  "run": {
+    "id": "39747285185",
+    "attempt": 1,
+    "event": "push",
+    "workflowId": "392530487",
+    "runNumber": 3,
+    "checkSuiteId": "107719476281",
+    "status": "completed",
+    "conclusion": "cancelled",
+    "url": "https://github.com/KG718718/spxt-public/actions/runs/39747285185",
+    "createdAt": "2026-10-22T08:22:47Z",
+    "updatedAt": "2026-10-22T08:22:54Z"
+  },
+  "supervision": {
+    "pushAttempts": 1,
+    "approvalAttempts": 0,
+    "approvalCommentSubmitted": false,
+    "failureClass": "HISTORY_SNAPSHOT_UNKNOWN",
+    "cancelProof": "ALL_OBSERVED_RUNS_COMPLETED",
+    "approvalDeadlineSeconds": 600,
+    "cancelConfirmationSeconds": 120,
+    "unknownPredicate": "NOT_RECORDED",
+    "rawApiSnapshotSaved": false
+  },
+  "jobs": [
+    {
+      "id": "119718802735",
+      "role": "A",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "stepCount": 0,
+      "execution": "NOT_REACHED"
+    },
+    {
+      "id": "119718841761",
+      "role": "B",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "stepCount": 0,
+      "execution": "NOT_REACHED"
+    }
+  ],
+  "approvalsCount": 0,
+  "pendingApprovalsCount": 0,
+  "artifactCount": 0,
+  "currentControlRunCount": 1,
+  "historicalRunIds": [
+    "39732016119",
+    "39732017789"
+  ],
+  "build": "NOT_STARTED",
+  "freshInstall": "NOT_STARTED",
+  "F01_F09": "NOT_REACHED",
+  "installedBusiness": "NOT_REACHED",
+  "core26_742": "NOT_REACHED",
+  "runtimeRecovery": "NOT_EXECUTED_NOT_A_PASS",
+  "candidate": "NOT_QUALIFIED",
+  "budget": {
+    "candidateAuthorized": 1,
+    "candidateUsed": 1,
+    "candidateRetry": 0,
+    "qaExisting": 1,
+    "qaUsed": 0,
+    "qaState": "UNUSED_FROZEN"
+  },
+  "historicalResultsChanged": false,
+  "sourceCodeModified": false,
+  "localBuildQualification": "BUILD_ONLY_NOT_INSTALLATION_ACCEPTANCE"
+}

@@ -1,3 +1,7 @@
+## 当前停止｜2026-10-22 唯一A/B Run 39747285185 审批前取消
+
+既有批准的唯一Candidate已由一次trigger-only push创建；Source3d256a01/control7c9aa11c。真实Environment配置与本地同源构建/Review通过，但审批前历史重复快照返回HISTORY_SNAPSHOT_UNKNOWN，具体差异未记录，不猜测GitHub内部原因。审批0次，监督器标准取消并确认completed/cancelled；A/B均cancelled、steps=[]、无Artifact，构建/安装/F01—F09/26-742未执行、恢复不追认PASS。实际同控制仅1条Run，旧两取消Run/FAIL/UNKNOWN不改。Candidate1/1已用、原QA0/1冻结；不retry/新Hosted/借QA。原T2/树保留，不main/tag/Release/内部SPXT/未知清理/sub-agent。仅治理非force同步后STOP，详见final-install-lan/AB-EXACT-RUN-HOSTED-RESULT.md。
+
 ## 当前准入｜2026-10-22 既有唯一A/B Candidate 预留 / REAL ENVIRONMENT PASS
 
 用户已配置真实fresh-ab-exact-run-approval/ID25002534760：唯一KG718718/id268517677、prevent-self-review=false、admin bypass=false、仅Branch codex/lan-fresh-trial-v1.1，实际认证与无认证读取均通过。新受审Source3d256a01/codeFP7f6ee233、完整本地EXE SHA86e88c25...783ecd及独立Review/1049文件20依赖/传递反例/Job环境恢复PASS。沿用已批准且未消耗的唯一A/B授权，0/1已预留尚未触发；原QA0/1只在完整Candidate/恢复/产物PASS后同EXE。最小schema2授权/Review使用现有合同，Master原生精确comment绑定唯一Run；600秒独立审批截止，重复/UNKNOWN拒绝并标准取消，不retry。旧两取消Run、FAIL/UNKNOWN/预算永久保留，不main/tag/Release/内部SPXT/未知清理/普通sub-agent。详见AB-EXACT-RUN-PREFLIGHT.json；真实Runner前态/安装/业务/恢复仍待当前Run，不提前PASS。
