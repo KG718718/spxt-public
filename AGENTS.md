@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-22 FINAL A/B ACCEPTANCE COMPLETION / LOCAL ONLY
+
+用户批准原Master/原FRESH-T2/bea7补齐A正常Fresh优先、B同正式EXE真实中途失败恢复、双独立标准Windows Job/不可变EXE传递/完整source-schema-外层恢复及completed后聚合；本地自主loop和Master独立Review。三方HEAD0a36894c、受审source461c7588保留；不重研FC3首因，不专门编译放宽条件EXE，不用五拒绝或FILE surrogate冒充中途恢复。新增Hosted0、原QA冻结，不触发/FC4/新预算；日常机仅owned私有fixture，不真实Setup/Startup/产品登记/业务/网络，不内部SPXT/main/tag/Release/未知清理/sub-agent。无法安全证明B时如实阻塞，不扩新框架。详见final-install-lan/AB-ACCEPTANCE-COMPLETION-AUTHORIZATION.md。下方STOP在本次明确本地范围内有限续行。
+
 ## 当前停止｜2026-10-20 FC3 LOCAL RECOVERY REVIEW / BUILD PASS — SPLIT NOT READY
 
 原FRESH-T2正式RETURN54f4da7c并冻结，受审/唯一完整构建source461c7588/codeFP e02e6682；Master独立CJS177/Root142/PS32/聚合5反例、1049文件20依赖与完整EXE逐字节Review PASS，Job/环境恢复PASS。EXE33558037字节/SHA5b035291...c21a9d仅BUILD资格。旧reg add归属缺陷已复现并修复为native回执/持续句柄/结构化四视图；历史FC3确切首因UNKNOWN、Binding OWNERSHIP_UNKNOWN及GlobalRegistry STATE_CHANGED不回填。A正常first/B五拒绝角色及严格聚合已接线，但B真实失败安装恢复producer、双独立VM/CI/schema/source/外层恢复发布未激活，完整Candidate NOT READY；安装/F01—F09/安装后26-742/QA/物理LAN未验，无合格用户包。本轮Hosted0，Candidate耗尽、QA0/1冻结，不retry/FC4/借额度；原树/失败/未跟踪保留，无生产安全/实际workflow/trigger/旧contracts改动，不main/tag/Release/内部SPXT/未知清理/sub-agent。仅本次非force治理同步后STOP。详见final-install-lan/FC3-RECOVERY-MASTER-REVIEW.md与EXECUTION-RETURN。下方保留授权和旧失败历史。
