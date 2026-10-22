@@ -1,0 +1,19 @@
+'use strict';
+// Master-side preparation only. No token/grant files and no remote writes.
+// A future budgeted Master may POST the returned body to the exact run's
+// pending_deployments endpoint. Runner credentials cannot issue that approval.
+const a=require('node:assert/strict'),g=require('../../../tests/fresh-lan-trial/ab/contract.cjs'),sg=require('../../../tests/fresh-lan-trial/ab/source-gate.cjs');
+async function prepare(repo,control,runId,api,env=process.env){
+ sg.checked('AUTHORIZATION_REJECTED',()=>{a.notEqual(env.GITHUB_ACTIONS,'true');a.match(control,g.HEX);a.match(runId,g.ID);});
+ const i=g.input(JSON.parse(g.bytesAt(repo,control,g.TRIGGER)));sg.checked('AUTHORIZATION_REJECTED',()=>{a.equal(i.schema,2);a.equal(g.gitAt(repo)('rev-parse',control+'^'),i.reviewedSource);a.deepEqual(g.gitAt(repo)('diff','--name-only',i.reviewedSource,control).split('\n'),[g.TRIGGER]);g.source(repo,i);});
+ const authority=g.authorityPolicy(repo,i),user=await sg.query(api,'user');sg.observed(user,['id','type']);sg.checked('AUTHORIZATION_REJECTED',()=>{a.equal(user.type,'User');a.equal(String(user.id),authority.policy.masterUserId);});
+ const f=await sg.facts(api,runId,authority.policy);sg.authorization(i,f.run,control);const digest=sg.history(f.history,f.run);sg.environment(f.environment,authority.policy);sg.observed(f.run,['actor']);sg.observed(f.run.actor,['id']);sg.checked('ENVIRONMENT_PROTECTION_REJECTED',()=>{const rule=f.environment.protection_rules.find(r=>r.type==='required_reviewers');a.ok(!rule.prevent_self_review||String(f.run.actor.id)!==authority.policy.masterUserId);});
+ sg.checked('MASTER_APPROVAL_REJECTED',()=>{a.deepEqual(f.reviews,[]);a.ok(['waiting','queued','pending','in_progress'].includes(f.run.status));a.equal(f.run.conclusion,null);for(const j of f.jobs.jobs){sg.observed(j,['name','status']);a.ok(['fresh-A','fresh-B'].includes(j.name));a.ok(['waiting','queued','pending'].includes(j.status));}});
+ const pending=await sg.query(api,'actions/runs/'+runId+'/pending_deployments');sg.checked('MASTER_APPROVAL_REJECTED',()=>{a.ok(Array.isArray(pending));a.equal(pending.length,1);sg.observed(pending[0],['environment','current_user_can_approve']);a.equal(String(pending[0].environment.id),authority.policy.environmentId);a.equal(pending[0].environment.name,sg.ENVIRONMENT);a.equal(pending[0].current_user_can_approve,true);});
+ const finalRows=await sg.pages(api,'actions/workflows/'+sg.WORKFLOW_ID+'/runs?','workflow_runs');a.equal(sg.history(finalRows,f.run),digest);
+ const receipt=sg.receipt(i,control,f.run,authority.authorizationSha256,digest,authority.policy);return{runId,route:'actions/runs/'+runId+'/pending_deployments',body:{environment_ids:[Number(authority.policy.environmentId)],state:'approved',comment:JSON.stringify(receipt)}};
+}
+module.exports={prepare};
+async function readApi(route){a.notEqual(process.env.GITHUB_ACTIONS,'true');a.ok(process.env.GH_TOKEN);const url=route==='user'?'https://api.github.com/user':'https://api.github.com/repos/KG718718/spxt-public/'+route;const r=await fetch(url,{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},signal:AbortSignal.timeout(15000)});a.equal(r.status,200);return r.json();}
+module.exports.readApi=readApi;
+if(require.main===module)prepare(...process.argv.slice(2),readApi).then(result=>process.stdout.write(JSON.stringify(result))).catch(e=>{const classification=sg.CLASSES.includes(e.classification)?e.classification:'AUTHORIZATION_REJECTED';process.stdout.write(JSON.stringify({schema:1,kind:'AB_MASTER_BINDING_PREPARATION',status:'FAIL',classification,observation:sg.diagnostic(classification).observation}));process.exitCode=1;});

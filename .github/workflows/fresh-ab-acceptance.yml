@@ -3,7 +3,7 @@ run-name: ${{ github.event.head_commit.message }}
 on:
   push:
     branches: [codex/lan-fresh-trial-v1.1]
-    paths: [docs/tasks/windows-installer-v1.1/fresh-lan-trial/final-install-lan/ab-acceptance-trigger.json]
+    paths: [docs/tasks/windows-installer-v1.1/fresh-lan-trial/final-install-lan/ab-exact-run-trigger.json]
 permissions:
   contents: read
   actions: read
@@ -13,6 +13,7 @@ concurrency:
 jobs:
   fresh_A:
     name: fresh-A
+    environment: fresh-ab-exact-run-approval
     if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-fresh-trial-v1.1' && github.run_attempt == 1
     runs-on: windows-2025
     timeout-minutes: 45

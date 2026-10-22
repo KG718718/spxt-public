@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -21,6 +22,177 @@ type freshAbController struct {
 	readerDone     chan struct{}
 	protocolFailed bool
 	stderr         bytes.Buffer
+}
+
+func freshAbCredentialFreeEnvironment(values []string) []string {
+	result := []string{}
+	for _, value := range values {
+		name := strings.ToUpper(strings.SplitN(value, "=", 2)[0])
+		secret := name == "GH_TOKEN" || name == "GITHUB_TOKEN"
+		for _, suffix := range []string{"_TOKEN", "_SECRET", "_PASSWORD", "_PRIVATE_KEY", "_CREDENTIAL", "_API_KEY"} {
+			secret = secret || strings.HasSuffix(name, suffix)
+		}
+		if !secret {
+			result = append(result, value)
+		}
+	}
+	return result
+}
+func TestFreshAbAdmissionEnvironment(t *testing.T) {
+	got := freshAbCredentialFreeEnvironment([]string{"PATH=owned", "GH_TOKEN=SENTINEL", "GITHUB_TOKEN=SENTINEL", "ACTIONS_RUNTIME_TOKEN=SENTINEL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN=SENTINEL", "TEST_SECRET=SENTINEL", "SystemRoot=owned"})
+	if len(got) != 2 || got[0] != "PATH=owned" || got[1] != "SystemRoot=owned" {
+		t.Fatal("AB_CREDENTIAL_PROPAGATION")
+	}
+}
+func freshAbInstallAdmission(node, repo, base, source, role string) bool {
+	return freshAbInstallAdmissionWithin(node, repo, base, source, role, 120*time.Second)
+}
+func freshAbHex(value any, length int) bool {
+	s, ok := value.(string)
+	if !ok || len(s) != length {
+		return false
+	}
+	for _, c := range s {
+		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+			return false
+		}
+	}
+	return true
+}
+func freshAbId(value any) bool {
+	s, ok := value.(string)
+	if !ok || len(s) == 0 || s[0] == '0' {
+		return false
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+func freshAbAdmissionSafe(value map[string]any, source, role string) bool {
+	if value["schema"] != float64(1) || value["kind"] != "AB_INSTALL_ADMISSION" {
+		return false
+	}
+	if value["status"] == "FAIL" {
+		if len(value) != 5 {
+			return false
+		}
+		c, ok := value["classification"].(string)
+		if !ok {
+			return false
+		}
+		known := false
+		for _, allowed := range []string{"API_QUERY_UNKNOWN", "API_DATA_UNKNOWN", "ADMISSION_PROCESS_TIMEOUT_UNKNOWN", "HISTORY_SNAPSHOT_UNKNOWN", "HISTORY_SCOPE_REJECTED", "AUTHORIZATION_REJECTED", "MASTER_APPROVAL_MISSING", "MASTER_APPROVAL_REJECTED", "ENVIRONMENT_PROTECTION_REJECTED", "JOB_STATE_UNKNOWN", "JOB_STATE_REJECTED"} {
+			known = known || c == allowed
+		}
+		obs := "REJECTED"
+		if strings.HasSuffix(c, "_UNKNOWN") || c == "MASTER_APPROVAL_MISSING" {
+			obs = "UNKNOWN"
+		}
+		return known && value["observation"] == obs
+	}
+	if len(value) != 12 || value["status"] != "PASS" || value["classification"] != "ADMITTED" || value["observation"] != "OBSERVED" || value["sourceCommit"] != source || !freshAbHex(value["sourceCommit"], 40) || !freshAbHex(value["controlCommit"], 40) || value["attempt"] != float64(1) || value["role"] != role || !freshAbId(value["runId"]) || !freshAbId(value["jobId"]) {
+		return false
+	}
+	b, ok := value["runBinding"].(map[string]any)
+	return ok && len(b) == 4 && b["schema"] == float64(1) && freshAbHex(b["approvalSha256"], 64) && freshAbHex(b["historySha256"], 64) && freshAbHex(b["authorizationSha256"], 64)
+}
+func freshAbInstallAdmissionWithin(node, repo, base, source, role string, deadline time.Duration) bool {
+	result := map[string]any{"schema": 1, "kind": "AB_INSTALL_ADMISSION", "status": "FAIL", "classification": "API_QUERY_UNKNOWN", "observation": "UNKNOWN"}
+	cmd := exec.Command(node, filepath.Join(repo, "tools/windows-installer/fresh-trial/ab/runtime-gate.cjs"), repo, os.Getenv("KSESSION_FRESH_PHYSICAL_WORK"), role)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd.Env = freshAbCredentialFreeEnvironment(os.Environ())
+	var out, errOut bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &errOut
+	var e error
+	timedOut := false
+	if e = cmd.Start(); e == nil {
+		done := make(chan error, 1)
+		go func() { done <- cmd.Wait() }()
+		select {
+		case e = <-done:
+		case <-time.After(deadline):
+			timedOut = true
+			cmd.Process.Kill()
+			select {
+			case <-done:
+			case <-time.After(5 * time.Second):
+			}
+			e = fmt.Errorf("ADMISSION_PROCESS_TIMEOUT_UNKNOWN")
+		}
+	}
+	known := map[string]any{}
+	if !timedOut && errOut.Len() == 0 && out.Len() <= 16384 && freshNoDuplicateJSON(json.NewDecoder(bytes.NewReader(out.Bytes())), 0) && json.Unmarshal(out.Bytes(), &known) == nil {
+		if freshAbAdmissionSafe(known, source, role) && (known["status"] != "PASS" || e == nil) {
+			result = known
+		} else {
+			result = map[string]any{"schema": 1, "kind": "AB_INSTALL_ADMISSION", "status": "FAIL", "classification": "API_DATA_UNKNOWN", "observation": "UNKNOWN"}
+		}
+	}
+	if timedOut {
+		result = map[string]any{"schema": 1, "kind": "AB_INSTALL_ADMISSION", "status": "FAIL", "classification": "ADMISSION_PROCESS_TIMEOUT_UNKNOWN", "observation": "UNKNOWN"}
+	}
+	encoded, writeError := json.Marshal(result)
+	if writeError != nil || os.WriteFile(filepath.Join(base, "installation-admission.json"), append(encoded, '\n'), 0600) != nil {
+		return false
+	}
+	return e == nil && errOut.Len() == 0 && len(result) == 12 && result["status"] == "PASS" && result["classification"] == "ADMITTED" && result["observation"] == "OBSERVED" && result["sourceCommit"] == source && result["role"] == role
+}
+func TestFreshAbAdmissionProcess(t *testing.T) {
+	node := os.Getenv("KSESSION_FRESH_TEST_NODE")
+	if node == "" {
+		t.Fatal("PINNED_NODE_REQUIRED")
+	}
+	t.Setenv("GH_TOKEN", "PRIVATE_TOKEN_SENTINEL")
+	for _, kind := range []string{"positive", "invalid", "extra", "stderr", "nonzero", "timeout"} {
+		t.Run(kind, func(t *testing.T) {
+			root := t.TempDir()
+			script := filepath.Join(root, "tools/windows-installer/fresh-trial/ab/runtime-gate.cjs")
+			if os.MkdirAll(filepath.Dir(script), 0700) != nil {
+				t.Fatal("PRIVATE_SCRIPT_CREATE_FAILED")
+			}
+			body := `if(Object.keys(process.env).some(k=>/TOKEN|SECRET|PASSWORD/.test(k))){process.exit(7)};const r={schema:1,kind:'AB_INSTALL_ADMISSION',status:'PASS',classification:'ADMITTED',observation:'OBSERVED',sourceCommit:'a'.repeat(40),controlCommit:'b'.repeat(40),runId:'900',attempt:1,role:'A',jobId:'100',runBinding:{schema:1,approvalSha256:'c'.repeat(64),historySha256:'d'.repeat(64),authorizationSha256:'e'.repeat(64)}};`
+			switch kind {
+			case "positive":
+				body += `process.stdout.write(JSON.stringify(r))`
+			case "invalid":
+				body += `process.stdout.write('INVALID')`
+			case "extra":
+				body += `process.stdout.write(JSON.stringify({...r,raw:'PRIVATE_SENTINEL'}))`
+			case "stderr":
+				body += `process.stderr.write('PRIVATE_SENTINEL')`
+			case "nonzero":
+				body += `process.stdout.write(JSON.stringify(r));process.exitCode=1`
+			case "timeout":
+				body += `setInterval(()=>{},1000)`
+			}
+			if os.WriteFile(script, []byte(body), 0600) != nil {
+				t.Fatal("PRIVATE_SCRIPT_WRITE_FAILED")
+			}
+			deadline := 5 * time.Second
+			if kind == "timeout" {
+				deadline = 100 * time.Millisecond
+			}
+			accepted := freshAbInstallAdmissionWithin(node, root, root, strings.Repeat("a", 40), "A", deadline)
+			if accepted != (kind == "positive") {
+				t.Fatal("ADMISSION_PROCESS_OUTCOME_WRONG")
+			}
+			data, e := os.ReadFile(filepath.Join(root, "installation-admission.json"))
+			if e != nil || bytes.Contains(data, []byte("PRIVATE_SENTINEL")) {
+				t.Fatal("ADMISSION_PRIVACY_OR_REPORT_FAILED")
+			}
+			var report map[string]any
+			if json.Unmarshal(data, &report) != nil {
+				t.Fatal("ADMISSION_REPORT_INVALID")
+			}
+			if kind == "timeout" && report["classification"] != "ADMISSION_PROCESS_TIMEOUT_UNKNOWN" {
+				t.Fatal("ADMISSION_TIMEOUT_SUBTYPE_LOST")
+			}
+		})
+	}
 }
 
 func (c *freshAbController) line() map[string]any {
@@ -178,6 +350,9 @@ func TestFreshAbControllerProtocol(t *testing.T) {
 // Called only by the real Hosted B core after all five rejection fixtures have
 // restored. Local tests never invoke the formal product Setup.
 func freshRunAbFailedInstall(ps, node, repo, base, setup, source, setupHash string, paths map[string]string, pre map[string]freshRecoverySnapshot, pending *bool) bool {
+	if !freshAbInstallAdmission(node, repo, base, source, "B") {
+		return false
+	}
 	proof := map[string]bool{}
 	for _, k := range []string{"logKnown", "preInstallReady", "nativeInstallStarted", "controlledDirectoryAttempt", "accessDenied5", "fatalInstall4", "nativeRollback", "postInstallNotReached", "setupNaturalExit", "sameExe", "creatorReady", "aclRestored", "creatorHandlesClosed"} {
 		proof[k] = false

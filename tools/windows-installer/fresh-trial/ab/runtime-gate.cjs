@@ -1,0 +1,10 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),a=require('node:assert/strict'),g=require('../../../tests/fresh-lan-trial/ab/contract.cjs'),sg=require('../../../tests/fresh-lan-trial/ab/source-gate.cjs');
+const SECRET=/^(?:GH_TOKEN|GITHUB_TOKEN|ACTIONS_RUNTIME_TOKEN|ACTIONS_ID_TOKEN_REQUEST_TOKEN)$|(?:_TOKEN|_SECRET|_PASSWORD|_PRIVATE_KEY|_CREDENTIAL|_API_KEY)$/i;
+function cleanEnvironment(env){return Object.fromEntries(Object.entries(env).filter(([k])=>!SECRET.test(k)));}
+async function publicApi(route){const r=await fetch('https://api.github.com/repos/KG718718/spxt-public/'+route,{headers:{Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},signal:AbortSignal.timeout(15000)});a.equal(r.status,200);return r.json();}
+async function inspect(repo,c,role,api=publicApi,completed=false){
+ sg.checked('AUTHORIZATION_REJECTED',()=>{g.boundContext(repo,c,process.env);a.equal(c.installSplit.role,role);});const authority=g.authorityPolicy(repo,c.ab.input),f=await sg.facts(api,c.run.id,authority.policy);const binding=sg.validate(c.ab.input,c.controlCommit,f.run,f.history,f.environment,f.reviews,authority.policy,authority.authorizationSha256);sg.checked('AUTHORIZATION_REJECTED',()=>a.deepEqual(binding,c.ab.runBinding));sg.jobState(()=>g.api(f.run,f.jobs,process.env,role,completed),f.jobs,role,completed);return{...sg.diagnostic('ADMITTED'),sourceCommit:c.sourceCommit,controlCommit:c.controlCommit,runId:c.run.id,attempt:1,role,jobId:c.ab.jobId,runBinding:binding};
+}
+async function main(repo,work,role,api=publicApi){let c=null,result;try{c=JSON.parse(fs.readFileSync(path.join(work,'context.json')));result=await inspect(repo,c,role,api);}catch(e){result=sg.diagnostic(sg.CLASSES.includes(e.classification)?e.classification:'AUTHORIZATION_REJECTED');}process.stdout.write(JSON.stringify(result));if(result.status!=='PASS')process.exitCode=1;return result;}
+module.exports={SECRET,cleanEnvironment,publicApi,inspect,main};if(require.main===module)main(...process.argv.slice(2)).catch(()=>{process.stderr.write('AB_INSTALL_ADMISSION_UNKNOWN\n');process.exitCode=1;});

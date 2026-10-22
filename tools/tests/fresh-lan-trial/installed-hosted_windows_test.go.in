@@ -265,6 +265,12 @@ func TestFreshInstalledCore(t *testing.T) {
 		}
 	}
 	install := func(label, target, data, log string) bool {
+		if role == "A" && label == "FRESH_ACCEPT" && !freshAbInstallAdmission(node, repo, base, commit, role) {
+			t.Fatal("AB_INSTALL_ADMISSION_REJECTED")
+		}
+		if role == "B" && label == "NONEMPTY_TARGET" && !freshAbInstallAdmission(node, repo, base, commit, role) {
+			t.Fatal("AB_INSTALL_ADMISSION_REJECTED")
+		}
 		// The cleanup collector is already registered before a native Setup can start.
 		cmd := exec.Command(setup, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/CURRENTUSER", "/DIR="+target, "/INSTANCE="+data, "/LOG="+log)
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}

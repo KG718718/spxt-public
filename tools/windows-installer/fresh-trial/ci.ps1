@@ -1,5 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$Work,[switch]$BuildOnly)
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'ab/credentials.ps1')
+Clear-FreshExecutionCredentials
 . (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/memory-process.ps1')
 . (Join-Path $PSScriptRoot '../../tests/fresh-lan-trial/supervisor-entry.ps1')
 try{

@@ -5,7 +5,7 @@ const assert=require('node:assert/strict'),crypto=require('node:crypto');
 const legacy=require('./report.cjs'),recovery=require('./install-r2/recovery.cjs');
 const HEX=/^[a-f0-9]{40}$/,SHA=/^[a-f0-9]{64}$/,ID=/^[1-9][0-9]{0,19}$/;
 const REJECT=Object.freeze(['NONEMPTY_TARGET','EXISTING_INSTANCE','DESKTOP_SHORTCUT','STARTUP_SHORTCUT','OLD_BINDING']);
-const FAILURES=Object.freeze(['NONE','CORE_NOT_RUN','CORE_PROCESS_FAILED','REGISTRY_REPORT_INVALID','CORE_REPORT_INVALID','FAILED_INSTALL_REPORT_INVALID','FAILED_INSTALL_RECOVERY_NOT_READY','REQUIRED_GATE_FAILED','CORE_GATE_FAILED','TRANSFER_IDENTITY_CHANGED']);
+const FAILURES=Object.freeze(['NONE','CORE_NOT_RUN','CORE_PROCESS_FAILED','REGISTRY_REPORT_INVALID','CORE_REPORT_INVALID','FAILED_INSTALL_REPORT_INVALID','FAILED_INSTALL_RECOVERY_NOT_READY','REQUIRED_GATE_FAILED','CORE_GATE_FAILED','TRANSFER_IDENTITY_CHANGED','INSTALL_ADMISSION_NOT_OBSERVED',...require('./ab/source-gate.cjs').CLASSES.filter(c=>c!=='ADMITTED').map(c=>'INSTALL_'+c)]);
 const STATES=Object.freeze(['NOT_STARTED','CREATED_NEW','UNCHANGED','OWNED_REMOVED','PRESTATE_UNKNOWN','PARENT_UNKNOWN','CREATE_COLLISION','CREATE_FAILED','WRITE_FAILED','WRITE_READBACK_UNKNOWN','WRITE_OBSERVATION_UNKNOWN','RECEIPT_UNKNOWN','HANDLE_CONTENT_CHANGED','HANDLE_CHANGED','OBSERVATION_FAILED','STRUCTURED_STATE_CHANGED','HANDLE_UNKNOWN','PARENT_CHANGED','DELETE_FAILED','CLOSE_FAILED','DELETE_OBSERVATION_FAILED','RETIRED_STATE_CHANGED']);
 function exact(o,keys){assert.ok(o&&typeof o==='object'&&!Array.isArray(o));assert.deepEqual(Object.keys(o).sort(),[...keys].sort());}
 function binding(value,role,source,setup){exact(value,['schema','role','sourceCommit','setupSha256']);assert.equal(value.schema,1);assert.ok(['A','B'].includes(role));assert.equal(value.role,role);assert.match(source,HEX);assert.equal(value.sourceCommit,source);assert.match(setup,SHA);assert.equal(value.setupSha256,setup);return true;}
@@ -37,9 +37,9 @@ function core(r,source,role,setup){
 function command(role,go,overlay){assert.ok(['A','B'].includes(role));return{exe:go,args:['test','-overlay',overlay,'-tags','fresh_trial_tests','-count=1','-timeout=15m','-run','^TestFreshInstalledCore$','.'],environment:{KSESSION_FRESH_INSTALL_ROLE:role}};}
 // This is also used by the real Hosted entry. Tests replace only its process
 // callback, never dispatch, evidence reads, fixed diagnostics or aggregation.
-async function execute({role,sourceCommit,setupSha256,launch,readCore,readRegistry,phases={},failedInstallRecovery,write}){
+async function execute({role,sourceCommit,setupSha256,launch,readCore,readRegistry,phases={},failedInstallRecovery,readAdmission,admissionContext,write}){
  assert.ok(['A','B'].includes(role));assert.match(sourceCommit,HEX);assert.match(setupSha256,SHA);
- const result={schema:2,kind:'FRESH_SPLIT_INNER',role,sourceCommit,setupSha256,status:'FAIL',stage:'F01',failure:'CORE_NOT_RUN',checks:{},core:null,registry:null,failedInstallRecovery:role==='B'?'NOT_RUN':'NOT_APPLICABLE',failedInstallEvidence:null};
+ const result={schema:readAdmission?3:2,...(readAdmission?{installAdmission:null}:{}),kind:'FRESH_SPLIT_INNER',role,sourceCommit,setupSha256,status:'FAIL',stage:'F01',failure:'CORE_NOT_RUN',checks:{},core:null,registry:null,failedInstallRecovery:role==='B'?'NOT_RUN':'NOT_APPLICABLE',failedInstallEvidence:null};
  let exit=null;
  try{exit=await launch(role);}catch{result.failure='CORE_PROCESS_FAILED';}
  // Always attempt both safe reports even when Go exits nonzero. Raw Go output
@@ -63,6 +63,7 @@ async function execute({role,sourceCommit,setupSha256,launch,readCore,readRegist
    }
   }catch{result.failure='REQUIRED_GATE_FAILED';}
  }else if(result.core&&result.registry){result.failure=exit!==0?'CORE_PROCESS_FAILED':'CORE_GATE_FAILED';}
+ if(readAdmission){try{result.installAdmission=require('./ab/source-gate.cjs').admission(await readAdmission(),admissionContext);}catch(e){if(require('./ab/source-gate.cjs').CLASSES.includes(e.classification))result.installAdmission=require('./ab/source-gate.cjs').diagnostic(e.classification);}if(result.installAdmission?.status!=='PASS'){result.status='FAIL';result.stage='F01';result.failure=result.installAdmission?'INSTALL_'+result.installAdmission.classification:'INSTALL_ADMISSION_NOT_OBSERVED';}}
  await write(result);return result;
 }
 function jobs(api,workflow,expected){
@@ -76,7 +77,7 @@ function jobs(api,workflow,expected){
  return true;
 }
 function inner(r,source,setup,role){
- exact(r,['schema','kind','role','sourceCommit','setupSha256','status','stage','failure','checks','core','registry','failedInstallRecovery','failedInstallEvidence']);assert.equal(r.schema,2);assert.equal(r.kind,'FRESH_SPLIT_INNER');assert.equal(r.role,role);assert.equal(r.sourceCommit,source);assert.equal(r.setupSha256,setup);assert.ok(['FAIL','INNER_PASS_OUTER_PENDING'].includes(r.status));assert.ok([...legacy.IDS,'COMPLETE'].includes(r.stage));assert.ok(FAILURES.includes(r.failure));
+ exact(r,['schema','kind','role','sourceCommit','setupSha256','status','stage','failure','checks','core','registry','failedInstallRecovery','failedInstallEvidence',...(r.schema===3?['installAdmission']:[])]);assert.ok([2,3].includes(r.schema));if(r.schema===3){if(r.installAdmission!==null){const q=r.installAdmission;assert.ok(require('./ab/source-gate.cjs').CLASSES.includes(q.classification));assert.deepEqual({schema:q.schema,kind:q.kind,status:q.status,classification:q.classification,observation:q.observation},require('./ab/source-gate.cjs').diagnostic(q.classification));}if(r.status==='INNER_PASS_OUTER_PENDING')assert.equal(r.installAdmission?.status,'PASS');}assert.equal(r.kind,'FRESH_SPLIT_INNER');assert.equal(r.role,role);assert.equal(r.sourceCommit,source);assert.equal(r.setupSha256,setup);assert.ok(['FAIL','INNER_PASS_OUTER_PENDING'].includes(r.status));assert.ok([...legacy.IDS,'COMPLETE'].includes(r.stage));assert.ok(FAILURES.includes(r.failure));
  const keys=[...new Set(legacy.IDS.flatMap(id=>legacy.WITNESSES[id]))].filter(k=>role==='B'?legacy.WITNESSES.F01.slice(3).includes(k):!legacy.WITNESSES.F01.slice(3).includes(k));
  for(const [k,v]of Object.entries(r.checks)){assert.ok(keys.includes(k));assert.equal(typeof v,'boolean');}
  if(r.core!==null)core(r.core,source,role,setup);if(r.registry!==null)registry(r.registry,source,role);if(r.failedInstallEvidence!==null)require('./ab-failure.cjs').validate(r.failedInstallEvidence,source,setup);
@@ -90,8 +91,8 @@ function aggregate(a,b,outerA,outerB,api,workflow,expected){
  exact(expected,['sourceCommit','controlCommit','setupSha256','runId','workflowSha256']);assert.match(expected.sourceCommit,HEX);assert.match(expected.controlCommit,HEX);assert.match(expected.setupSha256,SHA);assert.match(expected.runId,ID);assert.match(expected.workflowSha256,SHA);assert.equal(crypto.createHash('sha256').update(workflow).digest('hex'),expected.workflowSha256);
  assert.ok(a&&b);assert.equal(a.role,'A');assert.equal(b.role,'B');jobs(api,workflow,expected);
  for(const [r,o]of [[a,outerA],[b,outerB]]){
-  exact(r,['schema','kind','role','sourceCommit','setupSha256','status','stage','failure','checks','core','registry','failedInstallRecovery','failedInstallEvidence']);
-  assert.equal(r.schema,2);assert.equal(r.kind,'FRESH_SPLIT_INNER');assert.equal(r.sourceCommit,expected.sourceCommit);assert.equal(r.setupSha256,expected.setupSha256);assert.equal(r.status,'INNER_PASS_OUTER_PENDING');assert.equal(r.failure,'NONE');
+  exact(r,['schema','kind','role','sourceCommit','setupSha256','status','stage','failure','checks','core','registry','failedInstallRecovery','failedInstallEvidence',...(r.schema===3?['installAdmission']:[])]);
+  assert.ok([2,3].includes(r.schema));assert.equal(r.kind,'FRESH_SPLIT_INNER');assert.equal(r.sourceCommit,expected.sourceCommit);assert.equal(r.setupSha256,expected.setupSha256);assert.equal(r.status,'INNER_PASS_OUTER_PENDING');assert.equal(r.failure,'NONE');
   inner(r,expected.sourceCommit,expected.setupSha256,r.role);
   core(r.core,expected.sourceCommit,r.role,expected.setupSha256);registry(r.registry,expected.sourceCommit,r.role);assert.equal(r.core.status,'PASS');assert.equal(r.registry.firstFailure,'NONE');assert.equal(r.registry.handlesClosed,true);
   const keys=[...new Set(legacy.IDS.flatMap(id=>legacy.WITNESSES[id]))].filter(k=>r.role==='B'?legacy.WITNESSES.F01.slice(3).includes(k):!legacy.WITNESSES.F01.slice(3).includes(k));exact(r.checks,keys);assert.ok(Object.values(r.checks).every(v=>v===true));for(const [k,v]of Object.entries(r.core.checks))assert.equal(r.checks[k],v);

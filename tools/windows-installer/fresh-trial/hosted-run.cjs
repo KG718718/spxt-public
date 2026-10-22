@@ -23,7 +23,7 @@ async function main(){
  const writer=async r=>fs.writeFileSync(path.join(work,'fresh-report.json'),JSON.stringify(r)+'\n');
  const physical=process.env.KSESSION_FRESH_PHYSICAL_WORK;assert.ok(physical&&path.isAbsolute(physical));
  const evidence=path.join(physical,'installed-core');let core=null,socket=null,firewall=null,coreExit=null;
- const baseEnv={...process.env,KSESSION_FRESH_EVIDENCE:evidence,KSESSION_FRESH_SETUP:setup,KSESSION_FRESH_SETUP_SHA256:setupHash,KSESSION_FRESH_TEST_NODE:node,KSESSION_FRESH_REPO:repo,KSESSION_FRESH_TESTED_SOURCE:context.sourceCommit};
+ const baseEnv={...require('./ab/runtime-gate.cjs').cleanEnvironment(process.env),KSESSION_FRESH_EVIDENCE:evidence,KSESSION_FRESH_SETUP:setup,KSESSION_FRESH_SETUP_SHA256:setupHash,KSESSION_FRESH_TEST_NODE:node,KSESSION_FRESH_REPO:repo,KSESSION_FRESH_TESTED_SOURCE:context.sourceCommit};
  function command(exe,args,cwd=repo,env=baseEnv){const p=cp.spawnSync(exe,args,{cwd,env,windowsHide:true,encoding:'utf8',timeout:25*60*1000,maxBuffer:32*1024*1024});return p;}
  const fail=()=>{const e=Error('fixed gate');e.fixedStage=report.IDS.includes(core?.stage)?core.stage:'F09';e.fixedReason=core?.reason==='CLEANUP_UNPROVEN'?'CLEANUP_UNPROVEN':'GATE_FAILED';throw e;};
  function coreWitness(id){const witnesses=Object.fromEntries(report.WITNESSES[id].map(k=>[k,core?.checks?.[k]===true]));if(Object.values(witnesses).some(v=>v!==true))fail();return witnesses;}
@@ -58,7 +58,7 @@ async function main(){
  if(splitRole){
   const result=await split.execute({role:splitRole,sourceCommit:context.sourceCommit,setupSha256:setupHash,
    launch:async role=>{const overlay=prepare(path.join(work,'installed-overlay'));const plan=split.command(role,go,overlay);const p=command(plan.exe,plan.args,path.join(repo,'tools/windows-launcher'),{...baseEnv,...plan.environment});coreExit=p.status;return p.status;},
-   readCore:async()=>{readCore();return core;},readRegistry:async()=>JSON.parse(fs.readFileSync(path.join(evidence,'registry-fixture.json'))),phases,
+   readAdmission:async()=>JSON.parse(fs.readFileSync(path.join(evidence,'installation-admission.json'))),admissionContext:context,readCore:async()=>{readCore();return core;},readRegistry:async()=>JSON.parse(fs.readFileSync(path.join(evidence,'registry-fixture.json'))),phases,
    failedInstallRecovery:splitRole==='B'?async()=>JSON.parse(fs.readFileSync(path.join(evidence,'failed-install.json'))):undefined,
    write:async r=>{if(splitRole==='B'){try{inspect(artifact,context.sourceCommit,context.installSplit.setupSha256);const envelope=JSON.parse(fs.readFileSync(path.join(work,'ab-transfer-extracted/ab-transfer.json')));for(const [file,record]of Object.entries(envelope.files))assert.equal(sha(fs.readFileSync(path.join(artifact,file))),record.sha256);}catch{r.status='FAIL';r.stage='F09';r.failure='TRANSFER_IDENTITY_CHANGED';}}fs.writeFileSync(path.join(work,'split-inner.json'),JSON.stringify(r)+'\n');}});
   // A part never publishes a legacy PASS or borrows B's witnesses. B consumes
