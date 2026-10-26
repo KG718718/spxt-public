@@ -1,3 +1,7 @@
+## 当前完成｜2026-10-26 三条历史与同源本地准入 / HOSTED FROZEN
+
+原FRESH-T2补齐三条真实历史逐Run身份，第三39747285185独立3d256a01/7c9aa11c，API与历史trigger交叉核验；旧取消/UNKNOWN/预算不改。最终构建source d1c67563/tree831ea155/codeFPdc291751，完整新EXE33557974字节/SHA3030b06a...4f9fd38；Master逐字节1049文件20依赖/Manifest与同EXE传递5反例PASS。原模块72/72、Master独立33/33、真实新EXE四阶段离线回放及7拒绝、工具链/Job/环境恢复PASS。仅7个验收文件变化，生产/workflow/真实trigger/授权/账本不动；新Run/审批/Runner观察明确合成，未写真实账本。未发现本地覆盖范围内必然误拒绝；旧trigger仍绑定已耗旧来源，下一次必须新预算及同源证明/Review/授权/control/唯一真实Run与原生审批，实际Runner安全检查不得提前PASS。Hosted0、QA冻结，实际Setup/F01—F09/安装后26-742/LAN未验，无合格用户包；397472唯一根因仍UNKNOWN。原线程/树保留，仅非force同步后停止，不main/tag/Release/内部SPXT/未知清理/sub-agent。详见final-install-lan/AB-NEXT-PREFLIGHT-MASTER-REVIEW.md/json；下方历史原样保留。
+
 ## 本地闭环｜2026-10-26 历史快照状态误拒绝修复 / HOSTED FROZEN
 
 原FRESH-T2正式RETURN d11aba21，修复source918b5a12/codeFP1ea2d66f；原模块离线已复现queued→waiting及同集合乱序被整体deepEqual误拒绝。改为唯一ID稳定身份对齐、状态/Runner分配按阶段核验，重复/缺页/身份变化/失败终态/缺审批继续拒绝；固定分类及schema3内外一致性通过，旧schema1/2与history/receipt语义保留。固定Node24.21.0，T2定向35/35及owned Job恢复PASS，Master独立75/75 fail0skip0、diff/隐私/边界Review PASS并ff-only整合。历史Run39747285185精确差异和唯一根因仍UNKNOWN，取消及已耗Candidate不回填/返还；本轮Hosted0、QA冻结，不新Run/retry/审批/实装。生产、workflow、trigger、历史授权/账本均不改；原线程/树/证据保留。详见final-install-lan/AB-SNAPSHOT-STATE-MASTER-REVIEW.md/json。下方历史原样保留。
