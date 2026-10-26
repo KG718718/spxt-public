@@ -1,0 +1,117 @@
+{
+  "schema": 1,
+  "kind": "AB_SNAPSHOT_STATE_EXECUTION_EVIDENCE",
+  "status": "LOCAL_REPLAY_PASS_NOT_HOSTED_ACCEPTANCE",
+  "baseline": "ee0e8788d2325b63d34c0e988b8d7f4409d5c367",
+  "implementation": {
+    "schema": 1,
+    "kind": "AB_SNAPSHOT_STATE_LOCAL_REPLAY",
+    "sourceCommit": "918b5a1220dbee474e57678951e1bd925ed78a23",
+    "sourceTree": "c8652e7f05f2c3d473a32b33178df3af6377a5a6",
+    "codeFingerprint": "1ea2d66fa4a45e28b2c7196a4bb00c7fe98089a67c0ad5cca3bc91ce57b2284a",
+    "sourceBound": true,
+    "nodeVersion": "v24.21.0",
+    "nodeExeSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+    "tests": 35,
+    "pass": 35,
+    "fail": 0,
+    "skip": 0,
+    "syntaxFiles": 6,
+    "syntaxPassed": true,
+    "diffCheckPassed": true,
+    "stderrEmpty": true,
+    "naturalExit": true,
+    "rawOutputStored": false,
+    "githubEnvironmentSimulated": false,
+    "realNetworkCalled": false,
+    "hostedRuns": 0,
+    "productExecuted": false,
+    "status": "PASS"
+  },
+  "originalOfflineReplay": {
+    "schema": 1,
+    "kind": "ORIGINAL_SNAPSHOT_OFFLINE_REPLAY",
+    "status": "MISREJECTION_REPRODUCED",
+    "sourceCommit": "ee0e8788d2325b63d34c0e988b8d7f4409d5c367",
+    "moduleBlob": "18d9d2f4c770806ff0c2faf5f21dced3b2bfb94e",
+    "nodeVersion": "v24.21.0",
+    "nodeExeSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+    "cases": [
+      {
+        "id": "RUN_STATE_ONLY",
+        "expectedAccept": true,
+        "originalAccepted": false,
+        "classification": "HISTORY_SNAPSHOT_UNKNOWN"
+      },
+      {
+        "id": "JOB_STATE_ONLY",
+        "expectedAccept": true,
+        "originalAccepted": false,
+        "classification": "JOB_STATE_UNKNOWN"
+      },
+      {
+        "id": "RUN_ORDER_ONLY",
+        "expectedAccept": true,
+        "originalAccepted": false,
+        "classification": "HISTORY_SNAPSHOT_UNKNOWN"
+      }
+    ],
+    "historicalRunCause": "UNKNOWN_NOT_PROVEN_BY_OFFLINE_REPLAY",
+    "rawResponsesStored": false,
+    "githubEnvironmentSimulated": false,
+    "realNetworkCalled": false,
+    "hostedRuns": 0,
+    "productExecuted": false
+  },
+  "ownedScope": {
+    "scope": {
+      "schema": 1,
+      "kind": "FAST_OWNED_PROCESS_SCOPE",
+      "assigned": true,
+      "naturalExit": true,
+      "stderrEmpty": true,
+      "pipesClosed": true,
+      "handlesClosed": true,
+      "jobEmpty": true,
+      "forcedTermination": false,
+      "status": "PASS"
+    },
+    "classification": "PASS",
+    "rootExited": true,
+    "startedSuspended": true,
+    "childResumed": true,
+    "parentEnvironmentUnchanged": true
+  },
+  "changedFiles": [
+    "tools/tests/fresh-lan-trial/ab/snapshot-state.test.cjs",
+    "tools/tests/fresh-lan-trial/ab/source-gate.cjs",
+    "tools/windows-installer/fresh-trial/ab/aggregate.cjs",
+    "tools/windows-installer/fresh-trial/ab/bootstrap.cjs",
+    "tools/windows-installer/fresh-trial/ab/early.cjs",
+    "tools/windows-installer/fresh-trial/ab/master-binding.cjs"
+  ],
+  "unchangedScope": {
+    "workflow": true,
+    "triggers": true,
+    "authorizationAndReview": true,
+    "runLedgers": true,
+    "historicalResults": true,
+    "historyReceiptContract": true,
+    "goClassificationProtocol": true,
+    "productCode": true
+  },
+  "historicalRunCause": "UNKNOWN_NOT_PROVEN_BY_OFFLINE_REPLAY",
+  "currentRun": "39747285185",
+  "currentRunSpent": true,
+  "qa": "UNUSED_FROZEN",
+  "hostedRuns": 0,
+  "realApprovalsCreated": 0,
+  "environmentWrites": 0,
+  "fullExeBuilds": 0,
+  "goOrBusinessRegression": false,
+  "masterIndependentReview": "PENDING_SEPARATE_MASTER_RESULT",
+  "oldExeSource": "3d256a019f99126ac25298955a7ef9bb229eeb07",
+  "newSourceExeQualification": "NOT_BUILT_NOT_INSTALL_VERIFIED",
+  "rawResponsesStored": false,
+  "rawTestOutputStored": false
+}
