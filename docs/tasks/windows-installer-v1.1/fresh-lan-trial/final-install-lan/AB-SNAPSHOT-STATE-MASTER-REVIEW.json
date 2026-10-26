@@ -1,0 +1,627 @@
+{
+  "schema": 1,
+  "kind": "AB_SNAPSHOT_STATE_MASTER_REVIEW",
+  "status": "LOCAL_REVIEW_PASS_HOSTED_FROZEN",
+  "baseline": "ee0e8788d2325b63d34c0e988b8d7f4409d5c367",
+  "implementation": "918b5a1220dbee474e57678951e1bd925ed78a23",
+  "executionReturn": "d11aba211ce95e303768ddd8ca6d8d5796e6a84e",
+  "codeFingerprint": "1ea2d66fa4a45e28b2c7196a4bb00c7fe98089a67c0ad5cca3bc91ce57b2284a",
+  "nodeVersion": "v24.21.0",
+  "nodeSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+  "changedImplementationFiles": [
+    "tools/tests/fresh-lan-trial/ab/snapshot-state.test.cjs",
+    "tools/tests/fresh-lan-trial/ab/source-gate.cjs",
+    "tools/windows-installer/fresh-trial/ab/aggregate.cjs",
+    "tools/windows-installer/fresh-trial/ab/bootstrap.cjs",
+    "tools/windows-installer/fresh-trial/ab/early.cjs",
+    "tools/windows-installer/fresh-trial/ab/master-binding.cjs"
+  ],
+  "originalReproduction": {
+    "schema": 1,
+    "kind": "MASTER_ORIGINAL_MODULE_OFFLINE_REPRODUCTION",
+    "sourceCommit": "ee0e8788d2325b63d34c0e988b8d7f4409d5c367",
+    "nodeVersion": "v24.21.0",
+    "nodeSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+    "moduleBlob": "18d9d2f4c770806ff0c2faf5f21dced3b2bfb94e",
+    "cases": [
+      {
+        "kind": "STATUS_ONLY",
+        "identityUnchanged": true,
+        "rejected": true,
+        "classification": "HISTORY_SNAPSHOT_UNKNOWN"
+      },
+      {
+        "kind": "ORDER_ONLY",
+        "identityUnchanged": true,
+        "rejected": true,
+        "classification": "HISTORY_SNAPSHOT_UNKNOWN"
+      }
+    ],
+    "defectReproduced": true,
+    "networkCalls": 0,
+    "environmentImpersonation": false,
+    "hostedRuns": 0,
+    "historical39747285185Cause": "UNKNOWN"
+  },
+  "baselineRegression": {
+    "schema": 1,
+    "kind": "MASTER_SNAPSHOT_MODULE_OFFLINE_REPLAY",
+    "sourceCommit": "ee0e8788d2325b63d34c0e988b8d7f4409d5c367",
+    "moduleBlob": "18d9d2f4c770806ff0c2faf5f21dced3b2bfb94e",
+    "nodeVersion": "v24.21.0",
+    "nodeSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+    "cases": [
+      {
+        "name": "RUN_STATUS_ONLY",
+        "status": "FAIL",
+        "classification": "HISTORY_SNAPSHOT_UNKNOWN"
+      },
+      {
+        "name": "RUN_ORDER_ONLY",
+        "status": "FAIL",
+        "classification": "HISTORY_SNAPSHOT_UNKNOWN"
+      },
+      {
+        "name": "STATE_AND_ORDER_MULTIPAGE",
+        "status": "FAIL",
+        "classification": "HISTORY_SNAPSHOT_UNKNOWN"
+      },
+      {
+        "name": "RUN_IDENTITY_CONTROL",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_IDENTITY_WORKFLOW",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_IDENTITY_REPOSITORY",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_IDENTITY_HEAD_REPOSITORY",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_IDENTITY_ATTEMPT",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_IDENTITY_CHECK_SUITE",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_IDENTITY_RUN_NUMBER",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_IDENTITY_BRANCH",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_IDENTITY_EVENT",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_IDENTITY_WORKFLOW_PATH",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_IDENTITY_SOURCE_TITLE",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_ID_SET_CHANGED",
+        "status": "PASS"
+      },
+      {
+        "name": "DUPLICATE_ID_ACROSS_PAGES",
+        "status": "PASS"
+      },
+      {
+        "name": "MISSING_PAGE",
+        "status": "PASS"
+      },
+      {
+        "name": "TOTAL_DRIFT_WITHIN_READ",
+        "status": "PASS"
+      },
+      {
+        "name": "API_FAILURE_FIXED_ONLY",
+        "status": "PASS"
+      },
+      {
+        "name": "IDENTITY_FIELD_MISSING",
+        "status": "FAIL",
+        "classification": "ASSERTION_FAILED"
+      },
+      {
+        "name": "UNAUTHORIZED_EXTRA_RUN_STILL_REJECTED",
+        "status": "PASS"
+      },
+      {
+        "name": "COMPLETED_HISTORY_TERMINAL_IMMUTABLE",
+        "status": "PASS"
+      },
+      {
+        "name": "HISTORICAL_TERMINAL_CHANGED_BETWEEN_READS",
+        "status": "PASS"
+      },
+      {
+        "name": "MISSING_APPROVAL_STILL_REJECTED",
+        "status": "PASS"
+      },
+      {
+        "name": "RUN_WAITING_NOT_EXECUTION_PASS",
+        "status": "PASS"
+      },
+      {
+        "name": "CURRENT_TERMINAL_CANCELLED",
+        "status": "PASS"
+      },
+      {
+        "name": "CURRENT_TERMINAL_FAILURE",
+        "status": "PASS"
+      },
+      {
+        "name": "JOB_ASSIGNMENT_SEPARATE_FROM_IDENTITY",
+        "status": "FAIL",
+        "classification": "JOB_STATE_UNKNOWN"
+      },
+      {
+        "name": "PENDING_B_NULL_RUNNER_IS_NOT_MISSING_A_EVIDENCE",
+        "status": "PASS"
+      },
+      {
+        "name": "ACTIVE_A_MISSING_RUNNER_REJECTED",
+        "status": "PASS"
+      },
+      {
+        "name": "ACTIVE_A_WRONG_LABEL_REJECTED",
+        "status": "PASS"
+      },
+      {
+        "name": "JOB_IDENTITY_RUN_ID",
+        "status": "PASS"
+      },
+      {
+        "name": "JOB_IDENTITY_CONTROL",
+        "status": "PASS"
+      },
+      {
+        "name": "JOB_IDENTITY_ATTEMPT",
+        "status": "PASS"
+      },
+      {
+        "name": "JOB_IDENTITY_ROLE",
+        "status": "PASS"
+      }
+    ],
+    "pass": 30,
+    "fail": 5,
+    "skip": 0,
+    "networkCalls": 0,
+    "hostedRuns": 0,
+    "githubEnvironmentImpersonation": false,
+    "realApprovalOrInstallation": false
+  },
+  "masterIndependentSuites": [
+    {
+      "schema": 1,
+      "kind": "MASTER_SNAPSHOT_MODULE_OFFLINE_REPLAY",
+      "sourceCommit": "918b5a1220dbee474e57678951e1bd925ed78a23",
+      "moduleBlob": "a2a096188f90c3445a15cde3ca423f885770cf3c",
+      "nodeVersion": "v24.21.0",
+      "nodeSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+      "cases": [
+        {
+          "name": "RUN_STATUS_ONLY",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_ORDER_ONLY",
+          "status": "PASS"
+        },
+        {
+          "name": "STATE_AND_ORDER_MULTIPAGE",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_IDENTITY_CONTROL",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_IDENTITY_WORKFLOW",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_IDENTITY_REPOSITORY",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_IDENTITY_HEAD_REPOSITORY",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_IDENTITY_ATTEMPT",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_IDENTITY_CHECK_SUITE",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_IDENTITY_RUN_NUMBER",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_IDENTITY_BRANCH",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_IDENTITY_EVENT",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_IDENTITY_WORKFLOW_PATH",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_IDENTITY_SOURCE_TITLE",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_ID_SET_CHANGED",
+          "status": "PASS"
+        },
+        {
+          "name": "DUPLICATE_ID_ACROSS_PAGES",
+          "status": "PASS"
+        },
+        {
+          "name": "MISSING_PAGE",
+          "status": "PASS"
+        },
+        {
+          "name": "TOTAL_DRIFT_WITHIN_READ",
+          "status": "PASS"
+        },
+        {
+          "name": "API_FAILURE_FIXED_ONLY",
+          "status": "PASS"
+        },
+        {
+          "name": "IDENTITY_FIELD_MISSING",
+          "status": "PASS"
+        },
+        {
+          "name": "UNAUTHORIZED_EXTRA_RUN_STILL_REJECTED",
+          "status": "PASS"
+        },
+        {
+          "name": "COMPLETED_HISTORY_TERMINAL_IMMUTABLE",
+          "status": "PASS"
+        },
+        {
+          "name": "HISTORICAL_TERMINAL_CHANGED_BETWEEN_READS",
+          "status": "PASS"
+        },
+        {
+          "name": "MISSING_APPROVAL_STILL_REJECTED",
+          "status": "PASS"
+        },
+        {
+          "name": "RUN_WAITING_NOT_EXECUTION_PASS",
+          "status": "PASS"
+        },
+        {
+          "name": "CURRENT_TERMINAL_CANCELLED",
+          "status": "PASS"
+        },
+        {
+          "name": "CURRENT_TERMINAL_FAILURE",
+          "status": "PASS"
+        },
+        {
+          "name": "JOB_ASSIGNMENT_SEPARATE_FROM_IDENTITY",
+          "status": "PASS"
+        },
+        {
+          "name": "PENDING_B_NULL_RUNNER_IS_NOT_MISSING_A_EVIDENCE",
+          "status": "PASS"
+        },
+        {
+          "name": "ACTIVE_A_MISSING_RUNNER_REJECTED",
+          "status": "PASS"
+        },
+        {
+          "name": "ACTIVE_A_WRONG_LABEL_REJECTED",
+          "status": "PASS"
+        },
+        {
+          "name": "JOB_IDENTITY_RUN_ID",
+          "status": "PASS"
+        },
+        {
+          "name": "JOB_IDENTITY_CONTROL",
+          "status": "PASS"
+        },
+        {
+          "name": "JOB_IDENTITY_ATTEMPT",
+          "status": "PASS"
+        },
+        {
+          "name": "JOB_IDENTITY_ROLE",
+          "status": "PASS"
+        }
+      ],
+      "pass": 35,
+      "fail": 0,
+      "skip": 0,
+      "networkCalls": 0,
+      "hostedRuns": 0,
+      "githubEnvironmentImpersonation": false,
+      "realApprovalOrInstallation": false
+    },
+    {
+      "schema": 1,
+      "kind": "MASTER_SNAPSHOT_FIXED_DIAGNOSTICS_REVIEW",
+      "sourceCommit": "918b5a1220dbee474e57678951e1bd925ed78a23",
+      "cases": [
+        {
+          "name": "OBSERVE_STABLE",
+          "status": "PASS"
+        },
+        {
+          "name": "OBSERVE_STATE_ONLY_CHANGED",
+          "status": "PASS"
+        },
+        {
+          "name": "OBSERVE_ORDER_ONLY_CHANGED",
+          "status": "PASS"
+        },
+        {
+          "name": "OBSERVE_STATE_AND_ORDER_CHANGED",
+          "status": "PASS"
+        },
+        {
+          "name": "OBSERVE_IDENTITY_CHANGED",
+          "status": "PASS"
+        },
+        {
+          "name": "OBSERVE_DUPLICATE_ID",
+          "status": "PASS"
+        },
+        {
+          "name": "OBSERVE_PAGINATION_INCOMPLETE",
+          "status": "PASS"
+        },
+        {
+          "name": "OBSERVE_API_READ_FAILED",
+          "status": "PASS"
+        },
+        {
+          "name": "OBSERVE_DATA_UNOBSERVED",
+          "status": "PASS"
+        },
+        {
+          "name": "DIAGNOSTIC_REJECT_EXTRA_SENSITIVE_FIELD",
+          "status": "PASS"
+        },
+        {
+          "name": "DIAGNOSTIC_REJECT_UNKNOWN_CLASS",
+          "status": "PASS"
+        },
+        {
+          "name": "DIAGNOSTIC_REJECT_NULL_PASS_IDENTITY",
+          "status": "PASS"
+        },
+        {
+          "name": "DIAGNOSTIC_REJECT_STABLE_WITH_STATE_CHANGE",
+          "status": "PASS"
+        },
+        {
+          "name": "DIAGNOSTIC_REJECT_STABLE_WITH_ORDER_CHANGE",
+          "status": "PASS"
+        },
+        {
+          "name": "DIAGNOSTIC_REJECT_STATE_ONLY_WITHOUT_CHANGE",
+          "status": "PASS"
+        },
+        {
+          "name": "DIAGNOSTIC_REJECT_ORDER_ONLY_WITHOUT_CHANGE",
+          "status": "PASS"
+        },
+        {
+          "name": "DIAGNOSTIC_REJECT_RUNNER_CHANGED_WITHOUT_CHANGE",
+          "status": "PASS"
+        },
+        {
+          "name": "DIAGNOSTIC_REJECT_FAIL_AS_PASS",
+          "status": "PASS"
+        },
+        {
+          "name": "DIAGNOSTIC_REJECT_PASS_AS_FAIL",
+          "status": "PASS"
+        },
+        {
+          "name": "FACTS_FIXED_DIAGNOSTICS_WITHOUT_RAW_RESPONSES",
+          "status": "PASS"
+        },
+        {
+          "name": "CANCELLED_UNASSIGNED_IS_KNOWN_PHASE_REJECTION",
+          "status": "PASS"
+        },
+        {
+          "name": "LATEST_CANCELLED_HISTORY_CANNOT_USE_STALE_RUNNING_DETAIL",
+          "status": "PASS"
+        },
+        {
+          "name": "DETAIL_IDENTITY_MUST_MATCH_LATEST_HISTORY",
+          "status": "PASS"
+        }
+      ],
+      "pass": 23,
+      "fail": 0,
+      "skip": 0,
+      "hostedRuns": 0,
+      "networkCalls": 0,
+      "rawApiResponseSaved": false
+    },
+    {
+      "schema": 1,
+      "kind": "MASTER_NATIVE_APPROVAL_PREPARATION_OFFLINE_REVIEW",
+      "sourceCommit": "918b5a1220dbee474e57678951e1bd925ed78a23",
+      "cases": [
+        {
+          "name": "NORMAL_ADVANCE",
+          "status": "PASS"
+        },
+        {
+          "name": "FINAL_CANCELLED",
+          "status": "PASS"
+        },
+        {
+          "name": "FINAL_FAILED",
+          "status": "PASS"
+        },
+        {
+          "name": "FINAL_ATTEMPT_CHANGED",
+          "status": "PASS"
+        },
+        {
+          "name": "FINAL_DUPLICATE",
+          "status": "PASS"
+        },
+        {
+          "name": "NO_APPROVAL_CAPABILITY",
+          "status": "PASS"
+        }
+      ],
+      "pass": 6,
+      "fail": 0,
+      "skip": 0,
+      "networkCalls": 0,
+      "remoteWrites": 0,
+      "actualPermissionProof": false,
+      "processEnvironmentModified": false
+    },
+    {
+      "schema": 1,
+      "kind": "MASTER_SOURCE_DIAGNOSTIC_COHERENCE",
+      "sourceCommit": "918b5a1220dbee474e57678951e1bd925ed78a23",
+      "nodeVersion": "v24.21.0",
+      "cases": [
+        {
+          "name": "COMPLETE_SUCCESS_DIAGNOSTIC_ACCEPTS",
+          "status": "PASS"
+        },
+        {
+          "name": "PASS_REJECT_EMPTY",
+          "status": "PASS"
+        },
+        {
+          "name": "PASS_REJECT_MISSING_RUNS",
+          "status": "PASS"
+        },
+        {
+          "name": "PASS_REJECT_DUPLICATE_COLLECTION",
+          "status": "PASS"
+        },
+        {
+          "name": "PASS_REJECT_INNER_FAILURE",
+          "status": "PASS"
+        },
+        {
+          "name": "PASS_REJECT_EXTRA_COLLECTION",
+          "status": "PASS"
+        },
+        {
+          "name": "PRODUCER_CANNOT_REWRITE_FAILURE_TO_PASS",
+          "status": "PASS"
+        },
+        {
+          "name": "FAILURE_SAFE_DIAGNOSTIC_ACCEPTS",
+          "status": "PASS"
+        },
+        {
+          "name": "SENSITIVE_EXTRA_FIELD_REJECTS",
+          "status": "PASS"
+        },
+        {
+          "name": "LEGACY_SCHEMA_1_UNCHANGED",
+          "status": "PASS"
+        },
+        {
+          "name": "LEGACY_SCHEMA_2_UNCHANGED",
+          "status": "PASS"
+        }
+      ],
+      "pass": 11,
+      "fail": 0,
+      "skip": 0,
+      "networkCalls": 0,
+      "hostedRuns": 0
+    }
+  ],
+  "masterTotals": {
+    "pass": 75,
+    "fail": 0,
+    "skip": 0
+  },
+  "executionLocalTests": {
+    "pass": 35,
+    "fail": 0,
+    "skip": 0,
+    "sourceBound": true,
+    "scope": {
+      "scope": {
+        "schema": 1,
+        "kind": "FAST_OWNED_PROCESS_SCOPE",
+        "assigned": true,
+        "naturalExit": true,
+        "stderrEmpty": true,
+        "pipesClosed": true,
+        "handlesClosed": true,
+        "jobEmpty": true,
+        "forcedTermination": false,
+        "status": "PASS"
+      },
+      "classification": "PASS",
+      "rootExited": true,
+      "startedSuspended": true,
+      "childResumed": true,
+      "parentEnvironmentUnchanged": true
+    }
+  },
+  "review": {
+    "identityAlignedByUniqueId": true,
+    "phaseChecksSeparate": true,
+    "historicalTerminalStrict": true,
+    "duplicatesAndIncompletePaginationRejected": true,
+    "nativeApprovalStillRequired": true,
+    "latestObservedFailureRejected": true,
+    "missingExecutingRunnerRejected": true,
+    "fixedDiagnosticsAndSchemaValidated": true,
+    "contradictoryPassRejected": true,
+    "productionUnchanged": true,
+    "workflowsAndTriggersUnchanged": true,
+    "historicalAuthorizationAndLedgersUnchanged": true,
+    "mainTagsReleaseUnchanged": true
+  },
+  "historical39747285185": {
+    "conclusion": "CANCELLED_BEFORE_APPROVAL",
+    "exactSnapshotDifference": "UNKNOWN",
+    "uniqueRootCause": "UNKNOWN",
+    "budgetConsumedUnchanged": true
+  },
+  "hostedRuns": 0,
+  "actualApprovals": 0,
+  "environmentWrites": 0,
+  "qa": "UNUSED_FROZEN",
+  "candidateBudgetRefunded": false,
+  "productInstallation": "NOT_RUN",
+  "fullExeBuild": "NOT_RUN",
+  "rawApiResponsesStored": false,
+  "remoteSynchronization": "NOT_PART_OF_REVIEW_PROOF"
+}

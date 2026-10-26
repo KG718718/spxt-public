@@ -1,3 +1,7 @@
+## 本地闭环｜2026-10-26 历史快照状态误拒绝修复 / HOSTED FROZEN
+
+原FRESH-T2正式RETURN d11aba21，修复source918b5a12/codeFP1ea2d66f；原模块离线已复现queued→waiting及同集合乱序被整体deepEqual误拒绝。改为唯一ID稳定身份对齐、状态/Runner分配按阶段核验，重复/缺页/身份变化/失败终态/缺审批继续拒绝；固定分类及schema3内外一致性通过，旧schema1/2与history/receipt语义保留。固定Node24.21.0，T2定向35/35及owned Job恢复PASS，Master独立75/75 fail0skip0、diff/隐私/边界Review PASS并ff-only整合。历史Run39747285185精确差异和唯一根因仍UNKNOWN，取消及已耗Candidate不回填/返还；本轮Hosted0、QA冻结，不新Run/retry/审批/实装。生产、workflow、trigger、历史授权/账本均不改；原线程/树/证据保留。详见final-install-lan/AB-SNAPSHOT-STATE-MASTER-REVIEW.md/json。下方历史原样保留。
+
 ## 当前停止｜2026-10-22 唯一A/B Run 39747285185 审批前取消
 
 既有批准的唯一Candidate已由一次trigger-only push创建；Source3d256a01/control7c9aa11c。真实Environment配置与本地同源构建/Review通过，但审批前历史重复快照返回HISTORY_SNAPSHOT_UNKNOWN，具体差异未记录，不猜测GitHub内部原因。审批0次，监督器标准取消并确认completed/cancelled；A/B均cancelled、steps=[]、无Artifact，构建/安装/F01—F09/26-742未执行、恢复不追认PASS。实际同控制仅1条Run，旧两取消Run/FAIL/UNKNOWN不改。Candidate1/1已用、原QA0/1冻结；不retry/新Hosted/借QA。原T2/树保留，不main/tag/Release/内部SPXT/未知清理/sub-agent。仅治理非force同步后STOP，详见final-install-lan/AB-EXACT-RUN-HOSTED-RESULT.md。
