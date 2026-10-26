@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-26 唯一 A/B Candidate 预留 / 0 OF 1
+
+用户正式新增一次完整 A/B Candidate，固定 source d1c67563、本地参考 EXE3030b06a...4f9fd38，原独立 QA 0/1 仅完整 A/B/聚合/产物/恢复 PASS 后同 EXE。三条真实历史、现有 Environment 与权限只读复核通过；现有证明及授权指针更新，产品/验收源码/workflow 不改。600秒原生精确审批截止，重复或 UNKNOWN 拒绝并取消，取消不返还；不 retry/额外 Hosted/借 QA。当前尚未触发，Runner 安全前态与实际安装须由本 Run 证明。详见 final-install-lan/AB-20261026-AUTHORIZATION.md、PREFLIGHT 与 RUNS。下方历史原样保留。
+
 ## 当前完成｜2026-10-26 三条历史与同源本地准入 / HOSTED FROZEN
 
 三条历史已按真实API和各自trigger精确核验，39747285185独立来源保持，旧FAIL/UNKNOWN/预算不回填。受审构建source d1c67563/codeFPdc291751；新EXE33557974字节/SHA3030b06a...4f9fd38，Master1049文件20依赖逐字节及同EXE传递Review PASS。原模块72/72、Master33/33、真实EXE四阶段离线回放通过，工具链/Job/环境恢复通过。仅验收代码变化，生产和实际workflow/trigger/授权/账本不改；合成新Run仅离线测试。本地未发现必然误拒绝，仍须下一次新预算与同源真实授权/control/唯一Run/原生审批及Runner安全门禁。Hosted0、QA冻结；安装/F01—F09/安装后26-742/物理LAN未验。治理提交不改变d1c构建身份，无新控制提交、无合格用户包；原线程/树保留，非force同步后停止。详见final-install-lan/AB-NEXT-PREFLIGHT-MASTER-REVIEW.md/json。

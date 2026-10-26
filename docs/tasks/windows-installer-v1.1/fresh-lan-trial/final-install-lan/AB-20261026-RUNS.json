@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "kind": "AB_20261026_BUDGET",
+  "authorizationDate": "2026-10-26",
+  "sourceCommit": "d1c6756327a25974604d904ddb317b8f86a64b61",
+  "candidate": {
+    "limit": 1,
+    "used": 0,
+    "reserved": 1,
+    "runId": null,
+    "attemptLimit": 1,
+    "windowsJobs": 2,
+    "status": "RESERVED_NOT_TRIGGERED"
+  },
+  "qa": {
+    "existingLimit": 1,
+    "used": 0,
+    "status": "FROZEN_UNTIL_COMPLETE_AB_PASS",
+    "sameExeRequired": true
+  },
+  "otherHosted": 0,
+  "historicalRunsPreserved": [
+    "39732016119",
+    "39732017789",
+    "39747285185"
+  ],
+  "historicalBudgetRefunded": false
+}
