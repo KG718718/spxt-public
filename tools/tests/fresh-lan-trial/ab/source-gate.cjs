@@ -2,8 +2,13 @@
 // Exact external Run approval, not a lock and not a first-wins election.
 const a=require('node:assert/strict'),crypto=require('node:crypto');
 const BASELINE='a28b1e329600244a2ab6c7b40909a0dbb95e0cf0',WORKFLOW_ID='392530487',ENVIRONMENT='fresh-ab-exact-run-approval',REPO='KG718718/spxt-public';
-const OLD_CONTROL='482144f20c2720a351e65f5e7c23ddc3b12d610b',OLD_SOURCE='d8222780953bed685ccd0f4f5a3e82571b9e5bf2';
-const HISTORICAL=Object.freeze([{id:'39732016119',checkSuiteId:'107677983813',runNumber:1},{id:'39732017789',checkSuiteId:'107677988314',runNumber:2}]);
+// Historical allowance is per exact Run; it never grants execution permission.
+const historical=(id,sourceCommit,controlCommit,checkSuiteId,runNumber)=>Object.freeze({id,sourceCommit,controlCommit,checkSuiteId,runNumber,workflowId:WORKFLOW_ID,path:'.github/workflows/fresh-ab-acceptance.yml',repository:REPO,headRepository:REPO,branch:'codex/lan-fresh-trial-v1.1',event:'push',attempt:1,status:'completed',conclusion:'cancelled'});
+const HISTORICAL=Object.freeze([
+ historical('39732016119','d8222780953bed685ccd0f4f5a3e82571b9e5bf2','482144f20c2720a351e65f5e7c23ddc3b12d610b','107677983813',1),
+ historical('39732017789','d8222780953bed685ccd0f4f5a3e82571b9e5bf2','482144f20c2720a351e65f5e7c23ddc3b12d610b','107677988314',2),
+ historical('39747285185','3d256a019f99126ac25298955a7ef9bb229eeb07','7c9aa11cdc9205186b5321a31c487a0cb17f7401','107719476281',3)
+]);
 const CLASSES=Object.freeze(['ADMITTED','API_QUERY_UNKNOWN','ADMISSION_PROCESS_TIMEOUT_UNKNOWN','API_DATA_UNKNOWN','HISTORY_SNAPSHOT_UNKNOWN','HISTORY_SCOPE_REJECTED','AUTHORIZATION_REJECTED','MASTER_APPROVAL_MISSING','MASTER_APPROVAL_REJECTED','ENVIRONMENT_PROTECTION_REJECTED','JOB_STATE_UNKNOWN','JOB_STATE_REJECTED']);
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex'),ID=/^[1-9][0-9]*$/,HEX=/^[a-f0-9]{40}$/,SHA=/^[a-f0-9]{64}$/;
 function exact(o,keys){a.ok(o&&typeof o==='object'&&!Array.isArray(o));a.deepEqual(Object.keys(o).sort(),[...keys].sort());}
@@ -17,7 +22,7 @@ function history(rows,run){return checked('HISTORY_SCOPE_REJECTED',()=>{
  if(!Array.isArray(rows))fail('API_DATA_UNKNOWN');
  for(const r of rows||[]){observed(r,['id','workflow_id','head_sha','check_suite_id','run_number','path','head_branch','event','run_attempt','display_title','repository','head_repository','status','conclusion'],r.status==='completed'?[]:['conclusion']);observed(r.repository,['full_name']);observed(r.head_repository,['full_name']);}
  if(new Set(rows.map(r=>String(r.id))).size!==rows.length)fail('HISTORY_SNAPSHOT_UNKNOWN');
- for(const h of HISTORICAL){const r=rows.find(r=>String(r.id)===h.id);if(!r)fail('HISTORY_SNAPSHOT_UNKNOWN');a.equal(r.head_sha,OLD_CONTROL);a.equal(String(r.check_suite_id),h.checkSuiteId);a.equal(r.run_number,h.runNumber);a.equal(r.status,'completed');a.equal(r.conclusion,'cancelled');a.equal(r.display_title,'FreshABAcceptance '+OLD_SOURCE);}
+ for(const h of HISTORICAL){const r=rows.find(r=>String(r.id)===h.id);if(!r)fail('HISTORY_SNAPSHOT_UNKNOWN');a.deepEqual(identity(r),{id:h.id,head_sha:h.controlCommit,workflow_id:h.workflowId,path:h.path,head_branch:h.branch,event:h.event,run_attempt:h.attempt,check_suite_id:h.checkSuiteId,run_number:h.runNumber,display_title:'FreshABAcceptance '+h.sourceCommit,repository:h.repository,head_repository:h.headRepository,status:h.status,conclusion:h.conclusion});}
  a.equal(rows.length,HISTORICAL.length+1);
  for(const r of rows){a.equal(String(r.workflow_id),WORKFLOW_ID);a.equal(r.path,'.github/workflows/fresh-ab-acceptance.yml');a.equal(r.event,'push');a.equal(r.head_branch,'codex/lan-fresh-trial-v1.1');a.equal(r.run_attempt,1);a.equal(r.repository.full_name,REPO);a.equal(r.head_repository.full_name,REPO);a.match(String(r.id),ID);a.match(String(r.check_suite_id),ID);}
  a.ok(!HISTORICAL.some(h=>h.id===String(run.id)));if(!rows.some(r=>String(r.id)===String(run.id)))fail('HISTORY_SNAPSHOT_UNKNOWN');const current=rows.filter(r=>!HISTORICAL.some(h=>h.id===String(r.id)));a.equal(current.length,1);a.deepEqual(identity(current[0]),identity(run));
