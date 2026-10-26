@@ -1,0 +1,219 @@
+{
+  "schema": 1,
+  "kind": "AB_20261026_HOSTED_RESULT",
+  "status": "STOP_CANDIDATE_FAILED",
+  "sourceCommit": "d1c6756327a25974604d904ddb317b8f86a64b61",
+  "sourceTree": "831ea155b30fc53baad0f1f8edd70a8afa1acc74",
+  "reviewedSource": "2b5184a57c82e3ecf546a089e52fd12a20f193cc",
+  "controlCommit": "931dd0cf30245f319d5b2a9f0aee0c25d9432a5f",
+  "run": {
+    "id": "40286717015",
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "url": "https://github.com/KG718718/spxt-public/actions/runs/40286717015"
+  },
+  "jobs": [
+    {
+      "id": "121451986698",
+      "role": "A",
+      "status": "completed",
+      "conclusion": "failure",
+      "standardWindowsLabels": true,
+      "standardRunnerGroup": true,
+      "steps": [
+        {
+          "number": 1,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 2,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 3,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 4,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 5,
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "number": 6,
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "number": 7,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 8,
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 16,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 17,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": "121454427441",
+      "role": "B",
+      "status": "completed",
+      "conclusion": "skipped",
+      "standardWindowsLabels": true,
+      "standardRunnerGroup": null,
+      "steps": []
+    }
+  ],
+  "uniqueCurrentControlRun": true,
+  "approvals": {
+    "attempts": 1,
+    "verified": true,
+    "commentSha256": "d68d5d8ada8171c62eccfe1282a50934749a28b0b987fa5df4805d79f424b3d4",
+    "environmentChanged": false
+  },
+  "artifact": {
+    "id": "12635021130",
+    "name": "fresh-ab-evidence-A-d1c6756327a25974604d904ddb317b8f86a64b61-40286717015",
+    "sizeInBytes": 1597,
+    "digest": "sha256:0e7c7b41d60d335d54335a8c6dd6ad8221498ffc708d551b601a3bf9239e04f4",
+    "expired": false
+  },
+  "artifactIdentityAndPrivacy": "PASS_SINGLE_SAFE_JSON",
+  "localReferenceExe": {
+    "sha256": "3030b06a1403bd088810625db4040d93b5ca6cde628d34d5a3fcc59e84f9fd38",
+    "bytes": 33557974,
+    "qualification": "LOCAL_BUILD_REFERENCE_ONLY"
+  },
+  "hostedBuild": {
+    "status": "PASS",
+    "stage": "COMPLETE",
+    "reportedExeSha256": "fbc9344f0eb7ddf3c93a84131a815942290fd0a2b366ba7e7c177e4ebdb86394",
+    "reportedManifestSha256": "546d856fae1d5742282feeea3d875e7bdb06b1bea5469c34b1d6c372308d11f0",
+    "exeBytesPublished": false,
+    "independentHostedExeByteVerification": "NOT_POSSIBLE_NO_EXE_ARTIFACT"
+  },
+  "firstReportedFailure": {
+    "stage": "F01",
+    "classification": "INSTALL_ADMISSION_NOT_OBSERVED"
+  },
+  "installationAdmission": "NOT_OBSERVED",
+  "setupInvocationEvidence": "NOT_OBSERVED",
+  "f01": "FAIL",
+  "laterGates": "NOT_REACHED",
+  "installedBrowserBusiness": "NOT_VERIFIED",
+  "installedCore26Suites742Checks": "NOT_REACHED",
+  "BRejectionsAndNativeRecovery": "NOT_EXECUTED",
+  "strictCandidateAggregation": "INELIGIBLE_A_FAILED_B_SKIPPED",
+  "recovery": {
+    "outerStates": {
+      "binding": "ABSENT_UNCHANGED",
+      "compilerOwnedFiles": "OWNED_REMOVED",
+      "programFiles": "ABSENT_UNCHANGED",
+      "desktop": "ABSENT_UNCHANGED",
+      "compilerSettings": "SNAPSHOT_UNCHANGED",
+      "globalRegistry": "SNAPSHOT_UNCHANGED",
+      "productRegistration": "ABSENT_UNCHANGED",
+      "rules": "SNAPSHOT_UNCHANGED",
+      "startup": "ABSENT_UNCHANGED",
+      "programs": "ABSENT_UNCHANGED"
+    },
+    "outerCleanup": {
+      "ownedLauncherExited": true,
+      "ownedNodeExited": true,
+      "handlesClosed": true,
+      "lockReleased": true,
+      "ownedRulesAbsent": true,
+      "ownedRegistrationAbsent": true,
+      "ownedShortcutsAbsent": true,
+      "ownedToolchainAbsent": true,
+      "ownedDriveRestored": true,
+      "environmentRestored": true
+    },
+    "innerStates": {
+      "binding": "OBSERVATION_FAILED",
+      "desktop": "ABSENT_UNCHANGED",
+      "productRegistration": "OBSERVATION_FAILED",
+      "programFiles": "ABSENT_UNCHANGED",
+      "programs": "ABSENT_UNCHANGED",
+      "startup": "ABSENT_UNCHANGED"
+    },
+    "installationParents": {
+      "bindingParent": "NOT_APPLICABLE",
+      "uninstallParent": "OWNERSHIP_UNKNOWN"
+    },
+    "outerJobEmpty": false,
+    "supervisor": {
+      "schema": 1,
+      "kind": "FRESH_SUPERVISOR_ENTRY",
+      "sourceCommit": "d1c6756327a25974604d904ddb317b8f86a64b61",
+      "controlCommit": "931dd0cf30245f319d5b2a9f0aee0c25d9432a5f",
+      "run": {
+        "attempt": 1,
+        "id": "40286717015"
+      },
+      "diagnostic": {
+        "stage": "SUPERVISOR_JOB",
+        "classification": "CHILD_EXIT_FAILED",
+        "script": null,
+        "line": null
+      },
+      "scope": {
+        "schema": 1,
+        "kind": "FAST_OWNED_PROCESS_SCOPE",
+        "assigned": true,
+        "naturalExit": false,
+        "stderrEmpty": true,
+        "pipesClosed": true,
+        "handlesClosed": true,
+        "jobEmpty": true,
+        "forcedTermination": false,
+        "status": "FAIL"
+      },
+      "workObserved": true,
+      "workMatched": true
+    },
+    "overall": "NOT_PROVEN",
+    "realResiduals": "UNKNOWN"
+  },
+  "underlyingCause": "UNKNOWN",
+  "sourceReviewObservation": {
+    "missingAdmissionOverwritesEarlierCoreFailureClassification": true,
+    "uninstallParentPreparedBeforeInstallAdmission": true,
+    "uniqueHistoricalRootCauseNotClaimed": true
+  },
+  "candidateQualification": "NOT_QUALIFIED",
+  "qa": {
+    "used": 0,
+    "existingLimit": 1,
+    "status": "UNUSED_FROZEN",
+    "entry": "EXISTING_QA_DOES_NOT_ACCEPT_AB_AGGREGATE_WITHOUT_REVIEWED_ADAPTATION"
+  },
+  "budget": {
+    "candidateLimit": 1,
+    "candidateUsed": 1,
+    "reruns": 0,
+    "additionalHosted": 0
+  },
+  "productionAndAcceptanceCodeChanged": false,
+  "historicalResultsChanged": false
+}

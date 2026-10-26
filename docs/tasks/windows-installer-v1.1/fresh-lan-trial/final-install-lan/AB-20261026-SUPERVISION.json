@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "kind": "AB_EXACT_RUN_MASTER_SUPERVISION",
+  "sourceCommit": "d1c6756327a25974604d904ddb317b8f86a64b61",
+  "controlCommit": "931dd0cf30245f319d5b2a9f0aee0c25d9432a5f",
+  "authorizationCommit": "2b5184a57c82e3ecf546a089e52fd12a20f193cc",
+  "attempt": 1,
+  "status": "EXACT_RUN_NATIVE_APPROVAL_VERIFIED",
+  "pushAttempts": 1,
+  "approvalAttempts": 1,
+  "runIds": [
+    "40286717015"
+  ],
+  "deadlineSeconds": 600,
+  "cancelConfirmationSeconds": 120,
+  "pushCompletedAt": "2026-10-26T07:35:26.780Z",
+  "pushExitZero": true,
+  "historySnapshot": {
+    "schema": 1,
+    "kind": "AB_SNAPSHOT_COMPARISON",
+    "collection": "RUNS",
+    "classification": "STABLE",
+    "status": "PASS",
+    "identityStable": true,
+    "stateChanged": false,
+    "orderChanged": false,
+    "runnerAssignmentChanged": false
+  },
+  "approvalSnapshots": [
+    {
+      "schema": 1,
+      "kind": "AB_SNAPSHOT_COMPARISON",
+      "collection": "JOBS",
+      "classification": "STABLE",
+      "status": "PASS",
+      "identityStable": true,
+      "stateChanged": false,
+      "orderChanged": false,
+      "runnerAssignmentChanged": false
+    },
+    {
+      "schema": 1,
+      "kind": "AB_SNAPSHOT_COMPARISON",
+      "collection": "RUNS",
+      "classification": "STABLE",
+      "status": "PASS",
+      "identityStable": true,
+      "stateChanged": false,
+      "orderChanged": false,
+      "runnerAssignmentChanged": false
+    },
+    {
+      "schema": 1,
+      "kind": "AB_SNAPSHOT_COMPARISON",
+      "collection": "RUNS",
+      "classification": "STABLE",
+      "status": "PASS",
+      "identityStable": true,
+      "stateChanged": false,
+      "orderChanged": false,
+      "runnerAssignmentChanged": false
+    }
+  ],
+  "approvalSubmittedAt": "2026-10-26T07:35:44.720Z",
+  "approvalCommentSha256": "d68d5d8ada8171c62eccfe1282a50934749a28b0b987fa5df4805d79f424b3d4",
+  "runId": "40286717015",
+  "approvalVerifiedAt": "2026-10-26T07:35:46.565Z",
+  "approvalHistoryVerified": true,
+  "remoteSettingsChanged": false
+}

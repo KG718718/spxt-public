@@ -5,17 +5,18 @@
   "sourceCommit": "d1c6756327a25974604d904ddb317b8f86a64b61",
   "candidate": {
     "limit": 1,
-    "used": 0,
-    "reserved": 1,
-    "runId": null,
+    "used": 1,
+    "reserved": 0,
+    "runId": "40286717015",
     "attemptLimit": 1,
     "windowsJobs": 2,
-    "status": "RESERVED_NOT_TRIGGERED"
+    "status": "FAIL_A_B_SKIPPED_NO_RETRY",
+    "controlCommit": "931dd0cf30245f319d5b2a9f0aee0c25d9432a5f"
   },
   "qa": {
     "existingLimit": 1,
     "used": 0,
-    "status": "FROZEN_UNTIL_COMPLETE_AB_PASS",
+    "status": "UNUSED_FROZEN",
     "sameExeRequired": true
   },
   "otherHosted": 0,

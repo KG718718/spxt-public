@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "kind": "AB_20261026_CONTROL_REVIEW",
+  "status": "PASS_BEFORE_TRIGGER",
+  "sourceCommit": "d1c6756327a25974604d904ddb317b8f86a64b61",
+  "reviewedSource": "2b5184a57c82e3ecf546a089e52fd12a20f193cc",
+  "authorizationCommit": "2b5184a57c82e3ecf546a089e52fd12a20f193cc",
+  "controlCommit": "931dd0cf30245f319d5b2a9f0aee0c25d9432a5f",
+  "sourceContract": "PASS",
+  "triggerOnly": true,
+  "codeFingerprint": "dc291751f61bd09efbbe9fd8c3c93417324b02dad1e408103d963ba8f5d9d69e",
+  "reviewSha256": "cf30d436e212f9004aefa2031d1f9d757eb1f8392653d305f886763ed334c2c5",
+  "localBuildReportSha256": "9003eae2014e5173af49f1f954c151d7a83b2d32fe2abf563c4c571be67b2ea9",
+  "workflowSha256": "a4a237e9b93ec9767a098fa942ea69f6c1dfd25f712f2b40b23c5c0523a778f7",
+  "approvalDeadlineSeconds": 600,
+  "localSupervisionCounterexamples": 7,
+  "sourceCodeChanged": false,
+  "hostedTriggered": 0,
+  "executionIndependentReview": {
+    "thread": "01a13948-7433-7571-8330-a09bfd12a0dc",
+    "status": "PASS",
+    "fixedSource": true,
+    "canonicalProofAndReviewBytes": true,
+    "triggerOnlyControl": true
+  },
+  "masterReview": "PASS"
+}

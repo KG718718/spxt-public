@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "runId": "40286717015",
+  "controlCommit": "931dd0cf30245f319d5b2a9f0aee0c25d9432a5f",
+  "sourceCommit": "d1c6756327a25974604d904ddb317b8f86a64b61",
+  "artifact": {
+    "id": "12635021130",
+    "name": "fresh-ab-evidence-A-d1c6756327a25974604d904ddb317b8f86a64b61-40286717015",
+    "sizeInBytes": 1597,
+    "digest": "sha256:0e7c7b41d60d335d54335a8c6dd6ad8221498ffc708d551b601a3bf9239e04f4",
+    "expired": false
+  },
+  "singleJsonWhiteList": true,
+  "sourceAndSchemaValidated": true,
+  "reportSha256": "6d4ae56c01c734c6c9dea0fb71c394ca0f186904403dbc98fe7768841162df51",
+  "rawLogsDownloaded": false
+}

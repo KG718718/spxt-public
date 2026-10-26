@@ -1,3 +1,7 @@
+## 最终STOP｜2026-10-26 A/B Run40286717015 / F01 INSTALL_ADMISSION_NOT_OBSERVED
+
+唯一Run/原生精确审批已证，source d1c67563/control931dd0cf；A121451986698 failure、B121454427441 skipped。SOURCE/BUILD COMPLETE PASS，Hosted报告EXE SHA fbc9344f...db86394，无发布EXE。F01 admission未观察/Setup diagnostics空，实际安装与后续业务26-742未验；外层恢复10项可接受但内层登记观察失败/父登记OWNERSHIP_UNKNOWN、Supervisor CHILD_EXIT_FAILED及outer.jobEmpty=false，不能称完整恢复。Artifact12635021130单安全JSON/digest/source/schema PASS；实际底层首因UNKNOWN，原报告与分层恢复保留。Candidate1/1已用、QA0/1 UNUSED—FROZEN，不retry/追加/借QA；原T2/树/历史FAIL保留，仅治理非force同步后STOP，不main/tag/Release/内部SPXT/未知清理/sub-agent。详见final-install-lan/AB-20261026-HOSTED-RESULT.md/json。下方本地PASS/授权/历史保留。
+
 ## 当前授权｜2026-10-26 唯一 A/B Candidate 预留 / 0 OF 1
 
 用户正式新增一次完整 A/B Candidate，固定 source d1c67563、本地参考 EXE3030b06a...4f9fd38，原独立 QA 0/1 仅完整 A/B/聚合/产物/恢复 PASS 后同 EXE。三条真实历史、现有 Environment 与权限只读复核通过；现有证明及授权指针更新，产品/验收源码/workflow 不改。600秒原生精确审批截止，重复或 UNKNOWN 拒绝并取消，取消不返还；不 retry/额外 Hosted/借 QA。当前尚未触发，Runner 安全前态与实际安装须由本 Run 证明。详见 final-install-lan/AB-20261026-AUTHORIZATION.md、PREFLIGHT 与 RUNS。下方历史原样保留。
