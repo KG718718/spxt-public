@@ -1,3 +1,7 @@
+## 当前授权｜2026-10-27 安装前观察与首错保留 / LOCAL ONLY
+
+用户批准原FRESH-T2/bea7在a824e100基线修复安装前登记观察与首错保留、原模块端到端反例，并本地补齐同EXE A/B→QA报告接线。实际解释器/窄环境/私有owned夹具验证，保留stderr与身份/恢复严格条件；实现稳定后同源完整构建及Master独立Review。历史Run40286717015 FAIL/UNKNOWN与Candidate1/1已用不改；Hosted0、QA0/1冻结，不真实Setup/真实产品登记增删/trigger/main/tag/Release/内部SPXT/未知清理/sub-agent。FRESH-T2 thread01a13948-7433-7571-8330-a09bfd12a0dc，Master01a0db0e-c950-79e0-8e11-07155e0742f2，原local branch codex/fresh-t2-installer-ci，状态DISPATCHED。详见final-install-lan/AB-OBSERVATION-CLOSURE-AUTHORIZATION.md。下方STOP仅在本次明确本地范围内有限续行。
+
 ## 最终STOP｜2026-10-26 A/B Run40286717015 / F01 INSTALL_ADMISSION_NOT_OBSERVED
 
 唯一Run/原生精确审批已证，source d1c67563/control931dd0cf；A121451986698 failure、B121454427441 skipped。SOURCE/BUILD COMPLETE PASS，Hosted报告EXE SHA fbc9344f...db86394，无发布EXE。F01 admission未观察/Setup diagnostics空，实际安装与后续业务26-742未验；外层恢复10项可接受但内层登记观察失败/父登记OWNERSHIP_UNKNOWN、Supervisor CHILD_EXIT_FAILED及outer.jobEmpty=false，不能称完整恢复。Artifact12635021130单安全JSON/digest/source/schema PASS；实际底层首因UNKNOWN，原报告与分层恢复保留。Candidate1/1已用、QA0/1 UNUSED—FROZEN，不retry/追加/借QA；原T2/树/历史FAIL保留，仅治理非force同步后STOP，不main/tag/Release/内部SPXT/未知清理/sub-agent。详见final-install-lan/AB-20261026-HOSTED-RESULT.md/json。下方本地PASS/授权/历史保留。
