@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "kind": "MASTER_LOCAL_OBSERVATION_CLOSURE_RESULT",
+  "status": "BLOCKED_LOCAL_FIXTURE_RECOVERY_UNPROVEN",
+  "date": "2026-10-27",
+  "baseCommit": "a824e100d9c07a8e7f88a3a9e06734ebb046971e",
+  "localAuthorizationCommit": "7f33be2ca690f8e8d039da13696164840e340148",
+  "executionThread": "01a13948-7433-7571-8330-a09bfd12a0dc",
+  "implementationCommit": "01075664b4d9c381c20b047c9a33c63d569d286e",
+  "implementationQualification": "WIP_NOT_INTEGRATED_NOT_FINAL_REVIEWED",
+  "historical": {
+    "runId": "40286717015",
+    "status": "FAIL",
+    "cleanup": "UNPROVEN",
+    "rootCause": "UNKNOWN",
+    "originalSafeReportSha256": "6d4ae56c01c734c6c9dea0fb71c394ca0f186904403dbc98fe7768841162df51",
+    "bytesVerifiedUnchanged": true,
+    "budgetRestored": false
+  },
+  "confirmedDefects": [
+    "EARLIER_OBSERVATION_FAILURE_OVERWRITTEN_BY_ADMISSION_NOT_OBSERVED",
+    "PRIVATE_FIXTURE_FAILED_AFTER_CREATE_WITH_CLOSE_ONLY"
+  ],
+  "localFixture": {
+    "test": "TestFreshAbParentReceiptPrivate",
+    "attempt": "v3",
+    "failure": "INDEPENDENT_PRIVATE_TYPED_CONTENT_MISMATCH",
+    "afterParentAndChildCreated": true,
+    "beforeExplicitCleanup": true,
+    "oldDeferredAction": "CLOSE_ONLY",
+    "exactOwnedDeletionProved": false,
+    "postFailureRestorationProved": false,
+    "prefixPresentObserved": true,
+    "prefixProvesOwnership": false,
+    "unknownKeyModified": false,
+    "ownership": "UNKNOWN",
+    "restoration": "UNKNOWN",
+    "evidenceAuthority": "EXECUTION_RETURN_AND_MASTER_SOURCE_REVIEW"
+  },
+  "laterFixture": {
+    "attempt": "v6",
+    "testReportedPass": true,
+    "exactOwnedCleanupAdded": true,
+    "retroactiveRestorationClaim": false,
+    "evidenceAuthority": "EXECUTION_RETURN"
+  },
+  "masterIndependentReplay": {
+    "nodeVersion": "24.21.0",
+    "cases": 13,
+    "fail": 0,
+    "skip": 0,
+    "originalModules": true,
+    "syntheticOnly": true,
+    "scope": "SPLIT_CI_FINALIZE_FAILURE_PRESERVATION_AND_CONTRADICTORY_STATES",
+    "finalSuiteClaim": false
+  },
+  "executionReportedLocalTests": {
+    "abSyntheticChain": "16/16",
+    "legacyFq1": "17/17",
+    "newQaContract": "3/3",
+    "lastCombinedRun": "INTERRUPTED_ON_MASTER_STOP",
+    "allApplicablePass": "NOT_ESTABLISHED"
+  },
+  "qa": {
+    "status": "NOT_READY_FOR_EXECUTION",
+    "schema4Wiring": "WIP",
+    "independentReview": "INCOMPLETE",
+    "triggered": false,
+    "remainingBudget": 1,
+    "budgetState": "FROZEN"
+  },
+  "finalBuild": {
+    "sourceCommit": null,
+    "setupSha256": null,
+    "status": "NOT_RUN"
+  },
+  "masterFinalReview": "BLOCKED",
+  "newHostedRuns": 0,
+  "newQaRuns": 0,
+  "realProductInstalled": false,
+  "productionChanged": false,
+  "actualTriggerChanged": false,
+  "unknownResourcesDeleted": false,
+  "mainTagReleaseChanged": false,
+  "internalSpxtAccessed": false,
+  "ordinarySubagentCreated": false
+}

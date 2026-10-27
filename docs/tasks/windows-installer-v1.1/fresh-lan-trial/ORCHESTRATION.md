@@ -1,3 +1,7 @@
+## 当前停止｜2026-10-27 本地观察收口 / PRIVATE FIXTURE RECOVERY UNPROVEN
+
+原FRESH-T2正式RETURN并冻结，本地WIP01075664未push/未整合/未最终Review。已确认首错被admission未观察覆盖，Master原模块13/13局部反例PASS；但v3私有父/子登记创建后类型内容对比失败，当时仅defer close，删除及恢复未证。发现同前缀键不能证明归属，UNKNOWN保留未清理；后续t.Cleanup及v6成功不回填v3。QA上下游兼容仍WIP、组合测试中断，NOT READY；未完成最终整体Review或同源完整EXE，无新Source/构建身份。Hosted0、QA0/1冻结、历史Run40286717015 FAIL/UNKNOWN/预算不变。停止新增工程/实测/构建，仅治理非force同步；原线程/树/未跟踪保留，不main/tag/Release/内部SPXT/未知清理/sub-agent。详见final-install-lan/AB-OBSERVATION-CLOSURE-RESULT.md/json。下方授权与全部历史原样保留。
+
 ## 当前授权｜2026-10-27 安装前观察与首错保留 / LOCAL ONLY
 
 用户批准原FRESH-T2/bea7在a824e100基线修复安装前登记观察与首错保留、原模块端到端反例，并本地补齐同EXE A/B→QA报告接线。实际解释器/窄环境/私有owned夹具验证，保留stderr与身份/恢复严格条件；实现稳定后同源完整构建及Master独立Review。历史Run40286717015 FAIL/UNKNOWN与Candidate1/1已用不改；Hosted0、QA0/1冻结，不真实Setup/真实产品登记增删/trigger/main/tag/Release/内部SPXT/未知清理/sub-agent。FRESH-T2 thread01a13948-7433-7571-8330-a09bfd12a0dc，Master01a0db0e-c950-79e0-8e11-07155e0742f2，原local branch codex/fresh-t2-installer-ci，状态DISPATCHED。详见final-install-lan/AB-OBSERVATION-CLOSURE-AUTHORIZATION.md。下方STOP仅在本次明确本地范围内有限续行。
