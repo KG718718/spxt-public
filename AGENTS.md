@@ -1,3 +1,7 @@
+## 当前停止｜2026-11-02 原生登记恢复专项 / PRESTATE_UNPROVEN
+
+唯一 Run 41396108321、Windows Job 125117667113、Artifact 13119303105。受测 source e3df4eaa，control 0a453fd2。审批、来源及专项编译通过；NORMAL_RECEIPT 的首次四视图观察未能证明创建前状态，收据 0，进入创建函数前即停止。部分创建和替换均未运行，登记删除、关闭与恢复回读均未验证。进程句柄、管道、Job 和环境收尾有独立证据。专项 1/1 已耗尽，QA 冻结，完整 Candidate 不具备准入条件。v3 UNKNOWN 保留。详见 final-install-lan/NATIVE-REGISTRY-RESULT.md 和 NATIVE-REGISTRY-EVIDENCE.json。
+
 ## 当前停止｜2026-10-27 本地观察收口 / PRIVATE FIXTURE RECOVERY UNPROVEN
 
 原FRESH-T2正式RETURN并冻结，本地WIP01075664未push/未整合/未最终Review。已确认首错被admission未观察覆盖，Master原模块13/13局部反例PASS；但v3私有父/子登记创建后类型内容对比失败，当时仅defer close，删除及恢复未证。发现同前缀键不能证明归属，UNKNOWN保留未清理；后续t.Cleanup及v6成功不回填v3。QA上下游兼容仍WIP、组合测试中断，NOT READY；未完成最终整体Review或同源完整EXE，无新Source/构建身份。Hosted0、QA0/1冻结、历史Run40286717015 FAIL/UNKNOWN/预算不变。停止新增工程/实测/构建，仅治理非force同步；原线程/树/未跟踪保留，不main/tag/Release/内部SPXT/未知清理/sub-agent。详见final-install-lan/AB-OBSERVATION-CLOSURE-RESULT.md/json。下方授权与全部历史原样保留。
