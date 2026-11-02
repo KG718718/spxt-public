@@ -20,6 +20,7 @@ import (
 type freshRecoverySnapshot struct {
 	Known, Absent bool
 	Identity      string
+	Failure       string // Fixed in-memory class; never contains registry bytes or paths.
 }
 
 // These are owned FILE surrogates, never real product registry/known folders.
@@ -107,14 +108,17 @@ func freshRecoveryRestored(state string) bool {
 }
 func freshObserveRegistration(ps, key string) freshRecoverySnapshot {
 	keyJSON, _ := json.Marshal(key)
-	script := fmt.Sprintf(`$ErrorActionPreference='Stop';$ProgressPreference='SilentlyContinue';function Tree($k,$depth=0){if($depth -gt 16){throw 'Bound'};$v=[ordered]@{values=[ordered]@{};children=[ordered]@{}};foreach($n in @($k.GetValueNames()|Sort-Object)){$v.values[$n]=@([string]$k.GetValueKind($n),$k.GetValue($n,$null,[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames))};foreach($n in @($k.GetSubKeyNames()|Sort-Object)){$c=$k.OpenSubKey($n);if(!$c){throw 'Unknown'};try{$v.children[$n]=Tree $c ($depth+1)}finally{$c.Dispose()}};return $v};$rows=@();foreach($h in @([Microsoft.Win32.RegistryHive]::CurrentUser,[Microsoft.Win32.RegistryHive]::LocalMachine)){foreach($view in @([Microsoft.Win32.RegistryView]::Registry64,[Microsoft.Win32.RegistryView]::Registry32)){$r=[Microsoft.Win32.RegistryKey]::OpenBaseKey($h,$view);try{$k=$r.OpenSubKey((ConvertFrom-Json '%s'));if($null -eq $k){$rows+=@{id=([string]$h+':'+[string]$view);present=$false;tree=$null}}else{try{$rows+=@{id=([string]$h+':'+[string]$view);present=$true;tree=(Tree $k)}}finally{$k.Dispose()}}}finally{$r.Dispose()}}};[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);$rows|ConvertTo-Json -Depth 60 -Compress`, strings.ReplaceAll(string(keyJSON), "'", "''"))
+	script := fmt.Sprintf(`$ErrorActionPreference='Stop';$ProgressPreference='SilentlyContinue';try{function Tree($k,$depth=0){if($depth -gt 16){throw 'Bound'};$v=[ordered]@{values=[ordered]@{};children=[ordered]@{}};foreach($n in @($k.GetValueNames()|Sort-Object)){$v.values[$n]=@([string]$k.GetValueKind($n),$k.GetValue($n,$null,[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames))};foreach($n in @($k.GetSubKeyNames()|Sort-Object)){$c=$k.OpenSubKey($n);if(!$c){throw 'Unknown'};try{$v.children[$n]=Tree $c ($depth+1)}finally{$c.Dispose()}};return $v};$rows=@();foreach($h in @([Microsoft.Win32.RegistryHive]::CurrentUser,[Microsoft.Win32.RegistryHive]::LocalMachine)){foreach($view in @([Microsoft.Win32.RegistryView]::Registry64,[Microsoft.Win32.RegistryView]::Registry32)){$r=[Microsoft.Win32.RegistryKey]::OpenBaseKey($h,$view);try{$k=$r.OpenSubKey((ConvertFrom-Json '%s'));if($null -eq $k){$rows+=@{id=([string]$h+':'+[string]$view);present=$false;tree=$null}}else{try{$rows+=@{id=([string]$h+':'+[string]$view);present=$true;tree=(Tree $k)}}finally{$k.Dispose()}}}finally{$r.Dispose()}}};try{$json=$rows|ConvertTo-Json -Depth 60 -Compress}catch{exit 14};[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);[Console]::Write($json)}catch{if($_.Exception -is [System.UnauthorizedAccessException] -or $_.Exception -is [System.Security.SecurityException] -or $_.Exception.InnerException -is [System.UnauthorizedAccessException] -or $_.Exception.InnerException -is [System.Security.SecurityException]){exit 13};throw}`, strings.ReplaceAll(string(keyJSON), "'", "''"))
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	root := os.Getenv("SystemRoot")
-	cmd.Env = []string{"SystemRoot=" + root, "WINDIR=" + root, "PATH=" + filepath.Join(root, "System32"), "PSModulePath=" + filepath.Join(root, "System32", "WindowsPowerShell", "v1.0", "Modules"), "TEMP=" + os.Getenv("TEMP"), "TMP=" + os.Getenv("TMP")}
+	cmd.Env = freshRegistrationEnvironment()
 	return freshCaptureRegistration(cmd, func() bool { return ctx.Err() == nil })
+}
+func freshRegistrationEnvironment() []string {
+	root := os.Getenv("SystemRoot")
+	return []string{"SystemRoot=" + root, "WINDIR=" + root, "PATH=" + filepath.Join(root, "System32"), "PSModulePath=" + filepath.Join(root, "System32", "WindowsPowerShell", "v1.0", "Modules"), "TEMP=" + os.Getenv("TEMP"), "TMP=" + os.Getenv("TMP")}
 }
 
 func freshNoDuplicateJSON(d *json.Decoder, depth int) bool {
@@ -160,22 +164,25 @@ func freshNoDuplicateJSON(d *json.Decoder, depth int) bool {
 }
 func freshParseRegistration(raw []byte, exited, stderrEmpty bool) freshRecoverySnapshot {
 	if !exited || !stderrEmpty {
-		return freshRecoverySnapshot{}
+		return freshRecoverySnapshot{Failure: "PROCESS_OR_STDERR"}
 	}
 	check := json.NewDecoder(bytes.NewReader(raw))
 	if !freshNoDuplicateJSON(check, 0) {
-		return freshRecoverySnapshot{}
+		return freshRecoverySnapshot{Failure: "JSON_INVALID"}
 	}
 	if _, e := check.Token(); e != io.EOF {
-		return freshRecoverySnapshot{}
+		return freshRecoverySnapshot{Failure: "JSON_INVALID"}
 	}
 	var rawRows []map[string]json.RawMessage
-	if json.Unmarshal(raw, &rawRows) != nil || len(rawRows) != 4 {
-		return freshRecoverySnapshot{}
+	if json.Unmarshal(raw, &rawRows) != nil {
+		return freshRecoverySnapshot{Failure: "TYPE_INVALID"}
+	}
+	if len(rawRows) != 4 {
+		return freshRecoverySnapshot{Failure: "TYPE_INVALID"}
 	}
 	for _, row := range rawRows {
 		if len(row) != 3 || row["id"] == nil || row["present"] == nil || row["tree"] == nil {
-			return freshRecoverySnapshot{}
+			return freshRecoverySnapshot{Failure: "TYPE_INVALID"}
 		}
 	}
 	var rows []struct {
@@ -186,19 +193,19 @@ func freshParseRegistration(raw []byte, exited, stderrEmpty bool) freshRecoveryS
 	decoder := json.NewDecoder(bytes.NewReader(raw))
 	decoder.DisallowUnknownFields()
 	if decoder.Decode(&rows) != nil || len(rows) != 4 {
-		return freshRecoverySnapshot{}
+		return freshRecoverySnapshot{Failure: "TYPE_INVALID"}
 	}
 	expected := map[string]bool{"CurrentUser:Registry64": true, "CurrentUser:Registry32": true, "LocalMachine:Registry64": true, "LocalMachine:Registry32": true}
 	canonical := map[string]any{}
 	absent := true
 	for _, row := range rows {
 		if !expected[row.ID] || row.Present == nil || len(row.Tree) == 0 {
-			return freshRecoverySnapshot{}
+			return freshRecoverySnapshot{Failure: "TYPE_INVALID"}
 		}
 		delete(expected, row.ID)
 		if !*row.Present {
 			if !bytes.Equal(bytes.TrimSpace(row.Tree), []byte("null")) {
-				return freshRecoverySnapshot{}
+				return freshRecoverySnapshot{Failure: "TYPE_INVALID"}
 			}
 			canonical[row.ID] = nil
 		} else {
@@ -206,24 +213,24 @@ func freshParseRegistration(raw []byte, exited, stderrEmpty bool) freshRecoveryS
 			rd := json.NewDecoder(bytes.NewReader(row.Tree))
 			rd.UseNumber()
 			if rd.Decode(&tree) != nil || !freshRegistryTreeKnown(tree, 0) {
-				return freshRecoverySnapshot{}
+				return freshRecoverySnapshot{Failure: "TYPE_INVALID"}
 			}
 			if _, ok := tree["values"].(map[string]any); !ok {
-				return freshRecoverySnapshot{}
+				return freshRecoverySnapshot{Failure: "TYPE_INVALID"}
 			}
 			if _, ok := tree["children"].(map[string]any); !ok {
-				return freshRecoverySnapshot{}
+				return freshRecoverySnapshot{Failure: "TYPE_INVALID"}
 			}
 			canonical[row.ID] = tree
 		}
 		absent = absent && !*row.Present
 	}
 	if len(expected) != 0 {
-		return freshRecoverySnapshot{}
+		return freshRecoverySnapshot{Failure: "TYPE_INVALID"}
 	}
 	normalized, e := json.Marshal(canonical)
 	if e != nil {
-		return freshRecoverySnapshot{}
+		return freshRecoverySnapshot{Failure: "SERIALIZATION_FAILED"}
 	}
 	return freshRecoverySnapshot{Known: true, Absent: absent, Identity: digest(normalized)}
 }
@@ -383,7 +390,20 @@ func freshCaptureRegistration(cmd *exec.Cmd, deadlineKnown func() bool) freshRec
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	e := cmd.Run()
-	return freshParseRegistration(stdout.Bytes(), e == nil && deadlineKnown(), stderr.Len() == 0)
+	if !deadlineKnown() {
+		return freshRecoverySnapshot{Failure: "TIMEOUT"}
+	}
+	if e != nil {
+		var exit *exec.ExitError
+		if errors.As(e, &exit) {
+			if exit.ExitCode() == 13 { return freshRecoverySnapshot{Failure: "READ_DENIED"} }
+			if exit.ExitCode() == 14 { return freshRecoverySnapshot{Failure: "SERIALIZATION_FAILED"} }
+			return freshRecoverySnapshot{Failure: "NONZERO"}
+		}
+		return freshRecoverySnapshot{Failure: "SPAWN_FAILED"}
+	}
+	if stderr.Len() != 0 { return freshRecoverySnapshot{Failure: "STDERR"} }
+	return freshParseRegistration(stdout.Bytes(), true, true)
 }
 func freshRegistryTreeKnown(value any, depth int) bool {
 	if depth > 16 {
@@ -526,6 +546,41 @@ func TestFreshInstallRecoveryRegistryCollector(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFreshRegistrationProcessFailureClasses(t *testing.T) {
+	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	for _, row := range []struct{ name, script, want string }{
+		{"nonzero", "exit 1", "NONZERO"},
+		{"read_denied", "exit 13", "READ_DENIED"},
+		{"serialization", "exit 14", "SERIALIZATION_FAILED"},
+		{"stderr", "[Console]::Error.Write('PRIVATE_SENTINEL')", "STDERR"},
+		{"json", "[Console]::Write('INVALID')", "JSON_INVALID"},
+		{"type", "[Console]::Write('[]')", "TYPE_INVALID"},
+		{"object_type", "[Console]::Write('{}')", "TYPE_INVALID"},
+		{"string_type", "[Console]::Write('\"text\"')", "TYPE_INVALID"},
+		{"number_type", "[Console]::Write('1')", "TYPE_INVALID"},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", row.script)
+			cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+			cmd.Env = freshRegistrationEnvironment()
+			got := freshCaptureRegistration(cmd, func() bool { return ctx.Err() == nil })
+			if got.Known || got.Failure != row.want { t.Fatal("FIXED_OBSERVATION_CLASS_WRONG") }
+		})
+	}
+	cmd := exec.Command(filepath.Join(t.TempDir(), "missing-powershell.exe"))
+	if got := freshCaptureRegistration(cmd, func() bool { return true }); got.Known || got.Failure != "SPAWN_FAILED" { t.Fatal("SPAWN_CLASS_WRONG") }
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	cmd = exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "Start-Sleep -Seconds 2")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd.Env = freshRegistrationEnvironment()
+	if got := freshCaptureRegistration(cmd, func() bool { return ctx.Err() == nil }); got.Known || got.Failure != "TIMEOUT" { t.Fatal("TIMEOUT_CLASS_WRONG") }
+	private := fmt.Sprintf(`Software\CodexObserve_%x`, time.Now().UnixNano())
+	if got := freshObserveRegistration(ps, private); !got.Known || !got.Absent || got.Failure != "" { t.Fatal("PRIVATE_ABSENCE_OBSERVATION_WRONG") }
 }
 
 func freshObserveProgramFiles(root string) freshRecoverySnapshot {

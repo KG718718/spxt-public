@@ -1,0 +1,61 @@
+name: Native Registry Recovery
+run-name: ${{ github.event.head_commit.message }}
+on:
+  push:
+    branches: [codex/lan-fresh-trial-v1.1]
+    paths: [docs/tasks/windows-installer-v1.1/fresh-lan-trial/final-install-lan/native-registry-trigger.json]
+permissions:
+  contents: read
+  actions: read
+  deployments: read
+jobs:
+  native_registry:
+    if: github.repository == 'KG718718/spxt-public' && github.ref == 'refs/heads/codex/lan-fresh-trial-v1.1' && github.run_attempt == 1 && github.actor == 'KG718718'
+    name: native-registry-recovery
+    environment: fresh-ab-exact-run-approval
+    runs-on: windows-2025
+    timeout-minutes: 35
+    steps:
+      - name: Initialize isolated evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $root=Join-Path $env:RUNNER_TEMP ('native-registry-'+$env:GITHUB_RUN_ID+'-'+[guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Path $root -ErrorAction Stop | Out-Null
+          $report=Join-Path $root 'result.json'
+          $initial=[ordered]@{schema=1;kind='NATIVE_REGISTRY_JOB';runId=$env:GITHUB_RUN_ID;attempt=1;control=$env:GITHUB_SHA;source=$null;status='FAIL';stage='SOURCE';firstFailure='SOURCE_NOT_PROVEN';native=$null;scope=$null}
+          [IO.File]::WriteAllText($report,($initial|ConvertTo-Json -Compress))
+          "NATIVE_JOB_ROOT=$root" >> $env:GITHUB_ENV
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify approved unique run and reviewed source
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NODE_OPTIONS: ''
+          NODE_PATH: ''
+        run: node tools/tests/fresh-lan-trial/native-registry/admission.cjs
+      - name: Execute only the native registry recovery entry
+        shell: pwsh
+        env:
+          CI: 'true'
+          NODE_OPTIONS: ''
+          NODE_PATH: ''
+        run: |
+          $ErrorActionPreference='Stop'
+          try { & ./tools/tests/fresh-lan-trial/native-registry/hosted.ps1 }
+          catch { [Console]::Error.WriteLine('NATIVE_JOB_FAILED'); exit 1 }
+      - name: Publish fixed evidence only
+        if: always() && env.NATIVE_JOB_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-registry-evidence-${{ github.run_id }}
+          path: ${{ env.NATIVE_JOB_ROOT }}/result.json
+          if-no-files-found: error
+          retention-days: 30

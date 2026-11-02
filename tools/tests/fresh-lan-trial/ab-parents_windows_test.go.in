@@ -1,14 +1,57 @@
 package main
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"syscall"
 	"testing"
 	"time"
 	"unsafe"
+	"strings"
 )
+
+// Invoke the outer CI observer itself on the same private object. Only fixed
+// booleans cross this process boundary; registry values stay in memory.
+func freshOuterPrivateObservation(ps, key string) freshRecoverySnapshot {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	script := `$ErrorActionPreference='Stop';[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);. $env:FRESH_OBSERVER_LIB;$tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile($env:FRESH_CI_SCRIPT,[ref]$tokens,[ref]$errors);if($errors.Count){throw 'AST_INVALID'};$defs=@($ast.FindAll({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Registry-Tree'},$true));if($defs.Count -ne 1){throw 'DEFINITION_INVALID'};. ([scriptblock]::Create($defs[0].Extent.Text));$v=Get-FreshRegistryObservation @($env:FRESH_PRIVATE_KEY);[Console]::Write((@{known=$v.known;absent=$v.absent;value=$v.value}|ConvertTo-Json -Compress))`
+	cmd := exec.CommandContext(ctx, ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	root, e := filepath.Abs(filepath.Join("..", ".."))
+	if e != nil { return freshRecoverySnapshot{} }
+	cmd.Env = append(freshRegistrationEnvironment(), "FRESH_OBSERVER_LIB="+filepath.Join(root, "tools", "tests", "fresh-lan-trial", "install-r2", "hosted-recovery.ps1"), "FRESH_CI_SCRIPT="+filepath.Join(root, "tools", "windows-installer", "fresh-trial", "ci.ps1"), "FRESH_PRIVATE_KEY="+key)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	out, e := cmd.Output()
+	if e != nil || ctx.Err() != nil || stderr.Len() != 0 { return freshRecoverySnapshot{} }
+	var envelope struct { Known bool `json:"known"`; Absent bool `json:"absent"`; Value string `json:"value"` }
+	if json.Unmarshal(out, &envelope) != nil || !envelope.Known { return freshRecoverySnapshot{} }
+	var outer map[string]any
+	if json.Unmarshal([]byte(envelope.Value), &outer) != nil || len(outer) != 4 { return freshRecoverySnapshot{} }
+	canonical := map[string]any{}
+	for name, value := range outer { if !strings.HasSuffix(name, ":"+key) { return freshRecoverySnapshot{} }; if value != nil { tree, ok := freshOuterTreeToInner(value); if !ok { return freshRecoverySnapshot{} }; value = tree }; canonical[strings.TrimSuffix(name, ":"+key)] = value }
+	normalized, e := json.Marshal(canonical)
+	if e != nil { return freshRecoverySnapshot{} }
+	return freshRecoverySnapshot{Known:true, Absent:envelope.Absent, Identity:digest(normalized)}
+}
+func freshOuterTreeToInner(value any) (map[string]any, bool) {
+	tree, ok := value.(map[string]any)
+	if !ok || len(tree)!=2 { return nil,false }
+	values, vok := tree["values"].(map[string]any)
+	children, cok := tree["children"].(map[string]any)
+	if !vok || !cok { return nil,false }
+	normalizedValues:=map[string]any{}
+	for name, entry:=range values { v,ok:=entry.(map[string]any);if !ok||len(v)!=2 { return nil,false };kind,k:=v["kind"].(string);if !k { return nil,false };normalizedValues[name]=[]any{kind,v["value"]} }
+	normalizedChildren:=map[string]any{}
+	for name, entry:=range children { child,valid:=freshOuterTreeToInner(entry);if !valid { return nil,false };normalizedChildren[name]=child }
+	return map[string]any{"values":normalizedValues,"children":normalizedChildren},true
+}
 
 type freshAbParent struct {
 	key    string
@@ -21,7 +64,7 @@ func TestFreshAbRegistryDeleteUsesCreatorHandle(t *testing.T) {
 	ps := filepath.Join(os.Getenv("SystemRoot"), "System32/WindowsPowerShell/v1.0/powershell.exe")
 	key := fmt.Sprintf(`Software\CodexAbDelete_%x`, time.Now().UnixNano())
 	owner, state := freshCreateOwnedRegistry(ps, key)
-	defer owner.close()
+	defer func() { if !owner.close() { t.Error("ORIGINAL_HANDLE_CLOSE_UNPROVEN") } }()
 	if state != "CREATED_NEW" {
 		t.Fatal("PRIVATE_OWNER_CREATE_FAILED")
 	}
@@ -51,14 +94,19 @@ func TestFreshAbRegistryDeleteUsesCreatorHandle(t *testing.T) {
 	}
 	if blocked {
 		other, created := freshCreateOwnedRegistry(ps, key)
-		defer other.close()
+		defer func() { if !other.close() { t.Error("PRIVATE_OTHER_HANDLE_CLOSE_UNPROVEN") } }()
 		if created != "CREATED_NEW" || owner.cleanup() == "OWNED_REMOVED" || other.unchanged() != "UNCHANGED" || other.cleanup() != "OWNED_REMOVED" {
 			t.Fatal("CLOSED_RECEIPT_DELETED_REPLACEMENT")
 		}
 	} else {
+		closeReplacement := func() bool {
+			h := replacement
+			replacement = 0 // A failed close leaves unknown validity; never retry.
+			return h != 0 && syscall.RegCloseKey(h) == nil
+		}
 		defer func() {
 			if replacement != 0 {
-				syscall.RegCloseKey(replacement)
+				if !closeReplacement() { t.Error("PRIVATE_REPLACEMENT_CLOSE_UNPROVEN") }
 			}
 		}()
 		children, values, _, e := freshRegistryInfo(replacement)
@@ -72,8 +120,7 @@ func TestFreshAbRegistryDeleteUsesCreatorHandle(t *testing.T) {
 		if rc != 0 {
 			t.Fatal("PRIVATE_REPLACEMENT_RESTORE_FAILED")
 		}
-		syscall.RegCloseKey(replacement)
-		replacement = 0
+		if !closeReplacement() { t.Fatal("PRIVATE_REPLACEMENT_CLOSE_UNPROVEN") }
 	}
 	if after := freshObserveRegistration(ps, key); !after.Known || !after.Absent {
 		t.Fatal("PRIVATE_GLOBAL_RESTORE_UNPROVEN")
@@ -106,44 +153,66 @@ func freshPrepareAbParent(ps, key string) (*freshAbParent, string) {
 	return r, "OWNED_EMPTY_PARENT"
 }
 func (r *freshAbParent) cleanup(ps string, allow bool) string {
-	if r == nil || !r.known || !allow {
-		return "OWNERSHIP_UNKNOWN"
-	}
-	if r.owned != nil {
-		state := r.owned.cleanup()
-		if state != "OWNED_REMOVED" {
-			return "OWNERSHIP_UNKNOWN"
-		}
-		return "OWNED_REMOVED"
-	}
-	return freshRecoveryStatus(r.before, freshObserveRegistration(ps, r.key), false)
+	if r == nil { return "OWNERSHIP_UNKNOWN" }
+	nodes := 0
+	if r.owned != nil { nodes = len(r.owned.nodes) }
+	result := freshRunParentResponsibility(allow, r.known, r.owned != nil, nodes,
+		func() string { if r.owned.cleanup() == "OWNED_REMOVED" { return "OWNED_REMOVED" }; return "OWNERSHIP_UNKNOWN" },
+		func() string { return freshRecoveryStatus(r.before, freshObserveRegistration(ps, r.key), false) })
+	return result.State
 }
 func (r *freshAbParent) close() bool { return r == nil || r.owned == nil || r.owned.close() }
 func TestFreshAbParentReceiptPrivate(t *testing.T) {
 	ps := filepath.Join(os.Getenv("SystemRoot"), "System32/WindowsPowerShell/v1.0/powershell.exe")
-	key := fmt.Sprintf(`Software\CodexAbParent_%x\Beta`, time.Now().UnixNano())
+	outerPS, outerErr := exec.LookPath("pwsh")
+	if outerErr != nil { t.Fatal("OUTER_PWSH_NOT_AVAILABLE") }
+	key := fmt.Sprintf(`Software\CodexAbParent_%x_中文\Beta`, time.Now().UnixNano())
+	outerBefore := freshObserveRegistration(ps, key)
+	outer := freshOuterPrivateObservation(outerPS, key)
+	if !outer.Known || !outer.Absent || !outerBefore.Known || !outerBefore.Absent || outer.Identity != outerBefore.Identity { t.Fatal("INDEPENDENT_PRIVATE_PRESTATE_MISMATCH") }
 	parent, state := freshPrepareAbParent(ps, key)
-	defer parent.close()
+	parentOwned, parentRemoved := parent != nil && parent.owned != nil && len(parent.owned.nodes) != 0, false
+	var child *freshOwnedRegistry
+	childOwned, childRemoved := false, false
+	t.Cleanup(func(){
+		if childOwned && !childRemoved { if child.cleanup() != "OWNED_REMOVED" { t.Error("PRIVATE_CHILD_CLEANUP_UNPROVEN") } }
+		if child != nil && !child.close() { t.Error("PRIVATE_CHILD_CLOSE_UNPROVEN") }
+		if parentOwned && !parentRemoved { if parent.cleanup(ps,true) != "OWNED_REMOVED" { t.Error("PRIVATE_PARENT_CLEANUP_UNPROVEN") } }
+		if parent != nil && !parent.close() { t.Error("PRIVATE_PARENT_CLOSE_UNPROVEN") }
+	})
+	if !outerBefore.Known || !outerBefore.Absent || !parent.before.Known || parent.before.Identity != outerBefore.Identity { t.Fatal("INNER_OUTER_PRIVATE_PRESTATE_MISMATCH") }
 	if state != "OWNED_EMPTY_PARENT" {
 		t.Fatal("PRIVATE_PARENT_CREATE_FAILED")
 	}
+	outer = freshOuterPrivateObservation(outerPS, key)
+	inner := freshObserveRegistration(ps, key)
+	if !outer.Known || outer.Absent || !inner.Known || inner.Absent || outer.Identity != inner.Identity { t.Fatal("INDEPENDENT_PRIVATE_PRESENT_MISMATCH") }
 	existing, known := freshPrepareAbParent(ps, key)
 	defer existing.close()
 	if known != "PREEXISTING" || existing.owned != nil {
 		t.Fatal("EXISTING_PARENT_ADOPTED")
 	}
-	child, created := freshCreateOwnedRegistry(ps, key+`\Child`)
-	defer child.close()
+	var created string
+	child, created = freshCreateOwnedRegistry(ps, key+`\Child`)
+	childOwned = child != nil && len(child.nodes) != 0
 	if created != "CREATED_NEW" {
 		t.Fatal("PRIVATE_CHILD_CREATE_FAILED")
 	}
+	outer = freshOuterPrivateObservation(outerPS, key+`\Child`)
+	inner = freshObserveRegistration(ps, key+`\Child`)
+	if !outer.Known || outer.Absent || !inner.Known || inner.Absent || outer.Identity != inner.Identity { t.Fatal("INDEPENDENT_PRIVATE_TYPED_CONTENT_MISMATCH") }
 	if parent.cleanup(ps, true) != "OWNERSHIP_UNKNOWN" {
 		t.Fatal("UNKNOWN_CHILD_DELETED")
 	}
 	if child.cleanup() != "OWNED_REMOVED" {
 		t.Fatal("PRIVATE_CHILD_RESTORE_FAILED")
 	}
+	childRemoved = true
 	if existing.cleanup(ps, true) != "SNAPSHOT_UNCHANGED" || parent.cleanup(ps, true) != "OWNED_REMOVED" {
 		t.Fatal("PRIVATE_PARENT_RESTORE_FAILED")
 	}
+	parentRemoved = true
+	if after := freshObserveRegistration(ps, key); !after.Known || !after.Absent || after.Identity != outerBefore.Identity { t.Fatal("INNER_OUTER_PRIVATE_RESTORE_MISMATCH") }
+	outer = freshOuterPrivateObservation(outerPS, key)
+	if !outer.Known || !outer.Absent || outer.Identity != outerBefore.Identity { t.Fatal("INDEPENDENT_PRIVATE_RESTORE_MISMATCH") }
 }

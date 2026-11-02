@@ -1,0 +1,475 @@
+package main
+
+import (
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"syscall"
+	"testing"
+	"unsafe"
+)
+
+// This entry is only for a separately gated hosted Windows job. The report
+// contains fixed classes and receipt facts, never registry paths or values.
+type freshNativeNodeProof struct {
+	PrestateKnown       bool   `json:"prestateKnown"`
+	PrestateAbsent      bool   `json:"prestateAbsent"`
+	Disposition         uint32 `json:"disposition"`
+	CreatorHandleIssued bool   `json:"creatorHandleIssued"`
+	PoststateKnown      bool   `json:"poststateKnown"`
+	PoststateAbsent     bool   `json:"poststateAbsent"`
+	Restored            bool   `json:"restored"`
+}
+type freshNativeScenario struct {
+	ID                             string                 `json:"id"`
+	Status                         string                 `json:"status"`
+	ExpectedInjection              string                 `json:"expectedInjection"`
+	ObservedInjection              string                 `json:"observedInjection"`
+	PrestateKnown                  bool                   `json:"prestateKnown"`
+	PrestateAbsent                 bool                   `json:"prestateAbsent"`
+	Nodes                          []freshNativeNodeProof `json:"nodes"`
+	ReceiptNodes                   int                    `json:"receiptNodes"`
+	TemporaryClose                 string                 `json:"temporaryClose"`
+	OldOwnerRejected               *bool                  `json:"oldOwnerRejected"`
+	OldOwnerRejection              string                 `json:"oldOwnerRejection"`
+	ReplacementPreserved           *bool                  `json:"replacementPreserved"`
+	Delete                         string                 `json:"delete"`
+	Close                          string                 `json:"close"`
+	Observe                        string                 `json:"observe"`
+	ReplacementDelete              string                 `json:"replacementDelete"`
+	ReplacementClose               string                 `json:"replacementClose"`
+	ReplacementDisposition         uint32                 `json:"replacementDisposition"`
+	ReplacementCreatorHandleIssued bool                   `json:"replacementCreatorHandleIssued"`
+	DeleteFailure                  string                 `json:"deleteFailure"`
+	CloseFailure                   string                 `json:"closeFailure"`
+	ObserveFailure                 string                 `json:"observeFailure"`
+	ReplacementDeleteFailure       string                 `json:"replacementDeleteFailure"`
+	ReplacementCloseFailure        string                 `json:"replacementCloseFailure"`
+	Failure                        string                 `json:"failure"`
+}
+type freshNativeReport struct {
+	Schema        int                   `json:"schema"`
+	Kind          string                `json:"kind"`
+	Status        string                `json:"status"`
+	Qualification string                `json:"qualification"`
+	SourceCommit  string                `json:"sourceCommit"`
+	ControlCommit string                `json:"controlCommit"`
+	RunID         string                `json:"runId"`
+	Attempt       int                   `json:"attempt"`
+	Job           string                `json:"job"`
+	FirstFailure  string                `json:"firstFailure"`
+	Scenarios     []freshNativeScenario `json:"scenarios"`
+}
+
+func freshNativeBool(v bool) *bool { return &v }
+func freshNativeScene(id, injection string) freshNativeScenario {
+	replacementStep := "NOT_APPLICABLE"
+	if id == "REPLACEMENT_IDENTITY" {
+		replacementStep = "NOT_ATTEMPTED"
+	}
+	return freshNativeScenario{ID: id, Status: "NOT_RUN", ExpectedInjection: injection, ObservedInjection: "NOT_OBSERVED", Nodes: []freshNativeNodeProof{}, TemporaryClose: "NOT_ATTEMPTED", OldOwnerRejection: "NOT_ATTEMPTED", Delete: "NOT_ATTEMPTED", Close: "NOT_ATTEMPTED", Observe: "NOT_ATTEMPTED", ReplacementDelete: replacementStep, ReplacementClose: replacementStep, DeleteFailure: "NONE", CloseFailure: "NONE", ObserveFailure: "NONE", ReplacementDeleteFailure: "NONE", ReplacementCloseFailure: "NONE", Failure: "NONE"}
+}
+func freshNativeFail(s *freshNativeScenario, class string) {
+	s.Failure = freshFirstFailure(s.Failure, class)
+	s.Status = "FAIL"
+}
+func freshNativeReceipt(s *freshNativeScenario, r *freshOwnedRegistry) bool {
+	if r == nil {
+		freshNativeFail(s, "RECEIPT_UNPROVEN")
+		return false
+	}
+	s.ReceiptNodes = len(r.nodes)
+	for _, n := range r.nodes {
+		s.Nodes = append(s.Nodes, freshNativeNodeProof{PrestateKnown: n.before.Known, PrestateAbsent: n.before.Absent, Disposition: n.disposition, CreatorHandleIssued: n.creatorHandleIssued})
+		if !n.before.Known || !n.before.Absent || n.disposition != 1 || !n.creatorHandleIssued || n.h == 0 {
+			freshNativeFail(s, "RECEIPT_UNPROVEN")
+		}
+	}
+	if r.temporaryCloseOutcome != "" {
+		s.TemporaryClose = r.temporaryCloseOutcome
+	}
+	if r.temporaryCloseFailure != "" {
+		freshNativeFail(s, "TEMPORARY_CLOSE_UNPROVEN")
+	}
+	return s.Failure == "NONE" && len(r.nodes) > 0
+}
+func freshNativeExactNodes(r *freshOwnedRegistry) bool {
+	if r == nil || len(r.nodes) == 0 {
+		return false
+	}
+	for _, n := range r.nodes {
+		if !n.before.Known || !n.before.Absent || n.disposition != 1 || !n.creatorHandleIssued || n.h == 0 {
+			return false
+		}
+	}
+	return true
+}
+func freshNativePreflight(ps, key string) bool {
+	parts := strings.Split(key, `\`)
+	if len(parts) < 2 || parts[0] != "Software" {
+		return false
+	}
+	for i := 2; i <= len(parts); i++ {
+		before := freshObserveRegistration(ps, strings.Join(parts[:i], `\`))
+		if !before.Known || !before.Absent {
+			return false
+		}
+	}
+	return true
+}
+func freshNativeObserveNodes(s *freshNativeScenario, ps string, r *freshOwnedRegistry) bool {
+	if r == nil {
+		return false
+	}
+	ok := len(s.Nodes) == len(r.nodes) && len(r.nodes) > 0
+	for i, n := range r.nodes {
+		after := freshObserveRegistration(ps, n.path)
+		restored := after.Known && after.Absent && n.before.Known && n.before.Absent && after.Identity == n.before.Identity
+		if i < len(s.Nodes) {
+			s.Nodes[i].PoststateKnown = after.Known
+			s.Nodes[i].PoststateAbsent = after.Absent
+			s.Nodes[i].Restored = restored
+		}
+		ok = ok && restored
+	}
+	return ok
+}
+func freshNativeFinish(s *freshNativeScenario, ps, key string, before freshRecoverySnapshot, r *freshOwnedRegistry, cleanupAttempted bool) {
+	if r != nil {
+		if !cleanupAttempted && freshNativeExactNodes(r) {
+			result := freshRunParentResponsibility(true, r.ready, true, len(r.nodes), func() string { return r.cleanup() }, nil)
+			if result.State != "OWNED_REMOVED" {
+				freshNativeFail(s, "DELETE_UNPROVEN")
+			}
+		}
+		if r.deleteOutcome != "" {
+			s.Delete = r.deleteOutcome
+		}
+		if r.deleteFailure != "" {
+			s.DeleteFailure = r.deleteFailure
+			freshNativeFail(s, "DELETE_UNPROVEN")
+		}
+		if !r.close() {
+			s.CloseFailure = "CLOSE_FAILED"
+			freshNativeFail(s, "CLOSE_UNPROVEN")
+		}
+		if r.closeOutcome != "" {
+			s.Close = r.closeOutcome
+		}
+		if r.temporaryCloseOutcome != "" {
+			s.TemporaryClose = r.temporaryCloseOutcome
+		}
+		if r.temporaryCloseFailure != "" {
+			freshNativeFail(s, "TEMPORARY_CLOSE_UNPROVEN")
+		}
+	}
+	after := freshObserveRegistration(ps, key)
+	nodesRestored := freshNativeObserveNodes(s, ps, r)
+	if before.Known && before.Absent && after.Known && after.Absent && before.Identity == after.Identity && nodesRestored {
+		s.Observe = "RESTORED"
+	} else {
+		s.Observe = "UNPROVEN"
+		s.ObserveFailure = "FOUR_VIEW_RESTORE_UNPROVEN"
+		freshNativeFail(s, "OBSERVE_UNPROVEN")
+	}
+	if s.Failure == "NONE" {
+		s.Status = "PASS"
+	}
+}
+func freshNativeNormal(ps, key string) (s freshNativeScenario) {
+	s = freshNativeScene("NORMAL_RECEIPT", "NONE")
+	before := freshObserveRegistration(ps, key)
+	s.PrestateKnown, s.PrestateAbsent = before.Known, before.Absent
+	if !before.Known || !before.Absent || !freshNativePreflight(ps, key) {
+		freshNativeFail(&s, "PRESTATE_UNPROVEN")
+		return
+	}
+	r, state := freshPrepareOwnedRegistryScopeWithHook(ps, key, true, true, nil)
+	if state == "EMPTY_CREATED_NEW" {
+		state = r.writeMarker()
+	}
+	cleanupAttempted := false
+	defer func() { freshNativeFinish(&s, ps, key, before, r, cleanupAttempted) }()
+	if class := freshNativeCreationClass(state, "CREATED_NEW", "CREATE_UNPROVEN"); class != "NONE" {
+		freshNativeFail(&s, class)
+	}
+	receiptOK := freshNativeReceipt(&s, r)
+	if !receiptOK || state != "CREATED_NEW" || len(r.nodes) != 2 {
+		freshNativeFail(&s, "CREATE_UNPROVEN")
+		return
+	}
+	cleanupAttempted = true
+	if r.cleanup() != "OWNED_REMOVED" {
+		freshNativeFail(&s, "DELETE_UNPROVEN")
+	}
+	return
+}
+func freshNativePartial(ps, key string) (s freshNativeScenario) {
+	s = freshNativeScene("PARTIAL_CREATE_RECEIPT", "AFTER_FIRST_CREATE")
+	before := freshObserveRegistration(ps, key)
+	s.PrestateKnown, s.PrestateAbsent = before.Known, before.Absent
+	if !before.Known || !before.Absent || !freshNativePreflight(ps, key) {
+		freshNativeFail(&s, "PRESTATE_UNPROVEN")
+		return
+	}
+	injected := false
+	r, state := freshPrepareOwnedRegistryScopeWithHook(ps, key, true, true, func(nodes int) bool {
+		if nodes == 1 {
+			injected = true
+			return true
+		}
+		return false
+	})
+	cleanupAttempted := false
+	defer func() { freshNativeFinish(&s, ps, key, before, r, cleanupAttempted) }()
+	if injected {
+		s.ObservedInjection = "INJECTED_PARTIAL_FAILURE"
+	}
+	if class := freshNativeCreationClass(state, "INJECTED_PARTIAL_FAILURE", "INJECTION_UNPROVEN"); class != "NONE" {
+		freshNativeFail(&s, class)
+	}
+	receiptOK := freshNativeReceipt(&s, r)
+	if !receiptOK || state != "INJECTED_PARTIAL_FAILURE" || !injected || len(r.nodes) != 1 {
+		freshNativeFail(&s, "INJECTION_UNPROVEN")
+		return
+	}
+	// The final create failed, yet the first native creator receipt remains.
+	parent := &freshAbParent{key: key, before: before, owned: r, known: false}
+	cleanupAttempted = true
+	if parent.cleanup(ps, true) != "OWNED_REMOVED" {
+		freshNativeFail(&s, "DELETE_UNPROVEN")
+	}
+	return
+}
+func freshNativeReplacement(ps, key string) (s freshNativeScenario) {
+	s = freshNativeScene("REPLACEMENT_IDENTITY", "REPLACE_OBJECT")
+	before := freshObserveRegistration(ps, key)
+	s.PrestateKnown, s.PrestateAbsent = before.Known, before.Absent
+	if !before.Known || !before.Absent || !freshNativePreflight(ps, key) {
+		freshNativeFail(&s, "PRESTATE_UNPROVEN")
+		return
+	}
+	r, state := freshPrepareOwnedRegistryScopeWithHook(ps, key, true, true, nil)
+	if state == "EMPTY_CREATED_NEW" {
+		state = r.writeMarker()
+	}
+	var replacement syscall.Handle
+	replacementOwned := false
+	replacementProved := false
+	replacementIdentity := ""
+	originalChanged := false
+	originalCloseAttempted := false
+	defer func() {
+		if replacement != 0 {
+			if replacementOwned && replacementProved {
+				current := freshObserveRegistration(ps, key)
+				children, values, _, e := freshRegistryInfo(replacement)
+				if current.Known && !current.Absent && current.Identity == replacementIdentity && e == nil && children == 0 && values == 0 {
+					if rc, _, _ := freshRegNtDelete.Call(uintptr(replacement)); rc != 0 {
+						s.ReplacementDelete = "FAILED"
+						s.ReplacementDeleteFailure = "DELETE_FAILED"
+						freshNativeFail(&s, "DELETE_UNPROVEN")
+					} else {
+						s.ReplacementDelete = "OWNED_REMOVED"
+					}
+				} else {
+					freshNativeFail(&s, "REPLACEMENT_CHANGED")
+				}
+			}
+			h := replacement
+			replacement = 0
+			if syscall.RegCloseKey(h) != nil {
+				s.ReplacementClose = "FAIL"
+				s.ReplacementCloseFailure = "CLOSE_FAILED"
+				freshNativeFail(&s, "CLOSE_UNPROVEN")
+			} else {
+				s.ReplacementClose = "PASS"
+			}
+		}
+		if r != nil {
+			if !originalChanged && freshNativeExactNodes(r) {
+				result := freshRunParentResponsibility(true, r.ready, true, len(r.nodes), func() string { return r.cleanup() }, nil)
+				if result.State != "OWNED_REMOVED" {
+					freshNativeFail(&s, "DELETE_UNPROVEN")
+				}
+			}
+			if r.deleteOutcome != "" && s.Delete == "NOT_ATTEMPTED" && !originalChanged {
+				s.Delete = r.deleteOutcome
+			}
+			if r.deleteFailure != "" {
+				s.DeleteFailure = r.deleteFailure
+				freshNativeFail(&s, "DELETE_UNPROVEN")
+			}
+			if !originalCloseAttempted {
+				if !r.close() {
+					s.CloseFailure = "CLOSE_FAILED"
+					freshNativeFail(&s, "CLOSE_UNPROVEN")
+				}
+			}
+			if r.closeOutcome != "" {
+				s.Close = r.closeOutcome
+			}
+			if r.temporaryCloseOutcome != "" {
+				s.TemporaryClose = r.temporaryCloseOutcome
+			}
+			if r.temporaryCloseFailure != "" {
+				freshNativeFail(&s, "TEMPORARY_CLOSE_UNPROVEN")
+			}
+		}
+		after := freshObserveRegistration(ps, key)
+		nodesRestored := freshNativeObserveNodes(&s, ps, r)
+		if after.Known && after.Absent && before.Identity == after.Identity && nodesRestored {
+			s.Observe = "RESTORED"
+		} else {
+			s.Observe = "UNPROVEN"
+			s.ObserveFailure = "FOUR_VIEW_RESTORE_UNPROVEN"
+			freshNativeFail(&s, "OBSERVE_UNPROVEN")
+		}
+		if s.Failure == "NONE" {
+			s.Status = "PASS"
+		}
+	}()
+	if class := freshNativeCreationClass(state, "CREATED_NEW", "CREATE_UNPROVEN"); class != "NONE" {
+		freshNativeFail(&s, class)
+	}
+	receiptOK := freshNativeReceipt(&s, r)
+	if !receiptOK || state != "CREATED_NEW" || len(r.nodes) != 1 {
+		freshNativeFail(&s, "CREATE_UNPROVEN")
+		return
+	}
+	old := freshObserveRegistration(ps, key)
+	if !old.Known || old.Absent || r.unchanged() != "UNCHANGED" {
+		freshNativeFail(&s, "OBSERVE_UNPROVEN")
+		return
+	}
+	rc, _, _ := freshRegNtDelete.Call(uintptr(r.leaf))
+	if rc != 0 {
+		s.Delete = "FAILED"
+		s.DeleteFailure = "DELETE_FAILED"
+		freshNativeFail(&s, "INJECTION_UNPROVEN")
+		return
+	}
+	originalChanged = true
+	s.Delete = "OWNED_REMOVED"
+	originalCloseAttempted = true
+	if !r.close() {
+		s.Close = "FAIL"
+		s.CloseFailure = "CLOSE_FAILED"
+		freshNativeFail(&s, "CLOSE_UNPROVEN")
+		return
+	}
+	s.Close = "PASS"
+	deleted := freshObserveRegistration(ps, key)
+	if !deleted.Known || !deleted.Absent {
+		freshNativeFail(&s, "INJECTION_UNPROVEN")
+		return
+	}
+	var disposition uint32
+	rc, _, _ = freshRegCreate.Call(uintptr(syscall.HKEY_CURRENT_USER), uintptr(unsafe.Pointer(ptr(key))), 0, 0, 0, syscall.KEY_READ|syscall.KEY_WRITE|0x100|0x10000, 0, uintptr(unsafe.Pointer(&replacement)), uintptr(unsafe.Pointer(&disposition)))
+	s.ReplacementDisposition = disposition
+	s.ReplacementCreatorHandleIssued = replacement != 0
+	if rc != 0 || replacement == 0 {
+		freshNativeFail(&s, "REPLACEMENT_UNPROVEN")
+		return
+	}
+	if disposition != 1 {
+		freshNativeFail(&s, "REPLACEMENT_UNPROVEN")
+		return
+	}
+	replacementOwned = true
+	current := freshObserveRegistration(ps, key)
+	if !current.Known || current.Absent || current.Identity == old.Identity {
+		freshNativeFail(&s, "REPLACEMENT_UNPROVEN")
+		return
+	}
+	children, values, _, e := freshRegistryInfo(replacement)
+	if e != nil || children != 0 || values != 0 {
+		freshNativeFail(&s, "REPLACEMENT_CHANGED")
+		return
+	}
+	replacementProved = true
+	replacementIdentity = current.Identity
+	s.ObservedInjection = "REPLACEMENT_CREATED"
+	rejection := r.cleanup()
+	s.OldOwnerRejection = rejection
+	rejected := freshOldOwnerRejected(rejection)
+	s.OldOwnerRejected = freshNativeBool(rejected)
+	if !rejected {
+		freshNativeFail(&s, "OLD_OWNER_NOT_REJECTED")
+		return
+	}
+	still := freshObserveRegistration(ps, key)
+	preserved := still.Known && !still.Absent && still.Identity == current.Identity
+	s.ReplacementPreserved = freshNativeBool(preserved)
+	if !preserved {
+		freshNativeFail(&s, "REPLACEMENT_CHANGED")
+	}
+	return
+}
+
+func freshNativeGate() (freshNativeReport, string, bool) {
+	report := freshNativeReport{Schema: 1, Kind: "FRESH_NATIVE_REGISTRY_RECOVERY", Status: "FAIL", Qualification: "NATIVE_RECOVERY_ONLY_NOT_INSTALLATION_ACCEPTANCE", SourceCommit: os.Getenv("KSESSION_NATIVE_SOURCE"), ControlCommit: os.Getenv("GITHUB_SHA"), RunID: os.Getenv("GITHUB_RUN_ID"), Attempt: 1, Job: os.Getenv("GITHUB_JOB"), FirstFailure: "NONE", Scenarios: []freshNativeScenario{freshNativeScene("NORMAL_RECEIPT", "NONE"), freshNativeScene("PARTIAL_CREATE_RECEIPT", "AFTER_FIRST_CREATE"), freshNativeScene("REPLACEMENT_IDENTITY", "REPLACE_OBJECT")}}
+	hex40 := regexp.MustCompile(`^[a-f0-9]{40}$`)
+	id := regexp.MustCompile(`^[1-9][0-9]*$`)
+	if os.Getenv("GITHUB_ACTIONS") != "true" || os.Getenv("CI") != "true" || os.Getenv("RUNNER_ENVIRONMENT") != "github-hosted" || os.Getenv("RUNNER_OS") != "Windows" || os.Getenv("GITHUB_REPOSITORY") != "KG718718/spxt-public" || os.Getenv("GITHUB_REF") != "refs/heads/codex/lan-fresh-trial-v1.1" || os.Getenv("GITHUB_EVENT_NAME") != "push" || os.Getenv("GITHUB_RUN_ATTEMPT") != "1" || report.Job != "native_registry" || os.Getenv("GITHUB_WORKFLOW_SHA") != report.ControlCommit || !hex40.MatchString(report.SourceCommit) || !hex40.MatchString(report.ControlCommit) || !id.MatchString(report.RunID) {
+		return report, "", false
+	}
+	temp, raw := os.Getenv("RUNNER_TEMP"), os.Getenv("KSESSION_NATIVE_REPORT")
+	jobRoot := filepath.Dir(raw)
+	rootName := regexp.MustCompile(`^native-registry-` + regexp.QuoteMeta(report.RunID) + `-[a-f0-9]{32}$`)
+	if temp == "" || raw == "" || !filepath.IsAbs(temp) || !filepath.IsAbs(raw) || filepath.Clean(filepath.Dir(jobRoot)) != filepath.Clean(temp) || !rootName.MatchString(filepath.Base(jobRoot)) || filepath.Base(raw) != "native.json" {
+		return report, "", false
+	}
+	parent, e := os.Lstat(temp)
+	if e != nil || !parent.IsDir() || parent.Mode()&os.ModeSymlink != 0 || !noReparse(temp) {
+		return report, "", false
+	}
+	jobInfo, e := os.Lstat(jobRoot)
+	if e != nil || !jobInfo.IsDir() || jobInfo.Mode()&os.ModeSymlink != 0 || !noReparse(jobRoot) {
+		return report, "", false
+	}
+	return report, raw, true
+}
+func TestFreshNativeRegistryRecoveryOnly(t *testing.T) {
+	report, out, allowed := freshNativeGate()
+	if !allowed {
+		t.Fatal("NATIVE_ENVIRONMENT_BINDING_REJECTED")
+	}
+	f, e := os.OpenFile(out, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if e != nil {
+		t.Fatal("NATIVE_REPORT_CREATE_REJECTED")
+	}
+	defer func() {
+		b, e := json.Marshal(report)
+		if e != nil {
+			t.Error("NATIVE_REPORT_ENCODING_FAILED")
+		} else if _, e = f.Write(append(b, '\n')); e != nil {
+			t.Error("NATIVE_REPORT_WRITE_FAILED")
+		}
+		if f.Close() != nil {
+			t.Error("NATIVE_REPORT_CLOSE_FAILED")
+		}
+	}()
+	var token [16]byte
+	if _, e = rand.Read(token[:]); e != nil {
+		report.FirstFailure = "RANDOM_ROOT_UNPROVEN"
+		t.Error(report.FirstFailure)
+		return
+	}
+	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	base := `Software\CodexNativeRecovery_` + hex.EncodeToString(token[:])
+	for i, run := range []func(string, string) freshNativeScenario{freshNativeNormal, freshNativePartial, freshNativeReplacement} {
+		key := base + []string{`_Normal\Child`, `_Partial\Parent\Leaf`, `_Replacement`}[i]
+		report.Scenarios[i] = run(ps, key)
+		if report.Scenarios[i].Status != "PASS" {
+			report.FirstFailure = report.Scenarios[i].Failure
+			t.Error(report.FirstFailure)
+			return
+		}
+	}
+	report.Status = "PASS"
+}

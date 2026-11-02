@@ -1,10 +1,13 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-function prepare(out){
+function prepare(out, mode){
+	assert.ok(mode===undefined||mode==='--native-only');
  out=path.resolve(out);assert.equal(fs.existsSync(out),false);fs.mkdirSync(out,{recursive:true});
  const target=path.resolve(__dirname,'../../windows-launcher/fresh_installed_windows_test.go');
  const overlay=path.join(out,'fresh_installed_windows_test.go');
  fs.writeFileSync(overlay,fs.readFileSync(path.join(__dirname,'installed-hosted_windows_test.go.in'),'utf8').replace('__FRESH_STARTUP_STAGES_JSON__',JSON.stringify(require('./install-r2/startup-stages.cjs'))));
- const file=path.join(out,'overlay.json');fs.writeFileSync(file,JSON.stringify({Replace:{...require('./prepare-policy-overlay.cjs').replacements('LAUNCHER'),[target]:overlay,[path.resolve(__dirname,'../../windows-launcher/fresh_installed_recovery_windows_test.go')]:path.resolve(__dirname,'installed-recovery_windows_test.go.in'),[path.resolve(__dirname,'../../windows-launcher/fresh_owned_registry_windows_test.go')]:path.resolve(__dirname,'owned-registry_windows_test.go.in'),[path.resolve(__dirname,'../../windows-launcher/fresh_ab_failure_windows_test.go')]:path.resolve(__dirname,'ab-failure_windows_test.go.in'),[path.resolve(__dirname,'../../windows-launcher/fresh_ab_parents_windows_test.go')]:path.resolve(__dirname,'ab-parents_windows_test.go.in')}})+'\n',{flag:'wx'});return file;
+ const replace={...require('./prepare-policy-overlay.cjs').replacements('LAUNCHER'),[target]:overlay,[path.resolve(__dirname,'../../windows-launcher/fresh_installed_recovery_windows_test.go')]:path.resolve(__dirname,'installed-recovery_windows_test.go.in'),[path.resolve(__dirname,'../../windows-launcher/fresh_owned_registry_windows_test.go')]:path.resolve(__dirname,'owned-registry_windows_test.go.in'),[path.resolve(__dirname,'../../windows-launcher/fresh_owned_registry_control_test.go')]:path.resolve(__dirname,'owned-registry-control.go'),[path.resolve(__dirname,'../../windows-launcher/fresh_ab_failure_windows_test.go')]:path.resolve(__dirname,'ab-failure_windows_test.go.in'),[path.resolve(__dirname,'../../windows-launcher/fresh_ab_parents_windows_test.go')]:path.resolve(__dirname,'ab-parents_windows_test.go.in')};
+ if(mode==='--native-only')replace[path.resolve(__dirname,'../../windows-launcher/fresh_native_registry_recovery_windows_test.go')]=path.resolve(__dirname,'native-registry-recovery_windows_test.go.in');
+ const file=path.join(out,'overlay.json');fs.writeFileSync(file,JSON.stringify({Replace:replace})+'\n',{flag:'wx'});return file;
 }
-module.exports={prepare};if(require.main===module)process.stdout.write(prepare(process.argv[2])+'\n');
+module.exports={prepare};if(require.main===module)process.stdout.write(prepare(process.argv[2],process.argv[3])+'\n');

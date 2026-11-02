@@ -22,6 +22,8 @@ type freshRegistryNode struct {
 	path   string
 	h      syscall.Handle
 	before freshRecoverySnapshot
+	disposition uint32
+	creatorHandleIssued bool
 }
 
 // A receipt is issued only by the native exclusive creator, never by a sample
@@ -37,6 +39,19 @@ type freshOwnedRegistry struct {
 	expected       freshRecoverySnapshot
 	ready, retired bool
 	markerWritten  bool
+	deleteOutcome, closeOutcome, observeOutcome string
+	deleteFailure, closeFailure, observeFailure string
+	temporaryCloseOutcome, temporaryCloseFailure string
+}
+
+func (r *freshOwnedRegistry) closeTemporary(h syscall.Handle) bool {
+	if h == 0 { return false }
+	if syscall.RegCloseKey(h) != nil {
+		r.temporaryCloseOutcome, r.temporaryCloseFailure = freshStickyStep(r.temporaryCloseOutcome, r.temporaryCloseFailure, "FAIL", "TEMPORARY_CLOSE_FAILED")
+		return false
+	}
+	r.temporaryCloseOutcome, r.temporaryCloseFailure = freshStickyStep(r.temporaryCloseOutcome, r.temporaryCloseFailure, "PASS", "")
+	return r.temporaryCloseFailure == ""
 }
 
 func freshRegistryInfo(h syscall.Handle) (uint32, uint32, syscall.Filetime, error) {
@@ -80,8 +95,12 @@ func freshCreateOwnedRegistry(ps, key string) (*freshOwnedRegistry, string) {
 func freshPrepareOwnedRegistry(ps, key string) (*freshOwnedRegistry, string) {
 	return freshPrepareOwnedRegistryScope(ps, key, true)
 }
-func freshPrepareOwnedRegistryScope(ps, key string, allViewsAbsent bool) (*freshOwnedRegistry, string) {
+func freshPrepareOwnedRegistryScope(ps, key string, allViewsAbsent bool) (result *freshOwnedRegistry, state string) {
+	return freshPrepareOwnedRegistryScopeWithHook(ps, key, allViewsAbsent, false, nil)
+}
+func freshPrepareOwnedRegistryScopeWithHook(ps, key string, allViewsAbsent, rejectExistingIntermediate bool, afterOwnedCreate func(int) bool) (result *freshOwnedRegistry, state string) {
 	r := &freshOwnedRegistry{ps: ps, path: key}
+	result = r
 	before := freshObserveRegistration(ps, key)
 	parts := strings.Split(key, `\`)
 	if !before.Known || (allViewsAbsent && !before.Absent) || len(parts) < 2 || parts[0] != "Software" {
@@ -105,15 +124,19 @@ func freshPrepareOwnedRegistryScope(ps, key string, allViewsAbsent bool) (*fresh
 					return
 				}
 			}
-			syscall.RegCloseKey(parent)
+			if !r.closeTemporary(parent) && state == "EMPTY_CREATED_NEW" { state = "CLOSE_FAILED" }
 		}
 	}()
 	for i := 1; i < len(parts); i++ {
 		var h syscall.Handle
 		e := syscall.RegOpenKeyEx(parent, ptr(parts[i]), 0, syscall.KEY_READ|syscall.KEY_WRITE|0x100, &h)
 		if e == nil {
+			if rejectExistingIntermediate {
+				if !r.closeTemporary(h) { return r, "CLOSE_FAILED" }
+				return r, "CREATE_COLLISION"
+			}
 			if i == len(parts)-1 {
-				syscall.RegCloseKey(h)
+				if !r.closeTemporary(h) { return r, "CLOSE_FAILED" }
 				return r, "CREATE_COLLISION"
 			}
 		} else {
@@ -123,7 +146,7 @@ func freshPrepareOwnedRegistryScope(ps, key string, allViewsAbsent bool) (*fresh
 			var disposition uint32
 			nodePath := strings.Join(parts[:i+1], `\`)
 			nodeBefore := freshObserveRegistration(ps, nodePath)
-			if !nodeBefore.Known {
+			if !nodeBefore.Known || (rejectExistingIntermediate && !nodeBefore.Absent) {
 				return r, "PARENT_UNKNOWN"
 			}
 			rc, _, _ := freshRegCreate.Call(uintptr(parent), uintptr(unsafe.Pointer(ptr(parts[i]))), 0, 0, 0, syscall.KEY_READ|syscall.KEY_WRITE|0x100|0x10000, 0, uintptr(unsafe.Pointer(&h)), uintptr(unsafe.Pointer(&disposition)))
@@ -131,10 +154,11 @@ func freshPrepareOwnedRegistryScope(ps, key string, allViewsAbsent bool) (*fresh
 				return r, "CREATE_FAILED"
 			}
 			if disposition != 1 {
-				syscall.RegCloseKey(h)
+				if !r.closeTemporary(h) { return r, "CLOSE_FAILED" }
 				return r, "CREATE_COLLISION"
 			}
-			r.nodes = append(r.nodes, freshRegistryNode{nodePath, h, nodeBefore})
+			r.nodes = append(r.nodes, freshRegistryNode{path:nodePath, h:h, before:nodeBefore, disposition:disposition, creatorHandleIssued:h!=0})
+			if afterOwnedCreate != nil && afterOwnedCreate(len(r.nodes)) { return r, "INJECTED_PARTIAL_FAILURE" }
 		}
 		// Existing intermediate handles carry no delete authority.
 		keep := false
@@ -144,7 +168,13 @@ func freshPrepareOwnedRegistryScope(ps, key string, allViewsAbsent bool) (*fresh
 			}
 		}
 		if !keep {
-			syscall.RegCloseKey(parent)
+			if !r.closeTemporary(parent) {
+				parent = 0 // Unknown handle validity; do not retry.
+				ownedH := false
+				for _, n := range r.nodes { if n.h == h { ownedH = true } }
+				if !ownedH { r.closeTemporary(h) }
+				return r, "CLOSE_FAILED"
+			}
 		}
 		parent = h
 	}
@@ -197,13 +227,14 @@ func (r *freshOwnedRegistry) close() bool {
 	if r == nil {
 		return true
 	}
-	ok := true
+	ok := r.closeFailure == ""
 	for i := range r.nodes {
 		if r.nodes[i].h != 0 {
-			ok = syscall.RegCloseKey(r.nodes[i].h) == nil && ok
-			r.nodes[i].h = 0
+			if syscall.RegCloseKey(r.nodes[i].h) != nil { ok = false; r.closeOutcome, r.closeFailure = freshStickyStep(r.closeOutcome, r.closeFailure, "FAIL", "CLOSE_FAILED") }
+			r.nodes[i].h = 0 // Unknown validity after failure; never retry or reuse.
 		}
 	}
+	if ok { r.closeOutcome, r.closeFailure = freshStickyStep(r.closeOutcome, r.closeFailure, "PASS", "") }
 	r.leaf = 0
 	return ok
 }
@@ -215,21 +246,30 @@ func (r *freshOwnedRegistry) cleanupBeforeDelete(beforeDelete func()) string {
 	if r == nil {
 		return "RECEIPT_UNKNOWN"
 	}
+	if r.deleteOutcome == "" { r.deleteOutcome = "NOT_ATTEMPTED" }
+	if r.closeOutcome == "" { r.closeOutcome = "NOT_ATTEMPTED" }
+	if r.observeOutcome == "" { r.observeOutcome = "NOT_ATTEMPTED" }
 	if r.retired {
+		if r.deleteOutcome == "NOT_ATTEMPTED" { r.deleteOutcome = "ALREADY_REMOVED" }
 		after := freshObserveRegistration(r.ps, r.path)
 		if !after.Known {
+			r.observeOutcome = "UNPROVEN"; if r.observeFailure == "" { r.observeFailure = "OBSERVATION_FAILED" }
 			return "OBSERVATION_FAILED"
 		}
 		if !after.Absent {
+			r.observeOutcome = "UNPROVEN"; if r.observeFailure == "" { r.observeFailure = "RETIRED_STATE_CHANGED" }
 			return "RETIRED_STATE_CHANGED"
 		}
 		if !r.parentsRestored() {
+			r.observeOutcome = "UNPROVEN"; if r.observeFailure == "" { r.observeFailure = "RETIRED_STATE_CHANGED" }
 			return "RETIRED_STATE_CHANGED"
 		}
+		if r.observeFailure == "" { r.observeOutcome = "RESTORED" }
 		return "OWNED_REMOVED"
 	}
 	if r.ready {
 		if s := r.unchanged(); s != "UNCHANGED" {
+			r.observeOutcome = "UNPROVEN"; if r.observeFailure == "" { r.observeFailure = s }
 			return s
 		}
 	} else if len(r.nodes) == 0 {
@@ -241,13 +281,16 @@ func (r *freshOwnedRegistry) cleanupBeforeDelete(beforeDelete func()) string {
 		n := &r.nodes[i]
 		children, values, _, e := freshRegistryInfo(n.h)
 		if e != nil {
+			r.observeOutcome = "UNPROVEN"; if r.observeFailure == "" { r.observeFailure = "HANDLE_UNKNOWN" }
 			return "HANDLE_UNKNOWN"
 		}
 		if n.h == r.leaf && r.markerWritten {
 			if !freshRegistryMarker(n.h) {
+				r.observeOutcome = "UNPROVEN"; if r.observeFailure == "" { r.observeFailure = "HANDLE_CONTENT_CHANGED" }
 				return "HANDLE_CONTENT_CHANGED"
 			}
 		} else if children != 0 || values != 0 {
+			r.observeOutcome = "UNPROVEN"; if r.observeFailure == "" { r.observeFailure = "PARENT_CHANGED" }
 			return "PARENT_CHANGED"
 		}
 		if beforeDelete != nil {
@@ -256,22 +299,34 @@ func (r *freshOwnedRegistry) cleanupBeforeDelete(beforeDelete func()) string {
 		}
 		rc, _, _ := freshRegNtDelete.Call(uintptr(n.h))
 		if rc != 0 {
+			failedOutcome := "FAILED"
+			if r.deleteOutcome == "PARTIAL" { failedOutcome = "PARTIAL" }
+			r.deleteOutcome, r.deleteFailure = freshStickyStep(r.deleteOutcome, r.deleteFailure, failedOutcome, "DELETE_FAILED")
 			return "DELETE_FAILED"
 		}
+		r.deleteOutcome, r.deleteFailure = freshStickyStep(r.deleteOutcome, r.deleteFailure, "PARTIAL", "")
 		if syscall.RegCloseKey(n.h) != nil {
-			n.h = 0
+			r.closeOutcome, r.closeFailure = freshStickyStep(r.closeOutcome, r.closeFailure, "FAIL", "CLOSE_FAILED")
+			n.h = 0 // Preserve failure separately; no unsafe retry.
+			r.leaf = 0
 			return "CLOSE_FAILED"
 		}
+		if r.closeFailure == "" { r.closeOutcome = "PARTIAL" }
 		n.h = 0
 	}
+	r.deleteOutcome, r.deleteFailure = freshStickyStep(r.deleteOutcome, r.deleteFailure, "OWNED_REMOVED", "")
+	r.closeOutcome, r.closeFailure = freshStickyStep(r.closeOutcome, r.closeFailure, "PASS", "")
 	r.leaf = 0
 	after := freshObserveRegistration(r.ps, r.path)
 	if !after.Known || !after.Absent {
+		r.observeOutcome = "UNPROVEN"; if r.observeFailure == "" { r.observeFailure = "DELETE_OBSERVATION_FAILED" }
 		return "DELETE_OBSERVATION_FAILED"
 	}
 	if !r.parentsRestored() {
+		r.observeOutcome = "UNPROVEN"; if r.observeFailure == "" { r.observeFailure = "DELETE_OBSERVATION_FAILED" }
 		return "DELETE_OBSERVATION_FAILED"
 	}
+	if r.observeFailure == "" { r.observeOutcome = "RESTORED" }
 	r.retired = true
 	return "OWNED_REMOVED"
 }
