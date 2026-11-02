@@ -1,0 +1,21 @@
+'use strict';
+// No Release upload. Archives only an exact Runtime with matching hosted and local smoke evidence.
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{createRequire}=require('node:module');
+const {verify}=require('./verify.cjs'),{sha,inventory,writeNew,writeJSON,inside,assertArchiveAllowed}=require('./common.cjs');
+const [rootArg,regressionArg,smokeArg,outArg]=process.argv.slice(2);
+const root=path.resolve(rootArg),out=path.resolve(outArg);
+if(!/^E:\\/i.test(out)||fs.existsSync(out)||inside(root,out))throw Error('New external E directory required');
+const verified=verify(root),m=JSON.parse(fs.readFileSync(path.join(root,'manifest/runtime-manifest.json')));
+const gate=JSON.parse(fs.readFileSync(regressionArg)),smoke=JSON.parse(fs.readFileSync(smokeArg));
+assert.equal(gate.status,'PASS');assert.equal(gate.sourceCommit,m.sourceCommit);assert.equal(gate.suiteTotal,26);assert.equal(gate.suitePass,26);assert.equal(gate.skipped,0);assert.equal(gate.fail,0);
+assert.equal(gate.preflight.file,true);assert.equal(gate.preflight.directory,true);
+assert.equal(smoke.manifestHash,verified.manifestHash);assert.deepEqual(smoke.failures,[]);assert.equal(smoke.checks.length,12);
+assert.ok(smoke.checks.includes('package unchanged after diagnostics'));
+assert.deepEqual([smoke.pdfTrace.canvasLoads,smoke.pdfTrace.skiaLoads,smoke.pdfTrace.nativeAddonLoads,smoke.pdfTrace.externalNetworkAttempts],[0,0,0,0]);
+assertArchiveAllowed(m.nativeLicenseReview);
+const {zipSync}=createRequire(path.join(root,'app/package.json'))('fflate');
+const files=inventory(root),entries={};for(const f of files)entries[f.path]=[fs.readFileSync(path.join(root,f.path)),{mtime:new Date('2026-01-01T00:00:00Z')}];
+const zip=zipSync(entries,{level:6}),name='K-SESSION-runtime-prototype-win-x64.zip';
+writeNew(path.join(out,name),zip);writeNew(path.join(out,name+'.sha256'),sha(zip)+'  '+name+'\n');
+writeJSON(path.join(out,'archive-report.json'),{status:'PASS',sourceCommit:m.sourceCommit,buildToolCommit:m.build.toolCommit,hostedRunId:gate.runId,zip:name,zipSha256:sha(zip),zipBytes:zip.length,uncompressedBytes:files.reduce((n,f)=>n+f.bytes,0),files:files.length,manifestHash:verified.manifestHash,dependencyCount:m.dependencies.length,licenseUnresolved:m.nativeLicenseReview.unresolvedDistributionItems,extractedRecheck:'PENDING; archive creation alone is not completion'});
+console.log('ZIP generated; fresh extraction verification is still required.');
