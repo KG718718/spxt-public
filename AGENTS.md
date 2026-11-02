@@ -1,3 +1,7 @@
+## 2026-11-02 · 内部验证结束，转入 Experimental Beta 源码维护
+
+所有者关闭内部技术循环。Native Run 41396108321 的 PRESTATE_UNPROVEN、v3 恢复 UNKNOWN 和历次 FAIL 作为历史证据保留。Hosted、Candidate、Diagnostic、独立 QA 均不续行。当前交付范围为公开源码、用户文档、问题披露与贡献流程；源码阅读包及清单供所有者审核，尚无合格最新 EXE。社区更新由所有者提出或接收，经过分析、执行、独立 Review 后由所有者决定合并发布。下方均为历史记录。
+
 ## 当前停止｜2026-11-02 原生登记恢复专项 / PRESTATE_UNPROVEN
 
 唯一 Run 41396108321、Windows Job 125117667113、Artifact 13119303105。受测 source e3df4eaa，control 0a453fd2。审批、来源及专项编译通过；NORMAL_RECEIPT 的首次四视图观察未能证明创建前状态，收据 0，进入创建函数前即停止。部分创建和替换均未运行，登记删除、关闭与恢复回读均未验证。进程句柄、管道、Job 和环境收尾有独立证据。专项 1/1 已耗尽，QA 冻结，完整 Candidate 不具备准入条件。v3 UNKNOWN 保留。详见 final-install-lan/NATIVE-REGISTRY-RESULT.md 和 NATIVE-REGISTRY-EVIDENCE.json。

@@ -1,3 +1,7 @@
+## 2026-11-02 · K⁺-SESSION Experimental Beta
+
+当前公开交付为源码和文档，入口见 [README](README.md)、[安装状态](INSTALLATION.md) 与[已知问题](KNOWN-ISSUES.md)。最新 Fresh 安装和物理 LAN 未获认证，内部验证已关闭，QA 冻结。所有者负责社区修改的审核及合并发布决定。下方保留历史项目状态。
+
 ## 当前停止｜2026-10-27 本地观察收口 / PRIVATE FIXTURE RECOVERY UNPROVEN
 
 原FRESH-T2正式RETURN并冻结，本地WIP01075664未push/未整合/未最终Review。已确认首错被admission未观察覆盖，Master原模块13/13局部反例PASS；但v3私有父/子登记创建后类型内容对比失败，当时仅defer close，删除及恢复未证。发现同前缀键不能证明归属，UNKNOWN保留未清理；后续t.Cleanup及v6成功不回填v3。QA上下游兼容仍WIP、组合测试中断，NOT READY；未完成最终整体Review或同源完整EXE，无新Source/构建身份。Hosted0、QA0/1冻结、历史Run40286717015 FAIL/UNKNOWN/预算不变。停止新增工程/实测/构建，仅治理非force同步；原线程/树/未跟踪保留，不main/tag/Release/内部SPXT/未知清理/sub-agent。详见final-install-lan/AB-OBSERVATION-CLOSURE-RESULT.md/json。下方授权与全部历史原样保留。
