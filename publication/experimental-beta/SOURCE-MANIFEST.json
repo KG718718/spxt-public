@@ -1,0 +1,450 @@
+{
+  "kind": "K_SESSION_EXPERIMENTAL_SOURCE_READING_ARCHIVE",
+  "sourceCommit": "694abddf1571de99410dcf803cb38e777fbf09a7",
+  "files": [
+    {
+      "path": "BUG-REPORT.md",
+      "gitBlob": "ef799fbeb3961dd117e07fd133051c1e87eaf5f1",
+      "sha256": "c6a18323aba01c2a41ae836c49a796a0b0d5379460a252fb5c1cead2bbeb061d",
+      "bytes": 1117
+    },
+    {
+      "path": "CHANGELOG.md",
+      "gitBlob": "12f5d4e1569aafe6379df28c91c0d67fd403a758",
+      "sha256": "d553156bfce8cc7564fc17512280d1470be797b047bc7355b75387df23ee449a",
+      "bytes": 1646
+    },
+    {
+      "path": "CONFIGURATION.md",
+      "gitBlob": "53fd9fb04f7c365f0eb2ae7ffc36162bf7bb7bda",
+      "sha256": "1f6db32f9761a5aaca95b3b01dd02f7e919a431582fa84e031d8417d443dfd8c",
+      "bytes": 1375
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "gitBlob": "4d978ffcc613dd8f7dbc380e0a8db0995f471ff3",
+      "sha256": "3981e0c04414475576e91178116bd9cc33f51c3016e17a28f1623a9a37172056",
+      "bytes": 1323
+    },
+    {
+      "path": "INSTALLATION.md",
+      "gitBlob": "dc9d0350453f34cf1274bf0ae0227341f05a028b",
+      "sha256": "19a220156855e09612237dee535a53fe83a3896f50b3ac83b3cef34274abf2bf",
+      "bytes": 1775
+    },
+    {
+      "path": "KNOWN-ISSUES.md",
+      "gitBlob": "b7bf72ad705ddcbe3b6c37bf8cc0ec36a3d41696",
+      "sha256": "55df5a0301894813ba2bb25212f504c60d17e016444e1e70909f0ee3ca0fa579",
+      "bytes": 3848
+    },
+    {
+      "path": "LAN-DEPLOYMENT.md",
+      "gitBlob": "072eb8ee59c5d1f1670e4ee2ea234f1cad9ccb4a",
+      "sha256": "d48035e91c3956698408de484e8b5e7553097b06dc633cc91803c5367c54c252",
+      "bytes": 1870
+    },
+    {
+      "path": "LICENSE",
+      "gitBlob": "f65653c56aff11e4c3153cc9d31543031c2fafaf",
+      "sha256": "6503af1fae4848ab12e38e346cd01f8abb63f7dc0af877d2402aad0c7a6208a3",
+      "bytes": 1079
+    },
+    {
+      "path": "QUICK-START.md",
+      "gitBlob": "de16b4a4a33d20feee54b3c010b2dca5a60a8c58",
+      "sha256": "f14560d87e98c7f571e32af62c8b4d4274021e16ae0faad010af64b124a5ed5a",
+      "bytes": 1885
+    },
+    {
+      "path": "README.md",
+      "gitBlob": "1970533344bc02c07c9050e6bb96ea5e97e9a58b",
+      "sha256": "708ea7a518b862ecd4419ac9854d8d5377032b8a6565e6a4f865468d25b0ebc0",
+      "bytes": 2404
+    },
+    {
+      "path": "SECURITY.md",
+      "gitBlob": "2259b1b81b818287e63c13b522eef6b74df218f2",
+      "sha256": "e9d4a4a7fde9c44724314d23db9961114d28f29e20dec83e2ed2224ef71ea9e1",
+      "bytes": 1070
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "gitBlob": "85015d99cfd8cef75a36f99553b99406a706529d",
+      "sha256": "5787392db5438aaa710bd516c2e6cee98806028f052bacd6a58021418cd413a2",
+      "bytes": 1829
+    },
+    {
+      "path": "TROUBLESHOOTING.md",
+      "gitBlob": "f40fe8029675d01c6c414fb146f138838260ba93",
+      "sha256": "ff3b407eee7b7cd133adafc5b00971114917dacbf2371ef3c00a1efa61843fec",
+      "bytes": 1442
+    },
+    {
+      "path": "admin.html",
+      "gitBlob": "37221a8caca48d695bee35d0a3c82fec87225e0a",
+      "sha256": "ab66b684a740d32d9d489cdb511f7ec8261ad278eea36a58eaf27fe6c9b7a12b",
+      "bytes": 225983
+    },
+    {
+      "path": "approval.html",
+      "gitBlob": "08870acca3c8e812df8df61f5f461b57fcad0b22",
+      "sha256": "585918e8eefae2021d66f11455aa903ae4cd550876b081ac09b36424823df878",
+      "bytes": 254188
+    },
+    {
+      "path": "backup-service.js",
+      "gitBlob": "0dc96cf198bc7b5f3484a34b3fed21544df3dd27",
+      "sha256": "6c32d5635406071927ba36d350b0145fb4a6b7e1c7192d1a71db1d58d9b7ab2e",
+      "bytes": 12774
+    },
+    {
+      "path": "bonus-config.js",
+      "gitBlob": "1d68f71c739dfe80bda301a9f5dfec11d00d68d2",
+      "sha256": "ec05aeccb99dec94c0f20fbd5a8cbdf5f4bfcb19e7221c39bf3ea96686217729",
+      "bytes": 4945
+    },
+    {
+      "path": "bonus-preview.js",
+      "gitBlob": "c0c1fc475a2e4cfce3e326de2065f5532ecf1a78",
+      "sha256": "1208f67bc963bcd28b365681f2baf117912c2972a2f86a48137593ebc918446f",
+      "bytes": 9271
+    },
+    {
+      "path": "business-view-contract.js",
+      "gitBlob": "9777d89a5accc1299e152559d6436ca9677ba6a3",
+      "sha256": "b7739470b0116f6a7e45ac47afd7ee9f13819f0b7b9b7c0f85003f2ae8ee4c0a",
+      "bytes": 182
+    },
+    {
+      "path": "client-master.js",
+      "gitBlob": "36407b8d7426ed6ef275af0112a970cd6956e70f",
+      "sha256": "59351ca617997807de913299f1849dd062fede64262fc5c80576219b10f5ffe6",
+      "bytes": 5589
+    },
+    {
+      "path": "debt-repayment.js",
+      "gitBlob": "a61951126cff292f3ea84fc067387ff218b8eefe",
+      "sha256": "095595a3491b9f4173fcacc8987f0dea0d0df44b48e4e9a852bd28cf1a26b06d",
+      "bytes": 32743
+    },
+    {
+      "path": "debt.html",
+      "gitBlob": "ef9734a24a5227d9b6c6498e9439c8f905ef0341",
+      "sha256": "4573eb4cee2f148adbe76f6faa86f4510ded1fca27ee303a6398ec4ae27f4f2f",
+      "bytes": 29996
+    },
+    {
+      "path": "docs/versioning.md",
+      "gitBlob": "907a5904a77cf437d9a130a3de2f06291b348274",
+      "sha256": "118d946c11755ec80a9cb23395e7b61bb4bf5e59ee5cecea539a1f465f41001b",
+      "bytes": 3169
+    },
+    {
+      "path": "employee-settlement.js",
+      "gitBlob": "503db340cb99a314cddb308dd2f20e5743305145",
+      "sha256": "48241ba8a434271f4e9a01222932d4b05e618ad0a3b7bb4aa720cce8aef96253",
+      "bytes": 17843
+    },
+    {
+      "path": "execution-bonus.js",
+      "gitBlob": "f4b38f423ca361d76478e7d4883cd27573f40289",
+      "sha256": "7d65e271486c290d87af661d5678e50fd8c4a5f358a88acbfd4b6a685c5eb73e",
+      "bytes": 11178
+    },
+    {
+      "path": "export-service.js",
+      "gitBlob": "74990c3e0daa12529b9131540e5df5255a251650",
+      "sha256": "18ce05ad23109ca3b64892c69f1908cf73a93b56441d1954195b7704ef73a776",
+      "bytes": 43670
+    },
+    {
+      "path": "invoice-access-policy.js",
+      "gitBlob": "a599897ec4ee81dab68f10a942fc74d4f71665b2",
+      "sha256": "95f95a216fe329d8e3f0367353c4f54d167892a7f86f9de57e43944b4a9ac048",
+      "bytes": 5400
+    },
+    {
+      "path": "invoice.html",
+      "gitBlob": "0e763455ccc16249428942e20e346d92fb211a8d",
+      "sha256": "c19ceab68dce037132e6650f6e080f88c13b326fc8bb0a246703c278a6bb5bdc",
+      "bytes": 165004
+    },
+    {
+      "path": "k-session-theme.css",
+      "gitBlob": "8f417b63f99ba339944b29470d787ef46f575ce9",
+      "sha256": "d87737829bd191b74654e67c69251f79cf3a94604549aaf176b9df120d003aa5",
+      "bytes": 22776
+    },
+    {
+      "path": "login.html",
+      "gitBlob": "ca047e8ab75543e406f10070ff669682abe2cc90",
+      "sha256": "f2db60d5c3e1fc81874f5c7b32c2c7de30f6f6ceceafeb74641948b3989ff705",
+      "bytes": 9995
+    },
+    {
+      "path": "mail-reminder.js",
+      "gitBlob": "c9acd1c9f5a911043f6528230dbdcdbfe3b0cf93",
+      "sha256": "e63a25e6459357c0503ee0e4d57683239c4a1c3c133cac0844d75fc721169a78",
+      "bytes": 22499
+    },
+    {
+      "path": "package-lock.json",
+      "gitBlob": "46ee051e66e3a3cf32f97054a8da6d8e9dbf2f5b",
+      "sha256": "7e650d8d4141d888ab7cc81da25fa094f0e36ffaa0f2152d5066346633e8b2b5",
+      "bytes": 14658
+    },
+    {
+      "path": "package.json",
+      "gitBlob": "dedfadd60d92da0124a8b2c0006d42ab966b89be",
+      "sha256": "cdf5de458ad56c7dd7af87bace0c20823edacc53eb5493ef3bfc9567cb2d997e",
+      "bytes": 511
+    },
+    {
+      "path": "public-bootstrap-http.js",
+      "gitBlob": "ddcb432d2a078d254957dcb73c56dd001eb855a9",
+      "sha256": "343c0007de9b60028de68b4a3622e310edc28afe5b94116e6d32fcc7f2bd85bd",
+      "bytes": 5065
+    },
+    {
+      "path": "public-config-http.js",
+      "gitBlob": "8953ef7359b9944bb0736ceef57873e28c5819ca",
+      "sha256": "820964cc2995d4b91e5e56ff87f73ab9e5dcbad8ef09d011fb4dd61eb1e503aa",
+      "bytes": 6213
+    },
+    {
+      "path": "public-config-store.js",
+      "gitBlob": "5f7e43ff633fa50ed6f3d68650cd650ac80d5b8a",
+      "sha256": "5931297ea2c7122428bb8d4739c8f21a0798da8cf7d12a03ef44fdfd238fbbb1",
+      "bytes": 9729
+    },
+    {
+      "path": "public-lan-config.js",
+      "gitBlob": "62ac725d2c8f8d29c8f91c26a69ec367973f4793",
+      "sha256": "52a7b804ffbeba9689c7d07918d182dc9dcb8aaf258f7938fd701bbe24ab6f0d",
+      "bytes": 10498
+    },
+    {
+      "path": "public-lan-network.js",
+      "gitBlob": "0322c1638912dc1225c2aa4eef163242bf9254bf",
+      "sha256": "ae8a6c49117f222e7cbfa0fb73202222f7e74e635cc94c427b5641d459205f4d",
+      "bytes": 24189
+    },
+    {
+      "path": "public-lan-server.js",
+      "gitBlob": "b91c91084ac6008aa24bbf109a37196beb119650",
+      "sha256": "afd51c636c5719fb7b904076cb82d506fe30e3e8d51e6829a7692e45f7da16fc",
+      "bytes": 16396
+    },
+    {
+      "path": "public-runtime-state.js",
+      "gitBlob": "89b5067eabe1832e46bcfc0c2733995fedfa7406",
+      "sha256": "a786947f6d3359e6f2ef1033261d04c3d0875e7ee0f8b95b1b5b0bae41b3d742",
+      "bytes": 2313
+    },
+    {
+      "path": "public-startup.js",
+      "gitBlob": "240f2b9eea1a3716908a680ed205428fe04cfbc2",
+      "sha256": "150ba50a222535f4aae5774141237940402e5c5ef6c38b7d0700f09a99454742",
+      "bytes": 11000
+    },
+    {
+      "path": "server.js",
+      "gitBlob": "22650f97fc874fd401459147d9f001dcc684fa8d",
+      "sha256": "1335502a6d643c308fced975845b03246667df807d033de2eea251d236f1c24e",
+      "bytes": 501245
+    },
+    {
+      "path": "service-fee-config.js",
+      "gitBlob": "e3270c919fe15db26906933388423c14b3128b52",
+      "sha256": "a45bf1ea30baa3e10a1007b346f424eb38fab3e1db14fe9d6b2e63b93290e058",
+      "bytes": 2451
+    },
+    {
+      "path": "smtp-secret-store.js",
+      "gitBlob": "dc1d25dba8a4837c646bda2f5dfa8143b9383902",
+      "sha256": "fbcf9bdccab83acb3fe1ed105e8fe744e5a300bb055cb9838651d6f1a698ec7d",
+      "bytes": 4986
+    },
+    {
+      "path": "tax-config.js",
+      "gitBlob": "036f1ac87fe65657177501139e6f159846faf2c0",
+      "sha256": "81cbca5de0966048f80ecc52c5397da4e6bd37adb9aa4136cc3d00a5deabc9f6",
+      "bytes": 1034
+    },
+    {
+      "path": "tools/lan-host/config-cli.cjs",
+      "gitBlob": "ada1b46ba3ef88820dd0f054aaec6c2942147274",
+      "sha256": "fa9b9c762254690cf0b9febdad260ef7ff7955bf2712db48c6218a2a7c814255",
+      "bytes": 2298
+    },
+    {
+      "path": "tools/lan-host/launcher-cli.cjs",
+      "gitBlob": "a05581072878a5a0425aa799f6907c7f189bab66",
+      "sha256": "dbb144f4fa09967d3074b39ce1e1b9a23eec61a5ec673189d34a70f88a0db527",
+      "bytes": 5232
+    },
+    {
+      "path": "tools/lan-host/network-cli.cjs",
+      "gitBlob": "fdd412cbf1a102614162d9a3224c719392614e7e",
+      "sha256": "e913ded811003d73456fe3b913351fb81bddc0ceee25cf9bd9eb1bfbe7d80104",
+      "bytes": 1070
+    },
+    {
+      "path": "tools/ocr/ocr_invoice.py",
+      "gitBlob": "d3ed9b0207cebc444d3fb4a41df9d9eb4d8ae391",
+      "sha256": "327854b28f49e71e1e021c2ea4681613ef76966a40a50a59c5c123d7e7d40c60",
+      "bytes": 8329
+    },
+    {
+      "path": "tools/ocr/requirements.txt",
+      "gitBlob": "90a2e2a4a23bc6c9957fb67c469c130b1304f987",
+      "sha256": "b46bc803e74529a4afa0b46385e927e7e33c29141804a5cf0454964c700a9d17",
+      "bytes": 55
+    },
+    {
+      "path": "tools/windows-firewall/firewall_windows.go",
+      "gitBlob": "f9351e1ce26847936e8519a5d2876fd3cf0b75cc",
+      "sha256": "3b7c6029566dbc14a6d5cc440ea380dea5ce1b1c3b12d198ab883ef23f706cf1",
+      "bytes": 13955
+    },
+    {
+      "path": "tools/windows-firewall/go.mod",
+      "gitBlob": "0785197975743f0210fd32a7ef4b2cf7d29ae229",
+      "sha256": "7949856b2b5b65f5de96e998540883a1804e341ef1b7390b34ff3938e28fed58",
+      "bytes": 73
+    },
+    {
+      "path": "tools/windows-firewall/main_windows.go",
+      "gitBlob": "baaa1a225f18ca3d4815fcef5c075f198dcc83ff",
+      "sha256": "5e07095677b317b523e4f090da93cf46167d76dd03c1a528c6a53bfba1ec828b",
+      "bytes": 984
+    },
+    {
+      "path": "tools/windows-firewall/policy.go",
+      "gitBlob": "1fa53b014e9ead2f714e8455a3d83a34961df316",
+      "sha256": "979a376fcdfd8c8e14ce7c7ee03c061949bd245244377942f964b3806fd7b829",
+      "bytes": 16872
+    },
+    {
+      "path": "tools/windows-firewall/registry_windows.go",
+      "gitBlob": "36aeff8c315a87514db189506b4a96501fc7a403",
+      "sha256": "10dcd1aa1d326814b886e49ec9430fdb31d8a2034bb07a43295671c46106c819",
+      "bytes": 7762
+    },
+    {
+      "path": "tools/windows-installer/beta3-upgrade/setup-beta3.iss",
+      "gitBlob": "98bdc6888f4fbf851a640b29fb7e26e92729613c",
+      "sha256": "fc8119e29c89586581342014ce5d32eb7fb07d73b9684e79f0242d01271f4586",
+      "bytes": 42636
+    },
+    {
+      "path": "tools/windows-installer/beta4-upgrade/fresh-startup-identity.iss",
+      "gitBlob": "88377eeb400a9605672e5ef8bb29de5bbaad265c",
+      "sha256": "9d18b0fd2c3d74875998c77f3037fb363ee57c40cd6213ae85ffa03cc7623267",
+      "bytes": 20719
+    },
+    {
+      "path": "tools/windows-installer/beta4-upgrade/setup-beta4.iss",
+      "gitBlob": "7ed3e8034373d7a439c517188f889006ae2e7da7",
+      "sha256": "b0fbb0ccbb0bfc55eb060cec0dba1388a42d3105780f0348e060678e608f489f",
+      "bytes": 57822
+    },
+    {
+      "path": "tools/windows-installer/setup.iss",
+      "gitBlob": "3bb3a9d471e357972dcf9f88d53e9d7783b9a71e",
+      "sha256": "062e8871d4af943d9ebb7f9add88ea9908db0c89b0f8b6d6569acc23a626ef1a",
+      "bytes": 37528
+    },
+    {
+      "path": "tools/windows-launcher/core.go",
+      "gitBlob": "2b76d8992aaa76231cbde3c2b10be1f3fa4f2ccf",
+      "sha256": "04d93e4fd73cec8b0db032de465b51222cd2a0083bc7c46de5cc48bdb11dba40",
+      "bytes": 9529
+    },
+    {
+      "path": "tools/windows-launcher/go.mod",
+      "gitBlob": "9dd0946b06476835ace75579599b892efff28820",
+      "sha256": "01548a67ac73b92696bf10a98c137fee8072be6cfd52cb4704453d157b7a616e",
+      "bytes": 44
+    },
+    {
+      "path": "tools/windows-launcher/install_binding_windows.go",
+      "gitBlob": "8ccb17d5d1d56e99cbb1a7c8f78c330430673d9b",
+      "sha256": "eddbb0ef4d622e1834f85c9159065bdb4f573ef211ffaf723993c0225de86707",
+      "bytes": 7184
+    },
+    {
+      "path": "tools/windows-launcher/lan_core.go",
+      "gitBlob": "02623a787825600daf98ea3dd55c5bfb8bd28c21",
+      "sha256": "0b87b62a64fcae6ff12b5064291a57865ffb429c1fe54e73108ff2c2fabee62c",
+      "bytes": 13930
+    },
+    {
+      "path": "tools/windows-launcher/lan_windows.go",
+      "gitBlob": "32eb89ba25ea3208c46e9245a6d8263ed66e4a26",
+      "sha256": "507cc989478644111769e5a06c9355800519b12354e554697fb3b3db7e5aff54",
+      "bytes": 33705
+    },
+    {
+      "path": "tools/windows-launcher/logon_core.go",
+      "gitBlob": "23d26392801c8f6a57e44de5144d0de0d36067bd",
+      "sha256": "8f6ee6da270f53287e594a59504965a4484b1f13b09faf0bdbb2909140312d40",
+      "bytes": 1392
+    },
+    {
+      "path": "tools/windows-launcher/main_windows.go",
+      "gitBlob": "2a27127e29f993356049a0b2c4a89e50f5196d10",
+      "sha256": "90e68947d83f99289be023936315dafe7cc6634260ff47af6eea4eb26ff18a1a",
+      "bytes": 22722
+    },
+    {
+      "path": "tools/windows-launcher/toolchain.json",
+      "gitBlob": "bd3f69cd6a0185a1b0a02e8f0f1f3878cacb8a15",
+      "sha256": "f7eb1a2550515c76c4a499e72f2b5a38facb96f846227ce604d5f20e6678a8d1",
+      "bytes": 289
+    },
+    {
+      "path": "tools/windows-runtime/archive.cjs",
+      "gitBlob": "7c3ae7bf1a5297591092ad8caf51ad2ee13f60e4",
+      "sha256": "5e8a57f8f2ed7367ab018f155c9ada14ac549dda5245e8a535efd5b66057d7e6",
+      "bytes": 2485
+    },
+    {
+      "path": "tools/windows-runtime/build.cjs",
+      "gitBlob": "4d13ac51485edb02fd408eb96e73d5276e860d40",
+      "sha256": "a750bf131b0db2c69290227dc7c47c1e8b794175f1240a51a60411948d53d0d7",
+      "bytes": 13254
+    },
+    {
+      "path": "tools/windows-runtime/closure-policy.json",
+      "gitBlob": "e5cae16dd8814fb6becd46fe6a684a1a3139abb4",
+      "sha256": "7b6d7eb14c2dc844447278e64c55c3efc4c00240b03e85f7959fb892ced86a42",
+      "bytes": 704
+    },
+    {
+      "path": "tools/windows-runtime/collect-native-evidence.cjs",
+      "gitBlob": "7a5e907360f9e348dde89aed5445620b705e9956",
+      "sha256": "3c6e1bdf18d4f9f968cd963509965f81cc46a55d58a46bec01d3c060d7fcd514",
+      "bytes": 6079
+    },
+    {
+      "path": "tools/windows-runtime/common.cjs",
+      "gitBlob": "464b38cdfd01c1c7363d179820e28230b5d97cbc",
+      "sha256": "395b245c8e74dd2ab8b8785ef0bc94daf2026c761d9071cd8ca5355254b0eacd",
+      "bytes": 5826
+    },
+    {
+      "path": "tools/windows-runtime/verify.cjs",
+      "gitBlob": "700a70a7e56068ad2e5962572b7ebe444228ab03",
+      "sha256": "8bfc24dbc0624de192ea77881a63aa0f56ea36cf7adae2ff7b1074e4b176ef9f",
+      "bytes": 3820
+    }
+  ],
+  "archive": {
+    "filename": "K-SESSION-Experimental-Beta-source.zip",
+    "sha256": "4773f7439a5d8be2637e54834cdbb8d019f0c99fa5a234a010033e3bb8085648",
+    "bytes": 444329,
+    "entries": 73
+  }
+}
